@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Is the Park Allowed to Do That? · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Mobile home park rights in California: rent increases, fees, eviction notices, forced repairs, buyer approval, caregivers, guests, pets, For Sale signs, rule changes, maintenance, retaliation and park sales. Plain-language Mobilehome Residency Law with a letter you can copy.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t171/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Is the Park Allowed to Do That? · Ken Lam Tools">
+<meta property="og:description" content="Pick what the park did. Get the law in plain words, what to do, who to call, and a letter to copy.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t171/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T145 additions */
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.cmp div{border:1px solid var(--line);border-radius:10px;padding:12px}
+.cmp .k{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.cmp .v{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums;margin-top:2px}
+.cmp p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.cards{display:grid;gap:10px}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
+.card b{font-weight:500;font-size:15px}
+.card span{font-size:14px;color:var(--muted)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a,.card a,.cmp a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+/* T171 additions */
+.sits{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.sits button{border:1px solid var(--line);background:var(--panel);color:var(--fg);font:inherit;font-size:14px;line-height:1.3;text-align:left;padding:11px 12px;border-radius:10px;cursor:pointer;min-height:56px}
+.sits button[aria-pressed="true"]{border-color:var(--brass);background:var(--brass-soft);font-weight:500}
+.q{font-size:15px;font-weight:500;margin:0}
+.verdict .v{font-size:44px}
+.verdict.no .v{color:var(--warn)}
+.verdict.ok .v{color:var(--ok)}
+.law{font-size:15px;margin:0}
+.law a{color:var(--brass)}
+.todo{margin:0;padding-left:20px;display:grid;gap:6px;font-size:15px}
+.who2{display:grid;gap:8px}
+.who2 a.card{text-decoration:none;color:var(--fg)}
+.who2 .ph{color:var(--brass);font-weight:500;font-variant-numeric:tabular-nums}
+textarea{width:100%;min-height:260px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--fg);font:inherit;font-size:14px;line-height:1.5;padding:12px}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;padding:12px 4px}
+.meta a{color:var(--brass)}
+.ctl input::placeholder{color:var(--muted);opacity:.55}
+.gcal{color:var(--brass);text-decoration:none;font-size:14px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Is the park allowed to do that?</h1>
+    <p class="sub" data-i="sub">Pick what the park did. Answer one question. See what California's Mobilehome Residency Law says, what to do, and who to call.</p>
+  </header>
+
+  <section class="inputs" aria-label="Situation">
+    <span class="fl" data-i="l_sit">What happened?</span>
+    <div class="sits" id="sits" role="group"></div>
+    <p class="q" id="qText"></p>
+    <div class="seg" role="group" id="ansSeg">
+      <button type="button" data-v="a" aria-pressed="true" id="ansA">—</button>
+      <button type="button" data-v="b" aria-pressed="false" id="ansB">—</button>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_county">Your park is in</span>
+      <div class="seg" role="group" id="ctySeg">
+        <button type="button" data-v="sj" aria-pressed="true">San Jose</button>
+        <button type="button" data-v="scc" aria-pressed="false" data-i="c_scc">Other Santa Clara Co.</button>
+        <button type="button" data-v="ala" aria-pressed="false" data-i="c_ala">Alameda Co.</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="result verdict" id="verdictBox" aria-live="polite">
+    <div class="total">
+      <div class="k" id="vLabel"></div>
+      <div class="v"><span id="total">—</span></div>
+    </div>
+    <p class="law" id="lawText"></p>
+    <div class="meta"><span><span data-i="m_sec">Law</span>: <b id="secLinks"></b></span></div>
+    <div class="note" id="vNote"></div>
+  </section>
+  <video src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px;margin-top:8px" aria-label="How to use this tool"></video>
+
+  <section class="panel steps">
+    <h2 data-i="d_title">What to do</h2>
+    <ol class="todo" id="todo"></ol>
+    <a class="gcal" id="gcalLink" href="#" target="_blank" rel="noopener"></a>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="w_title">Who to call</h2>
+    <div class="who2" id="whoList"></div>
+  </section>
+
+  <section class="panel" id="letterPanel">
+    <h2 data-i="lt_title">Letter to the park (copy it)</h2>
+    <p class="hint" data-i="lt_hint">Written in English for the manager. Fill in your info, copy, sign, and keep a copy. Send it so you can prove it was received (certified mail or hand-deliver and get a dated receipt).</p>
+    <div class="row2">
+      <div class="field"><label for="lName"><span data-i="lt_name">Your name</span></label><div class="ctl"><input id="lName" type="text" autocomplete="name" placeholder="Lan Nguyen"></div></div>
+      <div class="field"><label for="lSpace"><span data-i="lt_space">Space #</span></label><div class="ctl"><input id="lSpace" type="text" placeholder="42"></div></div>
+    </div>
+    <div class="field"><label for="lPark"><span data-i="lt_park">Park name</span></label><div class="ctl"><input id="lPark" type="text" placeholder="Golden Oaks Mobile Home Park"></div></div>
+    <div class="field"><label for="lWhat"><span data-i="lt_what">What happened, in a few words (English)</span></label><div class="ctl"><input id="lWhat" type="text" placeholder="the clubhouse heater has been broken since March 1"></div></div>
+    <textarea id="letter" readonly aria-label="Letter"></textarea>
+    <button class="btn" type="button" id="copyLetter" data-i="lt_copy">Copy letter</button>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t171/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this to yourself</h2>
+    <p data-i="f_sub">You get the law, the steps and the letter in one email. Ken can point you to the right office. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Get everything in writing. Phone calls with the manager don't count later.</li>
+      <li data-i="ns2">Keep a folder: your rental agreement, park rules, every notice, photos with dates, receipts.</li>
+      <li data-i="ns3">Talk to neighbors. One resident's notice about broken common areas counts for the whole park (§798.84).</li>
+      <li data-i="ns4">Selling soon? See <a href="/t168/">T168</a> (what you take home) and <a href="/t169/">T169</a> (selling checklist).</li>
+    </ol>
+  </section>
+  <p class="myth" data-i="myth"><b>Many people get this wrong:</b> "It's the park's land, so they can make any rule they want." No. A park is run under the Mobilehome Residency Law. A new fee slipped in through a rule change is void, and the park can only end your tenancy for the reasons the law lists.</p>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#mobile-home-rights" target="_blank" rel="noopener" data-i="ft_lib">Your rights in a mobile home park</a> · <a href="https://kenlamrealty.com/library#video-mobile-home" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a> · <a href="/t162/">T162</a> · <a href="/t177/">T177</a></span>
+    <span><span data-i="ft_src">Sources:</span>
+      <a href="https://leginfo.legislature.ca.gov/faces/codes_displayexpandedbranch.xhtml?tocCode=CIV&amp;division=2.&amp;title=2.&amp;part=2.&amp;chapter=2.5." target="_blank" rel="noopener">Mobilehome Residency Law, Civil Code §798 et seq.</a> ·
+      <a href="https://shou.senate.ca.gov/media/743" target="_blank" rel="noopener">2026 MRL handbook (CA Senate Housing Committee)</a> ·
+      <a href="https://www.hcd.ca.gov/sites/default/files/docs/manufactured-and-mobilehomes/mrlpp-flyer.pdf" target="_blank" rel="noopener">HCD MRLPP</a> ·
+      <a href="https://sanjoseca.gov/your-government/departments-offices/housing/mobilehome-residents-park-owners/know-your-rights/find-resources-and-legal-assistance" target="_blank" rel="noopener">San Jose mobilehome resources</a> ·
+      <a href="https://lawlibrary.alamedacountyca.gov/project/tenant-and-eviction-referral-sheet/" target="_blank" rel="noopener">Alameda County Law Library referrals</a>
+      <span data-i="ft_chk">(checked 04/11/2026)</span></span>
+    <span data-i="ft_est">General information, not legal advice. The verdict is the usual answer; your lease, park rules and local ordinance can change it. For a notice with a deadline, call legal aid the same week.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Law + contacts — edit here (checked 04/11/2026) =====
+   Section text checked via the 2025/2026 MRL handbooks (Senate Housing Committee, https://shou.senate.ca.gov/media/743),
+   california.public.law / codes.findlaw / law.counselstack mirrors of leginfo (direct leginfo fetch was blocked from this workspace —
+   KEN DUYỆT: click each leginfo link once before posting).
+   §798.30 90-day written notice of rent increase. §798.30.5 cap: lower of 3%+CPI or 5% per 12 months; exempt if stricter local rule; ends 1/1/2030.
+   San Jose MRO 3%–7%/yr. §798.25: rule change w/o consent → 6 months notice (60 days for recreational facility rules); new-fee rule void.
+   §798.40 submeter bills show readings; water billing fee ≤ lesser of $4.75 (CPI-adj.) or 25% of volumetric charge.
+   §798.41 separate utility billing → base rent reduced by prior 12-month average.
+   §798.55 ≥60 days notice to sell/remove; §798.56(a)(1)-(7) seven reasons; rule violation 7 days to comply; rent 5 days late → 3-day notice.
+   §798.73 removal on sale only to upgrade park + (not a mobilehome / old & fails H&S by inspection / significantly rundown); written notice.
+   §798.73.5 repairs at sale: exterior, based on law or rule enforcing law; written summary within 15 business days on request, else waived.
+   §798.74 approval: 3 reasons only; 15 business days after complete info; no answer = approved; no tax returns; credit fee refund 30 days.
+   §798.34 guests ≤20 consecutive / 30 days per calendar year no fee; companion (lives alone) no fee; live-in caregiver no fee;
+        55+ in senior park: parent/sibling/child/grandchild needing care, no fee.
+   §798.33 at least 1 pet (leases on/after 1/1/2001), reasonable rules; pet fee only if special pet facilities.
+   §798.70 For Sale sign: 1 sign, face ≤24" wide × 36" high, owner/agent name, address, phone; open house if park allows.
+   §798.15(d) common areas: health/safety ASAP, other ≤30 days unless exigent. §798.84 30 days signed written notice before suing.
+   Retaliation: Civil Code §1942.5 applies to park tenants (Rich v. Schwab (1998) 63 Cal.App.4th 803; HCD MAC FAQ).
+        180-day presumption window — KEN DUYỆT. §798.21 is NOT retaliation (non-principal residence).
+   §798.80 park sale: notice to resident org officers 30 days–1 year before listing, only if org gave written notice of interest (renew yearly).
+   Phones: HCD MRLPP / Mobilehome Assistance Center (800) 952-8356 (MRLPP flyer + 2026 MRL handbook). HCD MAC FAQ also lists (800) 952-5275 — KEN DUYỆT.
+        San Jose Rent Stabilization 408-975-4480; SALA 408-295-5991; Law Foundation eviction clinic 408-280-2424; Project Sentinel 408-720-9888;
+        Asian Law Alliance 408-287-9710; Bay Area Legal Aid advice line 800-551-5554; Centro Legal de la Raza 510-437-1554;
+        EBCLC 510-548-4040; GSMOL 800-888-1727 (San Jose resource page + Alameda Co. Law Library, 04/11/2026). */
+const L=s=>'https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum='+s;
+const SIT=[
+ {id:'rent',sec:['798.30','798.30.5'],fu:0,
+  en:{t:'Rent increase',q:'Did you get written notice at least 90 days before it starts?',a:'No / less',b:'Yes, 90+ days',
+    law:'The park must give 90 days written notice before any rent increase (§798.30). Outside cities with their own rule, the yearly increase is capped at the lower of 3% + CPI or 5% (§798.30.5, until 1/1/2030). San Jose parks under the Mobilehome Rent Ordinance: 3% to 7% a year.',
+    va:'no',vb:'maybe',na:'Short notice: the increase can\'t start until 90 days after proper written notice.',nb:'Notice is fine. Now check the amount: over the cap in your city or the state cap is not allowed.',
+    todo:['Write down the date you got the notice and the old and new rent.','Check the % with <a href="/t162/">T162</a>.','San Jose: call Rent Stabilization Program before you pay the new amount.'],
+    ask:'the rent increase notice I received does not meet Civil Code §798.30 / §798.30.5 (notice period or allowed amount)'},
+  vi:{t:'Tăng tiền đất',q:'Mình có nhận giấy báo ít nhất 90 ngày trước ngày tăng không?',a:'Không / ít hơn',b:'Có, 90+ ngày',
+    law:'Park phải báo bằng giấy trước 90 ngày mới được tăng tiền đất (§798.30). Ở chỗ không có luật riêng của city, mỗi năm tăng tối đa 3% + CPI hoặc 5%, lấy số nhỏ hơn (§798.30.5, tới 1/1/2030). Park ở San Jose theo Mobilehome Rent Ordinance: 3% tới 7%/năm.',
+    na:'Báo trễ: phải đủ 90 ngày sau giấy báo đúng cách mới được tăng.',nb:'Giấy báo đủ ngày. Giờ coi tới mức tăng: vượt trần của city hoặc tiểu bang là không được.',
+    todo:['Ghi lại ngày nhận giấy báo, tiền cũ, tiền mới.','Tính % ở <a href="/t162/">T162</a>.','Park ở San Jose: gọi Rent Stabilization Program trước khi trả số mới.']}},
+ {id:'fee',sec:['798.25','798.40','798.41'],fu:14,
+  en:{t:'New fee or utility charge',q:'Is this fee written in the rental agreement you signed?',a:'No',b:'Yes',
+    law:'A park rule that creates a new fee you never agreed to in your rental agreement is void (§798.25). Submetered utility bills must show the meter readings and the rate, and the water billing fee is capped (§798.40). If the park starts billing a utility separately, your base rent must drop by what the park paid for it over the last 12 months (§798.41).',
+    va:'no',vb:'maybe',na:'A fee you never agreed to usually can\'t be added by a rule change.',nb:'If you signed for it, it may be allowed. Still check the bill shows readings and rates.',
+    todo:['Ask in writing what law or lease clause the fee is based on.','Compare the utility bill with the posted utility rate.','Keep paying rent on time while you dispute the fee.'],
+    ask:'the new fee / utility charge is not in my rental agreement or does not follow Civil Code §798.25, §798.40 or §798.41'},
+  vi:{t:'Phí mới hoặc tiền điện nước',q:'Phí này có ghi trong hợp đồng thuê đất mình đã ký không?',a:'Không',b:'Có',
+    law:'Nội quy mới đặt ra phí mà mình chưa từng đồng ý trong hợp đồng là vô hiệu (§798.25). Hóa đơn điện nước qua đồng hồ phụ (submeter) phải ghi số đồng hồ và giá, phí làm hóa đơn nước có trần (§798.40). Park chuyển sang tính riêng tiền điện/nước/rác thì tiền đất gốc phải giảm bằng số park đã trả 12 tháng trước (§798.41).',
+    na:'Phí mình chưa từng đồng ý thì thường không thêm vô bằng cách đổi nội quy được.',nb:'Đã ký thì có thể được. Vẫn kiểm tra hóa đơn có số đồng hồ và giá.',
+    todo:['Hỏi bằng giấy: phí này dựa vào luật nào hay điều nào trong hợp đồng.','So hóa đơn với bảng giá điện nước park dán.','Vẫn trả tiền đất đúng hạn trong lúc khiếu nại phí.']}},
+ {id:'evict',sec:['798.55','798.56'],fu:0,
+  en:{t:'Eviction / termination notice',q:'Does the notice name one of the 7 reasons the law allows?',a:'No / unclear',b:'Yes',
+    law:'The park can end your tenancy only for 7 reasons (§798.56): not fixing a government notice of violation, conduct that substantially annoys others, certain crimes in the park, breaking a reasonable park rule after a 7-day written warning, not paying rent or charges (3-day notice after 5 days late; paying within 3 days cures it), condemnation, or a change of use. The notice must give at least 60 days to sell or remove the home (§798.55).',
+    va:'no',vb:'maybe',na:'No legal reason, no termination. Don\'t ignore it though.',nb:'A legal reason may apply. You may still be able to cure it (pay, or fix the violation).',
+    todo:['Call legal aid this week. Deadlines are short.','Late on rent? Pay the full amount inside the 3 days and get a receipt.','Rule violation? Fix it within 7 days and take dated photos.'],
+    ask:'the termination notice I received does not state a reason allowed by Civil Code §798.56 or does not give the notice required by §798.55'},
+  vi:{t:'Giấy đuổi / chấm dứt hợp đồng',q:'Giấy có ghi 1 trong 7 lý do luật cho phép không?',a:'Không / không rõ',b:'Có',
+    law:'Park chỉ được chấm dứt hợp đồng vì 7 lý do (§798.56): không sửa vi phạm theo giấy của cơ quan nhà nước, làm phiền nặng hàng xóm, vài loại tội trong park, vi phạm nội quy hợp lý sau 7 ngày báo bằng giấy, không trả tiền đất/phí (trễ 5 ngày thì có giấy 3 ngày; trả trong 3 ngày là xong), park bị trưng thu, hoặc đổi mục đích sử dụng. Giấy phải cho ít nhất 60 ngày để bán hoặc dời nhà (§798.55).',
+    na:'Không có lý do hợp pháp thì không chấm dứt được. Nhưng đừng bỏ qua giấy.',nb:'Có thể có lý do hợp pháp. Nhiều khi vẫn sửa kịp (trả tiền, sửa vi phạm).',
+    todo:['Gọi legal aid ngay trong tuần. Hạn rất ngắn.','Trễ tiền đất? Trả đủ trong 3 ngày, lấy biên nhận.','Vi phạm nội quy? Sửa trong 7 ngày, chụp hình có ngày.']}},
+ {id:'remove',sec:['798.73'],fu:14,
+  en:{t:'"Home must be removed when sold"',q:'Did the park give you, in writing, the specific condition (and inspection, if age-based)?',a:'No',b:'Yes',
+    law:'The park can require removal on sale only to upgrade the park and only if: the unit isn\'t a mobilehome under the law, or it is old (over 20 years for 20 ft+ wide, over 17 years for narrower; 25 years if built after 9/15/1971) and an inspection shows it fails health and safety standards, or it is significantly rundown. The park carries the burden of proof and must give notice naming the condition (§798.73).',
+    va:'no',vb:'maybe',na:'"Too old" alone is not enough. No written reason, no removal.',nb:'It may be allowed. You can ask whether repairs would solve it instead.',
+    todo:['Ask in writing for the specific condition and the inspection report.','Get your own inspection or repair quote.','Talk to an agent before lowering your price.'],
+    ask:'the park is requiring removal of my home on sale without meeting Civil Code §798.73'},
+  vi:{t:'"Bán thì phải dời nhà ra"',q:'Park có đưa bằng giấy tình trạng cụ thể (và kết quả inspection nếu do nhà cũ) không?',a:'Không',b:'Có',
+    law:'Park chỉ được bắt dời nhà khi bán nếu để nâng cấp park và có 1 trong các lý do: căn đó không phải mobilehome theo luật; hoặc nhà cũ (trên 20 năm với nhà rộng 20 ft trở lên, trên 17 năm với nhà hẹp hơn; 25 năm nếu làm sau 15/9/1971) và inspection cho thấy không đạt chuẩn an toàn; hoặc nhà xuống cấp nặng. Park phải chứng minh và phải báo bằng giấy ghi rõ tình trạng (§798.73).',
+    na:'Chỉ "nhà cũ" thôi là chưa đủ. Không có lý do bằng giấy thì không được bắt dời.',nb:'Có thể được. Mình hỏi lại sửa thì có được ở lại không.',
+    todo:['Xin bằng giấy tình trạng cụ thể và báo cáo inspection.','Tự mời inspector hoặc lấy giá sửa.','Hỏi agent trước khi hạ giá.']}},
+ {id:'repair',sec:['798.73.5'],fu:21,
+  en:{t:'Forced repairs before I sell',q:'Is the repair on the outside of the home, and did they cite the law or rule for it?',a:'No',b:'Yes',
+    law:'When the home stays in the park after a sale, the park can only require repairs to the exterior, its appurtenances, or an accessory structure the park didn\'t install, and only based on a local ordinance, state law, or a park rule that enforces one. If you ask, the park must give a written list citing the rule or law within 15 business days. If it doesn\'t, it loses the right to require the work (except health and safety work required by law) (§798.73.5).',
+    va:'no',vb:'ok',na:'Interior work, or work with no cited rule, usually can\'t be a condition of sale.',nb:'Exterior work backed by a rule or law can be required. Get quotes and add it to your net sheet in T168.',
+    todo:['Ask in writing for the list of required work with the rule or law for each item.','Mark the date. 15 business days.','Put the cost into <a href="/t168/">T168</a>.'],
+    ask:'please provide the written summary of required repairs with the specific rule, ordinance or statute for each item, as required by Civil Code §798.73.5'},
+  vi:{t:'Park bắt sửa trước khi bán',q:'Chỗ sửa là bên ngoài nhà, và park có ghi luật/nội quy làm căn cứ không?',a:'Không',b:'Có',
+    law:'Nhà ở lại park sau khi bán thì park chỉ được bắt sửa bên ngoài nhà, phần gắn liền, hoặc nhà phụ mà park không lắp, và phải dựa vào luật city/tiểu bang hoặc nội quy thi hành luật đó. Mình hỏi thì park phải đưa danh sách bằng giấy, ghi rõ căn cứ, trong 15 ngày làm việc. Không đưa là mất quyền bắt sửa (trừ việc an toàn luật bắt buộc) (§798.73.5).',
+    na:'Sửa bên trong, hoặc không có căn cứ, thường không được bắt làm điều kiện bán.',nb:'Sửa bên ngoài có căn cứ thì park được bắt. Lấy giá rồi cộng vô bảng tính ở T168.',
+    todo:['Xin bằng giấy danh sách chỗ sửa, mỗi chỗ ghi căn cứ.','Đánh dấu ngày. 15 ngày làm việc.','Cộng tiền sửa vô <a href="/t168/">T168</a>.']}},
+ {id:'buyer',sec:['798.74'],fu:21,
+  en:{t:'Park won\'t approve my buyer',q:'Did the park answer in writing within 15 business days after getting all the buyer\'s info?',a:'No answer',b:'Yes, a written no',
+    law:'The park can turn down a buyer only if: past tenancies show they won\'t follow park rules, they can\'t pay the rent, utilities and charges, or they lied on the application. It may ask for proof of income but not tax returns. It has 15 business days after the complete application to answer in writing. No answer in time = approved. A rejected buyer gets the credit check fee back within 30 days (§798.74).',
+    va:'no',vb:'maybe',na:'If the 15 business days passed with no written answer, the law treats the buyer as approved.',nb:'A written denial for one of the 3 reasons may be allowed. A buyer denied on income can show savings and other assets.',
+    todo:['Write down the date the park got the complete application.','Ask for the reason in writing.','Buyer short on income? Send proof of savings or other assets.'],
+    ask:'my buyer\'s application was not handled as required by Civil Code §798.74 (allowed reasons, written answer within 15 business days)'},
+  vi:{t:'Park không duyệt người mua',q:'Park có trả lời bằng giấy trong 15 ngày làm việc sau khi đủ hồ sơ không?',a:'Không trả lời',b:'Có, từ chối bằng giấy',
+    law:'Park chỉ được từ chối người mua vì: lịch sử thuê nhà cho thấy sẽ không theo nội quy, không đủ khả năng trả tiền đất, điện nước và phí, hoặc khai gian. Park được xin giấy tờ thu nhập nhưng không được đòi tax return. Có 15 ngày làm việc sau khi đủ hồ sơ để trả lời bằng giấy. Quá hạn không trả lời = coi như duyệt. Bị từ chối thì được trả lại phí credit trong 30 ngày (§798.74).',
+    na:'Quá 15 ngày làm việc mà không trả lời bằng giấy thì luật coi như đã duyệt.',nb:'Từ chối bằng giấy vì 1 trong 3 lý do thì có thể được. Người mua thiếu thu nhập có thể đưa tiền tiết kiệm, tài sản khác.',
+    todo:['Ghi lại ngày park nhận đủ hồ sơ.','Xin lý do từ chối bằng giấy.','Người mua thiếu thu nhập? Gửi giấy tiết kiệm, tài sản khác.']}},
+ {id:'family',sec:['798.34'],fu:0,
+  en:{t:'Won\'t let a caregiver or family member live with me',q:'Is the person a live-in caregiver, or a companion while you live alone?',a:'Yes',b:'No, just moving in',
+    law:'No fee and no block for: one companion if you live alone (up to 3 per calendar year), an adult live-in caregiver (the park may ask for a note from a licensed health professional if the need isn\'t obvious), and in a 55+ park, an adult parent, sibling, child or grandchild who needs live-in care. These people don\'t get their own tenancy rights (§798.34).',
+    va:'no',vb:'maybe',na:'The park can\'t charge a fee or refuse a live-in caregiver or companion.',nb:'Other adults moving in for good may need to apply under the park rules.',
+    todo:['Tell the park in writing who is living with you and why.','Caregiver: get a short note from the doctor if the park asks.','Read the occupancy rule in your park rules.'],
+    ask:'I am entitled under Civil Code §798.34 to share my home with a live-in caregiver / companion without a fee'},
+  vi:{t:'Không cho người chăm sóc hoặc người nhà ở chung',q:'Người đó là người chăm sóc ở chung, hay người bạn ở cùng khi mình ở một mình?',a:'Đúng vậy',b:'Không, chỉ dọn vô ở',
+    law:'Không được tính phí, không được chặn: 1 người bạn ở chung nếu mình ở một mình (tối đa 3 người/năm), người lớn chăm sóc ở chung (park có thể xin giấy của bác sĩ nếu không thấy rõ), và trong park 55+, cha mẹ, anh chị em, con hoặc cháu đã lớn cần chăm sóc. Những người này không có quyền thuê riêng (§798.34).',
+    na:'Park không được tính phí hay từ chối người chăm sóc hoặc người bạn ở chung.',nb:'Người lớn khác dọn vô ở luôn có thể phải nộp đơn theo nội quy park.',
+    todo:['Báo park bằng giấy ai ở chung và vì sao.','Người chăm sóc: xin giấy bác sĩ ngắn nếu park hỏi.','Đọc điều về số người ở trong nội quy park.']}},
+ {id:'guest',sec:['798.34'],fu:0,
+  en:{t:'Guest fees',q:'Is the guest staying more than 20 days in a row, or more than 30 days this calendar year?',a:'No',b:'Yes, longer',
+    law:'A guest who stays no more than 20 days in a row or 30 days total in a calendar year can\'t be charged a fee and doesn\'t have to register (§798.34(a)).',
+    va:'no',vb:'maybe',na:'Short visits: no fee, no registration.',nb:'Longer stays may fall under the park\'s guest rules.',
+    todo:['Keep a simple log of guest dates.','Ask which rule the fee is based on.','Caregiver? Pick that option above instead.'],
+    ask:'my guest\'s stay is within the limits of Civil Code §798.34(a), so no fee or registration may be required'},
+  vi:{t:'Tính phí khách ở',q:'Khách ở hơn 20 ngày liên tục, hoặc hơn 30 ngày trong năm nay không?',a:'Không',b:'Có, lâu hơn',
+    law:'Khách ở không quá 20 ngày liên tục hoặc tổng 30 ngày trong năm thì park không được tính phí, không bắt đăng ký (§798.34(a)).',
+    na:'Khách ghé ngắn: không phí, không đăng ký.',nb:'Ở lâu hơn thì có thể theo nội quy khách của park.',
+    todo:['Ghi sổ ngày khách tới, ngày đi.','Hỏi phí dựa vào nội quy nào.','Người chăm sóc? Chọn mục đó ở trên.']}},
+ {id:'pet',sec:['798.33'],fu:0,
+  en:{t:'Pets',q:'Was your rental agreement signed or renewed on or after 1/1/2001?',a:'Yes',b:'No / not sure',
+    law:'Agreements made, changed or renewed on or after 1/1/2001 must let you keep at least one pet, under reasonable rules. The park can\'t charge a pet fee unless it gives special pet facilities, and then only to cover their upkeep (§798.33).',
+    va:'no',vb:'maybe',na:'A total pet ban or a pet fee with no pet facility usually isn\'t allowed.',nb:'Older agreements may follow the old rules. Check your lease date.',
+    todo:['Find the date on your rental agreement.','Ask what pet facility the fee pays for.','Follow the reasonable rules (leash, cleanup).'],
+    ask:'under Civil Code §798.33 I may keep at least one pet, and a pet fee is only allowed for special pet facilities'},
+  vi:{t:'Nuôi thú cưng',q:'Hợp đồng thuê đất ký hoặc gia hạn từ 1/1/2001 trở về sau không?',a:'Có',b:'Không / không chắc',
+    law:'Hợp đồng ký, sửa hoặc gia hạn từ 1/1/2001 phải cho nuôi ít nhất 1 con, theo nội quy hợp lý. Park không được tính phí thú cưng, trừ khi có chỗ riêng cho thú cưng, và chỉ đủ tiền giữ chỗ đó (§798.33).',
+    na:'Cấm hết thú cưng, hay tính phí mà không có chỗ cho thú cưng, thường là không được.',nb:'Hợp đồng cũ có thể theo luật cũ. Xem ngày ký.',
+    todo:['Tìm ngày ký trên hợp đồng thuê đất.','Hỏi phí thú cưng trả cho chỗ nào.','Theo nội quy hợp lý (dây dắt, dọn phân).']}},
+ {id:'sign',sec:['798.70'],fu:0,
+  en:{t:'"For Sale" sign',q:'Is your sign no bigger than 24 inches wide by 36 inches tall?',a:'Yes',b:'No, bigger',
+    law:'You (or your agent, or an heir) can put one For Sale sign in the window, on the side, or in front facing the street, with the owner or agent\'s name, address and phone. Sign face up to 24" wide × 36" high. Open house signs only if the park allows open houses (§798.70).',
+    va:'no',vb:'maybe',na:'The park can\'t ban a normal-size For Sale sign.',nb:'The park can limit oversized signs. Use a 24×36 or smaller.',
+    todo:['Use a sign 24×36 inches or smaller.','Put your name or your agent\'s name and phone on it.','Ask the park its open house rules.'],
+    ask:'Civil Code §798.70 allows me to display a For Sale sign up to 24 by 36 inches'},
+  vi:{t:'Bảng "For Sale"',q:'Bảng của mình có nhỏ hơn hoặc bằng 24 inch ngang × 36 inch cao không?',a:'Có',b:'Không, lớn hơn',
+    law:'Mình (hoặc agent, hoặc người thừa kế) được đặt 1 bảng For Sale ở cửa sổ, bên hông, hoặc phía trước nhìn ra đường, ghi tên, địa chỉ, số phone của chủ hoặc agent. Mặt bảng tối đa 24" ngang × 36" cao. Bảng open house chỉ khi park cho làm open house (§798.70).',
+    na:'Park không được cấm bảng For Sale cỡ bình thường.',nb:'Park được giới hạn bảng quá lớn. Dùng bảng 24×36 trở xuống.',
+    todo:['Dùng bảng 24×36 inch trở xuống.','Ghi tên mình hoặc agent và số phone.','Hỏi park nội quy open house.']}},
+ {id:'rule',sec:['798.25'],fu:0,
+  en:{t:'Park rule change',q:'Did you get at least 6 months\' written notice (60 days if it\'s about the clubhouse, pool or other recreation)?',a:'No',b:'Yes',
+    law:'The park must give 10 days\' notice of a meeting about rule changes. Without residents\' consent, a new rule takes effect only after at least 6 months\' written notice, or 60 days for rules about recreational facilities. A rule required by a change in law takes effect on 60 days\' notice. A rule that creates a new fee not in your agreement is void (§798.25).',
+    va:'no',vb:'ok',na:'Not enough notice: the rule isn\'t in effect yet for you.',nb:'With proper notice the rule can apply, unless it adds a new fee.',
+    todo:['Write down when you got the notice.','Go to the meeting and speak.','New fee hidden in the rule? See the fee option above.'],
+    ask:'the rule change was not made with the notice required by Civil Code §798.25'},
+  vi:{t:'Park đổi nội quy',q:'Mình có nhận giấy báo ít nhất 6 tháng trước (60 ngày nếu về clubhouse, hồ bơi, chỗ sinh hoạt) không?',a:'Không',b:'Có',
+    law:'Park phải báo trước 10 ngày về buổi họp đổi nội quy. Cư dân không đồng ý thì nội quy mới chỉ có hiệu lực sau ít nhất 6 tháng báo bằng giấy, hoặc 60 ngày nếu là nội quy chỗ sinh hoạt chung. Nội quy do luật thay đổi thì 60 ngày. Nội quy đặt ra phí mới không có trong hợp đồng là vô hiệu (§798.25).',
+    na:'Báo không đủ ngày: nội quy chưa áp dụng cho mình.',nb:'Báo đủ thì nội quy có thể áp dụng, trừ khi thêm phí mới.',
+    todo:['Ghi lại ngày nhận giấy báo.','Đi họp và lên tiếng.','Nội quy giấu phí mới? Xem mục phí ở trên.']}},
+ {id:'fix',sec:['798.15','798.84'],fu:30,
+  en:{t:'Common areas broken / no maintenance',q:'Has it been broken more than 30 days, or is it a health or safety problem?',a:'Yes',b:'No, recent',
+    law:'The park must keep common areas and facilities in working order. A health or safety problem must be fixed as soon as possible; anything else within 30 days, unless there\'s a real reason for delay (§798.15). Before suing over poor maintenance, a resident must give the park at least 30 days\' signed written notice with the problem and what you want; one resident\'s notice counts for everyone (§798.84).',
+    va:'no',vb:'maybe',na:'Past the deadline. Send the written notice now.',nb:'The park still has a reasonable time. Report it in writing so the clock starts.',
+    todo:['Take dated photos.','Send the letter below and keep proof it was received.','Mark 30 days on your calendar.'],
+    ask:'the common area facility described above has not been repaired as required by Civil Code §798.15. This letter is also my notice under Civil Code §798.84'},
+  vi:{t:'Khu chung hư / không bảo trì',q:'Hư hơn 30 ngày rồi, hoặc là chuyện an toàn sức khỏe?',a:'Đúng',b:'Không, mới hư',
+    law:'Park phải giữ khu chung chạy tốt. Chuyện an toàn sức khỏe phải sửa càng sớm càng tốt; chuyện khác trong 30 ngày, trừ khi có lý do thật sự (§798.15). Trước khi kiện vì không bảo trì, cư dân phải gửi giấy có ký tên, ghi rõ chuyện gì và muốn gì, ít nhất 30 ngày trước; giấy của 1 người tính cho cả park (§798.84).',
+    na:'Quá hạn rồi. Gửi giấy báo bằng văn bản ngay.',nb:'Park còn thời gian hợp lý. Báo bằng giấy để bắt đầu tính ngày.',
+    todo:['Chụp hình có ngày.','Gửi thư ở dưới, giữ bằng chứng park đã nhận.','Đánh dấu 30 ngày trên lịch.']}},
+ {id:'retal',sec:['1942.5'],code:'CIV',fu:0,
+  en:{t:'Retaliation after I complained',q:'Did it happen within about 6 months after you complained, called an agency, or joined a residents\' group?',a:'Yes',b:'No / longer ago',
+    law:'California\'s anti-retaliation law (Civil Code §1942.5) protects mobile home park residents too (Rich v. Schwab, 1998). The park can\'t raise rent, cut services or try to evict you because you complained to the park or a government agency, or organized. Residents also have the right to meet and talk with each other and invite officials (§798.50, §798.51).',
+    va:'no',vb:'maybe',na:'Payback for a complaint is not allowed. Keep the timeline in writing.',nb:'Harder to show it\'s retaliation, but still not allowed if that\'s the reason.',
+    todo:['Write a timeline: your complaint date, then what the park did.','Keep copies of your complaint.','Call legal aid. Don\'t stop paying rent.'],
+    ask:'this action appears to be in retaliation for my complaint, which is prohibited by Civil Code §1942.5'},
+  vi:{t:'Park trả thù sau khi mình khiếu nại',q:'Chuyện xảy ra trong khoảng 6 tháng sau khi mình khiếu nại, gọi cơ quan nhà nước, hoặc vô hội cư dân?',a:'Đúng',b:'Không / lâu hơn',
+    law:'Luật cấm trả thù của California (Civil Code §1942.5) bảo vệ cả cư dân mobile home park (vụ Rich v. Schwab, 1998). Park không được tăng tiền, cắt dịch vụ hay đuổi vì mình khiếu nại với park hay cơ quan nhà nước, hay vì mình lập hội. Cư dân cũng có quyền họp, nói chuyện với nhau và mời quan chức tới (§798.50, §798.51).',
+    na:'Trả thù vì khiếu nại là không được. Ghi lại mốc thời gian bằng giấy.',nb:'Khó chứng minh hơn, nhưng nếu đúng là trả thù thì vẫn không được.',
+    todo:['Viết mốc thời gian: ngày khiếu nại, rồi park làm gì.','Giữ bản sao giấy khiếu nại.','Gọi legal aid. Đừng ngưng trả tiền đất.']}},
+ {id:'sale',sec:['798.80'],fu:0,
+  en:{t:'Park is being sold',q:'Has your residents\' association sent the park written notice that residents want to buy (renewed every year)?',a:'Yes',b:'No',
+    law:'If the residents\' organization has told the owner in writing that residents are interested in buying, and renews that each year, the owner must notify the organization\'s president, secretary and treasurer in writing at least 30 days (and no more than a year) before listing the park or offering it for sale (§798.80). The sale itself doesn\'t cancel your rental agreement.',
+    va:'no',vb:'ok',na:'With that notice on file, the park can\'t list without telling the association first.',nb:'Without that notice on file, the park doesn\'t have to tell residents before listing. Set it up now for next time.',
+    todo:['Ask your HOA if the written notice of interest is on file this year.','Keep your rental agreement; the new owner takes over.','Closure or change of use? See <a href="/t177/">T177</a>.'],
+    ask:'our residents\' organization has a notice of interest on file, so Civil Code §798.80 requires written notice before the park is listed or offered for sale'},
+  vi:{t:'Park bị bán',q:'Hội cư dân đã gửi park giấy báo là cư dân muốn mua (gia hạn mỗi năm) chưa?',a:'Rồi',b:'Chưa',
+    law:'Nếu hội cư dân đã báo chủ park bằng giấy là cư dân muốn mua, và năm nào cũng gia hạn, thì chủ park phải báo bằng giấy cho chủ tịch, thư ký, thủ quỹ của hội ít nhất 30 ngày (và không quá 1 năm) trước khi rao bán park (§798.80). Park bán không làm mất hợp đồng thuê đất của mình.',
+    na:'Có giấy đó trong hồ sơ thì park không được rao bán mà không báo hội trước.',nb:'Chưa có giấy đó thì park không bắt buộc báo trước khi rao. Làm ngay cho lần sau.',
+    todo:['Hỏi hội cư dân giấy báo năm nay đã gửi chưa.','Giữ hợp đồng thuê đất; chủ mới phải tiếp tục.','Park đóng cửa hay đổi mục đích? Xem <a href="/t177/">T177</a>.']}}
+];
+SIT.forEach(s=>{ ['na','nb','va','vb','todo','ask'].forEach(k=>{ if(s.vi[k]==null&&s.en[k]!=null&&k!=='na'&&k!=='nb') s.vi[k]=s.en[k]; }); });
+
+/* who to call: tags all|sj|scc|ala ; which situations get the city rent office */
+const WHO=[
+ {k:'hcd',tag:'all',ph:'800-952-8356',url:'https://www.hcd.ca.gov/mmh/mac/mrlpp',en:['HCD Mobilehome Residency Law Protection Program','State complaints about MRL violations. Can refer you to free legal help. Not a lawyer.'],vi:['HCD Mobilehome Residency Law Protection Program','Khiếu nại vi phạm luật MRL lên tiểu bang. Có thể chuyển qua luật sư miễn phí. Không phải luật sư.']},
+ {k:'rsp',tag:'sj',ph:'408-975-4480',url:'https://www.sanjoseca.gov/your-government/departments-offices/housing/mobilehome-residents-park-owners',en:['San Jose Rent Stabilization Program','Rent increases and fees in San Jose parks.'],vi:['San Jose Rent Stabilization Program','Tăng tiền đất, phí trong park ở San Jose.']},
+ {k:'sala',tag:'scc',ph:'408-295-5991',en:['Senior Adults Legal Assistance (SALA)','Free legal help for seniors 60+ in Santa Clara County.'],vi:['Senior Adults Legal Assistance (SALA)','Luật sư miễn phí cho người 60+ ở Santa Clara County.']},
+ {k:'lf',tag:'scc',ph:'408-280-2424',en:['Law Foundation of Silicon Valley','Eviction help clinic, Santa Clara County.'],vi:['Law Foundation of Silicon Valley','Giúp khi bị đuổi nhà, Santa Clara County.']},
+ {k:'ala',tag:'scc',ph:'408-287-9710',en:['Asian Law Alliance','Housing help, San Jose. Asian languages.'],vi:['Asian Law Alliance','Giúp về nhà ở, San Jose. Có nói tiếng châu Á.']},
+ {k:'bla',tag:'all',ph:'800-551-5554',en:['Bay Area Legal Aid, advice line','Free legal advice for low-income residents, Bay Area.'],vi:['Bay Area Legal Aid, đường dây tư vấn','Tư vấn luật miễn phí cho người thu nhập thấp, vùng Bay Area.']},
+ {k:'centro',tag:'ala',ph:'510-437-1554',en:['Centro Legal de la Raza','Tenant help, Alameda County.'],vi:['Centro Legal de la Raza','Giúp người thuê, Alameda County.']},
+ {k:'ebclc',tag:'ala',ph:'510-548-4040',en:['East Bay Community Law Center','Housing help, Alameda County.'],vi:['East Bay Community Law Center','Giúp về nhà ở, Alameda County.']},
+ {k:'gsmol',tag:'all',ph:'800-888-1727',url:'https://www.gsmol.org',en:['GSMOL (homeowners league)','Statewide group of mobile home owners. Help organizing your park.'],vi:['GSMOL (hội chủ mobile home)','Hội chủ mobile home toàn tiểu bang. Giúp cư dân lập hội.']}
+];
+
+const I18N={
+ en:{title:'Is the park allowed to do that?',sub:'Pick what the park did. Answer one question. See what California\'s Mobilehome Residency Law says, what to do, and who to call.',
+  l_sit:'What happened?',l_county:'Your park is in',c_scc:'Other Santa Clara Co.',c_ala:'Alameda Co.',
+  v_label:'Usually',v_no:'NOT allowed',v_maybe:'Maybe',v_ok:'Allowed',m_sec:'Law',
+  d_title:'What to do',w_title:'Who to call',
+  gcal:'+ Google Calendar: follow up in {d} days',gcal_t:'Follow up with park: {s}',
+  lt_title:'Letter to the park (copy it)',lt_hint:'Written in English for the manager. Fill in your info, copy, sign, and keep a copy. Send it so you can prove it was received (certified mail or hand-deliver and get a dated receipt).',
+  lt_name:'Your name',lt_space:'Space #',lt_park:'Park name',lt_what:'What happened, in a few words (English)',lt_copy:'Copy letter',lt_done:'Copied ✓',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this to yourself',f_sub:'You get the law, the steps and the letter in one email. Ken can point you to the right office. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ns_t:'Next steps',ns1:"Get everything in writing. Phone calls with the manager don't count later.",ns2:'Keep a folder: your rental agreement, park rules, every notice, photos with dates, receipts.',
+  ns3:"Talk to neighbors. One resident's notice about broken common areas counts for the whole park (§798.84).",ns4:'Selling soon? See <a href="/t168/">T168</a> (what you take home) and <a href="/t169/">T169</a> (selling checklist).',
+  myth:'<b>Many people get this wrong:</b> "It\'s the park\'s land, so they can make any rule they want." No. A park is run under the Mobilehome Residency Law. A new fee slipped in through a rule change is void, and the park can only end your tenancy for the reasons the law lists.',
+  ft_read:'Read more:',ft_lib:'Your rights in a mobile home park',ft_vid:'3-min video',ft_src:'Sources:',ft_chk:'(checked 04/11/2026)',
+  ft_est:"General information, not legal advice. The verdict is the usual answer; your lease, park rules and local ordinance can change it. For a notice with a deadline, call legal aid the same week.",
+  ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I used the park rights tool on tools.kenlamrealty.com: {s} → "{v}". I have a question.',
+  subj:'Mobile home park question — {s} — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nSituation: {s}\nQuestion: {q} → {a}\nUsually: {v}\nLaw: {sec}\n\n{law}\n\nLETTER:\n{letter}\n\nSent from tool T171 tools.kenlamrealty.com'},
+ vi:{title:'Park làm vậy có đúng luật không?',sub:'Chọn chuyện park làm. Trả lời 1 câu. Coi luật Mobilehome Residency Law của California nói gì, mình làm gì, gọi ai.',
+  l_sit:'Chuyện gì xảy ra?',l_county:'Park ở đâu',c_scc:'Santa Clara Co. (ngoài SJ)',c_ala:'Alameda Co.',
+  v_label:'Thường là',v_no:'KHÔNG được',v_maybe:'Có thể',v_ok:'Được',m_sec:'Luật',
+  d_title:'Mình làm gì',w_title:'Gọi ai',
+  gcal:'+ Google Calendar: nhắc lại sau {d} ngày',gcal_t:'Hỏi lại park: {s}',
+  lt_title:'Thư gửi park (copy)',lt_hint:'Viết bằng tiếng Anh cho manager. Điền thông tin, copy, ký tên, giữ 1 bản. Gửi sao cho có bằng chứng park đã nhận (certified mail, hoặc đưa tận tay và xin biên nhận có ngày).',
+  lt_name:'Tên mình',lt_space:'Space #',lt_park:'Tên park',lt_what:'Chuyện gì, vài chữ (tiếng Anh)',lt_copy:'Copy thư',lt_done:'Đã copy ✓',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi về email mình',f_sub:'Nhận luật, các bước và lá thư trong 1 email. Ken chỉ mình gọi đúng chỗ. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ns_t:'Bước tiếp theo',ns1:'Cái gì cũng phải có giấy. Gọi điện với manager sau này không tính.',ns2:'Giữ 1 bìa hồ sơ: hợp đồng thuê đất, nội quy, mọi giấy báo, hình có ngày, biên nhận.',
+  ns3:'Nói chuyện với hàng xóm. Giấy báo khu chung hư của 1 người tính cho cả park (§798.84).',ns4:'Sắp bán? Xem <a href="/t168/">T168</a> (cầm về bao nhiêu) và <a href="/t169/">T169</a> (checklist bán).',
+  myth:'<b>Nhiều người hiểu sai:</b> "Đất của park thì park muốn đặt luật gì cũng được." Không phải. Park phải theo Mobilehome Residency Law. Phí mới nhét vô bằng cách đổi nội quy là vô hiệu, và park chỉ được chấm dứt hợp đồng vì những lý do luật ghi.',
+  ft_read:'Đọc thêm:',ft_lib:'Quyền của mình trong mobile home park',ft_vid:'Video 3 phút',ft_src:'Nguồn:',ft_chk:'(tra ngày 04/11/2026)',
+  ft_est:'Thông tin chung, không phải tư vấn luật. Kết quả là câu trả lời thường gặp; hợp đồng, nội quy park và luật city có thể làm khác đi. Giấy có hạn chót thì gọi legal aid ngay trong tuần.',
+  ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa dùng tool quyền lợi mobile home trên tools.kenlamrealty.com: {s} → "{v}". Cho tôi hỏi thêm.',
+  subj:'Hỏi về park mobile home — {s} — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nChuyện: {s}\nCâu hỏi: {q} → {a}\nThường là: {v}\nLuật: {sec}\n\n{law}\n\nTHƯ:\n{letter}\n\nGửi từ tool T171 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const strip=s=>String(s).replace(/<[^>]+>/g,'');
+let cur='rent', ans='a', cty='sj', last={};
+
+function secUrl(s,code){ return 'https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode='+(code||'CIV')+'&sectionNum='+s; }
+function verdictOf(s,a){ return a==='a'?s.en.va:s.en.vb; }
+function today(){ const d=new Date(); return d.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}); }
+function ymd(d){ return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0'); }
+function letterText(s){
+  const n=$('lName').value.trim()||'[Your name]', sp=$('lSpace').value.trim()||'[#]', pk=$('lPark').value.trim()||'[Park name]', w=$('lWhat').value.trim();
+  const secs=s.sec.map(x=>'Civil Code §'+x).join(', ');
+  return today()+'\n\nTo: Park Manager, '+pk+'\nFrom: '+n+', Space '+sp+'\n\nRe: '+s.en.t.replace(/"/g,'')+' ('+secs+')\n\nDear Manager,\n\n'+
+    (w?'I am writing about this: '+w+'.\n\n':'')+
+    'I believe '+s.en.ask+'.\n\nPlease respond in writing within 14 days'+(s.fu===30?' and repair the problem within 30 days':'')+'. I am keeping a copy of this letter for my records.\n\nThank you,\n\n'+n+'\nSpace '+sp+', '+pk;
+}
+function renderSits(){
+  $('sits').innerHTML=SIT.map(s=>'<button type="button" data-v="'+s.id+'" aria-pressed="'+(s.id===cur)+'">'+esc(s[lang].t)+'</button>').join('');
+}
+function calc(){
+  const d=I18N[lang], s=SIT.find(x=>x.id===cur), t=s[lang];
+  $('qText').textContent=t.q; $('ansA').textContent=t.a; $('ansB').textContent=t.b;
+  $('ansA').setAttribute('aria-pressed',ans==='a'); $('ansB').setAttribute('aria-pressed',ans==='b');
+  const v=verdictOf(s,ans);
+  $('verdictBox').classList.remove('no','ok'); if(v==='no') $('verdictBox').classList.add('no'); if(v==='ok') $('verdictBox').classList.add('ok');
+  $('vLabel').textContent=d.v_label;
+  $('total').textContent=v==='no'?d.v_no:v==='ok'?d.v_ok:d.v_maybe;
+  $('lawText').textContent=t.law;
+  $('secLinks').innerHTML=s.sec.map(x=>'<a href="'+secUrl(x,s.code)+'" target="_blank" rel="noopener">§'+x+'</a>').join(' · ');
+  $('vNote').textContent=ans==='a'?t.na:t.nb;
+  $('todo').innerHTML=(t.todo||s.en.todo).map(x=>'<li>'+x+'</li>').join('');
+  if(s.fu>0){ const dt=new Date(); dt.setDate(dt.getDate()+s.fu); const e=new Date(dt); e.setDate(e.getDate()+1);
+    $('gcalLink').href='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(fill(d.gcal_t,{s:t.t}))+'&dates='+ymd(dt)+'/'+ymd(e)+'&details='+encodeURIComponent(t.law+'\n\nhttps://tools.kenlamrealty.com/t171/');
+    $('gcalLink').textContent=fill(d.gcal,{d:s.fu}); $('gcalLink').classList.remove('hide');
+  } else $('gcalLink').classList.add('hide');
+  const rentLike=['rent','fee'].includes(cur);
+  $('whoList').innerHTML=WHO.filter(w=>w.tag==='all'||(w.tag==='sj'&&cty==='sj'&&rentLike)||(w.tag==='scc'&&(cty==='sj'||cty==='scc'))||(w.tag==='ala'&&cty==='ala')).map(w=>
+    '<a class="card" href="tel:'+w.ph.replace(/-/g,'')+'"><b>'+esc(w[lang][0])+'</b><span>'+esc(w[lang][1])+'</span><span class="ph">'+w.ph+'</span></a>').join('');
+  const letter=letterText(s); $('letter').value=letter;
+  last={s:t.t,q:t.q,a:ans==='a'?t.a:t.b,v:$('total').textContent,sec:s.sec.map(x=>'§'+x).join(', '),law:t.law,letter};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+}
+$('sits').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; cur=b.dataset.v; ans='a';
+  $('sits').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); calc();});
+$('ansSeg').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; ans=b.dataset.v; calc();});
+$('ctySeg').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; cty=b.dataset.v;
+  $('ctySeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); calc();});
+['lName','lSpace','lPark','lWhat'].forEach(id=>$(id).addEventListener('input',calc));
+$('copyLetter').onclick=async()=>{ const d=I18N[lang]; try{ await navigator.clipboard.writeText($('letter').value); }catch(e){ $('letter').select(); }
+  $('copyLetter').textContent=d.lt_done; setTimeout(()=>{$('copyLetter').textContent=I18N[lang].lt_copy},1800); };
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; renderSits(); calc();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const v=Object.assign({},last,{n,e,ph});
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,v))+'&body='+encodeURIComponent(fill(d.body,v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+window.__sit=SIT;
+applyLang();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
