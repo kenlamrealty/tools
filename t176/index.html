@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mobile Home Dictionary · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Mobile home words explained simply, in English and Vietnamese, with Bay Area examples: HCD title, decal, 433A, chattel loan, in-lieu fee, tax clearance, MRL, space rent, EBS, park approval and more.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t176/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Mobile Home Dictionary · Ken Lam Tools">
+<meta property="og:description" content="Decal, 433A, chattel, in-lieu, MRL: every mobile home word explained like you're 10.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t176/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T176 additions */
+.hide{display:none!important}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.ctl input[type=search]{font-size:18px}
+.ctl input[type=search]::-webkit-search-cancel-button{-webkit-appearance:none}
+.clr{border:0;background:transparent;color:var(--muted);font:inherit;font-size:14px;padding:4px 6px;cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-size:13px;padding:7px 12px;border-radius:999px;cursor:pointer}
+.chips button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);border-color:var(--brass);font-weight:500}
+.terms{display:grid;gap:10px}
+.term{border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;gap:6px;background:var(--panel)}
+.term h3{font-family:var(--display);font-weight:500;font-size:23px;line-height:1.15;margin:0;overflow-wrap:anywhere}
+.term h3 small{font-family:var(--body);font-size:13px;font-weight:400;color:var(--muted);margin-left:6px}
+.term .cat{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--brass)}
+.term p{margin:0;font-size:15px;line-height:1.5}
+.term .ex{font-size:14px;color:var(--muted);border-left:2px solid var(--line);padding-left:10px}
+.term .ex b{font-weight:500;color:var(--fg)}
+.term .go{font-size:13px}
+.term .go a{color:var(--brass);text-decoration:none}
+.term .go a:hover{text-decoration:underline}
+.term mark{background:var(--brass-soft);color:inherit;border-radius:3px;padding:0 1px}
+.empty{font-size:15px;color:var(--muted);text-align:center;padding:18px 0}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Mobile home dictionary, explained like you're 10</h1>
+    <p class="sub" data-i="sub">Decal, 433A, chattel, in-lieu, MRL. Type a word and get a plain answer with a Bay Area example. English and Vietnamese.</p>
+  </header>
+
+  <section class="inputs" aria-label="Search">
+    <div class="field">
+      <label for="q"><span data-i="l_q">Search a word</span> <small data-i="l_q_s">(English or Vietnamese, accents optional)</small></label>
+      <div class="ctl"><input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="decal, 433A, thuế…"><button class="clr" type="button" id="qClr" aria-label="Clear">✕</button></div>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="Topics"></div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_k">Terms showing</div>
+      <div class="v"><span id="total">0</span> <small id="ofTxt"></small></div>
+    </div>
+    <div class="terms" id="terms"></div>
+  </section>
+  <video src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px;margin-top:8px" aria-label="How to use this tool"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me these terms</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t176/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email these terms to yourself</h2>
+    <p data-i="f_sub">You get the words you're looking at. Ken can explain any of them for your home. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Buying? Follow the dated checklist in <a href="/t165/">T165</a>. Selling? Use <a href="/t169/">T169</a>.</li>
+      <li data-i="ns2">Find your home's decal number on the registration card. It tells you which tax system you're in. Then check <a href="/t163/">T163</a>.</li>
+      <li data-i="ns3">See the real monthly cost (loan + space rent + tax + insurance) in <a href="/t145/">T145</a>.</li>
+      <li data-i="ns4">Something the park did doesn't feel right? Check <a href="/t171/">T171</a>, or call HCD's MRLPP at (800) 952-8356.</li>
+    </ol>
+  </section>
+  <p class="myth" data-i="myth"><b>Many people get this wrong:</b> "mobile home" and "modular home" are the same thing. They're not. A mobile or manufactured home has a steel frame underneath, an HCD title and, in a park, no land. A modular home is built to the normal building code, sits on a foundation and is sold like a regular house with a grant deed. The loan, the tax and the resale are all different.</p>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#mobile-home-words" target="_blank" rel="noopener" data-i="ft_lib">Mobile home words, one page</a> · <a href="https://kenlamrealty.com/library#video-mobile-home" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span><span data-i="ft_src">Sources:</span>
+      <a href="https://leginfo.legislature.ca.gov/faces/codes_displayexpandedbranch.xhtml?tocCode=CIV&amp;division=2.&amp;title=&amp;part=2.&amp;chapter=2.5.&amp;article=" target="_blank" rel="noopener">Mobilehome Residency Law (Civil Code §798+)</a> ·
+      <a href="https://www.hcd.ca.gov/sites/default/files/docs/manufactured-and-mobilehomes/hcd-rt-491-1.pdf" target="_blank" rel="noopener">HCD RT 491.1</a> ·
+      <a href="https://www.hcd.ca.gov/sites/default/files/docs/manufactured-and-mobilehomes/hcd-rt-804-2.pdf" target="_blank" rel="noopener">HCD RT 804.2</a> ·
+      <a href="https://www.hcd.ca.gov/sites/default/files/docs/manufactured-and-mobilehomes/hcd-433a.pdf" target="_blank" rel="noopener">HCD 433A</a> ·
+      <a href="https://www.hcd.ca.gov/sites/default/files/docs/manufactured-and-mobilehomes/hcd-mp-50-erbs.pdf" target="_blank" rel="noopener">HCD MP 50 (earthquake bracing permit)</a> ·
+      <a href="https://www.hcd.ca.gov/sites/default/files/docs/manufactured-and-mobilehomes/mrlpp-flyer.pdf" target="_blank" rel="noopener">HCD MRLPP</a> ·
+      <a href="https://www.sccassessor.org/hindi/item/370-manufactured-home-tax-clearance" target="_blank" rel="noopener">Santa Clara: decal L vs A, tax clearance</a> ·
+      <a href="https://assessor.saccounty.gov/content/assessor/us/en/frequently-asked-questions/mobile-homes.html" target="_blank" rel="noopener">County assessor: 7/1/1980 rule</a> ·
+      <a href="https://cdtfa.ca.gov/formspubs/pub47.pdf" target="_blank" rel="noopener">CDTFA Pub 47 (use tax)</a> ·
+      <a href="https://www.boe.ca.gov/proptaxes/homeowners_exemption.htm" target="_blank" rel="noopener">BOE Homeowners' Exemption</a> ·
+      <a href="https://www.hud.gov/program_offices/fair_housing_equal_opp/fair_housing_act_housing_older_persons" target="_blank" rel="noopener">HUD 55+ (80% rule)</a> ·
+      <a href="https://www.hud.gov/sites/dfiles/SFH/documents/SFH_FHA_INFO_2024-08.pdf" target="_blank" rel="noopener">HUD FHA Title I limits</a> ·
+      <a href="https://law.justia.com/codes/california/code-bpc/division-4/part-1/chapter-3/article-1/section-10131-6/" target="_blank" rel="noopener">B&amp;P §10131.6</a> ·
+      <a href="https://www.sanjoseca.gov/your-government/departments-offices/housing/mobilehome-residents-park-owners/rent-control" target="_blank" rel="noopener">San Jose Mobilehome Rent Ordinance</a>
+      <span data-i="ft_chk">(checked 04/11/2026)</span></span>
+    <span data-i="ft_est">Plain-language explanations for learning, not exact legal definitions. Laws and city rules change; check the source or ask before you sign. Not legal or tax advice.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Facts used in the terms — edit here (checked 04/11/2026) =====
+   HUD code: federal standard for manufactured homes since 15/06/1976 (24 CFR 3280).
+   HCD title search RT 491.1: $25 informal / $35 formal. HCD RT 804.2: transfer within 20 days of sale, $35 + $10 Recovery Fund, lien $25,
+        duplicate title / registration card $25 each, late penalty $25.
+   Santa Clara: decal starting "L" = local property tax, "A" = HCD in-lieu (direct fee). sccassessor.org (tax clearance page).
+   Tax: sold new after 1/7/1980 → local property tax; earlier homes may stay on HCD in-lieu; once switched never back.
+   Tax clearance: H&S §18092.7. Use tax: CDTFA Pub 47 — used home on annual license fee bought from private party/broker; based on lesser of price or guide value;
+        homes on local property tax generally exempt.
+   Homeowners' Exemption: $7,000 off assessed value, BOE-266 (only homes on property tax).
+   433A: HCD form recorded when a home is installed on a permanent foundation → real property (H&S §18551).
+   MRL: Civil Code §798 et seq. MRLPP: HCD (800) 952-8356, homeowners only.
+   §798.74 park approval 15 business days; §798.73 removal on sale limits; §798.73.5 repairs on sale; §798.70 sign 24"x36"; §798.75 rental agreement.
+   §798.30.5 state cap (lesser of 3%+CPI or 5%, exempt if stricter local law, ends 1/1/2030); §798.18 12-month term.
+   San Jose MRO: 75% CPI, floor 3%, cap 7%, no increase on sale (2026 proposal not law yet) — sanjoseca.gov.
+   HUD 55+: 80% of units with one person 55+.
+   Park closure: §798.56(g) notice 6 or 12 months depending on permits — KEN DUYỆT. Relocation impact report: Gov Code §65863.7 — KEN DUYỆT.
+   FHA Title I (2024): home only $105,532 single / $193,719 multi.
+   B&P §10131.6: broker may sell a home registered with HCD; 2+ homes on display needs a dealer license. 10 CCR §2860: broker notifies HCD within 10 days (BRIEF).
+   Polybutylene ~1978–1995 (common industry range, ước tính). Bay Area examples are illustrations, not real addresses. */
+const CATS=[
+ {id:'all',en:'All',vi:'Tất cả'},
+ {id:'type',en:'Home types',vi:'Loại nhà'},
+ {id:'paper',en:'Title & papers',vi:'Giấy tờ & title'},
+ {id:'tax',en:'Tax',vi:'Thuế'},
+ {id:'park',en:'Park & law',vi:'Park & luật'},
+ {id:'build',en:'Structure',vi:'Kết cấu nhà'},
+ {id:'deal',en:'Buying, selling, loans',vi:'Mua bán & vay'}
+];
+/* [id, cat, term, viName, en, vi, exEn, exVi, link] */
+const TERMS=[
+ ['mobilehome','type','Mobilehome','nhà di động',
+  'A home built in a factory on a steel frame with wheels, then towed to a spot. In California law "mobilehome" is also the everyday word for homes in parks, old or new.',
+  'Căn nhà làm sẵn trong xưởng, đặt trên khung sắt có bánh xe, rồi kéo tới chỗ đặt. Luật California dùng chữ "mobilehome" cho nhà trong park, cũ hay mới đều gọi vậy.',
+  'A 1972 home in a San Jose park on Senter Road is a mobilehome. It came in on wheels and hasn\'t moved since.',
+  'Căn nhà đời 1972 trong park trên đường Senter, San Jose là mobilehome. Kéo vô bằng bánh xe, rồi nằm đó luôn tới giờ.','/t145/'],
+ ['manufactured','type','Manufactured home','nhà sản xuất sẵn',
+  'A factory-built home made to the federal HUD code, which started June 15, 1976. Same idea as a mobilehome, just the newer, safer rulebook.',
+  'Nhà làm trong xưởng theo chuẩn HUD của liên bang, bắt đầu từ 15/6/1976. Giống mobilehome, chỉ là theo bộ luật xây mới hơn, an toàn hơn.',
+  'A 1998 double-wide in a Milpitas park is a manufactured home. Look for the red HUD label outside.',
+  'Căn double-wide đời 1998 trong park ở Milpitas là manufactured home. Coi tấm bảng đỏ HUD ở ngoài vách.','/t166/'],
+ ['modular','type','Modular home','nhà ráp từng khối',
+  'Also built in a factory, but to the normal state building code, like a regular house. It sits on a permanent foundation, has no steel chassis, and is sold with a grant deed.',
+  'Cũng làm trong xưởng, nhưng theo luật xây nhà bình thường của tiểu bang, như nhà thường. Đặt trên móng cố định, không có khung sắt, bán bằng grant deed.',
+  'A modular ADU craned into a backyard in Fremont is modular, not a mobile home.',
+  'Căn ADU modular cẩu vô sân sau ở Fremont là modular, không phải mobile home.','/t179/'],
+ ['hudcode','type','HUD code','chuẩn HUD',
+  'The federal building rules for manufactured homes. Homes built after June 15, 1976 follow it. Lenders and insurers care a lot about whether a home is pre- or post-HUD code.',
+  'Bộ luật xây của liên bang cho manufactured home. Nhà làm sau 15/6/1976 phải theo. Lender và bảo hiểm rất để ý nhà làm trước hay sau chuẩn HUD.',
+  'A 1974 home in Sunnyvale is "pre-HUD." Many lenders won\'t touch it, so buyers often need cash.',
+  'Nhà đời 1974 ở Sunnyvale là "trước HUD". Nhiều lender không cho vay, người mua thường phải trả cash.','/t166/'],
+ ['hudlabel','paper','HUD label','bảng HUD',
+  'A small red metal plate on the outside of each section of the home. It proves the section was built to the HUD code. A double-wide has two.',
+  'Tấm bảng kim loại đỏ nhỏ gắn bên ngoài mỗi khúc nhà. Chứng minh khúc đó làm theo chuẩn HUD. Nhà double-wide có 2 tấm.',
+  'Missing label on a Hayward home? The HUD label number is also on HCD records, and a "label verification letter" can replace it.',
+  'Nhà ở Hayward mất bảng HUD? Số bảng có trong hồ sơ HCD, có thể xin thư xác nhận thay thế.','/t166/'],
+ ['dataplate','paper','Data plate','tờ thông số nhà',
+  'A paper sheet inside the home, often in a kitchen cabinet, a bedroom closet or by the electrical panel. It lists the maker, serial number and the wind, snow and heat zones the home was built for.',
+  'Tờ giấy dán bên trong nhà, thường trong tủ bếp, tủ phòng ngủ hay cạnh hộp điện. Ghi hãng làm, số serial, và vùng gió, tuyết, nhiệt mà nhà được làm cho.',
+  'The inspector in a Santa Clara park opens the hall closet and photographs the data plate first.',
+  'Inspector vô park ở Santa Clara mở tủ hành lang chụp tờ data plate trước tiên.','/t165/'],
+ ['serial','paper','Serial number','số serial',
+  'The maker\'s ID number for the home, on the data plate and on HCD records. Use it, or the decal number, to search the title at HCD.',
+  'Số nhận dạng của hãng làm nhà, có trên data plate và hồ sơ HCD. Dùng số này, hoặc số decal, để tra title ở HCD.',
+  'A buyer in Union City matches the serial on the data plate with the one on the HCD title before making an offer.',
+  'Người mua ở Union City so số serial trên data plate với số trên title HCD trước khi bỏ offer.','/t165/'],
+ ['decal','paper','Decal','số decal / tem HCD',
+  'The home\'s registration number from HCD, kind of like a license plate for a house. In Santa Clara County, a decal starting with "L" means county property tax; "A" means HCD in-lieu fee.',
+  'Số đăng ký của căn nhà ở HCD, giống biển số xe nhưng cho nhà. Ở Santa Clara, decal bắt đầu chữ "L" là đóng thuế county; chữ "A" là đóng phí in-lieu cho HCD.',
+  'Decal LAB1234 on a San Jose home: the seller pays county property tax, and escrow will need a tax clearance.',
+  'Decal LAB1234 của căn nhà ở San Jose: chủ đóng thuế county, escrow sẽ cần tax clearance.','/t163/'],
+ ['hcd','paper','HCD','Sở Gia cư California',
+  'California\'s Department of Housing and Community Development. For homes in parks it does the job the DMV does for cars: titles, registration and transfers. It also inspects many parks.',
+  'Sở Gia cư và Phát triển Cộng đồng California. Với nhà trong park, HCD làm việc giống DMV làm cho xe: title, đăng ký, sang tên. HCD cũng kiểm tra nhiều park.',
+  'Selling a home in a Newark park? The new owner\'s name goes on file at HCD, not at the county recorder.',
+  'Bán nhà trong park ở Newark? Tên chủ mới ghi ở HCD, không phải ở văn phòng recorder của county.','/t169/'],
+ ['title','paper','HCD title / Certificate of Title','giấy chủ quyền HCD',
+  'The paper that says who owns the home. For a home in a park it comes from HCD, not a grant deed. It lists the owners and any lender (lien).',
+  'Tờ giấy ghi ai là chủ căn nhà. Nhà trong park thì title do HCD cấp, không phải grant deed. Trên đó có tên chủ và lender nếu còn nợ (lien).',
+  'An HCD title search for a Campbell home costs $25 (informal) and shows the owner and any lien.',
+  'Tra title HCD căn nhà ở Campbell tốn $25 (loại thường), thấy ai đứng tên và có lien không.','/t165/'],
+ ['regcard','paper','Registration card','thẻ đăng ký',
+  'A card from HCD showing the home is registered, with the decal number. Homes on the in-lieu fee renew it every year. You need the latest one to sell.',
+  'Thẻ HCD cho thấy nhà đã đăng ký, có số decal. Nhà đóng in-lieu thì gia hạn mỗi năm. Muốn bán phải có thẻ mới nhất.',
+  'Lost it? HCD replaces a registration card for $25 (form RT 481.2).',
+  'Mất thẻ? HCD cấp lại $25 (form RT 481.2).','/t169/'],
+ ['lien','paper','Lien','nợ ghi trên title',
+  'A lender\'s claim written on the title. Until it\'s paid off and released, the home can\'t pass to a buyer clean.',
+  'Lender ghi tên mình trên title vì mình còn nợ. Chưa trả hết và chưa xóa thì chưa sang tên sạch cho người mua được.',
+  'A Mountain View seller still owes $40,000 on a chattel loan. Escrow pays it from the sale, then the lien comes off.',
+  'Chủ nhà ở Mountain View còn nợ chattel $40,000. Escrow trả từ tiền bán, rồi lien mới được xóa.','/t168/'],
+ ['transfer20','paper','HCD transfer (20 days)','sang tên HCD trong 20 ngày',
+  'After a sale, the transfer papers and fees must reach HCD within 20 days or there\'s a $25 penalty. Escrow usually files them.',
+  'Bán xong, giấy sang tên và phí phải tới HCD trong 20 ngày, trễ phạt $25. Thường escrow nộp giùm.',
+  'Closed in a San Jose park on March 1? HCD should have the transfer by March 21.',
+  'Close trong park ở San Jose ngày 1/3? HCD phải nhận giấy sang tên trước 21/3.','/t169/'],
+ ['personal','deal','Personal property vs real property','tài sản cá nhân vs bất động sản',
+  'Personal property is stuff you can move, like a car. Real property is land and what\'s attached to it. A home in a park is personal property; a home on its own land and foundation can become real property.',
+  'Tài sản cá nhân là đồ dời đi được, như chiếc xe. Bất động sản là đất và những gì gắn chặt vào đất. Nhà trong park là tài sản cá nhân; nhà đặt móng trên đất riêng có thể thành bất động sản.',
+  'Same double-wide: in a Fremont park it\'s personal property with an HCD title; moved onto a lot in Gilroy with a 433A, it\'s real property.',
+  'Cùng một căn double-wide: trong park ở Fremont là tài sản cá nhân, title HCD; đặt lên lô đất ở Gilroy có 433A thì thành bất động sản.','/t174/'],
+ ['f433a','paper','433A','giấy đặt nhà lên móng',
+  'An HCD form recorded with the county once a manufactured home is installed on a permanent foundation. After that, the home is treated as real property and taxed with the land.',
+  'Form của HCD, đem record ở county khi manufactured home đã đặt lên móng cố định. Từ đó nhà được coi là bất động sản, đóng thuế chung với đất.',
+  'An owner in Morgan Hill puts a home on a foundation on his own lot, records the 433A, and now can get a regular mortgage.',
+  'Chủ nhà ở Morgan Hill đặt nhà lên móng trên đất riêng, record 433A, giờ vay mortgage thường được.','/t174/'],
+ ['inlieu','tax','VLF / in-lieu fee','phí in-lieu thay thuế',
+  'A yearly fee paid to HCD instead of property tax. Homes first sold before July 1, 1980 can still be on it. Once a home switches to county property tax, it can\'t switch back.',
+  'Phí đóng cho HCD mỗi năm thay cho thuế nhà. Nhà bán lần đầu trước 1/7/1980 có thể vẫn đóng phí này. Đã đổi sang thuế county thì không đổi lại được.',
+  'A 1975 single-wide in a Santa Clara park pays a small in-lieu fee each year, and its decal starts with "A".',
+  'Căn single-wide đời 1975 trong park ở Santa Clara đóng phí in-lieu nhỏ mỗi năm, decal bắt đầu chữ "A".','/t163/'],
+ ['proptax','tax','County property tax (for mobile homes)','thuế county cho mobile home',
+  'Homes first sold new after July 1, 1980 pay property tax to the county, based on the home\'s value only (the park owns the land). Never both this and in-lieu.',
+  'Nhà bán mới sau 1/7/1980 đóng thuế nhà cho county, tính theo giá trị căn nhà thôi (đất là của park). Không bao giờ đóng cả thuế này lẫn in-lieu.',
+  'A 2005 home in a Pleasanton park gets an Alameda County tax bill every fall, just for the home.',
+  'Căn nhà đời 2005 trong park ở Pleasanton nhận bill thuế Alameda County mỗi mùa thu, chỉ tính căn nhà.','/t163/'],
+ ['clearance','tax','Tax clearance certificate','giấy xác nhận hết nợ thuế',
+  'A paper from the county tax collector saying the home\'s property tax is paid. HCD won\'t transfer a home on county tax without it.',
+  'Giấy của tax collector county xác nhận thuế căn nhà đã trả đủ. Nhà đóng thuế county mà thiếu giấy này thì HCD không sang tên.',
+  'Santa Clara County: escrow calls the Tax Collector at (408) 808-7900 to start the clearance.',
+  'Santa Clara County: escrow gọi Tax Collector (408) 808-7900 để xin giấy này.','/t169/'],
+ ['usetax','tax','Use tax','thuế use tax',
+  'Like sales tax, but paid when you register a used home that\'s on the in-lieu fee and bought from a private seller or broker. Based on the price or the guide value, whichever is lower. Homes on county property tax generally don\'t pay it.',
+  'Giống thuế bán hàng, đóng khi đăng ký căn nhà cũ đang đóng in-lieu, mua của người bán tư hay qua broker. Tính theo giá mua hay giá sách, lấy số thấp hơn. Nhà đóng thuế county thường không phải đóng.',
+  'Buying a 1978 in-lieu home in East San Jose for $90,000? Expect use tax at transfer. Ask escrow for the estimate.',
+  'Mua căn đời 1978 đóng in-lieu ở East San Jose giá $90,000? Sẽ có use tax lúc sang tên. Hỏi escrow số ước tính.','/t163/'],
+ ['hoe','tax','Homeowners\' exemption','miễn thuế cho chủ ở',
+  'If you live in the home and it\'s on county property tax, file form BOE-266 to take $7,000 off its taxable value every year. Doesn\'t apply to in-lieu homes.',
+  'Nếu bạn ở trong nhà và nhà đóng thuế county, nộp form BOE-266 để được trừ $7,000 giá trị tính thuế mỗi năm. Nhà đóng in-lieu thì không áp dụng.',
+  'A new owner in a Hayward park files BOE-266 with the Alameda County Assessor after moving in.',
+  'Chủ mới trong park ở Hayward dọn vào xong nộp BOE-266 cho Assessor Alameda County.','/t163/'],
+ ['spacerent','park','Space rent','tiền thuê đất',
+  'The monthly rent you pay the park for the patch of land under your home. You own the home; the park owns the dirt. It goes up over time.',
+  'Tiền thuê miếng đất dưới căn nhà, trả cho park mỗi tháng. Nhà là của mình, đất là của park. Năm nào cũng có thể tăng.',
+  'Space rent in many San Jose parks runs around $1,100 a month (2022), on top of the loan.',
+  'Tiền đất nhiều park ở San Jose khoảng $1,100/tháng (2022), cộng thêm tiền loan.','/t162/'],
+ ['rental','park','Rental agreement','hợp đồng thuê đất',
+  'Your lease with the park for the space. The park must offer a 12-month term (or shorter if you ask). A buyer who doesn\'t sign one has no right to stay on the space.',
+  'Hợp đồng thuê miếng đất với park. Park phải cho chọn 12 tháng (hoặc ngắn hơn nếu mình xin). Người mua không ký hợp đồng này thì không có quyền ở trên miếng đất.',
+  'A buyer in a Milpitas park is offered a 5-year lease. She asks for the 12-month option instead.',
+  'Người mua trong park ở Milpitas được mời ký 5 năm. Chị xin hợp đồng 12 tháng thay vào.','/t165/'],
+ ['rules','park','Park rules','nội quy park',
+  'The park\'s written rules: pets, parking, guests, landscaping, what you can build. They\'re part of your deal with the park, so read them before you buy.',
+  'Nội quy viết của park: thú nuôi, đậu xe, khách ở, cây cối, được xây gì. Đây là một phần thỏa thuận với park, đọc trước khi mua.',
+  'One Sunnyvale park allows one small dog; the buyer has two big dogs. Better to know before the offer.',
+  'Một park ở Sunnyvale chỉ cho 1 con chó nhỏ; người mua có 2 con lớn. Biết trước khi bỏ offer thì hơn.','/t165/'],
+ ['mrl','park','MRL (Mobilehome Residency Law)','luật cư trú mobilehome',
+  'The state law (Civil Code §798 and after) that sets the rules between home owners and park owners: rent notices, sales, approvals, evictions, signs.',
+  'Luật tiểu bang (Civil Code §798 trở đi) đặt luật chơi giữa chủ nhà và chủ park: báo tăng tiền đất, bán nhà, duyệt người mua, đuổi, cắm bảng.',
+  'A Santa Clara park says you can\'t put up a For Sale sign. The MRL (§798.70) says it can\'t ban one.',
+  'Park ở Santa Clara nói không được cắm bảng For Sale. MRL (§798.70) nói park không được cấm.','/t171/'],
+ ['mrlpp','park','MRLPP','chương trình bảo vệ luật MRL',
+  'HCD\'s Mobilehome Residency Law Protection Program. Home owners can file complaints about possible MRL violations at (800) 952-8356. It can refer cases to legal aid, but it doesn\'t give legal advice.',
+  'Chương trình của HCD bảo vệ luật MRL. Chủ nhà gọi (800) 952-8356 khiếu nại nếu park có thể làm sai luật. Họ có thể chuyển qua luật sư miễn phí, nhưng không tư vấn luật.',
+  'A park in Hayward hasn\'t answered a buyer\'s application in a month. The seller calls MRLPP.',
+  'Park ở Hayward cả tháng chưa trả lời đơn người mua. Chủ bán gọi MRLPP.','/t171/'],
+ ['rentcontrol','park','Rent control / rent stabilization','luật giới hạn tăng tiền đất',
+  'Rules that cap how much space rent can go up each year. San Jose\'s ordinance allows 75% of local CPI, at least 3% and at most 7%. Many other cities have their own cap (see T162). The state cap only covers parks that sit in two or more cities.',
+  'Luật giới hạn tiền đất tăng mỗi năm. San Jose cho tăng 75% CPI vùng, ít nhất 3%, nhiều nhất 7%. Nhiều city khác có luật riêng (xem T162). Trần tiểu bang chỉ áp dụng cho park nằm trên 2 city trở lên.',
+  '$1,100 space rent in San Jose: next year it can go to about $1,133–$1,177.',
+  'Tiền đất $1,100 ở San Jose: năm sau có thể lên khoảng $1,133–$1,177.','/t162/'],
+ ['vacancy','park','Vacancy control','không tăng tiền đất khi bán',
+  'A rule that stops the park from raising space rent to market when the home sells. San Jose\'s rule has it today; the city is reviewing a change (report due December 2026).',
+  'Luật không cho park tăng tiền đất lên giá thị trường khi nhà được bán. San Jose hiện có luật này; city đang xem đổi (báo cáo tháng 12/2026).',
+  'A buyer in a San Jose park keeps the seller\'s $1,050 space rent. Without vacancy control it could jump on sale.',
+  'Người mua trong park ở San Jose giữ nguyên tiền đất $1,050 của chủ cũ. Không có luật này thì có thể bị tăng ngay lúc bán.','/t162/'],
+ ['senior','park','55+ park','park cho người 55 tuổi trở lên',
+  'A park for older residents. Under federal law at least 80% of homes must have one person 55 or older, and the park must publish and follow its age policy.',
+  'Park dành cho người lớn tuổi. Theo luật liên bang, ít nhất 80% căn phải có 1 người từ 55 tuổi, và park phải công bố, làm đúng chính sách tuổi.',
+  'A 52-year-old buying with his 60-year-old wife in a Morgan Hill 55+ park: usually fine, but get the rule in writing.',
+  'Anh 52 tuổi mua chung với vợ 60 tuổi trong park 55+ ở Morgan Hill: thường được, nhưng xin luật bằng giấy.','/t165/'],
+ ['approval','park','Park approval','park duyệt người mua',
+  'The park checks a buyer can pay rent and follow the rules. It must answer in writing within 15 business days after getting all the info, and can\'t ask for tax returns.',
+  'Park kiểm người mua có đủ tiền trả tiền đất và theo nội quy không. Phải trả lời bằng giấy trong 15 ngày làm việc sau khi nhận đủ giấy, và không được đòi tax return.',
+  'A buyer in a Fremont park hands in everything on Monday, Nov 2. The park\'s answer is due 15 business days later.',
+  'Người mua trong park ở Fremont nộp đủ giấy thứ Hai 2/11. Park phải trả lời trong 15 ngày làm việc sau đó.','/t165/'],
+ ['removal','park','Removal on sale','park bắt dời nhà khi bán',
+  'Parks usually can\'t make a home leave the park when it sells. Narrow exceptions: it\'s not a "mobilehome," it\'s an older home failing a health & safety inspection, or it\'s badly rundown (with written notice).',
+  'Thường park không được bắt dời nhà ra khỏi park khi bán. Chỉ vài trường hợp hẹp: không phải "mobilehome", nhà cũ không đạt kiểm tra an toàn, hoặc xuống cấp nặng (phải báo bằng giấy).',
+  'A park in Santa Clara says "old homes must go when sold." That\'s not the rule; ask which exception they\'re using.',
+  'Park ở Santa Clara nói "nhà cũ bán là phải dời đi." Luật không phải vậy; hỏi họ dựa vào trường hợp nào.','/t171/'],
+ ['roc','park','Resident-owned community (ROC)','park do cư dân làm chủ',
+  'A park where the residents together own the land, through a co-op, nonprofit or by owning their lots. No outside landlord raising space rent.',
+  'Park mà cư dân cùng làm chủ đất, qua hợp tác xã, nonprofit, hay mỗi người làm chủ lô của mình. Không có chủ park bên ngoài tăng tiền đất.',
+  'Buying into a resident-owned park in the South Bay means reading the co-op or HOA papers, not just park rules.',
+  'Mua vô park do cư dân làm chủ ở South Bay thì phải đọc giấy co-op hay HOA, không chỉ nội quy park.','/t167/'],
+ ['closure','park','Park closure / change of use','park đóng cửa, đổi mục đích',
+  'When an owner wants to close a park or turn it into something else. State law requires months of written notice and local approval steps; many Bay Area cities add their own rules.',
+  'Khi chủ park muốn đóng park hay đổi qua làm thứ khác. Luật tiểu bang bắt báo bằng giấy trước nhiều tháng và qua các bước của city; nhiều city ở Bay Area có luật riêng thêm.',
+  'San Jose rezoned many parks for mobile home use only, to make closures harder.',
+  'San Jose đổi zoning nhiều park thành chỉ cho mobile home, để khó đóng park hơn.','/t177/'],
+ ['relocation','park','Relocation impact report','báo cáo ảnh hưởng di dời',
+  'A report the park owner must file with the city or county before closing or converting a park, about how residents will be affected and helped to move.',
+  'Báo cáo chủ park phải nộp cho city hay county trước khi đóng hay đổi park, nói cư dân bị ảnh hưởng ra sao và được giúp dời đi thế nào.',
+  'Residents of a closing park can read the report at the city hearing and comment.',
+  'Cư dân park sắp đóng được đọc báo cáo này ở buổi họp city và góp ý.','/t177/'],
+ ['singlewide','build','Single-wide / double-wide / triple-wide','nhà 1 khúc / 2 khúc / 3 khúc',
+  'How many sections the home came in. A single-wide is one long section. A double-wide is two joined side by side on site, triple-wide is three. More sections usually means more room and easier loans.',
+  'Nhà chở tới bằng mấy khúc. Single-wide là 1 khúc dài. Double-wide là 2 khúc ghép cạnh nhau tại chỗ, triple-wide là 3 khúc. Nhiều khúc thường rộng hơn, dễ vay hơn.',
+  'In many Bay Area parks double-wides sell faster; some programs don\'t lend on single-wides at all.',
+  'Ở nhiều park Bay Area, double-wide bán nhanh hơn; vài chương trình vay không nhận single-wide.','/t166/'],
+ ['skirting','build','Skirting','tấm che gầm nhà',
+  'Panels around the bottom of the home that hide the space underneath and keep animals and wind out. Parks often require it to be in good shape.',
+  'Tấm vách vòng quanh chân nhà, che gầm và chặn thú, gió. Park thường bắt phải còn tốt.',
+  'A park in Union City lists "replace broken skirting" on a seller\'s repair list. That\'s exterior, so it\'s allowed.',
+  'Park ở Union City ghi "thay skirting bị bể" vào danh sách sửa của người bán. Đó là phần ngoài, park được đòi.','/t173/'],
+ ['tiedowns','build','Tie-downs','dây neo nhà',
+  'Metal straps and ground anchors that hold the home down so it doesn\'t shift in wind or a quake.',
+  'Dây đai sắt và cọc neo xuống đất giữ nhà không bị xê dịch khi gió hay động đất.',
+  'An inspector in a Gilroy park finds rusted tie-downs and notes them in the report.',
+  'Inspector trong park ở Gilroy thấy dây neo rỉ sét, ghi vào report.','/t173/'],
+ ['ebs','build','EBS / ERBS (earthquake bracing)','hệ thống chống động đất',
+  'An earthquake-resistant bracing system under the home that catches it if a quake knocks it off its supports. Use an HCD-certified system, and it needs a permit.',
+  'Hệ thống giằng dưới gầm nhà, đỡ nhà lại nếu động đất làm nhà rớt khỏi chân đỡ. Phải dùng loại được HCD chứng nhận và có permit.',
+  'In the Bay Area, quake bracing can be the difference between a quick repair and a total loss. Ask if the home has it.',
+  'Ở Bay Area, có hay không có giằng động đất có khi là sửa nhẹ hay mất trắng. Hỏi nhà có chưa.','/t175/'],
+ ['piers','build','Piers','chân đỡ',
+  'Stacks or stands under the steel frame that hold the home up off the ground.',
+  'Những chân chồng hay chân sắt dưới khung nhà, nâng nhà lên khỏi mặt đất.',
+  'Soft soil after a wet winter in a San Jose park can make piers sink a little.',
+  'Đất mềm sau mùa mưa trong park ở San Jose có thể làm chân đỡ lún xuống chút.','/t173/'],
+ ['releveling','build','Re-leveling','cân lại nhà',
+  'Adjusting the piers so the home sits flat again. Signs it\'s needed: doors that stick, cracks at the ceiling seams, a marble that rolls.',
+  'Chỉnh lại chân đỡ cho nhà nằm phẳng lại. Dấu hiệu cần làm: cửa kẹt, nứt ở mối nối trần, bỏ viên bi xuống là lăn.',
+  'A seller in Milpitas re-levels before listing so doors close right during showings.',
+  'Chủ bán ở Milpitas cân lại nhà trước khi bán để cửa đóng êm lúc khách coi.','/t173/'],
+ ['polybutylene','build','Polybutylene pipe','ống nước polybutylene',
+  'A gray plastic water pipe used in many homes from about the late 1970s to the mid 1990s. It can crack and leak with age, and some insurers ask about it.',
+  'Ống nước nhựa màu xám, xài nhiều trong nhà làm khoảng cuối thập niên 1970 tới giữa 1990. Để lâu dễ nứt, rỉ nước, vài hãng bảo hiểm có hỏi.',
+  'A 1988 home in a Hayward park has gray pipes under the sink. The buyer budgets to re-pipe.',
+  'Căn đời 1988 trong park ở Hayward có ống xám dưới bồn rửa. Người mua dành tiền thay ống.','/t173/'],
+ ['tds','deal','MH Transfer Disclosure Statement','bản khai tình trạng nhà khi bán',
+  'The seller\'s disclosure form for reselling a manufactured or mobile home (Civil Code §1102.6d): defects, unpermitted work, lawsuits, plus agent inspection sections.',
+  'Form người bán khai khi bán lại manufactured hay mobile home (Civil Code §1102.6d): hư hỏng, đồ làm không permit, kiện tụng, có phần agent tự kiểm.',
+  'A seller in a Santa Clara park writes down the old roof leak, even though it was fixed. Honest is safer.',
+  'Chủ bán trong park ở Santa Clara ghi luôn chỗ mái từng dột, dù đã sửa. Khai thật thì an toàn hơn.','/t169/'],
+ ['chattel','deal','Chattel loan','vay tài sản cá nhân',
+  'A loan on the home only, not the land, because in a park you don\'t own land. Usually a higher rate and shorter term than a house mortgage.',
+  'Khoản vay chỉ trên căn nhà, không có đất, vì trong park mình không sở hữu đất. Thường lãi cao hơn và thời hạn ngắn hơn vay mua nhà thường.',
+  'A $200,000 home in a Fremont park with 10% down and a 20-year chattel loan: check the monthly in T145.',
+  'Căn $200,000 trong park ở Fremont, down 10%, vay chattel 20 năm: coi tiền tháng ở T145.','/t164/'],
+ ['fhatitle1','deal','FHA Title I','vay FHA Title I',
+  'An FHA-insured loan that can cover a manufactured home without land. 2024 limits: $105,532 for a single-section home, $193,719 for multi-section. Few lenders offer it.',
+  'Khoản vay có FHA bảo đảm, cho vay căn manufactured home không kèm đất. Mức tối đa 2024: $105,532 nhà 1 khúc, $193,719 nhà nhiều khúc. Ít lender làm.',
+  'A Bay Area double-wide priced at $260,000 is above the Title I cap, so the buyer needs more down or another loan.',
+  'Căn double-wide ở Bay Area giá $260,000 vượt mức Title I, người mua phải down thêm hoặc vay loại khác.','/t164/'],
+ ['dealer','deal','Dealer vs broker','dealer và broker',
+  'A dealer is licensed by HCD to sell manufactured homes. A real estate broker or agent (licensed by DRE) can also sell a home that\'s registered with HCD, but can\'t run a lot showing two or more homes without a dealer license.',
+  'Dealer có license của HCD để bán manufactured home. Broker hay agent địa ốc (license DRE) cũng bán được nhà đã đăng ký HCD, nhưng không được mở bãi trưng 2 căn trở lên nếu không có license dealer.',
+  'Selling one home in a Sunnyvale park? A Realtor can list it. A sales lot with five homes needs a dealer.',
+  'Bán 1 căn trong park ở Sunnyvale? Realtor list được. Bãi bán 5 căn thì phải là dealer.','/t169/'],
+ ['escrow','deal','Mobile home escrow','escrow mobile home',
+  'A neutral company holds the money and papers until everything is done. For a home in a park it also gets the tax clearance, pays off liens and files the HCD transfer. Dealer sales must use escrow.',
+  'Công ty trung gian giữ tiền và giấy tới khi mọi thứ xong. Với nhà trong park, escrow còn xin tax clearance, trả lien, nộp giấy sang tên HCD. Bán qua dealer thì luật bắt có escrow.',
+  'Not every Bay Area escrow office does mobile homes. Ask "do you handle HCD transfers?" before opening.',
+  'Không phải văn phòng escrow nào ở Bay Area cũng làm mobile home. Hỏi "có làm sang tên HCD không?" trước khi mở.','/t165/']
+];
+const I18N={
+ en:{title:'Mobile home dictionary, explained like you\'re 10',sub:'Decal, 433A, chattel, in-lieu, MRL. Type a word and get a plain answer with a Bay Area example. English and Vietnamese.',
+  l_q:'Search a word',l_q_s:'(English or Vietnamese, accents optional)',ph:'decal, 433A, tax…',r_k:'Terms showing',of:'of {n}',ex:'Bay Area example:',go:'Related tool',none:'No match. Try a shorter word, like "tax" or "title".',
+  b_email:'Email me these terms',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email these terms to yourself',f_sub:'You get the words you\'re looking at. Ken can explain any of them for your home. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ns_t:'Next steps',
+  ns1:'Buying? Follow the dated checklist in <a href="/t165/">T165</a>. Selling? Use <a href="/t169/">T169</a>.',
+  ns2:'Find your home\'s decal number on the registration card. It tells you which tax system you\'re in. Then check <a href="/t163/">T163</a>.',
+  ns3:'See the real monthly cost (loan + space rent + tax + insurance) in <a href="/t145/">T145</a>.',
+  ns4:'Something the park did doesn\'t feel right? Check <a href="/t171/">T171</a>, or call HCD\'s MRLPP at (800) 952-8356.',
+  myth:'<b>Many people get this wrong:</b> "mobile home" and "modular home" are the same thing. They\'re not. A mobile or manufactured home has a steel frame underneath, an HCD title and, in a park, no land. A modular home is built to the normal building code, sits on a foundation and is sold like a regular house with a grant deed. The loan, the tax and the resale are all different.',
+  ft_read:'Read more:',ft_lib:'Mobile home words, one page',ft_vid:'3-min video',ft_src:'Sources:',ft_chk:'(checked 04/11/2026)',
+  ft_est:'Plain-language explanations for learning, not exact legal definitions. Laws and city rules change; check the source or ask before you sign. Not legal or tax advice.',
+  ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I was reading the mobile home dictionary on tools.kenlamrealty.com{q}. I have a question.',smsq:' about "{q}"',
+  subj:'Mobile home terms{q} — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nSearch: {q}\nTerms ({c}):\n\n{list}\n\nSent from tool T176 tools.kenlamrealty.com'},
+ vi:{title:'Từ điển mobile home, giải thích dễ như cho con nít 10 tuổi',sub:'Decal, 433A, chattel, in-lieu, MRL. Gõ chữ là ra câu trả lời dễ hiểu, có ví dụ ở Bay Area. Tiếng Việt và tiếng Anh.',
+  l_q:'Tìm chữ',l_q_s:'(tiếng Việt hay tiếng Anh, không dấu cũng được)',ph:'decal, 433A, thue…',r_k:'Số chữ đang hiện',of:'trên {n}',ex:'Ví dụ ở Bay Area:',go:'Tool liên quan',none:'Không thấy. Thử chữ ngắn hơn, như "thue" hay "title".',
+  b_email:'Gửi mấy chữ này qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi mấy chữ này về email',f_sub:'Bạn nhận được các chữ đang coi. Ken giải thích thêm cho đúng căn nhà của bạn. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ns_t:'Bước tiếp theo',
+  ns1:'Đang mua? Làm theo checklist có ngày ở <a href="/t165/">T165</a>. Đang bán? Dùng <a href="/t169/">T169</a>.',
+  ns2:'Tìm số decal trên registration card. Số đó cho biết nhà đóng thuế loại nào. Rồi coi <a href="/t163/">T163</a>.',
+  ns3:'Coi tiền mỗi tháng thật (loan + tiền đất + thuế + bảo hiểm) ở <a href="/t145/">T145</a>.',
+  ns4:'Park làm gì thấy không đúng? Coi <a href="/t171/">T171</a>, hoặc gọi MRLPP của HCD (800) 952-8356.',
+  myth:'<b>Nhiều người hiểu sai:</b> "mobile home với modular home là một." Không phải. Mobile hay manufactured home có khung sắt dưới gầm, title HCD, và trong park thì không có đất. Modular làm theo luật xây nhà thường, đặt trên móng, bán như nhà thường bằng grant deed. Vay, thuế, bán lại đều khác.',
+  ft_read:'Đọc thêm:',ft_lib:'Chữ mobile home, gom 1 trang',ft_vid:'Video 3 phút',ft_src:'Nguồn:',ft_chk:'(tra ngày 04/11/2026)',
+  ft_est:'Giải thích bằng lời dễ hiểu để học, không phải định nghĩa luật chính xác. Luật tiểu bang và city có thể đổi; coi nguồn hoặc hỏi trước khi ký. Không phải tư vấn luật hay thuế.',
+  ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi đang đọc từ điển mobile home trên tools.kenlamrealty.com{q}. Cho tôi hỏi thêm.',smsq:', chữ "{q}"',
+  subj:'Chữ mobile home{q} — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nTìm: {q}\nCác chữ ({c}):\n\n{list}\n\nGửi từ tool T176 tools.kenlamrealty.com'}
+};
+let lang='en', cat='all', shown=[];
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* strip Vietnamese accents so "thue" finds "thuế" */
+const fold=s=>String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase();
+const IDX=TERMS.map(t=>fold([t[2],t[3],t[4],t[5],t[6],t[7]].join(' ')));
+function hl(text,q){ /* highlight match in folded space, map back by index (NFD fold keeps base letters 1:1 for precomposed chars) */
+  const s=esc(text); if(!q) return s;
+  const f=fold(text); const i=f.indexOf(q); if(i<0||f.length!==text.length) return s;
+  return esc(text.slice(0,i))+'<mark>'+esc(text.slice(i,i+q.length))+'</mark>'+esc(text.slice(i+q.length));
+}
+function filter(q,c){ const fq=fold(q.trim()); const words=fq.split(/\s+/).filter(Boolean);
+  return TERMS.map((t,i)=>({t,i})).filter(o=>(c==='all'||o.t[1]===c)&&words.every(w=>IDX[o.i].includes(w))); }
+function chips(){
+  $('chips').innerHTML=CATS.map(c=>'<button type="button" data-c="'+c.id+'" aria-pressed="'+(c.id===cat)+'">'+esc(c[lang])+'</button>').join('');
+}
+function render(){
+  const d=I18N[lang], q=$('q').value, fq=fold(q.trim());
+  const R=filter(q,cat); shown=R.map(o=>o.t);
+  $('total').textContent=R.length; $('ofTxt').textContent=d.of.replace('{n}',TERMS.length);
+  const catName=id=>CATS.find(c=>c.id===id)[lang];
+  $('terms').innerHTML=R.length?R.map(({t})=>{
+    const main=lang==='vi'?t[5]:t[4], ex=lang==='vi'?t[7]:t[6], alt=lang==='vi'?t[3]:'';
+    return '<article class="term" id="w-'+t[0]+'"><div class="cat">'+esc(catName(t[1]))+'</div>'
+      +'<h3>'+hl(t[2],fq)+(alt?'<small>'+hl(alt,fq)+'</small>':'')+'</h3>'
+      +'<p>'+hl(main,fq)+'</p>'
+      +'<p class="ex"><b>'+d.ex+'</b> '+hl(ex,fq)+'</p>'
+      +(t[8]?'<div class="go">'+d.go+': <a href="'+t[8]+'">'+t[8].replace(/\//g,'').toUpperCase()+' →</a></div>':'')
+      +'</article>';}).join(''):'<div class="empty">'+d.none+'</div>';
+  const qq=q.trim();
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(d.sms.replace('{q}',qq?d.smsq.replace('{q}',qq):''));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('q').placeholder=d.ph; $('langBtn').textContent=d.lang; document.documentElement.lang=lang; chips(); render();
+}
+$('chips').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; cat=b.dataset.c; chips(); render();});
+$('q').addEventListener('input',render);
+$('qClr').onclick=()=>{$('q').value=''; render(); $('q').focus();};
+(function(){ try{ const u=new URLSearchParams(location.search).get('q'); if(u) $('q').value=u; }catch(e){} })();
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—', q=$('q').value.trim();
+  const list=shown.map(t=>'• '+t[2]+(lang==='vi'?' ('+t[3]+')':'')+': '+(lang==='vi'?t[5]:t[4])).join('\n\n')||'—';
+  const v={n,e,ph,q:q||'—',c:shown.length,list};
+  const fill=s=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+  const subj=d.subj.replace('{q}',q?' "'+q+'"':'').replace('{n}',n);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(fill(d.body));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+window.__filter=filter;
+applyLang();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
