@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ARM Reset Calculator · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;--panel:#FFFFFF;--fg:#2B2925;--muted:#7A7468;--line:#E6E0D3;
+  --brass:#B8955A;--brass-soft:#F3EBDC;--warn:#9A5B2E;--ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:42ch}
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label,.field .lb{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input,.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl select{font-size:17px;padding:13px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl.sel::after{content:'▾';color:var(--muted);font-size:14px}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.ctl input[type=month]{font-size:17px}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+.row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px 8px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+details.more{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:0 14px}
+details.more summary{cursor:pointer;padding:13px 0;font-size:14px;font-weight:500;list-style:none;display:flex;justify-content:space-between;gap:10px}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary::after{content:'+';color:var(--brass);font-size:18px;line-height:1}
+details.more[open] summary::after{content:'−'}
+details.more .in{display:grid;gap:14px;padding:2px 0 16px}
+details.more .ctl{background:var(--bg)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer}
+.chk input{width:18px;height:18px;accent-color:var(--brass);margin-top:2px;flex:none}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.total .d{font-size:15px;margin-top:6px;font-variant-numeric:tabular-nums}
+.total .d.up{color:var(--warn)} .total .d.dn{color:var(--ok)}
+.lines{display:grid;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.ng .a{color:var(--warn)} .line.sv .a{color:var(--ok)}
+.status{font-size:14px;border-radius:10px;padding:10px 12px;line-height:1.45;border:1px solid var(--line)}
+.status.ok{border-color:var(--ok);color:var(--ok)}
+.status.bad{border-color:var(--warn);color:var(--warn)}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.hide{display:none!important}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.chart{display:grid;gap:6px}
+.chart svg{width:100%;height:auto;display:block;overflow:visible}
+.chart .ax{stroke:var(--line);stroke-width:1}
+.chart .gd{stroke:var(--line);stroke-width:1;stroke-dasharray:2 4}
+.chart .s0{stroke:var(--brass);stroke-width:2.5;fill:none}
+.chart .s1{stroke:var(--warn);stroke-width:2;fill:none;stroke-dasharray:6 4}
+.chart .s2{stroke:var(--ok);stroke-width:2;fill:none;stroke-dasharray:2 3}
+.chart .now{stroke:var(--muted);stroke-width:1;stroke-dasharray:2 3}
+.chart text{fill:var(--muted);font-family:var(--body);font-size:11px}
+.chart text.hl{fill:var(--fg);font-weight:500}
+table.sch{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+table.sch th{font-weight:500;color:var(--muted);font-size:12px;text-align:right;padding:6px 4px;border-bottom:1px solid var(--line)}
+table.sch th:first-child,table.sch td:first-child{text-align:left}
+table.sch td{text-align:right;padding:8px 4px;border-bottom:1px solid var(--line)}
+table.sch td.w{color:var(--warn)}
+.schwrap h3{font-size:13px;font-weight:500;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:0 0 4px}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:12px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.panel p{margin:0;font-size:15px}
+.panel p.m{color:var(--muted);font-size:14px}
+.panel ol,.panel ul{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.panel a{color:var(--brass)}
+.panel b{font-weight:500}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+</style>
+<meta name="description" content="Have an adjustable-rate mortgage (ARM) or thinking about one? See when your rate changes, the new payment, the worst case under your caps, and what happened to old LIBOR ARMs.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t181/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="ARM Reset Calculator · Ken Lam Tools">
+<meta property="og:description" content="When your ARM rate changes, your new payment, and the worst case under your caps.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t181/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">ARM: what happens when your rate resets?</h1>
+    <p class="sub" data-i="sub">When it changes, the new payment, and the worst case your caps allow.</p>
+  </header>
+
+  <div class="seg" role="group" aria-label="Mode">
+    <button type="button" id="mHave" aria-pressed="true" data-i="m_have">I have an ARM</button>
+    <button type="button" id="mPlan" aria-pressed="false" data-i="m_plan">Thinking about one</button>
+  </div>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="row2">
+      <div class="field">
+        <label for="type"><span data-i="l_type">ARM type</span></label>
+        <div class="ctl sel"><select id="type"></select></div>
+      </div>
+      <div class="field">
+        <label for="loan"><span data-i="l_loan">Original loan</span></label>
+        <div class="ctl"><span class="pre">$</span><input id="loan" type="number" inputmode="numeric" min="0" step="5000" value="800000"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field" id="fStart">
+        <label for="start"><span data-i="l_start">First payment</span> <small data-i="l_start_s">(month)</small></label>
+        <div class="ctl"><input id="start" type="month" value="2022-01"></div>
+      </div>
+      <div class="field">
+        <label for="r0"><span data-i="l_r0">Start rate</span></label>
+        <div class="ctl"><input id="r0" type="number" inputmode="decimal" min="0" max="20" step="0.125" value="2.875"><span class="post">%</span></div>
+      </div>
+    </div>
+    <div class="field" id="fCur">
+      <label for="rc"><span data-i="l_rc">Rate you pay now</span> <small data-i="l_rc_s">(from your statement)</small></label>
+      <div class="ctl"><input id="rc" type="number" inputmode="decimal" min="0" max="20" step="0.125" value="2.875"><span class="post">%</span></div>
+    </div>
+    <div class="field hide" id="fFix">
+      <label for="rf"><span data-i="l_rf">30-yr fixed rate today</span> <small data-i="l_rf_s">(to compare)</small></label>
+      <div class="ctl"><input id="rf" type="number" inputmode="decimal" min="0" max="20" step="0.125" value="7.24"><span class="post">%</span></div>
+    </div>
+
+    <details class="more" id="more">
+      <summary data-i="more">Loan details from your Note (defaults are typical)</summary>
+      <div class="in">
+        <p class="hint" data-i="more_h">Look in your Adjustable Rate Note, section 4: index, margin and caps. Or call your servicer.</p>
+        <div class="field">
+          <label for="idxT"><span data-i="l_idx">Index</span></label>
+          <div class="ctl sel"><select id="idxT"></select></div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="idx"><span data-i="l_idxv">Index today</span></label>
+            <div class="ctl"><input id="idx" type="number" inputmode="decimal" min="0" max="20" step="0.01"><span class="post">%</span></div>
+          </div>
+          <div class="field">
+            <label for="mg"><span data-i="l_mg">Margin</span></label>
+            <div class="ctl"><input id="mg" type="number" inputmode="decimal" min="0" max="10" step="0.125" value="2.75"><span class="post">%</span></div>
+          </div>
+        </div>
+        <div class="field">
+          <span class="lb"><span data-i="l_caps">Caps: first / each later / lifetime</span></span>
+          <div class="row3">
+            <div class="ctl"><input id="c1" type="number" inputmode="decimal" min="0" max="10" step="1" aria-label="First cap"><span class="post">%</span></div>
+            <div class="ctl"><input id="c2" type="number" inputmode="decimal" min="0" max="10" step="1" aria-label="Periodic cap"><span class="post">%</span></div>
+            <div class="ctl"><input id="c3" type="number" inputmode="decimal" min="0" max="10" step="1" aria-label="Lifetime cap"><span class="post">%</span></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="bal"><span data-i="l_bal">Balance now</span> <small data-i="l_bal_s">(blank = we estimate)</small></label>
+          <div class="ctl"><span class="pre">$</span><input id="bal" type="number" inputmode="numeric" min="0" step="1000" placeholder="—"></div>
+        </div>
+        <label class="chk"><input type="checkbox" id="io"><span data-i="l_io">Interest-only during the fixed years (common on older jumbo ARMs)</span></label>
+      </div>
+    </details>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="status" id="status"></div>
+    <div class="total">
+      <div class="k" id="bigK" data-i="r_big">Payment after the next change</div>
+      <div class="v"><span id="big">$0</span> <small data-i="permo">/mo</small></div>
+      <div class="d" id="bigD"></div>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_now">Paying now</b> <span data-i="n_pi">(P&amp;I)</span> <span id="nowS"></span></span><span class="a" id="pNow">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_next">Rate at next change</b> <span id="nextS"></span></span><span class="a" id="rNext">0%</span></div>
+      <div class="line"><span class="n"><b data-i="n_full">Index + margin</b> <span data-i="n_full_s">(where it's heading)</span></span><span class="a" id="rFull">0%</span></div>
+      <div class="line ng"><span class="n"><b data-i="n_ceil">Rate can never go above</b></span><span class="a" id="rCeil">0%</span></div>
+      <div class="line ng"><span class="n"><b data-i="n_worst">Worst-case payment</b> <span id="worstS"></span></span><span class="a" id="pWorst">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_bal">Balance now</b> <span id="balS"></span></span><span class="a" id="bNow">$0</span></div>
+      <div class="line sv hide" id="fixLine"><span class="n"><b id="fixN"></b></span><span class="a" id="fixA">$0</span></div>
+    </div>
+    <div class="chart">
+      <svg id="svg" viewBox="0 0 320 200" role="img" aria-label="Monthly payment over time in three scenarios"></svg>
+      <div class="legend">
+        <span><i style="background:var(--brass)"></i><span data-i="lg0">Index stays the same</span></span>
+        <span><i style="background:var(--warn)"></i><span data-i="lg1">Worst case (caps)</span></span>
+        <span><i style="background:var(--ok)"></i><span data-i="lg2">Index drops 1%</span></span>
+      </div>
+    </div>
+    <div class="schwrap">
+      <h3 data-i="sch_t">Next rate changes</h3>
+      <table class="sch"><thead><tr><th data-i="th_d">Date</th><th data-i="th_r">Rate</th><th data-i="th_p">Payment</th><th data-i="th_w">Worst case</th></tr></thead><tbody id="sch"></tbody></table>
+    </div>
+    <div class="note" id="ioNote" data-i="io_note">Interest-only ends at the first change. The payment jumps twice: the rate goes up, and you start paying principal over fewer years.</div>
+    <div class="note" data-i="calc_note">Rates round to the nearest 1/8% and never fall below the margin. Your Note may differ. Check it.</div>
+  </section>
+  <video src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="How to use this tool"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t181/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this to yourself</h2>
+    <p data-i="f_sub">Ken will reply and help you plan before the reset. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="how_t">How an ARM works, in plain words</h2>
+    <ol>
+      <li data-i="how1"><b>5/6, 7/1…</b> The first number is how many years the rate is locked. The second is how often it changes after that: <b>/1</b> = every year, <b>/6</b> = every 6 months.</li>
+      <li data-i="how2"><b>New rate = index + margin.</b> The index moves with the market (SOFR, Treasury). The margin is fixed for life, written in your Note. Think of it as the bank's markup.</li>
+      <li data-i="how3"><b>Caps are the seatbelt.</b> 2/1/5 means: the first change can move at most 2%, each later change at most 1%, and never more than 5% above the start rate.</li>
+      <li data-i="how4"><b>Caps work both ways.</b> If the market drops, the rate can drop too, but usually not below the margin.</li>
+    </ol>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="old_t">Took an ARM in 2019–2022? Here's where you stand</h2>
+    <p data-i="old1">A lot of people locked 2.5–3.5% for 5 or 7 years. Those locks are ending now, in 2025–2029. Index + margin today is around <b id="oldFull">—</b>. So most will hit the cap on the first change, not the full rate.</p>
+    <p data-i="old2"><b>Had a LIBOR ARM?</b> LIBOR ended June 30, 2023. By federal law, your loan switched to a SOFR rate plus a fixed add-on (0.71513% for 12-month LIBOR, 0.42826% for 6-month). Your margin and caps stayed the same. Check the letter your servicer sent in 2023.</p>
+    <p data-i="old3"><b>Your servicer must warn you.</b> For the first change: a notice 210–240 days before the first new payment. For later changes: 60–120 days before. No letter yet? You still have time to plan.</p>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="opt_t">4 ways to handle a reset</h2>
+    <ul>
+      <li data-i="opt1"><b>Refinance</b> into a fixed rate. Worth it when the reset rate is higher than today's fixed rate. Run <a href="/t31/">T31</a>.</li>
+      <li data-i="opt2"><b>Pay it down</b> before the change. Each extra dollar lowers the new payment. Some lenders also do a recast. See <a href="/t33/">T33</a>.</li>
+      <li data-i="opt3"><b>Keep it.</b> If the worst case still fits your budget, the ARM may stay cheaper than a 7% fixed for a while.</li>
+      <li data-i="opt4"><b>Sell</b> if you were moving anyway. See what you walk away with: <a href="/t21/">T21</a>.</li>
+    </ul>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Pull your Adjustable Rate Note. Write down the index, margin and the 3 caps. Put them in the box above.</li>
+      <li data-i="ns2">Call your servicer: "What is my next change date and the projected rate?"</li>
+      <li data-i="ns3">Worst case doesn't fit? Get a refinance quote 3–4 months before the change, not the week of.</li>
+    </ol>
+  </section>
+
+  <p class="myth" data-i="myth"><b>Many people get this wrong:</b> "My ARM resets to whatever rates are that day." No. It resets to index + margin, and the caps limit the jump. A 2.875% loan with a 2% first cap can't go past 4.875% on the first change, even if rates are 7%.</p>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#arm" target="_blank" rel="noopener" data-i="ft_lib">ARM loans, plain words</a> · <a href="https://kenlamrealty.com/library#video-arm" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span><span data-i="ft_src">Sources:</span> <span id="srcList"></span></span>
+    <span data-i="ft_est">Estimate only. Uses your index today for every future change (or the worst case your caps allow). Real index values will move. Not a loan offer.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: <span id="upd"></span> · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số liệu — sửa ở đây khi đổi (tra 04/11/2026) =====
+   FIXED30 7.24%: Freddie Mac PMMS 30-yr, tuần 29/10/2026. https://www.freddiemac.com/pmms
+   INDEX (sửa mỗi thứ Năm cùng T30):
+     sofr30 3.91: NY Fed 30-day Average SOFR, 04/11/2026 (3.91060). https://www.newyorkfed.org/markets/reference-rates/sofr-averages-and-index
+     tsofr12 5.09 = CME Term SOFR 12M 4.37614 (02/11/2026, global-rates.com) + 0.71513 (Reg ZZ).
+     tsofr6 4.59 = CME Term SOFR 6M 4.16415 (02/11/2026) + 0.42826 (Reg ZZ). https://www.global-rates.com/en/interest-rates/cme-term-sofr/
+     cmt1 4.44: 1-yr Treasury CMT, weekly avg tuần 30/10/2026 (FRED WGS1YR, Fed H.15). https://fred.stlouisfed.org/series/WGS1YR
+   Spread LIBOR→SOFR: 12 CFR 253.4 (Regulation ZZ) — 6M 0.42826, 12M 0.71513; đủ spread từ 7/2024. https://www.law.cornell.edu/cfr/text/12/253.4
+   Caps SOFR ARM: 5/6 = 2/1/5; 7/6 & 10/6 = 5/1/5; đổi mỗi 6 tháng; floor = margin; margin 1–3%. Freddie Mac SOFR fact sheet.
+     https://my.sf.freddiemac.com/docs/pdf/fact-sheet/sofr-ataglance-sell-deliver.pdf
+   Làm tròn 1/8%, không thấp hơn margin: Fannie Mae Selling Guide B2-1.4-02. https://selling-guide.fanniemae.com/sel/b2-1.4-02/adjustable-rate-mortgages-arms
+   ARM LIBOR cũ: 5/1 caps 2/2/5 hoặc 5/2/5; 7/1, 10/1 = 5/2/5; margin chuẩn 2.25%. Fannie "Hybrid ARM Components". https://singlefamily.fanniemae.com/media/14976/display
+   3/1 caps 2/2/6: mức thông dụng — ƯỚC TÍNH, KEN DUYỆT.
+   Margin 2.75 cho SOFR ARM: mức thông dụng, guide không quy định — ƯỚC TÍNH.
+   Lãi 7/6 hôm nay 6.71%: Mortgage News Daily 03/11/2026. https://www.mortgagenewsdaily.com/mortgage-rates/5-1-arm
+   5/1 ARM trung bình năm: 2019 ~3.57, 2020 ~3.07, 2021 ~2.61 (FRED MORTGAGE5US, Freddie ngưng 11/2022). https://fred.stlouisfed.org/series/MORTGAGE5US
+   Thông báo đổi lãi: 210–240 ngày trước lần đầu, 60–120 ngày các lần sau — Reg Z 12 CFR 1026.20(c)(d). https://www.consumerfinance.gov/rules-policy/regulations/1026/20/
+   Interest-only: thường 10 năm IO rồi trả hết trong 20 năm còn lại — thông dụng, ƯỚC TÍNH. */
+const UPDATED='04/11/2026';
+const FIXED30=7.24;
+const INDEX={
+  sofr30:{v:3.91, en:'30-day avg SOFR (most ARMs since 2021)', vi:'SOFR trung bình 30 ngày (ARM từ 2021 trở đi)'},
+  tsofr12:{v:5.09,en:'Was 12-mo LIBOR → 1-yr Term SOFR + 0.71513', vi:'Trước là LIBOR 12 tháng → Term SOFR 1 năm + 0.71513'},
+  tsofr6:{v:4.59, en:'Was 6-mo LIBOR → 6-mo Term SOFR + 0.42826', vi:'Trước là LIBOR 6 tháng → Term SOFR 6 tháng + 0.42826'},
+  cmt1:{v:4.44,   en:'1-yr Treasury (CMT)', vi:'Trái phiếu 1 năm (CMT)'}
+};
+const TYPES={
+  '3/1': {f:3, a:12,caps:[2,2,6],idx:'tsofr12',mg:2.25},
+  '5/1': {f:5, a:12,caps:[2,2,5],idx:'tsofr12',mg:2.25},
+  '7/1': {f:7, a:12,caps:[5,2,5],idx:'tsofr12',mg:2.25},
+  '10/1':{f:10,a:12,caps:[5,2,5],idx:'tsofr12',mg:2.25},
+  '5/6': {f:5, a:6, caps:[2,1,5],idx:'sofr30',mg:2.75},
+  '7/6': {f:7, a:6, caps:[5,1,5],idx:'sofr30',mg:2.75},
+  '10/6':{f:10,a:6, caps:[5,1,5],idx:'sofr30',mg:2.75}
+};
+const PLAN_RATE=6.71;
+const ROUND=0.125, TERM=360;
+const SOURCES=[
+ ['https://www.newyorkfed.org/markets/reference-rates/sofr-averages-and-index','NY Fed SOFR averages (3.91%, 04/11/2026)'],
+ ['https://www.global-rates.com/en/interest-rates/cme-term-sofr/','CME Term SOFR (02/11/2026)'],
+ ['https://fred.stlouisfed.org/series/WGS1YR','1-yr Treasury CMT (FRED/H.15)'],
+ ['https://www.law.cornell.edu/cfr/text/12/253.4','Regulation ZZ: LIBOR → SOFR spreads'],
+ ['https://my.sf.freddiemac.com/docs/pdf/fact-sheet/sofr-ataglance-sell-deliver.pdf','Freddie Mac SOFR ARM caps'],
+ ['https://selling-guide.fanniemae.com/sel/b2-1.4-02/adjustable-rate-mortgages-arms','Fannie Mae B2-1.4-02'],
+ ['https://www.consumerfinance.gov/rules-policy/regulations/1026/20/','CFPB Reg Z 1026.20: ARM notices'],
+ ['https://www.mortgagenewsdaily.com/mortgage-rates/5-1-arm','MND 7/6 ARM 6.71% (03/11/2026)'],
+ ['https://www.freddiemac.com/pmms','Freddie Mac PMMS 7.24% (29/10/2026)'],
+ ['https://files.consumerfinance.gov/f/201603_cfpb_booklet_charm.pdf','CFPB CHARM booklet']
+];
+
+/* ===== Engine ===== */
+const round8=x=>Math.round(x/ROUND)*ROUND;
+function pmt(B,r,n){ if(B<=0||n<=0) return 0; const i=r/1200; return i===0?B/n:B*i/(1-Math.pow(1+i,-n)); }
+/* m = 0 là tháng trả đầu tiên. e = tháng hiện tại. scen: 0 index giữ nguyên · 1 tệ nhất · 2 index giảm 1% */
+function sim(o,scen){
+  const F=o.f*12, A=o.a, hi=o.r0+o.c3, lo=Math.max(o.mg,o.r0-o.c3);
+  const idx=scen===2?o.idx-1:o.idx;
+  let bal=o.loan, prev=o.r0, rate=o.r0; const out=[];
+  for(let m=0;m<TERM;m++){
+    let changed=false;
+    if(m<o.e){ rate=m<F?o.r0:o.rc; }            /* quá khứ: ước theo lãi đầu / lãi đang trả */
+    else if(m===o.e){ rate=o.e>=F?o.rc:o.r0; prev=rate; if(o.bal>0) bal=o.bal; }
+    if(m>o.e && m>=F && (m-F)%A===0){
+      const cap=m===F?o.c1:o.c2, target=scen===1?Infinity:round8(idx+o.mg);
+      let r=Math.min(Math.max(target,prev-cap),prev+cap);
+      r=round8(Math.min(Math.max(r,lo),hi));
+      changed=true; rate=r; prev=r;
+    }
+    const io=o.io&&m<F;
+    const pay=io?bal*rate/1200:pmt(bal,rate,TERM-m);
+    out.push({m,rate,pay,bal,changed,io});
+    bal=Math.max(0,bal-(pay-bal*rate/1200));
+  }
+  return out;
+}
+
+/* ===== Chữ ===== */
+const I18N={
+ en:{title:'ARM: what happens when your rate resets?',sub:'When it changes, the new payment, and the worst case your caps allow.',
+  m_have:'I have an ARM',m_plan:'Thinking about one',
+  l_type:'ARM type',l_loan:'Original loan',l_start:'First payment',l_start_s:'(month)',l_r0:'Start rate',l_rc:'Rate you pay now',l_rc_s:'(from your statement)',
+  l_rf:'30-yr fixed rate today',l_rf_s:'(to compare)',l_loan_p:'Loan amount',l_r0_p:'ARM start rate',
+  more:'Loan details from your Note (defaults are typical)',more_h:'Look in your Adjustable Rate Note, section 4: index, margin and caps. Or call your servicer.',
+  l_idx:'Index',l_idxv:'Index today',l_mg:'Margin',l_caps:'Caps: first / each later / lifetime',l_bal:'Balance now',l_bal_s:'(blank = we estimate)',
+  l_io:'Interest-only during the fixed years (common on older jumbo ARMs)',
+  r_big:'Payment after the next change',permo:'/mo',
+  d_up:'+{d}/mo vs now (+{p}%)',d_dn:'{d}/mo vs now',d_eq:'Same as now',
+  n_now:'Paying now',n_pi:'(P&I)',n_next:'Rate at next change',n_full:'Index + margin',n_full_s:"(where it's heading)",
+  n_ceil:'Rate can never go above',n_worst:'Worst-case payment',worst_s:'(by {d})',n_bal:'Balance now',bal_est:'(estimate)',bal_you:'(you entered)',
+  next_s:'({d})',now_s:'at {r}',io_s:'interest-only',
+  fix_n:'Cheaper than {r} fixed during the first {y} yrs',fix_n2:'Costs more than {r} fixed during the first {y} yrs',
+  st_before:'Your rate is locked until {d}. First change in {n} months. Then it changes every {a} months.',
+  st_after:'Your fixed years are over. Next change: {d} (in {n} months).',
+  st_plan:'Rate locked at {r} for {y} years, until {d}. Then it changes every {a} months.',
+  st_done:'This loan is already paid off on schedule. Check your dates.',st_future:'First payment is in the future. Use "Thinking about one" instead.',
+  st_bad:' Payment goes up {d}/mo.',st_ok:' Payment goes down {d}/mo.',
+  mo12:'12',mo6:'6',
+  lg0:'Index stays the same',lg1:'Worst case (caps)',lg2:'Index drops 1%',ax_y:'year',ax_now:'now',
+  sch_t:'Next rate changes',th_d:'Date',th_r:'Rate',th_p:'Payment',th_w:'Worst case',
+  io_note:'Interest-only ends at the first change. The payment jumps twice: the rate goes up, and you start paying principal over fewer years.',
+  calc_note:'Rates round to the nearest 1/8% and never fall below the margin. Your Note may differ. Check it.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this to yourself',f_sub:'Ken will reply and help you plan before the reset. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  how_t:'How an ARM works, in plain words',
+  how1:'<b>5/6, 7/1…</b> The first number is how many years the rate is locked. The second is how often it changes after that: <b>/1</b> = every year, <b>/6</b> = every 6 months.',
+  how2:"<b>New rate = index + margin.</b> The index moves with the market (SOFR, Treasury). The margin is fixed for life, written in your Note. Think of it as the bank's markup.",
+  how3:'<b>Caps are the seatbelt.</b> 2/1/5 means: the first change can move at most 2%, each later change at most 1%, and never more than 5% above the start rate.',
+  how4:'<b>Caps work both ways.</b> If the market drops, the rate can drop too, but never below the margin.',
+  old_t:'Took an ARM in 2019–2022? Here’s where you stand',
+  old1:'5-yr ARMs averaged about 3.6% in 2019, 3.1% in 2020 and 2.6% in 2021. Those locks end in 2024–2029. Index + margin today is about <b>{f}</b>. So most loans hit the cap on the first change, not the full rate. Then they keep climbing, one cap at a time.',
+  old2:'<b>Had a LIBOR ARM?</b> LIBOR ended June 30, 2023. By federal law, loans without a clear backup switched to Term SOFR plus a fixed add-on: 0.71513% for 12-month LIBOR, 0.42826% for 6-month. Your margin and caps stayed the same. Look for the letter your servicer sent in 2023.',
+  old3:'<b>Your servicer must warn you.</b> First change: a notice 210–240 days before the first new payment. Later changes: 60–120 days before. No letter yet? You still have time.',
+  opt_t:'4 ways to handle a reset',
+  opt1:'<b>Refinance</b> into a fixed rate. Makes sense when the reset rate will be higher than today’s fixed rate. Run <a href="/t31/">T31</a>.',
+  opt2:'<b>Pay it down</b> before the change. Every extra dollar lowers the new payment. Some lenders also recast. See <a href="/t33/">T33</a>.',
+  opt3:'<b>Keep it.</b> If the worst case still fits your budget, the ARM can stay cheaper than a 7% fixed for years.',
+  opt4:'<b>Sell</b> if you were moving anyway. See what you walk away with: <a href="/t21/">T21</a>.',
+  ns_t:'Next steps',
+  ns1:'Pull your Adjustable Rate Note. Write down the index, margin and the 3 caps. Put them in the box above.',
+  ns2:'Call your servicer: "What is my next change date, and what is the projected rate?"',
+  ns3:'Worst case doesn’t fit? Get a refinance quote 3–4 months before the change, not the week of.',
+  myth:"<b>Many people get this wrong:</b> \"My ARM resets to whatever rates are that day.\" No. It resets to index + margin, and the caps limit the jump. A 2.875% loan with a 2% first cap can't go past 4.875% on the first change, even when fixed rates are 7%.",
+  ft_read:'Read more:',ft_lib:'ARM loans, plain words',ft_vid:'3-min video',ft_src:'Sources:',
+  ft_est:'Estimate only. Uses today’s index for every future change (or the worst case your caps allow). Real index values will move. Not a loan offer.',
+  ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I ran the ARM tool on tools.kenlamrealty.com: {t} ARM, {l}, start {r0}%. Next change {nd}: about {rn}%, payment {pn}/mo (now {p0}). Worst case {pw}. What should I do?',
+  subj:'ARM reset — {nm}',
+  body:'Name: {nm}\nEmail: {e}\nPhone: {ph}\n\nARM type: {t}\nOriginal loan: {l}\nFirst payment: {sd}\nStart rate: {r0}%  ·  Rate now: {rc}%\nIndex: {ix} {iv}%  ·  Margin: {mg}%  ·  Caps: {cp}\nInterest-only: {io}\nBalance now: {b}\n\nPaying now: {p0}/mo\nNEXT CHANGE {nd}: {rn}% → {pn}/mo\nIndex + margin: {rf}%\nRate ceiling: {rx}%\nWorst-case payment: {pw}/mo\n\nSent from tool T181 tools.kenlamrealty.com'},
+ vi:{title:'ARM: tới lúc đổi lãi thì sao?',sub:'Khi nào đổi, tiền nhà mới bao nhiêu, và tệ nhất lên tới đâu.',
+  m_have:'Tôi đang có ARM',m_plan:'Tôi tính vay ARM',
+  l_type:'Loại ARM',l_loan:'Số vay ban đầu',l_start:'Tháng trả đầu tiên',l_start_s:'',l_r0:'Lãi lúc đầu',l_rc:'Lãi đang trả bây giờ',l_rc_s:'(coi statement)',
+  l_rf:'Lãi fixed 30 năm hôm nay',l_rf_s:'(để so)',l_loan_p:'Số tiền vay',l_r0_p:'Lãi ARM lúc đầu',
+  more:'Chi tiết trong Note (để mặc định nếu chưa biết)',more_h:'Coi giấy Adjustable Rate Note, mục 4: index, margin, caps. Hoặc gọi servicer hỏi.',
+  l_idx:'Index',l_idxv:'Index hôm nay',l_mg:'Margin',l_caps:'Caps: lần đầu / mỗi lần sau / cả đời',l_bal:'Còn nợ bây giờ',l_bal_s:'(để trống = tool tự ước)',
+  l_io:'Chỉ trả lãi (interest-only) trong mấy năm cố định — hay gặp ở jumbo ARM đời cũ',
+  r_big:'Tiền nhà sau lần đổi lãi tới',permo:'/tháng',
+  d_up:'+{d}/tháng so với bây giờ (+{p}%)',d_dn:'{d}/tháng so với bây giờ',d_eq:'Bằng bây giờ',
+  n_now:'Đang trả',n_pi:'(P&I)',n_next:'Lãi lần đổi tới',n_full:'Index + margin',n_full_s:'(lãi đang hướng tới)',
+  n_ceil:'Lãi không bao giờ vượt',n_worst:'Tiền nhà tệ nhất',worst_s:'(tới {d})',n_bal:'Còn nợ',bal_est:'(ước tính)',bal_you:'(anh/chị nhập)',
+  next_s:'({d})',now_s:'lãi {r}',io_s:'chỉ trả lãi',
+  fix_n:'Rẻ hơn fixed {r} trong {y} năm đầu',fix_n2:'Đắt hơn fixed {r} trong {y} năm đầu',
+  st_before:'Lãi giữ nguyên tới {d}. Còn {n} tháng là đổi lần đầu. Sau đó cứ {a} tháng đổi một lần.',
+  st_after:'Hết mấy năm cố định rồi. Lần đổi tới: {d} (còn {n} tháng).',
+  st_plan:'Lãi giữ {r} trong {y} năm, tới {d}. Sau đó {a} tháng đổi một lần.',
+  st_done:'Theo lịch thì loan này trả hết rồi. Coi lại ngày.',st_future:'Tháng trả đầu còn ở tương lai. Bấm "Tôi tính vay ARM".',
+  st_bad:' Tiền nhà lên {d}/tháng.',st_ok:' Tiền nhà xuống {d}/tháng.',
+  lg0:'Index giữ nguyên',lg1:'Tệ nhất (đụng trần)',lg2:'Index xuống 1%',ax_y:'năm',ax_now:'bây giờ',
+  sch_t:'Mấy lần đổi lãi tới',th_d:'Ngày',th_r:'Lãi',th_p:'Tiền nhà',th_w:'Tệ nhất',
+  io_note:'Hết interest-only là tiền nhà nhảy 2 lần một lúc: lãi lên, và bắt đầu trả gốc trong ít năm hơn.',
+  calc_note:'Lãi làm tròn 1/8% và không bao giờ thấp hơn margin. Note của mình có thể khác. Coi lại cho chắc.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi bảng tính này về email',f_sub:'Ken sẽ trả lời và giúp tính trước ngày đổi lãi. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  how_t:'ARM chạy sao, nói cho dễ hiểu',
+  how1:'<b>5/6, 7/1…</b> Số đầu là mấy năm lãi đứng yên. Số sau là đổi bao lâu một lần sau đó: <b>/1</b> = mỗi năm, <b>/6</b> = mỗi 6 tháng.',
+  how2:'<b>Lãi mới = index + margin.</b> Index lên xuống theo thị trường (SOFR, Treasury). Margin cố định cả đời loan, ghi trong Note. Coi như tiền lời ngân hàng cộng thêm.',
+  how3:'<b>Caps là dây an toàn.</b> 2/1/5 nghĩa là: lần đổi đầu lên xuống tối đa 2%, mỗi lần sau tối đa 1%, và cả đời không quá lãi đầu + 5%.',
+  how4:'<b>Caps chặn cả hai chiều.</b> Thị trường xuống thì lãi cũng xuống được, nhưng không thấp hơn margin.',
+  old_t:'Vay ARM hồi 2019–2022, giờ sao?',
+  old1:'ARM 5 năm hồi đó trung bình khoảng 3.6% (2019), 3.1% (2020), 2.6% (2021). Mấy loan này hết hạn cố định từ 2024 tới 2029. Index + margin bây giờ khoảng <b>{f}</b>. Nên đa số sẽ đụng cap ở lần đổi đầu, chưa lên hết. Rồi cứ mỗi lần đổi leo thêm một nấc.',
+  old2:'<b>Loan cũ chạy theo LIBOR?</b> LIBOR chết ngày 30/6/2023. Luật liên bang chuyển loan không có phương án dự phòng sang Term SOFR cộng thêm một khoản cố định: 0.71513% cho LIBOR 12 tháng, 0.42826% cho LIBOR 6 tháng. Margin và caps giữ nguyên. Tìm lại thư servicer gửi năm 2023.',
+  old3:'<b>Servicer bắt buộc phải báo trước.</b> Lần đổi đầu: báo 210–240 ngày trước kỳ trả tiền mới. Mấy lần sau: 60–120 ngày. Chưa nhận thư thì còn thời gian tính.',
+  opt_t:'4 đường khi sắp đổi lãi',
+  opt1:'<b>Refinance</b> sang fixed. Hợp lý khi lãi sau khi đổi sẽ cao hơn lãi fixed hôm nay. Chạy <a href="/t31/">T31</a>.',
+  opt2:'<b>Trả bớt nợ</b> trước ngày đổi. Trả thêm đồng nào, tiền nhà mới nhẹ đồng đó. Có lender cho recast. Coi <a href="/t33/">T33</a>.',
+  opt3:'<b>Giữ luôn.</b> Tệ nhất mà vẫn trả nổi thì ARM có thể vẫn rẻ hơn fixed 7% thêm vài năm.',
+  opt4:'<b>Bán</b> nếu đằng nào cũng tính dọn. Coi cầm về bao nhiêu: <a href="/t21/">T21</a>.',
+  ns_t:'Bước tiếp theo',
+  ns1:'Lấy giấy Adjustable Rate Note ra. Ghi index, margin, 3 con số caps. Bỏ vào ô ở trên.',
+  ns2:'Gọi servicer hỏi: "Lần đổi lãi tới là ngày nào, lãi dự kiến bao nhiêu?"',
+  ns3:'Tệ nhất mà trả không nổi? Xin báo giá refinance trước 3–4 tháng, đừng đợi sát ngày.',
+  myth:'<b>Nhiều người hiểu sai:</b> "Tới ngày đổi, ARM nhảy lên bằng lãi thị trường hôm đó." Không phải. Nó nhảy về index + margin, và caps chặn mức nhảy. Loan 2.875% có cap lần đầu 2% thì lần đổi đầu không quá 4.875%, kể cả khi fixed đang 7%.',
+  ft_read:'Đọc thêm:',ft_lib:'ARM nói dễ hiểu',ft_vid:'Video 3 phút',ft_src:'Nguồn:',
+  ft_est:'Chỉ là ước tính. Lấy index hôm nay cho mọi lần đổi sau (hoặc mức tệ nhất caps cho phép). Index thật sẽ lên xuống. Không phải báo giá loan.',
+  ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa xài tool ARM trên tools.kenlamrealty.com: ARM {t}, vay {l}, lãi đầu {r0}%. Lần đổi tới {nd}: khoảng {rn}%, tiền nhà {pn}/tháng (bây giờ {p0}). Tệ nhất {pw}. Tôi nên làm gì?',
+  subj:'ARM đổi lãi — {nm}',
+  body:'Tên: {nm}\nEmail: {e}\nPhone: {ph}\n\nLoại ARM: {t}\nVay ban đầu: {l}\nTháng trả đầu: {sd}\nLãi đầu: {r0}%  ·  Lãi bây giờ: {rc}%\nIndex: {ix} {iv}%  ·  Margin: {mg}%  ·  Caps: {cp}\nChỉ trả lãi: {io}\nCòn nợ: {b}\n\nĐang trả: {p0}/tháng\nLẦN ĐỔI TỚI {nd}: {rn}% → {pn}/tháng\nIndex + margin: {rf}%\nTrần lãi: {rx}%\nTiền nhà tệ nhất: {pw}/tháng\n\nGửi từ tool T181 tools.kenlamrealty.com'}
+};
+
+/* ===== UI ===== */
+let lang='en', mode='have', last={};
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−':'')+'$'+Math.abs(Math.round(n)).toLocaleString('en-US');
+const pc=x=>(Math.round(x*1000)/1000)+'%';
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]!=null?v[k]:m);
+const NOW=(()=>{const d=new Date();return {y:d.getFullYear(),m:d.getMonth()};})();
+const addM=(b,k)=>{const t=b.y*12+b.m+k;return {y:Math.floor(t/12),m:t%12};};
+const dstr=d=>String(d.m+1).padStart(2,'0')+'/'+d.y;
+/* lưu riêng ô nhập cho mỗi chế độ */
+const SAVED={have:{type:'5/6',loan:800000,start:'2022-01',r0:2.875,rc:2.875},plan:{type:'7/6',loan:960000,r0:PLAN_RATE}};
+
+function fillSelects(){
+  const d=I18N[lang], t=$('type').value||SAVED[mode].type;
+  $('type').innerHTML=Object.keys(TYPES).map(k=>'<option value="'+k+'">'+k+(TYPES[k].a===6?' SOFR':'')+'</option>').join('');
+  $('type').value=t;
+  const ix=$('idxT').value;
+  $('idxT').innerHTML=Object.keys(INDEX).map(k=>'<option value="'+k+'">'+INDEX[k][lang]+'</option>').join('');
+  if(ix) $('idxT').value=ix;
+}
+function applyType(){
+  const T=TYPES[$('type').value];
+  $('c1').value=T.caps[0]; $('c2').value=T.caps[1]; $('c3').value=T.caps[2];
+  $('idxT').value=T.idx; $('idx').value=INDEX[T.idx].v; $('mg').value=T.mg;
+}
+function setMode(m){
+  /* lưu ô cũ */
+  const s=SAVED[mode]; s.type=$('type').value; s.loan=num('loan'); s.r0=num('r0'); if(mode==='have'){s.start=$('start').value; s.rc=num('rc');}
+  mode=m; const n=SAVED[m];
+  $('mHave').setAttribute('aria-pressed',m==='have'); $('mPlan').setAttribute('aria-pressed',m==='plan');
+  $('fStart').classList.toggle('hide',m==='plan'); $('fCur').classList.toggle('hide',m==='plan'); $('fFix').classList.toggle('hide',m!=='plan');
+  $('type').value=n.type; applyType(); $('loan').value=n.loan; $('r0').value=n.r0;
+  if(m==='have'){ $('start').value=n.start; $('rc').value=n.rc; }
+  $('bal').value='';
+  labels(); calc();
+}
+function labels(){
+  const d=I18N[lang];
+  document.querySelector('[data-i="l_loan"]').innerHTML=mode==='plan'?d.l_loan_p:d.l_loan;
+  document.querySelector('[data-i="l_r0"]').innerHTML=mode==='plan'?d.l_r0_p:d.l_r0;
+}
+
+function chart(rows,e){
+  const d=I18N[lang], W=320,H=200,L=46,R=10,T=12,B=30,w=W-L-R,h=H-T-B;
+  const span=Math.min(144,TERM-e); if(span<2){$('svg').innerHTML='';return;}
+  const S=rows.map(r=>r.slice(e,e+span));
+  let mx=0,mn=Infinity; S.forEach(s=>s.forEach(p=>{mx=Math.max(mx,p.pay);mn=Math.min(mn,p.pay);}));
+  const lo=Math.max(0,mn*0.85), hi=mx*1.05||1;
+  const sx=i=>L+i/(span-1)*w, sy=v=>T+h-(v-lo)/(hi-lo)*h;
+  const k=v=>'$'+(v>=10000?Math.round(v/1000)+'k':(v/1000).toFixed(1)+'k');
+  let s='<line class="ax" x1="'+L+'" y1="'+(T+h)+'" x2="'+(L+w)+'" y2="'+(T+h)+'"/>';
+  [0,.5,1].forEach(f=>{const v=lo+(hi-lo)*f; s+='<line class="gd" x1="'+L+'" y1="'+sy(v)+'" x2="'+(L+w)+'" y2="'+sy(v)+'"/><text x="'+(L-6)+'" y="'+(sy(v)+4)+'" text-anchor="end">'+k(v)+'</text>';});
+  const yrs=Math.floor((span-1)/12), st=yrs>8?4:2;
+  for(let y=0;y<=yrs;y+=st) s+='<text x="'+sx(y*12)+'" y="'+(T+h+16)+'" text-anchor="middle">'+(y===0?d.ax_now:'+'+y)+'</text>';
+  s+='<text x="'+(L+w)+'" y="'+(T+h+28)+'" text-anchor="end">'+d.ax_y+'</text>';
+  const path=(arr,c)=>{let p='';let py=null;arr.forEach((q,i)=>{const x=sx(i),y=sy(q.pay);p+=(i?(' L'+x.toFixed(1)+' '+(py).toFixed(1)+' L'):'M')+x.toFixed(1)+' '+y.toFixed(1);py=y;});return '<path class="'+c+'" d="'+p+'"/>';};
+  s+=path(S[2],'s2')+path(S[1],'s1')+path(S[0],'s0');
+  $('svg').innerHTML=s;
+}
+
+function calc(){
+  const d=I18N[lang], T=TYPES[$('type').value];
+  const o={loan:Math.max(0,num('loan')),f:T.f,a:T.a,c1:num('c1'),c2:num('c2'),c3:num('c3'),r0:num('r0'),mg:num('mg'),idx:num('idx'),io:$('io').checked,bal:num('bal')};
+  let start=NOW, e=0;
+  if(mode==='have'){
+    const v=($('start').value||'').split('-'); if(v.length===2) start={y:+v[0],m:+v[1]-1};
+    e=(NOW.y-start.y)*12+(NOW.m-start.m);
+    o.rc=num('rc')||o.r0;
+  } else o.rc=o.r0;
+  $('ioNote').classList.toggle('hide',!o.io);
+  const st=$('status');
+  if(mode==='have'&&e<0){ st.textContent=d.st_future; st.className='status bad'; return; }
+  if(e>=TERM-1){ st.textContent=d.st_done; st.className='status bad'; return; }
+  o.e=e;
+  const R=[sim(o,0),sim(o,1),sim(o,2)], A=R[0], W=R[1];
+  const now=A[e];
+  let nx=-1; for(let m=e+1;m<TERM;m++){ if(m>=o.f*12&&(m-o.f*12)%o.a===0){nx=m;break;} }
+  const F=o.f*12;
+  const nextRow=nx>=0?A[nx]:now, nd=dstr(addM(start,nx>=0?nx:e));
+  const diff=nextRow.pay-now.pay;
+  $('big').textContent=fmt(nextRow.pay);
+  const dd=$('bigD');
+  if(Math.abs(diff)<1){dd.textContent=d.d_eq;dd.className='d';}
+  else if(diff>0){dd.textContent=fill(d.d_up,{d:fmt(diff),p:Math.round(diff/Math.max(1,now.pay)*100)});dd.className='d up';}
+  else {dd.textContent=fill(d.d_dn,{d:fmt(diff)});dd.className='d dn';}
+  $('pNow').textContent=fmt(now.pay); $('nowS').textContent=now.io?d.io_s:fill(d.now_s,{r:pc(now.rate)});
+  $('rNext').textContent=pc(nextRow.rate); $('nextS').textContent=fill(d.next_s,{d:nd});
+  const full=round8(o.idx+o.mg); $('rFull').textContent=pc(full);
+  const ceil=o.r0+o.c3; $('rCeil').textContent=pc(ceil);
+  let wm=e; for(let m=e;m<TERM;m++){ if(W[m].pay>W[wm].pay+0.5) wm=m; }
+  /* tháng đầu tiên chạm trần lãi trong kịch bản tệ nhất */
+  let cm=-1; for(let m=e;m<TERM;m++){ if(W[m].rate>=ceil-1e-9 && !W[m].io){cm=m;break;} }
+  const wRow=cm>=0?W[cm]:W[wm];
+  $('pWorst').textContent=fmt(wRow.pay); $('worstS').textContent=fill(d.worst_s,{d:dstr(addM(start,cm>=0?cm:wm))});
+  $('bNow').textContent=fmt(now.bal); $('balS').textContent=o.bal>0?d.bal_you:d.bal_est;
+  /* trạng thái */
+  let msg;
+  const months=nx>=0?nx-e:0;
+  if(mode==='plan') msg=fill(d.st_plan,{r:pc(o.r0),y:o.f,d:dstr(addM(start,F)),a:o.a});
+  else if(e<F) msg=fill(d.st_before,{d:dstr(addM(start,F)),n:F-e,a:o.a});
+  else msg=fill(d.st_after,{d:nd,n:months});
+  if(mode==='have'){ if(diff>=1) msg+=fill(d.st_bad,{d:fmt(diff)}); else if(diff<=-1) msg+=fill(d.st_ok,{d:fmt(-diff)}); }
+  st.textContent=msg; st.className='status '+(mode==='have'&&diff>=1?'bad':'ok');
+  /* so với fixed */
+  const fl=$('fixLine');
+  if(mode==='plan'){
+    const rf=num('rf'), fp=pmt(o.loan,rf,TERM); let sv=0; for(let m=0;m<F;m++) sv+=fp-A[m].pay;
+    fl.classList.remove('hide'); fl.className='line '+(sv>=0?'sv':'ng');
+    $('fixN').textContent=fill(sv>=0?d.fix_n:d.fix_n2,{r:pc(rf),y:o.f}); $('fixA').textContent=fmt(Math.abs(sv));
+  } else fl.classList.add('hide');
+  /* bảng các lần đổi */
+  let rows='',c=0;
+  for(let m=e+1;m<TERM&&c<6;m++){ if(m>=F&&(m-F)%o.a===0){ rows+='<tr><td>'+dstr(addM(start,m))+'</td><td>'+pc(A[m].rate)+'</td><td>'+fmt(A[m].pay)+'</td><td class="w">'+pc(W[m].rate)+' · '+fmt(W[m].pay)+'</td></tr>'; c++; } }
+  $('sch').innerHTML=rows;
+  chart(R,e);
+  last={t:$('type').value,l:fmt(o.loan),sd:dstr(start),r0:o.r0,rc:o.rc,ix:INDEX[$('idxT').value][lang],iv:o.idx,mg:o.mg,cp:o.c1+'/'+o.c2+'/'+o.c3,io:o.io?'yes':'no',
+        b:fmt(now.bal),p0:fmt(now.pay),nd,rn:pc(nextRow.rate),pn:fmt(nextRow.pay),rf:pc(full),rx:pc(ceil),pw:fmt(wRow.pay)};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  const oldF=Math.min(round8(INDEX.sofr30.v+2.75),round8(INDEX.tsofr12.v+2.25)), oldT=Math.max(round8(INDEX.sofr30.v+2.75),round8(INDEX.tsofr12.v+2.25));
+  document.querySelector('[data-i="old1"]').innerHTML=fill(d.old1,{f:oldF+'–'+oldT+'%'});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  fillSelects(); labels(); calc();
+}
+$('srcList').innerHTML=SOURCES.map(s=>'<a href="'+s[0]+'" target="_blank" rel="noopener">'+s[1]+'</a>').join(' · ')+' (checked '+UPDATED+')';
+$('upd').textContent=UPDATED;
+$('rf').value=FIXED30;
+['loan','start','r0','rc','rf','idx','mg','c1','c2','c3','bal','io'].forEach(id=>$(id).addEventListener('input',calc));
+$('type').addEventListener('change',()=>{applyType();calc();});
+$('idxT').addEventListener('change',()=>{$('idx').value=INDEX[$('idxT').value].v;calc();});
+$('mHave').onclick=()=>{if(mode!=='have')setMode('have');};
+$('mPlan').onclick=()=>{if(mode!=='plan')setMode('plan');};
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], v={...last,nm:$('fname').value.trim()||'—',e:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'};
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,v))+'&body='+encodeURIComponent(fill(d.body,v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){} };
+fillSelects(); $('type').value=SAVED.have.type; applyType(); applyLang();
+
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
