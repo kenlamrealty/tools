@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rental Property Cash Flow · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Rental property calculator for Bay Area investors: NOI, cap rate, monthly cash flow, cash-on-cash return, DSCR, GRM, break-even occupancy and a simple 5-year IRR.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t146/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Rental Property Cash Flow · Ken Lam Tools">
+<meta property="og:description" content="Cap rate, cash flow, cash-on-cash, DSCR and 5-year IRR for a rental, with Bay Area defaults.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t146/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T146 additions */
+.hide{display:none!important}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.sec-k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:6px 0 0}
+.chip{display:inline-block;font-size:12px;font-weight:500;line-height:1.2;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;margin-left:8px}
+.chip.g{color:var(--ok);border-color:var(--ok)}
+.chip.y{color:var(--brass);border-color:var(--brass)}
+.chip.r{color:var(--warn);border-color:var(--warn);background:var(--brass-soft)}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.line .a{display:flex;align-items:center}
+.total .v.neg{color:var(--warn)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Does this rental actually make money?</h1>
+    <p class="sub" data-i="sub">Price, loan, rent, expenses. See cap rate, monthly cash flow and return on your cash, live.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <p class="sec-k" data-i="k_buy">Purchase and loan</p>
+    <div class="field">
+      <label for="price"><span data-i="l_price">Purchase price</span></label>
+      <div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" min="0" step="5000" value="1400000"></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="down"><span data-i="l_down">Down payment</span> <small data-i="l_down_s">(investors: often 25%)</small></label>
+        <div class="ctl"><input id="down" type="number" inputmode="decimal" min="0" max="100" step="1" value="25"><span class="post">%</span></div>
+      </div>
+      <div class="field">
+        <label for="rate"><span data-i="l_rate">Interest rate</span> <small data-i="l_rate_s">(estimate, edit)</small></label>
+        <div class="ctl"><input id="rate" type="number" inputmode="decimal" min="0" max="20" step="0.01" value="7.74"><span class="post">%</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="cc"><span data-i="l_cc">Closing costs</span> <small data-i="l_cc_s">(% of price, estimate)</small></label>
+      <div class="ctl"><input id="cc" type="number" inputmode="decimal" min="0" max="10" step="0.1" value="2"><span class="post">%</span></div>
+    </div>
+
+    <p class="sec-k" data-i="k_inc">Income</p>
+    <div class="field">
+      <span class="fl" data-i="l_mode">Rent entered as</span>
+      <div class="seg" role="group" id="mode">
+        <button type="button" data-v="units" aria-pressed="true" data-i="m_units">Units × rent</button>
+        <button type="button" data-v="total" aria-pressed="false" data-i="m_total">Total rent</button>
+      </div>
+    </div>
+    <div class="row2" id="unitsRow">
+      <div class="field">
+        <label for="nunits"><span data-i="l_nunits">Units</span></label>
+        <div class="ctl"><input id="nunits" type="number" inputmode="numeric" min="1" max="50" step="1" value="4"></div>
+      </div>
+      <div class="field">
+        <label for="urent"><span data-i="l_urent">Rent per unit</span></label>
+        <div class="ctl"><span class="pre">$</span><input id="urent" type="number" inputmode="numeric" min="0" step="25" value="2450"><span class="post" data-i="per_mo">/mo</span></div>
+      </div>
+    </div>
+    <div class="field hide" id="totalRow">
+      <label for="trent"><span data-i="l_trent">Total monthly rent</span></label>
+      <div class="ctl"><span class="pre">$</span><input id="trent" type="number" inputmode="numeric" min="0" step="50" value="9800"><span class="post" data-i="per_mo2">/mo</span></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="oth"><span data-i="l_oth">Other income</span> <small data-i="l_oth_s">(laundry, parking)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="oth" type="number" inputmode="numeric" min="0" step="25" value="0"><span class="post" data-i="per_mo3">/mo</span></div>
+      </div>
+      <div class="field">
+        <label for="vac"><span data-i="l_vac">Vacancy</span></label>
+        <div class="ctl"><input id="vac" type="number" inputmode="decimal" min="0" max="100" step="1" value="5"><span class="post">%</span></div>
+      </div>
+    </div>
+
+    <p class="sec-k" data-i="k_exp">Expenses</p>
+    <div class="row2">
+      <div class="field">
+        <label for="tax"><span data-i="l_tax">Property tax</span> <small data-i="l_tax_s">(% of price/yr)</small></label>
+        <div class="ctl"><input id="tax" type="number" inputmode="decimal" min="0" max="5" step="0.05" value="1.25"><span class="post">%</span></div>
+      </div>
+      <div class="field">
+        <label for="ins"><span data-i="l_ins">Insurance</span> <small data-i="l_ins_s">(estimate)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="ins" type="number" inputmode="numeric" min="0" step="100" value="4900"><span class="post" data-i="per_yr">/yr</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="hoa"><span data-i="l_hoa">HOA</span></label>
+        <div class="ctl"><span class="pre">$</span><input id="hoa" type="number" inputmode="numeric" min="0" step="25" value="0"><span class="post" data-i="per_mo4">/mo</span></div>
+      </div>
+      <div class="field">
+        <label for="util"><span data-i="l_util">Utilities owner pays</span></label>
+        <div class="ctl"><span class="pre">$</span><input id="util" type="number" inputmode="numeric" min="0" step="25" value="350"><span class="post" data-i="per_mo5">/mo</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="rep"><span data-i="l_rep">Repairs</span> <small data-i="l_pct_rent">(% of rent)</small></label>
+        <div class="ctl"><input id="rep" type="number" inputmode="decimal" min="0" max="50" step="1" value="5"><span class="post">%</span></div>
+      </div>
+      <div class="field">
+        <label for="capex"><span data-i="l_capex">CapEx</span> <small data-i="l_pct_rent2">(% of rent)</small></label>
+        <div class="ctl"><input id="capex" type="number" inputmode="decimal" min="0" max="50" step="1" value="5"><span class="post">%</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="mgmt"><span data-i="l_mgmt">Property management</span> <small data-i="l_mgmt_s">(% of rent, 0 if you self-manage)</small></label>
+      <div class="ctl"><input id="mgmt" type="number" inputmode="decimal" min="0" max="50" step="1" value="8"><span class="post">%</span></div>
+    </div>
+
+    <p class="sec-k" data-i="k_5y">5-year view</p>
+    <div class="row2">
+      <div class="field">
+        <label for="app"><span data-i="l_app">Home value growth</span> <small data-i="l_yr">(per year)</small></label>
+        <div class="ctl"><input id="app" type="number" inputmode="decimal" min="-20" max="20" step="0.5" value="3"><span class="post">%</span></div>
+      </div>
+      <div class="field">
+        <label for="rg"><span data-i="l_rg">Rent growth</span> <small data-i="l_yr2">(per year)</small></label>
+        <div class="ctl"><input id="rg" type="number" inputmode="decimal" min="-20" max="20" step="0.5" value="3"><span class="post">%</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">Monthly cash flow</div>
+      <div class="v" id="cfV"><span id="cf">$0</span> <small data-i="per_mo6">/mo</small></div>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b>NOI</b><small data-i="n_noi_s">Net operating income, before the mortgage</small></span><span class="a" id="noi">$0</span></div>
+      <div class="line"><span class="n"><b>Cap rate</b><small data-i="n_cap_s">NOI ÷ price</small></span><span class="a"><span id="cap">0%</span><span class="chip" id="cCap"></span></span></div>
+      <div class="line"><span class="n"><b>Cash-on-cash</b><small data-i="n_coc_s">Yearly cash flow ÷ cash you put in</small></span><span class="a"><span id="coc">0%</span><span class="chip" id="cCoc"></span></span></div>
+      <div class="line"><span class="n"><b>DSCR</b><small data-i="n_dscr_s">NOI ÷ mortgage payments</small></span><span class="a"><span id="dscr">0</span><span class="chip" id="cDscr"></span></span></div>
+      <div class="line"><span class="n"><b>GRM</b><small data-i="n_grm_s">Price ÷ yearly gross rent</small></span><span class="a"><span id="grm">0</span><span class="chip" id="cGrm"></span></span></div>
+      <div class="line"><span class="n"><b data-i="n_beo">Break-even occupancy</b><small data-i="n_beo_s">How full it must be to cover all bills</small></span><span class="a"><span id="beo">0%</span><span class="chip" id="cBeo"></span></span></div>
+      <div class="line"><span class="n"><b data-i="n_irr">5-year IRR</b><small data-i="n_irr_s">Cash flow + sale after 5 years, simple estimate</small></span><span class="a"><span id="irr">—</span><span class="chip" id="cIrr"></span></span></div>
+    </div>
+    <div class="meta">
+      <span><span data-i="m_cash">Cash needed</span>: <b id="cash">$0</b> · <span data-i="m_loan">Loan</span>: <b id="loan">$0</b></span>
+      <span><span data-i="m_pi">Mortgage (P&amp;I)</span>: <b id="pi">$0</b><span data-i="m_mo">/mo</span> · <span data-i="m_gross">Gross rent</span>: <b id="gross">$0</b><span data-i="m_yr">/yr</span></span>
+      <span><span data-i="m_opex">Operating expenses</span>: <b id="opex">$0</b><span data-i="m_yr2">/yr</span> · <span data-i="m_sale">Equity at year 5</span>: <b id="eq5">$0</b></span>
+    </div>
+    <div class="note hide" id="negNote"></div>
+    <div class="note" id="dscrNote" data-i="dscr_note">Lenders who qualify on the property's rent (DSCR loans) often want DSCR of 1.0 to 1.25 or higher. Ask your lender.</div>
+    <p class="hint" data-i="rule">Good / ok / weak cutoffs are rules of thumb, not rules. Bay Area cap rates are often low because prices are high.</p>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t146/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this analysis to yourself</h2>
+    <p data-i="f_sub">Ken will reply and can run it on real listings and rents. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Check the rent you typed against real numbers. HUD fair market rents for Santa Clara and Alameda are in <a href="/t51/">T51</a>.</li>
+      <li data-i="ns2">Get a real investor loan quote. Investment property rates usually run higher than the rate you see on the news.</li>
+      <li data-i="ns3">Know how much you can raise rent later. AB 1482 and city rules are in <a href="/t55/">T55</a>.</li>
+      <li data-i="ns4">Selling another rental to buy this one? See if a 1031 exchange fits with <a href="/t27/">T27</a>.</li>
+    </ol>
+  </section>
+  <p class="myth" data-i="myth"><b>Many people get this wrong:</b> "cap rate includes my mortgage." It doesn't. Cap rate is NOI ÷ price, as if you paid cash. Your loan shows up in cash flow, cash-on-cash and DSCR.</p>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#dau-tu-nha-cho-thue" target="_blank" rel="noopener" data-i="ft_lib">Rental property math, step by step</a> · <a href="https://kenlamrealty.com/library#video-cap-rate" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span><span data-i="ft_src">Sources:</span> <a href="https://www.freddiemac.com/pmms" target="_blank" rel="noopener">Freddie Mac PMMS (30-yr 7.24%, 29/10/2026)</a> · <a href="https://www.boe.ca.gov/proptaxes/pdf/pub29.pdf" target="_blank" rel="noopener">CA BOE Pub 29 (Prop 13, 1% base + local bonds)</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=1947.12" target="_blank" rel="noopener">Civil Code §1947.12 (AB 1482)</a> <span data-i="ft_chk">(checked 04/11/2026)</span></span>
+    <span data-i="ft_est">Estimates only. Investor rate add-on, insurance, closing and selling costs are estimates. Not tax or investment advice; depreciation and income tax are not included.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Assumptions — edit here (checked 04/11/2026) =====
+   BASE_RATE 7.24%: Freddie Mac PMMS 30-yr fixed, 29/10/2026 https://www.freddiemac.com/pmms
+   INVESTOR_ADD 0.50%: investment-property pricing add-on, ước tính — KEN DUYỆT (varies by lender, credit, LTV)
+   TAX 1.25%/yr: Santa Clara & Alameda typical (1% Prop 13 base + voter bonds), project standard; BOE Pub 29
+        https://www.boe.ca.gov/proptaxes/pdf/pub29.pdf . Prop 13: assessed value grows max 2%/yr → TAX_GROWTH.
+   Default insurance ~0.35% of price/yr ($4,900 on $1.4M fourplex), ước tính — KEN DUYỆT
+   Closing 2% buyer side, SELL_COST 6% at year-5 sale (commission + transfer tax + escrow), ước tính — KEN DUYỆT
+   EXP_GROWTH 3%/yr for insurance, HOA, utilities, ước tính.
+   Default rent $2,450/unit (2BR-ish, Alameda/Santa Clara fourplex), ước tính — check HUD FMR in /t51/.
+   Chip cutoffs = rules of thumb (see TH). */
+const BASE_RATE=7.24, INVESTOR_ADD=0.50, TAX_GROWTH=0.02, EXP_GROWTH=0.03, SELL_COST=0.06, TERM=30;
+const TH={ /* [good if >=, ok if >=] unless inverted */
+  cap:[6,4], coc:[8,4], dscr:[1.25,1.0], cf:[100,0], irr:[10,6],
+  grm:[12,18], beo:[80,95] /* lower is better */
+};
+
+const I18N={
+ en:{title:'Does this rental actually make money?',sub:'Price, loan, rent, expenses. See cap rate, monthly cash flow and return on your cash, live.',
+  k_buy:'Purchase and loan',k_inc:'Income',k_exp:'Expenses',k_5y:'5-year view',
+  l_price:'Purchase price',l_down:'Down payment',l_down_s:'(investors: often 25%)',l_rate:'Interest rate',l_rate_s:'(estimate, edit)',
+  l_cc:'Closing costs',l_cc_s:'(% of price, estimate)',l_mode:'Rent entered as',m_units:'Units × rent',m_total:'Total rent',
+  l_nunits:'Units',l_urent:'Rent per unit',l_trent:'Total monthly rent',per_mo:'/mo',per_mo2:'/mo',per_mo3:'/mo',per_mo4:'/mo',per_mo5:'/mo',per_mo6:'/mo',per_yr:'/yr',
+  l_oth:'Other income',l_oth_s:'(laundry, parking)',l_vac:'Vacancy',l_tax:'Property tax',l_tax_s:'(% of price/yr)',l_ins:'Insurance',l_ins_s:'(estimate)',
+  l_hoa:'HOA',l_util:'Utilities owner pays',l_rep:'Repairs',l_pct_rent:'(% of rent)',l_capex:'CapEx',l_pct_rent2:'(% of rent)',
+  l_mgmt:'Property management',l_mgmt_s:'(% of rent, 0 if you self-manage)',l_app:'Home value growth',l_yr:'(per year)',l_rg:'Rent growth',l_yr2:'(per year)',
+  r_total:'Monthly cash flow',n_noi_s:'Net operating income, before the mortgage',n_cap_s:'NOI ÷ price',n_coc_s:'Yearly cash flow ÷ cash you put in',
+  n_dscr_s:'NOI ÷ mortgage payments',n_grm_s:'Price ÷ yearly gross rent',n_beo:'Break-even occupancy',n_beo_s:'How full it must be to cover all bills',
+  n_irr:'5-year IRR',n_irr_s:'Cash flow + sale after 5 years, simple estimate',
+  m_cash:'Cash needed',m_loan:'Loan',m_pi:'Mortgage (P&amp;I)',m_mo:'/mo',m_gross:'Gross rent',m_yr:'/yr',m_yr2:'/yr',m_opex:'Operating expenses',m_sale:'Equity at year 5',
+  c_g:'Good',c_y:'OK',c_r:'Weak',
+  neg:'<b>You pay {x}/mo out of pocket</b> to hold this property. Rent would need to be about {r}/mo to break even. Some buyers accept this and count on price growth. That’s a bet on the market, not cash flow.',
+  dscr_note:"Lenders who qualify on the property's rent (DSCR loans) often want DSCR of 1.0 to 1.25 or higher. Ask your lender.",
+  rule:'Good / ok / weak cutoffs are rules of thumb, not rules. Bay Area cap rates are often low because prices are high.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this analysis to yourself',f_sub:'Ken will reply and can run it on real listings and rents. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ns_t:'Next steps',
+  ns1:'Check the rent you typed against real numbers. HUD fair market rents for Santa Clara and Alameda are in <a href="/t51/">T51</a>.',
+  ns2:'Get a real investor loan quote. Investment property rates usually run higher than the rate you see on the news.',
+  ns3:'Know how much you can raise rent later. AB 1482 and city rules are in <a href="/t55/">T55</a>.',
+  ns4:'Selling another rental to buy this one? See if a 1031 exchange fits with <a href="/t27/">T27</a>.',
+  myth:'<b>Many people get this wrong:</b> "cap rate includes my mortgage." It doesn’t. Cap rate is NOI ÷ price, as if you paid cash. Your loan shows up in cash flow, cash-on-cash and DSCR.',
+  ft_read:'Read more:',ft_lib:'Rental property math, step by step',ft_vid:'3-min video',ft_src:'Sources:',ft_chk:'(checked 04/11/2026)',
+  ft_est:'Estimates only. Investor rate add-on, insurance, closing and selling costs are estimates. Not tax or investment advice; depreciation and income tax are not included.',
+  ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I ran a rental on tools.kenlamrealty.com: price {p}, rent {g}/yr, cap rate {cap}, cash flow {cf}/mo. Can we talk?',
+  subj:'Rental analysis — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nPrice: {p}\nDown: {d}% · Rate: {r}% · Closing: {cc}%\nGross rent: {g}/yr · Vacancy {v}%\nOperating expenses: {ox}/yr\n\nNOI: {noi}/yr\nCap rate: {cap}\nMortgage P&I: {pi}/mo\nCash flow: {cf}/mo\nCash-on-cash: {coc}\nDSCR: {dscr}\nGRM: {grm}\nBreak-even occupancy: {beo}\n5-yr IRR (app {app}%): {irr}\nCash needed: {cash}\n\nSent from tool T146 tools.kenlamrealty.com'},
+ vi:{title:'Căn nhà cho thuê này có lời không?',sub:'Nhập giá, loan, tiền thuê, chi phí. Ra liền cap rate, tiền dư mỗi tháng và lời trên tiền mình bỏ ra.',
+  k_buy:'Mua và vay',k_inc:'Tiền thu',k_exp:'Chi phí',k_5y:'Nhìn 5 năm',
+  l_price:'Giá mua',l_down:'Tiền down',l_down_s:'(nhà đầu tư: thường 25%)',l_rate:'Lãi suất',l_rate_s:'(ước tính, sửa được)',
+  l_cc:'Closing cost',l_cc_s:'(% giá, ước tính)',l_mode:'Nhập tiền thuê theo',m_units:'Số căn × tiền thuê',m_total:'Tổng tiền thuê',
+  l_nunits:'Số căn',l_urent:'Tiền thuê mỗi căn',l_trent:'Tổng tiền thuê/tháng',per_mo:'/tháng',per_mo2:'/tháng',per_mo3:'/tháng',per_mo4:'/tháng',per_mo5:'/tháng',per_mo6:'/tháng',per_yr:'/năm',
+  l_oth:'Thu thêm',l_oth_s:'(máy giặt, chỗ đậu xe)',l_vac:'Thời gian trống',l_tax:'Thuế nhà',l_tax_s:'(% giá/năm)',l_ins:'Bảo hiểm',l_ins_s:'(ước tính)',
+  l_hoa:'HOA',l_util:'Điện nước chủ trả',l_rep:'Sửa vặt',l_pct_rent:'(% tiền thuê)',l_capex:'Sửa lớn (CapEx)',l_pct_rent2:'(% tiền thuê)',
+  l_mgmt:'Công ty quản lý',l_mgmt_s:'(% tiền thuê, tự quản lý thì 0)',l_app:'Nhà lên giá',l_yr:'(mỗi năm)',l_rg:'Tiền thuê tăng',l_yr2:'(mỗi năm)',
+  r_total:'Tiền dư mỗi tháng',n_noi_s:'Tiền thu trừ chi phí, chưa trừ tiền nhà',n_cap_s:'NOI ÷ giá mua',n_coc_s:'Tiền dư 1 năm ÷ tiền mình bỏ ra',
+  n_dscr_s:'NOI ÷ tiền trả loan',n_grm_s:'Giá ÷ tiền thuê 1 năm',n_beo:'Phải cho thuê đủ bao nhiêu %',n_beo_s:'Mức đầy để đủ trả hết bill',
+  n_irr:'IRR 5 năm',n_irr_s:'Tiền dư + bán nhà sau 5 năm, ước tính đơn giản',
+  m_cash:'Tiền mặt cần',m_loan:'Loan',m_pi:'Tiền nhà (P&amp;I)',m_mo:'/tháng',m_gross:'Tiền thuê',m_yr:'/năm',m_yr2:'/năm',m_opex:'Chi phí vận hành',m_sale:'Vốn trong nhà năm thứ 5',
+  c_g:'Tốt',c_y:'Tạm',c_r:'Yếu',
+  neg:'<b>Mỗi tháng mình bù {x}</b> để giữ căn này. Tiền thuê phải khoảng {r}/tháng mới huề. Có người chấp nhận và trông nhà lên giá. Đó là đánh cược vào thị trường, không phải cash flow.',
+  dscr_note:'Lender cho vay dựa trên tiền thuê (DSCR loan) thường muốn DSCR từ 1.0 tới 1.25 trở lên. Hỏi lender cho chắc.',
+  rule:'Mốc tốt/tạm/yếu là kinh nghiệm chung, không phải luật. Ở Bay Area cap rate hay thấp vì giá nhà cao.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi bảng tính này về email',f_sub:'Ken nhận được sẽ trả lời và có thể tính trên nhà thật, tiền thuê thật. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ns_t:'Bước tiếp theo',
+  ns1:'So tiền thuê mình nhập với số thật. Giá thuê HUD (FMR) của Santa Clara và Alameda có trong <a href="/t51/">T51</a>.',
+  ns2:'Xin lender báo lãi thật cho nhà đầu tư. Lãi nhà cho thuê thường cao hơn số trên tin tức.',
+  ns3:'Biết trước sau này tăng tiền thuê được bao nhiêu. AB 1482 và luật thành phố ở <a href="/t55/">T55</a>.',
+  ns4:'Bán căn cho thuê khác để mua căn này? Coi 1031 exchange có hợp không ở <a href="/t27/">T27</a>.',
+  myth:'<b>Nhiều người hiểu sai:</b> "cap rate có tính tiền loan." Không có. Cap rate là NOI ÷ giá, coi như mua cash. Tiền loan nằm ở cash flow, cash-on-cash và DSCR.',
+  ft_read:'Đọc thêm:',ft_lib:'Tính nhà cho thuê từng bước',ft_vid:'Video 3 phút',ft_src:'Nguồn:',ft_chk:'(tra 04/11/2026)',
+  ft_est:'Chỉ là ước tính. Phần cộng thêm lãi cho nhà đầu tư, bảo hiểm, closing và chi phí bán là ước tính. Không phải tư vấn thuế hay đầu tư; chưa tính khấu hao và thuế thu nhập.',
+  ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa tính nhà cho thuê trên tools.kenlamrealty.com: giá {p}, tiền thuê {g}/năm, cap rate {cap}, dư {cf}/tháng. Cho tôi hỏi thêm.',
+  subj:'Tính nhà cho thuê — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nGiá: {p}\nDown: {d}% · Lãi: {r}% · Closing: {cc}%\nTiền thuê: {g}/năm · Trống {v}%\nChi phí vận hành: {ox}/năm\n\nNOI: {noi}/năm\nCap rate: {cap}\nTiền nhà P&I: {pi}/tháng\nTiền dư: {cf}/tháng\nCash-on-cash: {coc}\nDSCR: {dscr}\nGRM: {grm}\nPhải cho thuê đủ: {beo}\nIRR 5 năm (lên giá {app}%): {irr}\nTiền mặt cần: {cash}\n\nGửi từ tool T146 tools.kenlamrealty.com'}
+};
+let lang='en', mode='units', last={};
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'-$':'$')+Math.abs(Math.round(n)).toLocaleString('en-US');
+const pct=(x,dp=1)=>isFinite(x)?(x*100).toFixed(dp)+'%':'—';
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]!=null?v[k]:m);
+
+function pmt(loan,ratePct,years){ const r=ratePct/100/12,n=years*12; if(loan<=0) return 0; return r===0?loan/n:loan*r/(1-Math.pow(1+r,-n)); }
+function balance(loan,ratePct,years,months){ const r=ratePct/100/12; if(loan<=0) return 0; if(r===0) return loan*(1-months/(years*12));
+  const p=pmt(loan,ratePct,years); return loan*Math.pow(1+r,months)-p*(Math.pow(1+r,months)-1)/r; }
+function irr(flows){ const npv=x=>flows.reduce((s,c,t)=>s+c/Math.pow(1+x,t),0);
+  let lo=-0.99,hi=1.5,flo=npv(lo),fhi=npv(hi); if(!isFinite(flo)||!isFinite(fhi)||flo*fhi>0) return NaN;
+  for(let i=0;i<200;i++){ const m=(lo+hi)/2,fm=npv(m); if(Math.abs(fm)<1e-6) return m; if(flo*fm<0){hi=m;}else{lo=m;flo=fm;} } return (lo+hi)/2; }
+
+/* Pure model — all annual unless named */
+function model(i){
+  const down=i.price*i.downPct/100, loan=Math.max(0,i.price-down), cash=down+i.price*i.ccPct/100;
+  const piM=pmt(loan,i.rate,TERM), ads=piM*12;
+  const yr=t=>{ /* t = 0-based year */
+    const g=Math.pow(1+i.rg/100,t), e=Math.pow(1+EXP_GROWTH,t);
+    const gsi=(i.rentM+i.othM)*12*g, egi=gsi*(1-i.vac/100);
+    const fixed=i.price*i.taxPct/100*Math.pow(1+TAX_GROWTH,t)+(i.ins+i.hoaM*12+i.utilM*12)*e;
+    const pctx=egi*(i.rep+i.capex+i.mgmt)/100;
+    return {gsi,egi,opex:fixed+pctx,noi:egi-fixed-pctx};
+  };
+  const y1=yr(0);
+  const cf=y1.noi-ads;
+  const sale=i.price*Math.pow(1+i.app/100,5);
+  const eq5=sale*(1-SELL_COST)-balance(loan,i.rate,TERM,60);
+  const flows=[-cash]; for(let t=0;t<5;t++){ flows.push(yr(t).noi-ads+(t===4?eq5:0)); }
+  /* break-even rent: monthly rent where cash flow = 0 (vacancy & % expenses scale with rent) */
+  const k=(1-i.vac/100)*(1-(i.rep+i.capex+i.mgmt)/100)*12;
+  const fixed1=y1.opex-y1.egi*(i.rep+i.capex+i.mgmt)/100;
+  const beRent=k>0?(fixed1+ads)/k-i.othM:NaN;
+  return {down,loan,cash,piM,ads,gsi:y1.gsi,egi:y1.egi,opex:y1.opex,noi:y1.noi,
+    cap:i.price>0?y1.noi/i.price:NaN, cfM:cf/12, coc:cash>0?cf/cash:NaN, dscr:ads>0?y1.noi/ads:NaN,
+    grm:y1.gsi>0?i.price/y1.gsi:NaN, beo:y1.gsi>0?(y1.opex+ads)/y1.gsi:NaN, irr:irr(flows), eq5, beRent};
+}
+function chip(id,v,key){
+  const d=I18N[lang], t=TH[key], low=(key==='grm'||key==='beo'); let c='';
+  if(isFinite(v)){ c= low ? (v<=t[0]?'g':v<=t[1]?'y':'r') : (v>=t[0]?'g':v>=t[1]?'y':'r'); }
+  const el=$(id); el.className='chip '+c; el.textContent=c?d['c_'+c]:''; el.style.display=c?'':'none'; return c;
+}
+function inputs(){
+  const rentM = mode==='units' ? num('nunits')*num('urent') : num('trent');
+  return {price:num('price'),downPct:Math.min(100,Math.max(0,num('down'))),rate:num('rate'),ccPct:num('cc'),rentM,othM:num('oth'),vac:num('vac'),
+    taxPct:num('tax'),ins:num('ins'),hoaM:num('hoa'),utilM:num('util'),rep:num('rep'),capex:num('capex'),mgmt:num('mgmt'),app:num('app'),rg:num('rg')};
+}
+function calc(){
+  const d=I18N[lang], i=inputs(), m=model(i);
+  $('cf').textContent=fmt(m.cfM); $('cfV').classList.toggle('neg',m.cfM<0);
+  $('noi').textContent=fmt(m.noi);
+  $('cap').textContent=pct(m.cap,2); chip('cCap',m.cap*100,'cap');
+  $('coc').textContent=pct(m.coc); chip('cCoc',m.coc*100,'coc');
+  $('dscr').textContent=isFinite(m.dscr)?m.dscr.toFixed(2):'—'; chip('cDscr',m.dscr,'dscr');
+  $('grm').textContent=isFinite(m.grm)?m.grm.toFixed(1):'—'; chip('cGrm',m.grm,'grm');
+  $('beo').textContent=pct(m.beo,0); chip('cBeo',m.beo*100,'beo');
+  $('irr').textContent=pct(m.irr); chip('cIrr',m.irr*100,'irr');
+  $('cash').textContent=fmt(m.cash); $('loan').textContent=fmt(m.loan); $('pi').textContent=fmt(m.piM);
+  $('gross').textContent=fmt(m.gsi); $('opex').textContent=fmt(m.opex); $('eq5').textContent=fmt(m.eq5);
+  const neg=m.cfM<0; $('negNote').classList.toggle('hide',!neg);
+  if(neg) $('negNote').innerHTML=fill(d.neg,{x:fmt(-m.cfM),r:isFinite(m.beRent)?fmt(m.beRent):'—'});
+  last={p:fmt(i.price),d:i.downPct,r:i.rate,cc:i.ccPct,g:fmt(m.gsi),v:i.vac,ox:fmt(m.opex),noi:fmt(m.noi),cap:pct(m.cap,2),pi:fmt(m.piM),cf:fmt(m.cfM),
+    coc:pct(m.coc),dscr:isFinite(m.dscr)?m.dscr.toFixed(2):'—',grm:isFinite(m.grm)?m.grm.toFixed(1):'—',beo:pct(m.beo,0),irr:pct(m.irr),app:i.app,cash:fmt(m.cash)};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+}
+function setMode(v){ mode=v; document.querySelectorAll('#mode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v?'true':'false'));
+  $('unitsRow').classList.toggle('hide',v!=='units'); $('totalRow').classList.toggle('hide',v==='units');
+  if(v==='total') $('trent').value=Math.round(num('nunits')*num('urent')); calc(); }
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+['price','down','rate','cc','nunits','urent','trent','oth','vac','tax','ins','hoa','util','rep','capex','mgmt','app','rg'].forEach(id=>$(id).addEventListener('input',calc));
+$('mode').addEventListener('click',e=>{const b=e.target.closest('button'); if(b) setMode(b.dataset.v);});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const v=Object.assign({},last,{n,e,ph});
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,v))+'&body='+encodeURIComponent(fill(d.body,v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+window.__model=model;
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

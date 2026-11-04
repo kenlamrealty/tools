@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Condo HOA Questions · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="20 questions to ask the HOA before you buy a condo or townhome: reserves, special assessments, rules, building, lawsuits, FHA/VA and Fannie/Freddie approval. Enter the numbers from the HOA docs and see red flags.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t144/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Condo HOA Questions · Ken Lam Tools">
+<meta property="og:description" content="20 questions to ask the HOA before you buy a condo, with red-flag thresholds and a loan-risk check.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t144/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T144 additions */
+.hide{display:none!important}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.sec-k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:0}
+.chip{display:inline-block;font-size:12px;font-weight:500;line-height:1.2;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.g{color:var(--ok);border-color:var(--ok)}
+.chip.y{color:var(--brass);border-color:var(--brass)}
+.chip.r{color:var(--warn);border-color:var(--warn);background:var(--brass-soft)}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.total .v.redc{color:var(--warn)}
+.grp{display:grid;gap:0;border-top:1px solid var(--line)}
+.grp h3{font-family:var(--display);font-weight:400;font-size:22px;margin:14px 0 4px}
+.q{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;padding:10px 0;border-bottom:1px solid var(--line);align-items:start}
+.q input{accent-color:var(--brass);width:18px;height:18px;margin:3px 0 0}
+.qt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;text-align:left;padding:0;cursor:pointer;line-height:1.4}
+.qt::after{content:" +";color:var(--brass)}
+.qt[aria-expanded="true"]::after{content:" \2212"}
+.q.done .qt{color:var(--muted)}
+.why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.45;display:grid;gap:4px}
+.why b{color:var(--warn);font-weight:500}
+.prog{display:grid;gap:6px}
+.prog .k{font-size:13px;color:var(--muted)}
+.prog .k b{color:var(--fg);font-weight:500}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.smallbtn{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;cursor:pointer;justify-self:start}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Buying a condo? Ask the HOA these 20 questions</h1>
+    <p class="sub" data-i="sub">Type in a few numbers from the HOA docs. Red flags show up right away. Then tick off the questions as you get answers.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <p class="sec-k" data-i="in_k">From the HOA docs (optional, skip what you don't have)</p>
+    <div class="row2">
+      <div class="field">
+        <label for="res"><span data-i="l_res">Reserves funded</span> <small data-i="l_res_s">(§5570 summary, item 6)</small></label>
+        <div class="ctl"><input id="res" type="number" inputmode="decimal" min="0" max="200" step="1" value="28"><span class="post">%</span></div>
+      </div>
+      <div class="field">
+        <label for="dues"><span data-i="l_dues">HOA dues</span></label>
+        <div class="ctl"><span class="pre">$</span><input id="dues" type="number" inputmode="numeric" min="0" step="10" value="385"><span class="post" data-i="per_mo">/mo</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="units"><span data-i="l_units">Units in the HOA</span></label>
+        <div class="ctl"><input id="units" type="number" inputmode="numeric" min="0" step="1" value="96"></div>
+      </div>
+      <div class="field">
+        <label for="rent"><span data-i="l_rent">Units rented out</span></label>
+        <div class="ctl"><input id="rent" type="number" inputmode="decimal" min="0" max="100" step="1" value="35"><span class="post">%</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="del"><span data-i="l_del">Owners 60+ days late</span> <small data-i="l_del_s">(% of units)</small></label>
+        <div class="ctl"><input id="del" type="number" inputmode="decimal" min="0" max="100" step="1" value="4"><span class="post">%</span></div>
+      </div>
+      <div class="field">
+        <label for="sa"><span data-i="l_sa">Special assessment coming</span> <small data-i="l_sa_s">(your unit's share)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="sa" type="number" inputmode="numeric" min="0" step="500" value="0"></div>
+      </div>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_lit">Is the HOA in a lawsuit?</span>
+      <div class="seg" role="group" id="lit">
+        <button type="button" data-v="no" aria-pressed="true" data-i="lit_no">No</button>
+        <button type="button" data-v="yes" aria-pressed="false" data-i="lit_yes">Yes</button>
+        <button type="button" data-v="unk" aria-pressed="false" data-i="lit_unk">Don't know</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">Red flags</div>
+      <div class="v" id="redV"><span id="red">0</span> <small id="yelS"></small></div>
+    </div>
+    <div class="lines" id="lines"></div>
+    <div class="meta" id="meta"></div>
+    <div class="note" id="loanNote"></div>
+    <div class="note hide" id="mythNote" data-i="myth_note">Low dues with low reserves usually means the HOA has been saving too little. The bill comes later as a special assessment or a big dues jump.</div>
+    <p class="hint" data-i="rule">Green / yellow / red cutoffs are rules of thumb, except where a lender rule is named. Every lender reads the HOA a little differently.</p>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t144/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this checklist to yourself</h2>
+    <p data-i="f_sub">Ken will reply and can go through the HOA docs with you. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="ck_t">The 20 questions</h2>
+    <p class="hint" data-i="ck_s">Tap a question to see why it matters and what a red flag looks like. Tick it once you have the answer in writing.</p>
+    <div class="prog">
+      <div class="k"><b id="progN">0/20</b> <span data-i="prog_k">answered</span></div>
+      <div class="bar" aria-hidden="true"><i class="b1" id="progBar" style="width:0%"></i></div>
+    </div>
+    <div id="checklist"></div>
+    <button type="button" class="smallbtn" id="copyQ" data-i="copyq">Copy open questions</button>
+    <button type="button" class="smallbtn" id="resetQ" data-i="resetq">Clear ticks</button>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Ask the listing agent for the full HOA package the seller must give you under Civil Code §4525. You can request it with <a href="/t151/">T151</a>.</li>
+      <li data-i="ns2">Read the one-page Assessment and Reserve Funding Disclosure Summary first. Item 3 (enough money for 30 years?) and item 4 (how much short per unit) tell you most of the story.</li>
+      <li data-i="ns3">Ask your lender before you write the offer: "Is this project warrantable? FHA or VA approved?" You can check FHA yourself on the <a href="https://entp.hud.gov/idapp/html/condlook.cfm" target="_blank" rel="noopener">HUD condo list</a>.</li>
+      <li data-i="ns4">Comparing this condo with a house or townhome? Put them side by side, dues included, with <a href="/t05/">T05</a>.</li>
+    </ol>
+  </section>
+  <p class="myth" data-i="myth"><b>Many people get this wrong:</b> "low HOA dues = good deal." Often it means the HOA isn't saving enough. When the roof or balconies come due, owners pay it as a special assessment, sometimes $10,000+ per unit.</p>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#mua-condo-hoa" target="_blank" rel="noopener" data-i="ft_lib">Reading HOA docs before you buy</a> · <a href="https://kenlamrealty.com/library#video-hoa" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span><span data-i="ft_src">Sources:</span> <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=4525" target="_blank" rel="noopener">Civil Code §4525 (HOA docs to buyer)</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=5300" target="_blank" rel="noopener">§5300 (annual budget report)</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=5550" target="_blank" rel="noopener">§5550 (reserve study)</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=5551" target="_blank" rel="noopener">§5551 (balcony inspection, SB 326)</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=5570" target="_blank" rel="noopener">§5570 (reserve disclosure summary)</a> · <a href="https://selling-guide.fanniemae.com/sel/b4-2.1-03/ineligible-projects" target="_blank" rel="noopener">Fannie Mae B4-2.1-03</a> · <a href="https://homebuyer.com/guidelines/fannie-mae/full-review-process-b4-2-2-02" target="_blank" rel="noopener">Fannie Mae B4-2.2-02 (quoted)</a> · <a href="https://entp.hud.gov/idapp/html/condlook.cfm" target="_blank" rel="noopener">HUD FHA condo lookup</a> <span data-i="ft_chk">(checked 04/11/2026)</span></span>
+    <span data-i="ft_est">General info, not legal or loan advice. Lender rules change and each lender adds its own. Confirm with your lender and read the full HOA documents.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Thresholds & sources — edit here when rules change (checked 04/11/2026) =====
+   leginfo.legislature.ca.gov blocked from this sandbox; statute text verified via california.public.law copies:
+   §4525 docs to buyer (incl. (a)(8) approved not-yet-due assessments, (a)(9) rental ban statement, (a)(11) §5551 report)
+        https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=4525
+   §5300 annual budget report 30–90 days before FY end; includes insurance summary (limits + deductibles),
+        reserve summary, expected special assessments, FHA & VA certification status
+        https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=5300
+   §5550 reserve study: visual inspection at least every 3 years, reviewed every year
+        https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=5550
+   §5551 (SB 326) exterior elevated elements: licensed structural/civil engineer or architect, at least every 9 years,
+        first inspection by 01/01/2025 per statute text. KEN DUYỆT: some HOA sites cite 01/01/2026 — UI avoids the date.
+        https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=5551
+   §5570 Assessment & Reserve Funding Disclosure Summary: item 2 scheduled assessments, item 3 enough for 30 yrs,
+        item 4 extra needed per unit, item 6 percent funded
+        https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=5570
+   Fannie Mae B4-2.1-03 (dated 08/05/2026): HOA named in pending litigation = ineligible (minor-litigation exceptions);
+        single entity max 20% of units (21+ units), 2 units (5–20); commercial ≤35%; critical repairs e.g. unfunded
+        repairs >$10,000/unit within 12 months = ineligible  https://selling-guide.fanniemae.com/sel/b4-2.1-03/ineligible-projects
+   Fannie Mae B4-2.2-02 Full Review (04/02/2025, quoted by homebuyer.com): ≥10% of assessment income budgeted to reserves;
+        ≤15% of units 60+ days delinquent; ≥50% owner-occupied applies to INVESTMENT purchases only
+        https://homebuyer.com/guidelines/fannie-mae/full-review-process-b4-2-2-02
+   HUD FHA approved condo lookup: https://entp.hud.gov/idapp/html/condlook.cfm
+   Reserve % funded cutoffs (30 / 70) and renter / small-HOA cutoffs are industry rules of thumb, NOT law. KEN DUYỆT. */
+const T={
+  RES_RED:30, RES_GREEN:70,          /* rule of thumb */
+  DEL_RED:15, DEL_YEL:10,            /* 15% = Fannie full review; 10% yellow = rule of thumb */
+  SA_RED:10000,                      /* echoes Fannie "critical repair" >$10k/unit example */
+  RENT_RED:50, RENT_YEL:40,          /* 50% = Fannie owner-occupancy test for investor loans */
+  SMALL:10,                          /* rule of thumb */
+  RESERVE_LINE:0.10                  /* Fannie: ≥10% of assessment income to reserves */
+};
+const STORE='kl_t144_chk';
+
+const Q=[
+ {g:'money',
+  en:'What percent funded are the reserves?',vi:'Quỹ dự trữ (reserves) đang đủ bao nhiêu %?',
+  why_en:'The reserve study says how much the HOA should have saved for roofs, paint, paving. Percent funded = what they actually have.',
+  why_vi:'Reserve study ghi HOA lẽ ra phải để dành bao nhiêu cho mái, sơn, đường. % funded là số tiền thật sự đang có so với số đó.',
+  red_en:'Under 30% red, 30–70% yellow, 70%+ green (rule of thumb).',red_vi:'Dưới 30% là đỏ, 30–70% vàng, từ 70% trở lên xanh (kinh nghiệm chung).'},
+ {g:'money',
+  en:'Any special assessment approved or being talked about?',vi:'Có special assessment (thu thêm tiền) đã duyệt hoặc đang bàn không?',
+  why_en:'Approved charges that aren\u2019t due yet must be disclosed to you. Once you own, they\u2019re yours to pay.',
+  why_vi:'Khoản thu thêm đã duyệt mà chưa tới hạn thì bên bán phải khai. Mua xong là mình trả.',
+  red_en:'Any approved amount. $10,000+ per unit is serious.',red_vi:'Có khoản nào đã duyệt là phải hỏi kỹ. Từ $10,000/căn trở lên là chuyện lớn.'},
+ {g:'money',
+  en:'How have the dues changed over the last 5 years?',vi:'5 năm qua phí HOA tăng thế nào?',
+  why_en:'Steady small raises are normal. Years of no raise, then a jump, usually means the HOA was putting off saving.',
+  why_vi:'Tăng đều mỗi năm chút ít là bình thường. Mấy năm không tăng rồi nhảy một phát là dấu hiệu HOA để dành không đủ.',
+  red_en:'Flat for 5+ years, or one jump over 10% in a year.',red_vi:'Đứng yên 5 năm trở lên, hoặc có năm tăng hơn 10%.'},
+ {g:'money',
+  en:'How many owners are 60+ days behind on dues?',vi:'Bao nhiêu chủ đang trễ phí HOA từ 60 ngày trở lên?',
+  why_en:'When owners don\u2019t pay, everyone else covers the gap. Lenders check this number.',
+  why_vi:'Người khác không đóng thì mình gánh. Lender cũng coi con số này.',
+  red_en:'Over 15% of units (Fannie Mae limit).',red_vi:'Trên 15% số căn (giới hạn của Fannie Mae).'},
+ {g:'money',
+  en:'How much of the yearly budget goes into reserves?',vi:'Mỗi năm HOA bỏ bao nhiêu % ngân sách vào quỹ dự trữ?',
+  why_en:'This is the monthly savings habit. Look at the reserve line in the annual budget report.',
+  why_vi:'Đây là thói quen để dành hàng tháng của HOA. Coi dòng reserve trong annual budget report.',
+  red_en:'Under 10% of dues income (Fannie Mae full-review rule).',red_vi:'Dưới 10% tiền phí thu vào (luật Fannie Mae khi review đầy đủ).'},
+ {g:'money',
+  en:'Does the 30-year plan say reserves are enough?',vi:'Kế hoạch 30 năm có nói quỹ đủ tiền không?',
+  why_en:'Item 3 on the reserve disclosure summary is a plain Yes/No. If No, item 4 says how much extra per unit is needed.',
+  why_vi:'Mục 3 trong tờ tóm tắt reserves trả lời Có/Không. Nếu Không, mục 4 ghi mỗi căn phải góp thêm bao nhiêu.',
+  red_en:'"No", with a big per-unit number in item 4.',red_vi:'"Không", và mục 4 ghi số tiền mỗi căn lớn.'},
+ {g:'rules',
+  en:'Can I rent it out? Any cap, waitlist or minimum lease?',vi:'Cho thuê được không? Có giới hạn số căn, danh sách chờ, hay hợp đồng tối thiểu?',
+  why_en:'Even if you plan to live there, life changes. A rental ban must be disclosed to you in writing.',
+  why_vi:'Dù định ở, sau này đổi ý vẫn có thể. Nếu HOA cấm cho thuê thì phải ghi rõ bằng giấy.',
+  red_en:'Rental ban or long waitlist, if renting later matters to you.',red_vi:'Cấm cho thuê hoặc chờ lâu, nếu mình có thể cho thuê sau này.'},
+ {g:'rules',
+  en:'Pet rules: how many, how big, which breeds?',vi:'Luật nuôi thú: mấy con, nặng bao nhiêu, giống nào?',
+  why_en:'Weight limits are common in condos. Check before you fall in love with the unit.',
+  why_vi:'Condo hay giới hạn cân nặng chó. Hỏi trước khi mê căn nhà.',
+  red_en:'A limit your pet doesn\u2019t meet.',red_vi:'Giới hạn mà thú cưng của mình không đạt.'},
+ {g:'rules',
+  en:'Parking: how many spaces, assigned or open, any EV charging?',vi:'Đậu xe: mấy chỗ, chỗ riêng hay chung, có sạc xe điện không?',
+  why_en:'Two cars and one space is a daily headache. EV charging may need board approval and your own wiring cost.',
+  why_vi:'Hai xe mà một chỗ là ngày nào cũng mệt. Sạc xe điện có khi phải xin HOA và tự trả tiền đi dây.',
+  red_en:'Fewer spaces than cars, or street parking only.',red_vi:'Chỗ đậu ít hơn số xe, hoặc chỉ đậu ngoài đường.'},
+ {g:'rules',
+  en:'Remodel rules: floors, windows, plumbing, any ADU or add-on?',vi:'Luật sửa nhà: sàn, cửa sổ, ống nước, có cho làm ADU/thêm phòng không?',
+  why_en:'Many HOAs require approval and sound pads under hard floors. Townhome or PUD? Ask about ADUs and patios.',
+  why_vi:'Nhiều HOA bắt xin phép và lót cách âm dưới sàn gỗ. Townhouse/PUD thì hỏi thêm ADU, patio.',
+  red_en:'No hard floors allowed, or approval takes months.',red_vi:'Cấm sàn gỗ/gạch, hoặc xin phép mất mấy tháng.'},
+ {g:'rules',
+  en:'Any open violation notice on this unit?',vi:'Căn này có đang bị HOA phạt hay cảnh cáo gì không?',
+  why_en:'Unresolved violations and unpaid fines can follow the unit to you.',
+  why_vi:'Vi phạm chưa xong, tiền phạt chưa trả có thể theo căn nhà qua mình.',
+  red_en:'Open notice for unpermitted work.',red_vi:'Bị nhắc vì sửa không xin phép mà chưa giải quyết.'},
+ {g:'bldg',
+  en:'How old is the roof, and when is it due?',vi:'Mái bao nhiêu tuổi, khi nào phải thay?',
+  why_en:'The reserve study lists each big part and its remaining life. Roofs are one of the biggest bills.',
+  why_vi:'Reserve study ghi từng hạng mục lớn còn xài được bao lâu. Thay mái là một trong những khoản lớn nhất.',
+  red_en:'Roof due in 1–3 years with low reserves.',red_vi:'Mái phải thay trong 1–3 năm mà quỹ thấp.'},
+ {g:'bldg',
+  en:'Plumbing: pipe type, age, any leak history?',vi:'Ống nước: loại gì, bao nhiêu tuổi, từng bể chưa?',
+  why_en:'In a condo, a leak upstairs becomes your problem. Repiping a building is a huge project.',
+  why_vi:'Ở condo, nhà trên bể ống là nhà mình ướt. Thay ống cả tòa nhà là dự án rất lớn.',
+  red_en:'Repeat leaks, or "repipe" in board minutes.',red_vi:'Bể ống nhiều lần, hoặc biên bản họp có bàn thay ống.'},
+ {g:'bldg',
+  en:'Balcony and deck inspection (SB 326) done? What did it find?',vi:'Đã kiểm tra balcony/deck theo luật SB 326 chưa? Kết quả ra sao?',
+  why_en:'California makes HOAs have an engineer or architect check balconies, decks and stairs at least every 9 years. You get a copy.',
+  why_vi:'Luật California bắt HOA thuê kỹ sư/kiến trúc sư kiểm tra balcony, deck, cầu thang ít nhất 9 năm 1 lần. Người mua được nhận bản sao.',
+  red_en:'No report yet, or repairs found with no money set aside.',red_vi:'Chưa có report, hoặc report ra phải sửa mà chưa có tiền.'},
+ {g:'bldg',
+  en:'Master insurance: what\u2019s covered and what\u2019s the deductible?',vi:'Bảo hiểm chung (master policy) bảo hiểm tới đâu, deductible bao nhiêu?',
+  why_en:'The budget report lists each policy\u2019s limit and deductible. A big deductible can land on owners. Your HO-6 should cover the gap.',
+  why_vi:'Budget report ghi giới hạn và deductible từng loại bảo hiểm. Deductible lớn có thể chia đầu cho chủ căn. HO-6 của mình nên che phần này.',
+  red_en:'No earthquake/flood info, or a deductible owners would split.',red_vi:'Không nói gì động đất/lụt, hoặc deductible lớn chia cho chủ căn.'},
+ {g:'bldg',
+  en:'Any water intrusion, mold, or big repair in the next 12 months?',vi:'Có thấm nước, nấm mốc, hay sửa lớn trong 12 tháng tới không?',
+  why_en:'Lenders call these critical repairs. Read the last 12 months of board minutes, you can ask for them.',
+  why_vi:'Lender gọi đây là critical repairs. Xin biên bản họp 12 tháng gần nhất mà đọc.',
+  red_en:'Unfunded repairs over $10,000 per unit (Fannie Mae example).',red_vi:'Sửa trên $10,000/căn mà chưa có tiền (ví dụ của Fannie Mae).'},
+ {g:'legal',
+  en:'Is the HOA in any lawsuit?',vi:'HOA có đang bị kiện hoặc đi kiện ai không?',
+  why_en:'If the HOA is named in pending litigation, Fannie Mae calls the project ineligible, with a few small exceptions.',
+  why_vi:'HOA có tên trong vụ kiện đang chạy thì Fannie Mae coi là không đủ điều kiện, trừ vài vụ nhỏ.',
+  red_en:'Yes, especially about construction defects.',red_vi:'Có, nhất là kiện về lỗi xây dựng.'},
+ {g:'legal',
+  en:'Is it FHA approved? VA approved?',vi:'Có được FHA, VA duyệt không?',
+  why_en:'The annual budget report must state FHA and VA status. Not approved means fewer future buyers when you sell.',
+  why_vi:'Annual budget report phải ghi tình trạng FHA/VA. Không được duyệt thì sau này bán, ít người mua hơn.',
+  red_en:'Not approved and you need FHA/VA now.',red_vi:'Không được duyệt mà mình đang tính vay FHA/VA.'},
+ {g:'legal',
+  en:'Is it warrantable for Fannie Mae / Freddie Mac?',vi:'Có "warrantable" theo Fannie Mae / Freddie Mac không?',
+  why_en:'Your lender checks with a condo questionnaire. Non-warrantable means fewer lenders, often a higher rate and bigger down.',
+  why_vi:'Lender sẽ gửi bảng câu hỏi cho HOA. Non-warrantable là ít lender cho vay, lãi thường cao hơn, down nhiều hơn.',
+  red_en:'One owner holds over 20% of units (21+ unit HOA), or commercial space over 35%.',red_vi:'Một chủ giữ hơn 20% số căn (HOA từ 21 căn), hoặc phần thương mại hơn 35%.'},
+ {g:'legal',
+  en:'Any builder defect list or defect claim?',vi:'Có danh sách lỗi xây dựng hoặc đang đòi bồi thường chủ đầu tư không?',
+  why_en:'Newer buildings may have a defect list. The seller must give you a copy if it\u2019s not resolved.',
+  why_vi:'Tòa mới hay có danh sách lỗi. Chưa giải quyết xong thì bên bán phải đưa bản sao.',
+  red_en:'An open defect list with no fix plan.',red_vi:'Có danh sách lỗi mà chưa có kế hoạch sửa.'}
+];
+const GROUPS=['money','rules','bldg','legal'];
+
+const I18N={
+ en:{title:'Buying a condo? Ask the HOA these 20 questions',sub:'Type in a few numbers from the HOA docs. Red flags show up right away. Then tick off the questions as you get answers.',
+  in_k:"From the HOA docs (optional, skip what you don't have)",
+  l_res:'Reserves funded',l_res_s:'(§5570 summary, item 6)',l_dues:'HOA dues',per_mo:'/mo',l_units:'Units in the HOA',l_rent:'Units rented out',
+  l_del:'Owners 60+ days late',l_del_s:'(% of units)',l_sa:'Special assessment coming',l_sa_s:"(your unit's share)",
+  l_lit:'Is the HOA in a lawsuit?',lit_no:'No',lit_yes:'Yes',lit_unk:"Don't know",
+  r_total:'Red flags',yel:'+ {n} yellow',
+  n_res:'Reserves',n_del:'Late owners',n_sa:'Special assessment',n_rent:'Renters',n_lit:'Lawsuit',n_units:'HOA size',
+  s_res_r:'Under 30%, thin cushion',s_res_y:'30–70%, ok but ask about the plan',s_res_g:'70%+, healthy',
+  s_del_r:'Over 15%, fails Fannie Mae',s_del_y:'10–15%, watch it',s_del_g:'Under 10%',
+  s_sa_r:'$10,000+ per unit',s_sa_y:'Ask what it\u2019s for and when due',s_sa_g:'None pending',
+  s_rent_r:'Over 50%, investor loans get hard',s_rent_y:'40–50%',s_rent_g:'Mostly owners',
+  s_lit_r:'Many lenders won\u2019t lend',s_lit_y:'Find out before the offer',s_lit_g:'None reported',
+  s_units_y:'10 units or fewer: one big repair or one late owner hits harder',s_units_g:'Costs spread over more units',
+  c_g:'Green',c_y:'Yellow',c_r:'Red',c_na:'—',na:'not entered',
+  m_budget:'HOA collects about <b>{b}</b>/yr in dues.',m_line:'At least <b>{l}</b>/yr should go to reserves (Fannie Mae 10% rule).',
+  loan_bad:'<b>Loan risk:</b> this may be a non-warrantable condo. That means fewer lenders, often a higher rate and a bigger down payment. Ask your lender before you write an offer.',
+  loan_unk:'<b>Loan risk:</b> unknown on the lawsuit question. Get the answer in writing, lenders will ask.',
+  loan_ok:'<b>Loan risk:</b> nothing here that usually blocks a regular loan. Your lender still runs its own condo review.',
+  myth_note:'Low dues with low reserves usually means the HOA has been saving too little. The bill comes later as a special assessment or a big dues jump.',
+  rule:'Green / yellow / red cutoffs are rules of thumb, except where a lender rule is named. Every lender reads the HOA a little differently.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this checklist to yourself',f_sub:'Ken will reply and can go through the HOA docs with you. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ck_t:'The 20 questions',ck_s:'Tap a question to see why it matters and what a red flag looks like. Tick it once you have the answer in writing.',
+  prog_k:'answered',copyq:'Copy open questions',copied:'Copied',resetq:'Clear ticks',
+  g_money:'Money',g_rules:'Rules',g_bldg:'Building',g_legal:'Legal and loan',why:'Why it matters:',redf:'Red flag:',
+  ns_t:'Next steps',
+  ns1:'Ask the listing agent for the full HOA package the seller must give you under Civil Code §4525. You can request it with <a href="/t151/">T151</a>.',
+  ns2:'Read the one-page Assessment and Reserve Funding Disclosure Summary first. Item 3 (enough money for 30 years?) and item 4 (how much short per unit) tell you most of the story.',
+  ns3:'Ask your lender before you write the offer: "Is this project warrantable? FHA or VA approved?" You can check FHA yourself on the <a href="https://entp.hud.gov/idapp/html/condlook.cfm" target="_blank" rel="noopener">HUD condo list</a>.',
+  ns4:'Comparing this condo with a house or townhome? Put them side by side, dues included, with <a href="/t05/">T05</a>.',
+  myth:'<b>Many people get this wrong:</b> "low HOA dues = good deal." Often it means the HOA isn\u2019t saving enough. When the roof or balconies come due, owners pay it as a special assessment, sometimes $10,000+ per unit.',
+  ft_read:'Read more:',ft_lib:'Reading HOA docs before you buy',ft_vid:'3-min video',ft_src:'Sources:',ft_chk:'(checked 04/11/2026)',
+  ft_est:'General info, not legal or loan advice. Lender rules change and each lender adds its own. Confirm with your lender and read the full HOA documents.',
+  ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I ran the condo HOA check on tools.kenlamrealty.com: {r} red flag(s), reserves {res}. Can you look at the HOA docs with me?',
+  subj:'Condo HOA check — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nRed flags: {r}  Yellow: {y}\n{lines}\n{meta}\nLoan risk: {loan}\n\nQuestions answered: {done}\nStill open:\n{open}\n\nSent from tool T144 tools.kenlamrealty.com'},
+ vi:{title:'Mua condo? Hỏi HOA 20 câu này trước',sub:'Nhập vài con số trong giấy HOA. Có vấn đề là thấy liền. Rồi hỏi tới đâu tick tới đó.',
+  in_k:'Số trong giấy HOA (không bắt buộc, không có thì bỏ trống)',
+  l_res:'Quỹ dự trữ đủ',l_res_s:'(tờ §5570, mục 6)',l_dues:'Phí HOA',per_mo:'/tháng',l_units:'HOA có bao nhiêu căn',l_rent:'Số căn cho thuê',
+  l_del:'Chủ trễ phí 60+ ngày',l_del_s:'(% số căn)',l_sa:'Sắp thu thêm (special assessment)',l_sa_s:'(phần căn mình)',
+  l_lit:'HOA có đang bị kiện không?',lit_no:'Không',lit_yes:'Có',lit_unk:'Chưa biết',
+  r_total:'Số điểm đỏ',yel:'+ {n} vàng',
+  n_res:'Quỹ dự trữ',n_del:'Chủ trễ phí',n_sa:'Thu thêm',n_rent:'Căn cho thuê',n_lit:'Kiện tụng',n_units:'Cỡ HOA',
+  s_res_r:'Dưới 30%, quỹ mỏng',s_res_y:'30–70%, tạm được, hỏi kế hoạch góp',s_res_g:'Từ 70%, khỏe',
+  s_del_r:'Trên 15%, không qua Fannie Mae',s_del_y:'10–15%, coi chừng',s_del_g:'Dưới 10%',
+  s_sa_r:'Từ $10,000/căn',s_sa_y:'Hỏi thu để làm gì, khi nào đóng',s_sa_g:'Không có',
+  s_rent_r:'Trên 50%, vay nhà đầu tư khó',s_rent_y:'40–50%',s_rent_g:'Đa số chủ ở',
+  s_lit_r:'Nhiều lender không cho vay',s_lit_y:'Hỏi cho ra trước khi viết offer',s_lit_g:'Không có',
+  s_units_y:'Từ 10 căn trở xuống: sửa lớn hay 1 người trễ phí là ảnh hưởng nhiều',s_units_g:'Chi phí chia cho nhiều căn',
+  c_g:'Xanh',c_y:'Vàng',c_r:'Đỏ',c_na:'—',na:'chưa nhập',
+  m_budget:'HOA thu khoảng <b>{b}</b>/năm tiền phí.',m_line:'Ít nhất <b>{l}</b>/năm phải bỏ vào quỹ dự trữ (luật 10% của Fannie Mae).',
+  loan_bad:'<b>Rủi ro vay:</b> căn này có thể là condo non-warrantable. Nghĩa là ít lender cho vay, lãi thường cao hơn, down nhiều hơn. Hỏi lender trước khi viết offer.',
+  loan_unk:'<b>Rủi ro vay:</b> chưa biết vụ kiện tụng. Xin câu trả lời bằng giấy, lender sẽ hỏi.',
+  loan_ok:'<b>Rủi ro vay:</b> chưa thấy gì thường làm kẹt loan thường. Lender vẫn sẽ tự review HOA.',
+  myth_note:'Phí thấp mà quỹ cũng thấp thường là HOA để dành không đủ. Sau này sẽ thu thêm một cục hoặc tăng phí mạnh.',
+  rule:'Mốc xanh/vàng/đỏ là kinh nghiệm chung, trừ chỗ có ghi luật của lender. Mỗi lender coi HOA hơi khác nhau.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi checklist này về email',f_sub:'Ken nhận được sẽ trả lời và có thể coi giấy HOA chung với mình. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ck_t:'20 câu hỏi',ck_s:'Bấm vào câu hỏi để coi vì sao quan trọng và thế nào là đáng lo. Có câu trả lời bằng giấy rồi thì tick.',
+  prog_k:'đã có câu trả lời',copyq:'Copy câu chưa hỏi',copied:'Đã copy',resetq:'Xóa tick',
+  g_money:'Tiền',g_rules:'Luật lệ',g_bldg:'Tòa nhà',g_legal:'Pháp lý và vay',why:'Vì sao:',redf:'Đáng lo khi:',
+  ns_t:'Bước tiếp theo',
+  ns1:'Xin agent bên bán trọn bộ giấy HOA mà luật (Civil Code §4525) bắt bên bán phải đưa. Xin qua <a href="/t151/">T151</a> cũng được.',
+  ns2:'Đọc tờ tóm tắt Assessment and Reserve Funding Disclosure Summary trước. Mục 3 (đủ tiền 30 năm không) và mục 4 (mỗi căn thiếu bao nhiêu) nói gần hết câu chuyện.',
+  ns3:'Hỏi lender trước khi viết offer: "Căn này warrantable không? FHA, VA duyệt chưa?" FHA thì tự tra trên <a href="https://entp.hud.gov/idapp/html/condlook.cfm" target="_blank" rel="noopener">danh sách condo của HUD</a>.',
+  ns4:'Đang so condo này với nhà riêng hay townhouse? Đặt cạnh nhau, tính luôn phí HOA, ở <a href="/t05/">T05</a>.',
+  myth:'<b>Nhiều người hiểu sai:</b> "phí HOA thấp là hời." Nhiều khi là HOA để dành không đủ. Tới lúc thay mái hay sửa balcony, chủ căn phải đóng thêm, có khi $10,000+ mỗi căn.',
+  ft_read:'Đọc thêm:',ft_lib:'Đọc giấy HOA trước khi mua',ft_vid:'Video 3 phút',ft_src:'Nguồn:',ft_chk:'(tra 04/11/2026)',
+  ft_est:'Thông tin chung, không phải tư vấn luật hay vay. Luật của lender hay đổi và mỗi lender có thêm luật riêng. Hỏi lender và đọc hết giấy HOA.',
+  ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa kiểm tra HOA condo trên tools.kenlamrealty.com: {r} điểm đỏ, quỹ dự trữ {res}. Ken coi giấy HOA giùm tôi được không?',
+  subj:'Kiểm tra HOA condo — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nĐiểm đỏ: {r}  Vàng: {y}\n{lines}\n{meta}\nRủi ro vay: {loan}\n\nĐã hỏi: {done}\nCòn chưa hỏi:\n{open}\n\nGửi từ tool T144 tools.kenlamrealty.com'}
+};
+let lang='en', lit='no', checked={}, last={};
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+try{ checked=JSON.parse(localStorage.getItem(STORE)||'{}')||{}; }catch(e){ checked={}; }
+
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const val=id=>{const s=$(id).value; if(s==='') return null; const v=parseFloat(s); return isFinite(v)?v:null;};
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]!=null?v[k]:m);
+const strip=s=>String(s).replace(/<[^>]+>/g,'');
+
+/* Pure scoring — returns level per metric: 'g'|'y'|'r'|null (null = not entered) */
+function score(inp){
+  const o={};
+  o.res = inp.res==null?null: inp.res<T.RES_RED?'r': inp.res<T.RES_GREEN?'y':'g';
+  o.del = inp.del==null?null: inp.del>T.DEL_RED?'r': inp.del>=T.DEL_YEL?'y':'g';
+  o.sa  = inp.sa==null?null: inp.sa>=T.SA_RED?'r': inp.sa>0?'y':'g';
+  o.rent= inp.rent==null?null: inp.rent>T.RENT_RED?'r': inp.rent>=T.RENT_YEL?'y':'g';
+  o.lit = inp.lit==='yes'?'r': inp.lit==='unk'?'y':'g';
+  o.units= (inp.units==null||inp.units<=0)?null: inp.units<=T.SMALL?'y':'g';
+  const lv=Object.values(o);
+  const red=lv.filter(x=>x==='r').length, yel=lv.filter(x=>x==='y').length;
+  /* Loan-risk triggers tied to lender rules (Fannie Mae): litigation, delinquency >15%, big special assessment, renters >50% */
+  const nonW = o.lit==='r' || o.del==='r' || o.sa==='r' || o.rent==='r';
+  const loan = nonW?'bad': o.lit==='y'?'unk':'ok';
+  const budget = (inp.dues!=null&&inp.units>0)? inp.dues*inp.units*12 : null;
+  const lowDuesLowRes = inp.res!=null && inp.res<T.RES_RED && inp.dues!=null && inp.dues>0;
+  return {o,red,yel,loan,budget,reserveLine:budget!=null?budget*T.RESERVE_LINE:null,lowDuesLowRes};
+}
+
+function calc(){
+  const d=I18N[lang];
+  const inp={res:val('res'),dues:val('dues'),units:val('units'),rent:val('rent'),del:val('del'),sa:val('sa'),lit};
+  const s=score(inp);
+  $('red').textContent=s.red;
+  $('redV').classList.toggle('redc',s.red>0);
+  $('yelS').textContent=s.yel?fill(d.yel,{n:s.yel}):'';
+  const rows=[
+    ['res',d.n_res,inp.res!=null?inp.res+'%':null],
+    ['del',d.n_del,inp.del!=null?inp.del+'%':null],
+    ['sa',d.n_sa,inp.sa!=null?fmt(inp.sa):null],
+    ['rent',d.n_rent,inp.rent!=null?inp.rent+'%':null],
+    ['lit',d.n_lit,d['lit_'+lit]],
+    ['units',d.n_units,inp.units!=null&&inp.units>0?String(inp.units):null]
+  ];
+  const cname={g:d.c_g,y:d.c_y,r:d.c_r};
+  const txt=[];
+  $('lines').innerHTML=rows.map(([k,n,v])=>{
+    const lv=s.o[k]; const sub=lv?(d['s_'+k+'_'+lv]||''):d.na;
+    txt.push('- '+n+': '+(v||'—')+(lv?' ['+cname[lv]+'] '+sub:''));
+    return `<div class="line"><span class="n"><b>${n}</b>${v?' · '+v:''}<small>${sub}</small></span><span class="chip ${lv||''}">${lv?cname[lv]:d.c_na}</span></div>`;
+  }).join('');
+  let meta='';
+  if(s.budget!=null){ meta='<span>'+fill(d.m_budget,{b:fmt(s.budget)})+'</span><span>'+fill(d.m_line,{l:fmt(s.reserveLine)})+'</span>'; }
+  $('meta').innerHTML=meta; $('meta').classList.toggle('hide',!meta);
+  $('loanNote').innerHTML=d['loan_'+s.loan];
+  $('mythNote').classList.toggle('hide',!s.lowDuesLowRes);
+  const done=Q.filter((q,i)=>checked[i]).length;
+  last={r:s.red,y:s.yel,lines:txt.join('\n'),meta:strip(meta.replace('</span><span>','\n')),loan:strip(d['loan_'+s.loan]).replace(/^[^:]+:\s*/,''),
+    res:inp.res!=null?inp.res+'%':'—',done:done+'/'+Q.length,open:openList().join('\n')||'—'};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+}
+function openList(){ return Q.map((q,i)=>checked[i]?null:'- '+q[lang]).filter(Boolean); }
+
+function renderChecklist(){
+  const d=I18N[lang];
+  $('checklist').innerHTML=GROUPS.map(g=>{
+    const items=Q.map((q,i)=>({q,i})).filter(x=>x.q.g===g).map(({q,i})=>
+      `<div class="q${checked[i]?' done':''}" id="q${i}"><input type="checkbox" data-i-q="${i}" aria-label="${q[lang].replace(/"/g,'&quot;')}" ${checked[i]?'checked':''}>`+
+      `<button type="button" class="qt" aria-expanded="false" aria-controls="w${i}" data-w="${i}">${q[lang]}</button>`+
+      `<div class="why hide" id="w${i}"><span>${d.why} ${q['why_'+lang]}</span><span><b>${d.redf}</b> ${q['red_'+lang]}</span></div></div>`).join('');
+    return `<div class="grp"><h3>${d['g_'+g]}</h3>${items}</div>`;
+  }).join('');
+  prog();
+}
+function prog(){
+  const done=Q.filter((q,i)=>checked[i]).length;
+  $('progN').textContent=done+'/'+Q.length; $('progBar').style.width=(done/Q.length*100)+'%';
+}
+function save(){ try{ localStorage.setItem(STORE,JSON.stringify(checked)); }catch(e){} }
+
+$('checklist').addEventListener('change',e=>{
+  const i=e.target.getAttribute('data-i-q'); if(i==null) return;
+  if(e.target.checked) checked[i]=1; else delete checked[i];
+  $('q'+i).classList.toggle('done',e.target.checked); save(); prog(); calc();
+});
+$('checklist').addEventListener('click',e=>{
+  const b=e.target.closest('.qt'); if(!b) return;
+  const w=$('w'+b.dataset.w), open=b.getAttribute('aria-expanded')==='true';
+  b.setAttribute('aria-expanded',open?'false':'true'); w.classList.toggle('hide',open);
+});
+$('copyQ').onclick=async()=>{
+  const t=openList().join('\n'); try{ await navigator.clipboard.writeText(t); $('copyQ').textContent=I18N[lang].copied; setTimeout(()=>{$('copyQ').textContent=I18N[lang].copyq},1500);}catch(e){}
+};
+$('resetQ').onclick=()=>{ checked={}; save(); renderChecklist(); calc(); };
+
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; renderChecklist(); calc();
+}
+['res','dues','units','rent','del','sa'].forEach(id=>$(id).addEventListener('input',calc));
+$('lit').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b)return; lit=b.dataset.v;
+  document.querySelectorAll('#lit button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); calc();});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const v=Object.assign({},last,{n,e,ph});
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,v))+'&body='+encodeURIComponent(fill(d.body,v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+window.__score=score;
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'\u2190 All tools':'\u2190 T\u1ea5t c\u1ea3 tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
