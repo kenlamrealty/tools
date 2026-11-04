@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bán Xong Cầm Về</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- Thêm cho T03/T21 (không đổi class cũ) ---- */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl select:focus-visible{outline:none}
+.ctl .chev{color:var(--muted);font-size:13px;pointer-events:none}
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.seg.s4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.seg.s4 button{padding:11px 4px;font-size:14px}
+@media (max-width:380px){.seg.s4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.field.dim{opacity:.45}
+.line.grp{padding-top:14px}
+.line.grp .n b{font-size:15px}
+.line.grp .a{color:var(--fg)}
+.line.sub{padding:7px 0 7px 12px;font-size:14px;border-bottom:1px dashed var(--line)}
+.line.sub .a{font-weight:400;color:var(--muted)}
+.line.off{display:none}
+.line.neg .a{color:var(--warn)}
+.total .v.neg{color:var(--warn)}
+</style>
+<meta name="description" content="Trừ nợ, commission, transfer tax theo từng city, escrow, title. Thông lệ Santa Clara / Alameda, ra số liền.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t21/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Bán Xong Cầm Về · Ken Lam Tools">
+<meta property="og:description" content="Trừ nợ, commission, transfer tax theo từng city, escrow, title. Thông lệ Santa Clara / Alameda, ra số liền.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t21/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title">Bán nhà xong, cầm về bao nhiêu?</h1>
+    <p class="sub" data-i="sub">Trừ nợ, commission, transfer tax theo từng city, escrow, title. Thông lệ Santa Clara / Alameda, ra số liền.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="price" data-i="l_price">Giá bán</label>
+      <div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" min="0" step="5000" value="1500000"></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="payoff"><span data-i="l_payoff">Nợ còn lại</span> <small>(payoff)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="payoff" type="number" inputmode="numeric" min="0" step="1000" value="600000"></div>
+      </div>
+      <div class="field">
+        <label for="city" data-i="l_city">Thành phố</label>
+        <div class="ctl"><select id="city"></select><span class="chev">▾</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="cl" data-i="l_cl">Commission listing agent</label>
+        <div class="ctl"><input id="cl" type="number" inputmode="decimal" min="0" max="10" step="0.25" value="2.5"><span class="post">%</span></div>
+      </div>
+      <div class="field">
+        <label for="cb" data-i="l_cb">Commission buyer agent</label>
+        <div class="ctl"><input id="cb" type="number" inputmode="decimal" min="0" max="10" step="0.25" value="2.5"><span class="post">%</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="credit"><span data-i="l_credit">Credit cho buyer</span> <small data-i="l_credit_s">(concessions)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="credit" type="number" inputmode="numeric" min="0" step="1000" value="0"></div>
+      </div>
+      <div class="field">
+        <label for="repair" data-i="l_repair">Sửa nhà &amp; staging</label>
+        <div class="ctl"><span class="pre">$</span><input id="repair" type="number" inputmode="numeric" min="0" step="500" value="8000"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">Tiền cầm về (net proceeds)</div>
+      <div class="v" id="totalV"><span id="total">$0</span></div>
+    </div>
+    <div class="bar" aria-hidden="true"><i class="b1" id="s1"></i><i class="b2" id="s2"></i><i class="b3" id="s3"></i><i class="b4" id="s4"></i></div>
+    <div class="legend">
+      <span><i style="background:var(--brass)"></i><span data-i="lg_net">Cầm về</span></span>
+      <span><i style="background:#A9B7A0"></i><span data-i="lg_pay">Trả nợ</span></span>
+      <span><i style="background:#CBB7A3"></i><span data-i="lg_comm">Commission</span></span>
+      <span><i style="background:var(--warn)"></i><span data-i="lg_fee">Thuế, phí, sửa nhà</span></span>
+    </div>
+    <div class="lines">
+      <div class="line grp"><span class="n"><b data-i="g_price">Giá bán</b></span><span class="a" id="vPrice">$0</span></div>
+
+      <div class="line grp"><span class="n"><b data-i="g_comm">Commission</b></span><span class="a" id="vComm">−$0</span></div>
+      <div class="line sub"><span class="n" id="nCL"></span><span class="a" id="vCL">$0</span></div>
+      <div class="line sub"><span class="n" id="nCB"></span><span class="a" id="vCB">$0</span></div>
+
+      <div class="line grp"><span class="n"><b data-i="g_tt">Transfer tax</b></span><span class="a" id="vTT">−$0</span></div>
+      <div class="line sub"><span class="n" id="nCounty"></span><span class="a" id="vCounty">$0</span></div>
+      <div class="line sub"><span class="n" id="nCity"></span><span class="a" id="vCity">$0</span></div>
+      <div class="line sub" id="rE"><span class="n" id="nE"></span><span class="a" id="vE">$0</span></div>
+
+      <div class="line grp"><span class="n"><b data-i="g_te">Escrow, title &amp; giấy tờ</b></span><span class="a" id="vTE">−$0</span></div>
+      <div class="line sub"><span class="n" id="nEsc"></span><span class="a" id="vEsc">$0</span></div>
+      <div class="line sub"><span class="n" id="nOpol"></span><span class="a" id="vOpol">$0</span></div>
+      <div class="line sub"><span class="n" data-i="n_nhd">NHD report (~$100)</span><span class="a" id="vNhd">$0</span></div>
+      <div class="line sub"><span class="n" data-i="n_misc">Reconveyance, notary, courier, wire (ước tính)</span><span class="a" id="vMisc">$0</span></div>
+
+      <div class="line grp" id="rCR"><span class="n"><b data-i="g_cr">Credit cho buyer</b></span><span class="a" id="vCR">−$0</span></div>
+      <div class="line grp" id="rRP"><span class="n"><b data-i="g_rp">Sửa nhà &amp; staging</b></span><span class="a" id="vRP">−$0</span></div>
+      <div class="line grp"><span class="n"><b data-i="g_pay">Trả nợ (payoff)</b></span><span class="a" id="vPay">−$0</span></div>
+    </div>
+    <div class="meta">
+      <span><span data-i="m_cost">Tổng chi phí bán (chưa tính nợ)</span>: <b id="mCost">$0</b> = <b id="mPct">0%</b> <span data-i="m_pct">giá bán</span></span>
+    </div>
+    <div class="note" id="noteNeg" data-i="note_neg">Số âm: bán giá này không đủ trả nợ + chi phí. Phải mang tiền tới escrow, hoặc nói chuyện short sale với lender.</div>
+    <div class="note" id="noteCity"></div>
+    <div class="note" data-i="note_nar">Commission do mình thương lượng với agent. Sau vụ NAR settlement (2024), phần trả cho agent bên mua không còn ghi sẵn trên MLS — người bán có thể trả, không trả, hay để buyer xin credit. Để 0% nếu không trả.</div>
+    <div class="note" data-i="note_gen">Chưa tính: thuế nhà chia theo ngày (proration), HOA docs/transfer nếu là condo (~$300–800), home warranty, capital gains tax. Ai trả gì là thông lệ, thương lượng được.</div>
+  </section>
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video hướng dẫn"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Gửi kết quả qua email</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Hỏi Ken</a>
+    <a class="btn" id="videoBtn" href="/t21/web.mp4" target="_blank" rel="noopener" data-i="b_video">Xem video 15 giây</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Gửi bảng tính này về email</h2>
+    <p data-i="f_sub">Ken nhận được sẽ gửi lại seller net sheet chi tiết + giá thị trường căn nhà bạn. Không spam.</p>
+    <div class="field"><label for="fname" data-i="f_name">Tên</label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone" data-i="f_phone">Phone (không bắt buộc)</label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Hoặc text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Đọc thêm:</span> <a href="https://kenlamrealty.com/library#ban-xong-cam-ve-bao-nhieu" target="_blank" rel="noopener" data-i="ft_lib">Chi phí khi bán nhà</a> · <a href="https://kenlamrealty.com/library#video-chi-phi-ban-nha" target="_blank" rel="noopener" data-i="ft_vid">Video 3 phút</a></span>
+    <span data-i="ft_est">Escrow, title, NHD là ước tính. Số thật nằm trong estimated settlement statement của escrow. Transfer tax theo bảng county/city 2026.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 03/11/2026 · <a href="/" data-i="ft_all">Tất cả tools</a></span>
+  </footer>
+</div>
+
+<script>
+/*CALC-START*/
+/* ===== Số liệu Bắc Cali — sửa ở đây khi đổi (tra 03/11/2026) =====
+   County documentary transfer tax: $0.55 mỗi $500 hoặc phần lẻ ($1.10/$1,000), CẢ Santa Clara và Alameda, seller trả.
+     Alameda official: https://apps.acgov.org/auditor/clerk/transfertax.htm ; Santa Clara: FNF rev 01/06/2026 (dưới).
+   Ai trả (thông lệ): FNF "Who Pays What — California Transfer Tax and Fees" rev 01/06/2026
+     https://page.fnf.com/rs/393-REY-847/images/Who%20Pays%20What%20-%20California%20Transfer%20Tax%20and%20Fees%20%28rev%2001062026%29.pdf
+     + Old Republic Title closing costs flyer 07/2025
+     https://www.oldrepublictitle.com/Media/2mckowmc/or1591-northern-southern-califorina-closing-costs-flyer-di-ca.pdf
+     Santa Clara: seller trả escrow fee + owner's policy + county tax; city tax chia 50/50.
+     Alameda:     buyer trả escrow fee + owner's policy; seller trả county tax; city tax chia 50/50.
+   Owner's policy: WFG National Title California Rate Book (eff. 2/1/2023), Homeowner's policy rate
+     https://wfgtitle.com/wp-content/uploads/2024/04/WFG-California-Rate-Book-2.1.2023-Up-to-5-Mil.pdf (tra 03/11/2026)
+   Escrow fee: ước tính $250 + $2.00/$1,000 — KEN DUYỆT (hỏi Michelle WFG). https://listwithclever.com/?p=10855
+   NHD ~$100, SELLER_MISC (reconveyance, notary, courier, wire, demand) — ước tính KEN DUYỆT.
+   Commission mặc định 2.5% + 2.5%: chỉ là số mẫu; sau NAR settlement (hiệu lực 17/08/2024) commission bên mua thương lượng.
+*/
+const CFG={
+  COUNTY_PER500:0.55,
+  ESCROW_BASE:250, ESCROW_PER1000:2.00,             /* ước tính — KEN DUYỆT */
+  ESCROW_SELLER_SHARE:{SC:1,AL:0},                  /* thông lệ FNF/ORT 2026 */
+  ESCROW_SELLER_MISC_AL:300,                        /* Alameda: seller vẫn có vài phí escrow nhỏ — ước tính KEN DUYỆT */
+  OWNER_POLICY_SELLER:{SC:true,AL:false},           /* thông lệ FNF/ORT 2026 */
+  NHD:100, SELLER_MISC:250,                         /* ước tính — KEN DUYỆT */
+  HO_RATES:[[250000,1045],[300000,1155],[400000,1375],[500000,1595],[600000,1716],[700000,1892],[750000,1980],[800000,2046],[900000,2178],[1000000,2310],[1100000,2585],[1200000,2695],[1250000,2750],[1500000,3025],[1750000,3300],[2000000,3575],[2500000,4015],[3000000,4455],[3500000,4952],[4000000,5337],[4700000,5876]]
+};
+/* ===== City transfer tax — 1 chỗ duy nhất, dùng chung T03 & T21 (tra 03/11/2026) =====
+   per1000: [[giá tới mức này, $/1,000], ...] — áp cho TOÀN BỘ giá (không lũy tiến từng khúc). Không có tax = [].
+   split: phần buyer theo thông lệ (0.5 = chia đôi) → seller chịu (1 − split). extra: thuế thêm, mặc định seller trả 100% (San Jose Measure E).
+   Alameda County list (official): https://apps.acgov.org/auditor/clerk/transfertax.htm
+     Alameda $12; Berkeley $15 ≤$1.7M / $25 >$1.7M; Hayward $8.50; Oakland $10 ≤$300K / $15 ≤$2M / $17.50 ≤$5M / $25 >$5M; San Leandro $11.
+     Berkeley: https://berkeleyca.gov/city-services/report-pay/property-transfer-tax (Measure W thêm bậc 3%/3.5% từ 01/01/2027).
+     Oakland: https://www.oaklandca.gov/resources/real-estate-transfer-tax (tiers từ 01/2019).
+   Santa Clara County: chỉ San Jose, Mountain View, Palo Alto có city tax $3.30/$1,000 (FNF rev 01/06/2026).
+     Mountain View: $1.65/$500 ≤$6M; $15/$1,000 >$6M (Measure G, eff 20/12/2024)
+       https://www.mountainview.gov/our-city/departments/finance-and-administrative-services/city-tax-information/real-property-transfer-conveyance-tax
+     San Jose Measure E (thêm, toàn bộ giá): >$2.3M 0.75%; >$5M 1.0%; >$10M 1.5% — ngưỡng tăng lên $2.3M từ 01/07/2025
+       FNF rev 01/06/2026 + Old Republic Santa Clara Homeowners Manual p.42 https://media.oldrepublictitle.com/homeowners-manual/santa-clara/files/basic-html/page42.html
+       Ai trả Measure E: không có thông lệ in sẵn; mặc định seller — KEN DUYỆT.
+   Fremont, Union City, Newark, Pleasanton, Livermore, Dublin, unincorporated Alameda, và các city Santa Clara còn lại: không có city tax.
+   LƯU Ý: bầu cử 03/11/2026 có measure về transfer tax (Oakland sửa miễn trừ foreclosure; Piedmont tăng; prop tiểu bang giới hạn transfer tax) — kiểm kết quả rồi sửa ở đây.
+*/
+const CITIES=[
+  {id:'sj', n:'San Jose',      c:'SC', per1000:[[Infinity,3.30]], split:0.5, extra:[[2300000,0.0075],[5000000,0.01],[10000000,0.015]]},
+  {id:'sc', n:'Santa Clara',   c:'SC', per1000:[]},
+  {id:'sv', n:'Sunnyvale',     c:'SC', per1000:[]},
+  {id:'mv', n:'Mountain View', c:'SC', per1000:[[6000000,3.30],[Infinity,15]], split:0.5},
+  {id:'pa', n:'Palo Alto',     c:'SC', per1000:[[Infinity,3.30]], split:0.5},
+  {id:'mp', n:'Milpitas',      c:'SC', per1000:[]},
+  {id:'cu', n:'Cupertino',     c:'SC', per1000:[]},
+  {id:'cb', n:'Campbell',      c:'SC', per1000:[]},
+  {id:'lg', n:'Los Gatos',     c:'SC', per1000:[]},
+  {id:'sa', n:'Saratoga',      c:'SC', per1000:[]},
+  {id:'mh', n:'Morgan Hill',   c:'SC', per1000:[]},
+  {id:'gi', n:'Gilroy',        c:'SC', per1000:[]},
+  {id:'osc',n:'Other Santa Clara County', c:'SC', per1000:[]},
+  {id:'oak',n:'Oakland',       c:'AL', per1000:[[300000,10],[2000000,15],[5000000,17.5],[Infinity,25]], split:0.5},
+  {id:'brk',n:'Berkeley',      c:'AL', per1000:[[1700000,15],[Infinity,25]], split:0.5},
+  {id:'fre',n:'Fremont',       c:'AL', per1000:[]},
+  {id:'hay',n:'Hayward',       c:'AL', per1000:[[Infinity,8.50]], split:0.5},
+  {id:'sl', n:'San Leandro',   c:'AL', per1000:[[Infinity,11]], split:0.5},
+  {id:'ala',n:'Alameda',       c:'AL', per1000:[[Infinity,12]], split:0.5},
+  {id:'uc', n:'Union City',    c:'AL', per1000:[]},
+  {id:'nw', n:'Newark',        c:'AL', per1000:[]},
+  {id:'pl', n:'Pleasanton',    c:'AL', per1000:[]},
+  {id:'lv', n:'Livermore',     c:'AL', per1000:[]},
+  {id:'du', n:'Dublin',        c:'AL', per1000:[]},
+  {id:'cv', n:'Castro Valley / unincorporated Alameda', c:'AL', per1000:[]}
+];
+function cityTax(city,price){
+  let rate=0;
+  for(const [max,r] of city.per1000){ if(price<=max){ rate=r; break; } }
+  const base=price*rate/1000;
+  let xr=0; if(city.extra) for(const [min,r] of city.extra){ if(price>min) xr=r; }
+  return {base, rate, extra:price*xr, xr, split:city.split||0};
+}
+function interp(tbl,x){
+  if(x<=0) return 0;
+  if(x<=tbl[0][0]) return tbl[0][1];
+  for(let i=1;i<tbl.length;i++){ const [x1,y1]=tbl[i]; if(x<=x1){ const [x0,y0]=tbl[i-1]; return y0+(y1-y0)*(x-x0)/(x1-x0); } }
+  const [xa,ya]=tbl[tbl.length-2],[xb,yb]=tbl[tbl.length-1]; return yb+(yb-ya)*(x-xb)/(xb-xa);
+}
+/* Pure calc: inp = {price, payoff, cl, cb, cityId, credit, repair} */
+function computeSell(inp){
+  const price=Math.max(0,inp.price||0), payoff=Math.max(0,inp.payoff||0);
+  const city=CITIES.find(c=>c.id===inp.cityId)||CITIES[0], co=city.c;
+  const commL=price*Math.max(0,inp.cl||0)/100, commB=price*Math.max(0,inp.cb||0)/100, comm=commL+commB;
+  const county=price>0?CFG.COUNTY_PER500*Math.ceil(price/500):0;
+  const ct=cityTax(city,price);
+  const citySeller=ct.base*(1-ct.split);
+  const measE=ct.extra;                               /* seller 100% (mặc định) */
+  const tt=county+citySeller+measE;
+  const escFull=price>0?CFG.ESCROW_BASE+CFG.ESCROW_PER1000*price/1000:0;
+  const esc=escFull*CFG.ESCROW_SELLER_SHARE[co] + (co==='AL'&&price>0?CFG.ESCROW_SELLER_MISC_AL:0);
+  const opol=CFG.OWNER_POLICY_SELLER[co]?interp(CFG.HO_RATES,price):0;
+  const nhd=price>0?CFG.NHD:0, misc=price>0?CFG.SELLER_MISC:0;
+  const te=esc+opol+nhd+misc;
+  const credit=Math.max(0,inp.credit||0), repair=Math.max(0,inp.repair||0);
+  const cost=comm+tt+te+credit+repair;
+  const net=price-cost-payoff;
+  return {price,payoff,city,co,commL,commB,comm,county,ct,citySeller,measE,tt,escFull,esc,opol,nhd,misc,te,credit,repair,cost,net,costPct:price>0?cost/price*100:0};
+}
+/*CALC-END*/
+const UPDATED='03/11/2026';
+
+const I18N={
+ vi:{title:'Bán nhà xong, cầm về bao nhiêu?',sub:'Trừ nợ, commission, transfer tax theo từng city, escrow, title. Thông lệ Santa Clara / Alameda, ra số liền.',
+  l_price:'Giá bán',l_payoff:'Nợ còn lại',l_city:'Thành phố',l_cl:'Commission listing agent',l_cb:'Commission buyer agent',l_credit:'Credit cho buyer',l_credit_s:'(concessions)',l_repair:'Sửa nhà &amp; staging',
+  r_total:'Tiền cầm về (net proceeds)',lg_net:'Cầm về',lg_pay:'Trả nợ',lg_comm:'Commission',lg_fee:'Thuế, phí, sửa nhà',
+  g_price:'Giá bán',g_comm:'Commission',n_cl:'Listing agent {r}%',n_cb:'Buyer agent {r}%',
+  g_tt:'Transfer tax',county_sc:'County Santa Clara $1.10/$1,000 (seller trả)',county_al:'County Alameda $1.10/$1,000 (seller trả)',
+  city_none:'{c}: không có city transfer tax',city_split:'{c} ${r}/$1,000 — seller chịu nửa (thông lệ chia đôi)',n_e:'San Jose Measure E {r}% (giá trên $2.3M, mặc định seller trả)',
+  g_te:'Escrow, title &amp; giấy tờ',esc_sc:'Escrow fee (seller trả, thông lệ Santa Clara)',esc_al:'Escrow: phí phía seller (escrow fee chính buyer trả, thông lệ Alameda)',
+  opol_sc:"Owner's title policy (seller trả, thông lệ Santa Clara)",opol_al:"Owner's title policy (buyer trả ở Alameda → $0)",n_nhd:'NHD report (~$100)',n_misc:'Reconveyance, notary, courier, wire (ước tính)',
+  g_cr:'Credit cho buyer',g_rp:'Sửa nhà &amp; staging',g_pay:'Trả nợ (payoff)',
+  m_cost:'Tổng chi phí bán (chưa tính nợ)',m_pct:'giá bán',
+  note_neg:'Số âm: bán giá này không đủ trả nợ + chi phí. Phải mang tiền tới escrow, hoặc nói chuyện short sale với lender.',
+  note_e:'San Jose: giá trên $2.3M bị thêm Measure E {r}% = {a}, tính trên TOÀN BỘ giá. Bán $2.30M với $2.31M chênh cả chục ngàn — hỏi Ken trước khi chốt giá.',
+  note_brk:'Berkeley: từ $1.7M trở lên tax nhảy từ 1.5% lên 2.5% trên toàn bộ giá. Từ 01/01/2027 Measure W thêm bậc cao hơn.',
+  note_oak:'Oakland: tax theo bậc, áp trên toàn bộ giá (1% / 1.5% / 1.75% / 2.5%).',
+  note_mv:'Mountain View: trên $6M tax nhảy lên $15/$1,000 (Measure G).',
+  note_nar:'Commission do mình thương lượng với agent. Sau vụ NAR settlement (2024), phần trả cho agent bên mua không còn ghi sẵn trên MLS — người bán có thể trả, không trả, hay để buyer xin credit. Để 0% nếu không trả.',
+  note_gen:'Chưa tính: thuế nhà chia theo ngày (proration), HOA docs/transfer nếu là condo (~$300–800), home warranty, capital gains tax. Ai trả gì là thông lệ, thương lượng được.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi bảng tính này về email',f_sub:'Ken nhận được sẽ gửi lại seller net sheet chi tiết + giá thị trường căn nhà bạn. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Chi phí khi bán nhà',ft_vid:'Video 3 phút',ft_est:'Escrow, title, NHD là ước tính. Số thật nằm trong estimated settlement statement của escrow. Transfer tax theo bảng county/city 2026.',ft_upd:'Cập nhật',ft_all:'Tất cả tools',
+  lang:'English',sms:'Chào Ken, tôi vừa tính bán nhà trên tools.kenlamrealty.com: bán {p} ở {city}, nợ {po} → cầm về khoảng {t}. Cho tôi hỏi thêm.',
+  subj:'Bán nhà cầm về bao nhiêu — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nGiá bán: {p}\nThành phố: {city}\nNợ còn lại: {po}\n\nCommission: {comm} (listing {cl}%, buyer {cb}%)\nTransfer tax (phần seller): {tt}\nEscrow, title, NHD: {te}\nCredit cho buyer: {cr}\nSửa nhà & staging: {rp}\nTổng chi phí: {cost} ({pct}% giá)\n\nTIỀN CẦM VỀ: {t}\n\nGửi từ tool T21 tools.kenlamrealty.com'},
+ en:{title:'After selling, how much do I walk away with?',sub:'Minus payoff, commission, city-by-city transfer tax, escrow and title. Santa Clara / Alameda customs, live result.',
+  l_price:'Sale price',l_payoff:'Loan payoff',l_city:'City',l_cl:'Listing agent commission',l_cb:'Buyer agent commission',l_credit:'Credit to buyer',l_credit_s:'(concessions)',l_repair:'Repairs &amp; staging',
+  r_total:'Net proceeds',lg_net:'You keep',lg_pay:'Loan payoff',lg_comm:'Commission',lg_fee:'Taxes, fees, repairs',
+  g_price:'Sale price',g_comm:'Commission',n_cl:'Listing agent {r}%',n_cb:'Buyer agent {r}%',
+  g_tt:'Transfer tax',county_sc:'Santa Clara County $1.10/$1,000 (seller pays)',county_al:'Alameda County $1.10/$1,000 (seller pays)',
+  city_none:'{c}: no city transfer tax',city_split:'{c} ${r}/$1,000 — seller pays half (custom split)',n_e:'San Jose Measure E {r}% (over $2.3M, seller by default)',
+  g_te:'Escrow, title &amp; paperwork',esc_sc:'Escrow fee (seller pays, Santa Clara custom)',esc_al:'Escrow: seller-side charges (buyer pays main fee, Alameda custom)',
+  opol_sc:"Owner's title policy (seller pays, Santa Clara custom)",opol_al:"Owner's title policy (buyer pays in Alameda → $0)",n_nhd:'NHD report (~$100)',n_misc:'Reconveyance, notary, courier, wire (estimate)',
+  g_cr:'Credit to buyer',g_rp:'Repairs &amp; staging',g_pay:'Loan payoff',
+  m_cost:'Total selling costs (excl. payoff)',m_pct:'of price',
+  note_neg:'Negative: this price does not cover the loan + costs. You would bring cash to escrow, or talk to the lender about a short sale.',
+  note_e:'San Jose: over $2.3M adds Measure E {r}% = {a}, on the WHOLE price. $2.30M vs $2.31M can differ by tens of thousands — ask Ken before setting the price.',
+  note_brk:'Berkeley: at $1.7M and up the tax jumps from 1.5% to 2.5% on the whole price. Measure W adds higher tiers from 1/1/2027.',
+  note_oak:'Oakland: tiered tax on the whole price (1% / 1.5% / 1.75% / 2.5%).',
+  note_mv:'Mountain View: over $6M the tax jumps to $15/$1,000 (Measure G).',
+  note_nar:'Commission is negotiable. Since the NAR settlement (2024), buyer agent pay is no longer posted on the MLS — the seller may pay it, not pay it, or give the buyer a credit. Set 0% if not paying.',
+  note_gen:'Not included: property tax proration, HOA docs/transfer for condos (~$300–800), home warranty, capital gains tax. Who pays what is custom and negotiable.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this breakdown to yourself',f_sub:"Ken will reply with a detailed seller net sheet and your home's market value. No spam.",f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'Costs of selling a home',ft_vid:'3-min video',ft_est:"Escrow, title and NHD are estimates. Real numbers are on escrow's estimated settlement statement. Transfer taxes per 2026 county/city tables.",ft_upd:'Updated',ft_all:'All tools',
+  lang:'Tiếng Việt',sms:'Hi Ken, I ran the seller net tool on tools.kenlamrealty.com: selling {p} in {city}, owe {po} → about {t} net. I have a question.',
+  subj:'Seller net proceeds — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nSale price: {p}\nCity: {city}\nLoan payoff: {po}\n\nCommission: {comm} (listing {cl}%, buyer {cb}%)\nTransfer tax (seller share): {tt}\nEscrow, title, NHD: {te}\nCredit to buyer: {cr}\nRepairs & staging: {rp}\nTotal costs: {cost} ({pct}% of price)\n\nNET PROCEEDS: {t}\n\nSent from tool T21 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const neg=n=>'−'+fmt(n);
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+let last={};
+
+$('city').innerHTML='<optgroup label="Santa Clara County">'+CITIES.filter(c=>c.c==='SC').map(c=>'<option value="'+c.id+'">'+c.n+'</option>').join('')+'</optgroup>'
+  +'<optgroup label="Alameda County">'+CITIES.filter(c=>c.c==='AL').map(c=>'<option value="'+c.id+'">'+c.n+'</option>').join('')+'</optgroup>';
+$('city').value='sj';
+
+function calc(){
+  const d=I18N[lang];
+  const r=computeSell({price:num('price'),payoff:num('payoff'),cl:num('cl'),cb:num('cb'),cityId:$('city').value,credit:num('credit'),repair:num('repair')});
+  $('total').textContent=fmt(r.net); $('totalV').classList.toggle('neg',r.net<0);
+  $('vPrice').textContent=fmt(r.price);
+  $('vComm').textContent=neg(r.comm); $('vCL').textContent=fmt(r.commL); $('vCB').textContent=fmt(r.commB);
+  $('nCL').textContent=d.n_cl.replace('{r}',num('cl')); $('nCB').textContent=d.n_cb.replace('{r}',num('cb'));
+  $('vTT').textContent=neg(r.tt); $('vCounty').textContent=fmt(r.county); $('nCounty').textContent=r.co==='SC'?d.county_sc:d.county_al;
+  $('vCity').textContent=fmt(r.citySeller);
+  $('nCity').textContent=r.ct.rate>0?d.city_split.replace('{c}',r.city.n).replace('{r}',r.ct.rate.toFixed(2)):d.city_none.replace('{c}',r.city.n);
+  $('rE').classList.toggle('off',r.measE<=0); $('vE').textContent=fmt(r.measE); $('nE').textContent=d.n_e.replace('{r}',(r.ct.xr*100).toFixed(2));
+  $('vTE').textContent=neg(r.te); $('vEsc').textContent=fmt(r.esc); $('nEsc').textContent=r.co==='SC'?d.esc_sc:d.esc_al;
+  $('vOpol').textContent=fmt(r.opol); $('nOpol').textContent=r.co==='SC'?d.opol_sc:d.opol_al;
+  $('vNhd').textContent=fmt(r.nhd); $('vMisc').textContent=fmt(r.misc);
+  $('vCR').textContent=neg(r.credit); $('rCR').classList.toggle('off',r.credit<=0);
+  $('vRP').textContent=neg(r.repair); $('rRP').classList.toggle('off',r.repair<=0);
+  $('vPay').textContent=neg(r.payoff);
+  $('mCost').textContent=fmt(r.cost); $('mPct').textContent=r.costPct.toFixed(1)+'%';
+  $('noteNeg').classList.toggle('hide',r.net>=0);
+  let cn=''; const id=r.city.id;
+  if(id==='sj'&&r.measE>0) cn=d.note_e.replace('{r}',(r.ct.xr*100).toFixed(2)).replace('{a}',fmt(r.measE));
+  else if(id==='brk') cn=d.note_brk; else if(id==='oak') cn=d.note_oak; else if(id==='mv'&&r.price>6000000) cn=d.note_mv;
+  $('noteCity').textContent=cn; $('noteCity').classList.toggle('hide',!cn);
+  const fees=r.tt+r.te+r.credit+r.repair, keep=Math.max(0,r.net), pay=Math.min(r.payoff,Math.max(0,r.price-r.comm-fees));
+  const T=(keep+pay+r.comm+fees)||1;
+  $('s1').style.width=(keep/T*100)+'%'; $('s2').style.width=(pay/T*100)+'%'; $('s3').style.width=(r.comm/T*100)+'%'; $('s4').style.width=(fees/T*100)+'%';
+  last={p:fmt(r.price),city:r.city.n,po:fmt(r.payoff),comm:fmt(r.comm),cl:num('cl'),cb:num('cb'),tt:fmt(r.tt),te:fmt(r.te),cr:fmt(r.credit),rp:fmt(r.repair),cost:fmt(r.cost),pct:r.costPct.toFixed(1),t:fmt(r.net)};
+  const s=d.sms.replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s);
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+['price','payoff','cl','cb','credit','repair'].forEach(id=>$(id).addEventListener('input',calc));
+$('city').addEventListener('change',calc);
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'\u2190 All tools':'\u2190 T\u1ea5t c\u1ea3 tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

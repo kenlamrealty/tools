@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HELOC Hay Cash-out Refi</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T36 thêm ---- */
+.more{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:0 12px}
+.more summary{cursor:pointer;font-size:14px;color:var(--muted);padding:12px 0;list-style-position:inside}
+.more[open] summary{border-bottom:1px solid var(--line);margin-bottom:12px}
+.more .inner{display:grid;gap:12px;padding-bottom:14px}
+.more .ctl input{font-size:17px;padding:10px 8px}
+.tag{display:inline-block;font-size:11px;line-height:1.5;padding:0 7px;border-radius:999px;border:1px solid var(--brass);color:var(--brass);white-space:nowrap;font-weight:400}
+.total .sub2{margin-top:8px;font-size:14px;color:var(--muted)}
+.alert{font-size:14px;color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);border-radius:10px;padding:10px 12px;line-height:1.45}
+.alert.hide{display:none}
+.cmp{display:grid;gap:6px;padding-left:12px;border-left:3px solid var(--line)}
+.cmp.sel{border-left-color:var(--brass)}
+.cmp h3{font-family:var(--display);font-weight:400;font-size:24px;margin:0;line-height:1.2}
+.cmp h3 small{font-family:var(--body);font-size:12px;color:var(--muted);font-weight:400;letter-spacing:.04em}
+.line.up .a{color:var(--warn)}
+.line.down .a{color:var(--ok)}
+.verdict{font-size:15px;color:var(--fg);border-top:1px solid var(--line);padding-top:12px;line-height:1.45}
+</style>
+<meta name="description" content="Nhập giá nhà, nợ còn lại, lãi cũ và số cần rút. Xem rút tối đa bao nhiêu và mỗi tháng trả thêm bao nhiêu.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t36/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="HELOC Hay Cash-out Refi · Ken Lam Tools">
+<meta property="og:description" content="Nhập giá nhà, nợ còn lại, lãi cũ và số cần rút. Xem rút tối đa bao nhiêu và mỗi tháng trả thêm bao nhiêu.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t36/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title">Rút tiền từ nhà: HELOC hay cash-out refi?</h1>
+    <p class="sub" data-i="sub">Nhập giá nhà, nợ còn lại, lãi cũ và số cần rút. Xem rút tối đa bao nhiêu và mỗi tháng trả thêm bao nhiêu.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="row2">
+      <div class="field">
+        <label for="val" data-i="l_val">Giá trị nhà hiện tại</label>
+        <div class="ctl"><span class="pre">$</span><input id="val" type="number" inputmode="numeric" min="0" step="10000" value="1400000"></div>
+      </div>
+      <div class="field">
+        <label for="debt" data-i="l_debt">Nợ còn lại</label>
+        <div class="ctl"><span class="pre">$</span><input id="debt" type="number" inputmode="numeric" min="0" step="5000" value="500000"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="oldRate" data-i="l_old">Lãi suất loan hiện tại</label>
+        <div class="ctl"><input id="oldRate" type="number" inputmode="decimal" min="0" max="20" step="0.125" value="3.25"><span class="post">%</span></div>
+      </div>
+      <div class="field">
+        <label for="need" data-i="l_need">Cần rút bao nhiêu</label>
+        <div class="ctl"><span class="pre">$</span><input id="need" type="number" inputmode="numeric" min="0" step="5000" value="150000"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="oldPI"><span data-i="l_oldpi">Tiền P&amp;I hiện tại/tháng</span> <small data-i="l_oldpi_s">(để trống = tự tính, còn 25 năm)</small></label>
+      <div class="ctl"><span class="pre">$</span><input id="oldPI" type="number" inputmode="numeric" min="0" step="10" placeholder="2437"><span class="post" data-i="per_mo">/tháng</span></div>
+    </div>
+    <div class="field">
+      <label data-i="l_mode">Cách rút</label>
+      <div class="seg" role="group">
+        <button type="button" id="mCash" aria-pressed="false">Cash-out refi</button>
+        <button type="button" id="mHeloc" aria-pressed="true">HELOC</button>
+      </div>
+    </div>
+    <details class="more">
+      <summary data-i="adv">Lãi mới, LTV, closing cost (ước tính, sửa được)</summary>
+      <div class="inner">
+        <div class="row2">
+          <div class="field">
+            <label for="cashRate" data-i="l_cr">Lãi cash-out mới <small>(30y PMMS + 0.25)</small></label>
+            <div class="ctl"><input id="cashRate" type="number" inputmode="decimal" step="0.125" value="7.49"><span class="post">%</span></div>
+          </div>
+          <div class="field">
+            <label for="helocRate" data-i="l_hr">Lãi HELOC <small>(prime + 0.5)</small></label>
+            <div class="ctl"><input id="helocRate" type="number" inputmode="decimal" step="0.125" value="7.5"><span class="post">%</span></div>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="ltv" data-i="l_ltv">Max LTV cash-out</label>
+            <div class="ctl"><input id="ltv" type="number" inputmode="decimal" step="1" value="80"><span class="post">%</span></div>
+          </div>
+          <div class="field">
+            <label for="cltv" data-i="l_cltv">Max CLTV HELOC</label>
+            <div class="ctl"><input id="cltv" type="number" inputmode="decimal" step="1" value="85"><span class="post">%</span></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="cc" data-i="l_cc">Closing cost refi <small>(% loan mới, cộng vào loan)</small></label>
+          <div class="ctl"><input id="cc" type="number" inputmode="decimal" step="0.25" value="2"><span class="post">%</span></div>
+        </div>
+        <div class="note" data-i="ltv_note">Conventional cash-out tối đa 80%. FHA cash-out cũng 80%. VA có lender cho tới 90%. HELOC 85% là ước tính, mỗi ngân hàng khác.</div>
+      </div>
+    </details>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_max">Rút tối đa được</div>
+      <div class="v"><span id="maxOut">$0</span></div>
+      <div class="sub2" id="maxSub"></div>
+    </div>
+    <div class="alert hide" id="overAlert"></div>
+
+    <div class="cmp" id="cmpCash">
+      <h3>Cash-out refi <small id="cashTag"></small></h3>
+      <div class="lines">
+        <div class="line"><span class="n"><b data-i="n_newloan">Loan mới</b> <span id="ccInfo"></span></span><span class="a" id="newLoan">$0</span></div>
+        <div class="line"><span class="n"><b data-i="n_oldpi">P&amp;I cũ</b> <span id="oldPIinfo"></span></span><span class="a" id="oldPIout">$0</span></div>
+        <div class="line"><span class="n"><b data-i="n_newpi">P&amp;I mới</b> <span id="newPIinfo"></span></span><span class="a" id="newPI">$0</span></div>
+        <div class="line" id="diffLine"><span class="n"><b data-i="n_diff">Chênh mỗi tháng</b></span><span class="a" id="diff">$0</span></div>
+      </div>
+      <div class="alert hide" id="rateAlert"></div>
+    </div>
+
+    <div class="cmp" id="cmpHeloc">
+      <h3>HELOC <small id="helocTag"></small></h3>
+      <div class="lines">
+        <div class="line"><span class="n"><b data-i="n_io">Interest-only/tháng</b> <span data-i="n_io_s">(10 năm đầu, giai đoạn rút)</span></span><span class="a" id="io">$0</span></div>
+        <div class="line"><span class="n"><b data-i="n_tot">Tổng tiền/tháng</b> <span data-i="n_tot_s">(loan cũ + HELOC)</span></span><span class="a" id="hTot">$0</span></div>
+        <div class="line"><span class="n"><b data-i="n_rep">Sau 10 năm</b> <span data-i="n_rep_s">(HELOC trả gốc + lãi 20 năm)</span></span><span class="a" id="rep">$0</span></div>
+      </div>
+      <div class="note" data-i="heloc_note">Lãi HELOC thả nổi theo prime rate. Prime lên thì tiền tháng lên.</div>
+    </div>
+
+    <div class="verdict" id="verdict"></div>
+    <div class="note hide" id="jumboNote"></div>
+  </section>
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video hướng dẫn"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Gửi kết quả qua email</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Hỏi Ken</a>
+    <a class="btn" id="videoBtn" href="/t36/web.mp4" target="_blank" rel="noopener" data-i="b_video">Xem video 15 giây</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Gửi bảng so sánh này về email</h2>
+    <p data-i="f_sub">Ken nhận được sẽ gửi lại tên lender HELOC và cash-out đang cho rate tốt. Không spam.</p>
+    <div class="field"><label for="fname" data-i="f_name">Tên</label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone" data-i="f_phone">Phone (không bắt buộc)</label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Hoặc text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Đọc thêm:</span> <a href="https://kenlamrealty.com/library#heloc-cash-out" target="_blank" rel="noopener" data-i="ft_lib">HELOC và cash-out khác nhau ra sao</a> · <a href="https://kenlamrealty.com/library#video-heloc" target="_blank" rel="noopener" data-i="ft_vid">Video 3 phút</a></span>
+    <span data-i="ft_est">Lãi suất, LTV, closing cost là ước tính. Số thật tùy lender, điểm credit và appraisal.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 03/11/2026 · <a href="/" data-i="ft_all">Tất cả tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số liệu — sửa ở đây khi đổi =====
+   PMMS30 = 7.24%: Freddie Mac PMMS tuần 29/10/2026, https://www.freddiemac.com/pmms (tra 03/11/2026).
+     Lãi cash-out mặc định = PMMS30 + 0.25 (cash-out thường cao hơn rate mua nhà) — ƯỚC TÍNH, KEN DUYỆT.
+   PRIME = 7.00%: Fed H.15 Bank prime loan, https://www.federalreserve.gov/releases/h15/ (số ngày 30/10/2026, tra 03/11/2026);
+     khớp WSJ Prime https://www.bankrate.com/rates/interest-rates/wall-street-prime-rate/ (updated 30/10/2026).
+     Lãi HELOC mặc định = prime + 0.5 — ƯỚC TÍNH, KEN DUYỆT (tùy ngân hàng, credit, CLTV).
+   MAX_LTV 80%: conventional cash-out 1 căn ở chính (Fannie Mae Eligibility Matrix / Selling Guide B2-1.3-03,
+     https://selling-guide.fanniemae.com/). FHA cash-out 80% (HUD 4000.1). VA: luật cho tới 100%, nhiều lender cap 90% — KEN DUYỆT.
+   MAX_CLTV 85% HELOC: mức thông dụng, có nơi 80–90% — ƯỚC TÍNH, KEN DUYỆT.
+   CC 2%: closing cost refi ước tính % loan mới, cộng vào loan — ƯỚC TÍNH, KEN DUYỆT.
+   OLD_YEARS 25: số năm còn lại mặc định để tự tính P&I cũ. HELOC: 10 năm rút (interest-only) + 20 năm trả.
+   LIMIT: conforming high-cost 2026 Santa Clara/Alameda (giống T01). */
+const PMMS30=7.24, PRIME=7.00;
+const D_CASH_RATE=+(PMMS30+0.25).toFixed(3), D_HELOC_RATE=PRIME+0.5;
+const MAX_LTV=80, MAX_CLTV=85, CC=2, OLD_YEARS=25, DRAW_YEARS=10, REPAY_YEARS=20, NEW_YEARS=30;
+const LIMIT=1249125;
+const UPDATED='03/11/2026';
+
+const I18N={
+ vi:{title:'Rút tiền từ nhà: HELOC hay cash-out refi?',sub:'Nhập giá nhà, nợ còn lại, lãi cũ và số cần rút. Xem rút tối đa bao nhiêu và mỗi tháng trả thêm bao nhiêu.',
+  l_val:'Giá trị nhà hiện tại',l_debt:'Nợ còn lại',l_old:'Lãi suất loan hiện tại',l_need:'Cần rút bao nhiêu',l_oldpi:'Tiền P&amp;I hiện tại/tháng',l_oldpi_s:'(để trống = tự tính, còn 25 năm)',per_mo:'/tháng',l_mode:'Cách rút',
+  adv:'Lãi mới, LTV, closing cost (ước tính, sửa được)',l_cr:'Lãi cash-out mới <small>(30y PMMS + 0.25)</small>',l_hr:'Lãi HELOC <small>(prime + 0.5)</small>',l_ltv:'Max LTV cash-out',l_cltv:'Max CLTV HELOC',l_cc:'Closing cost refi <small>(% loan mới, cộng vào loan)</small>',
+  ltv_note:'Conventional cash-out tối đa 80%. FHA cash-out cũng 80%. VA có lender cho tới 90%. HELOC 85% là ước tính, mỗi ngân hàng khác.',
+  r_max:'Rút tối đa được',sub_cash:'Cash-out refi · loan mới tối đa {p}% giá nhà, đã trừ closing cost',sub_heloc:'HELOC · loan cũ + HELOC tối đa {p}% giá nhà',
+  over:'Số bạn cần ({n}) vượt mức rút tối đa ({m}). Bảng dưới tính với {m}.',
+  tag_sel:'· đang chọn',est:'ước tính',
+  n_newloan:'Loan mới',cc_info:'(gồm {c} closing)',n_oldpi:'P&amp;I cũ',oldpi_auto:'(tự tính, {r}%, 25 năm)',oldpi_in:'(bạn nhập)',n_newpi:'P&amp;I mới',newpi_info:'({r}%, 30 năm)',n_diff:'Chênh mỗi tháng',
+  rate_alert:'Bạn bỏ lãi {a}% để lấy {b}% trên toàn bộ {l}, không chỉ trên số rút.',
+  n_io:'Interest-only/tháng',n_io_s:'(10 năm đầu, giai đoạn rút)',n_tot:'Tổng tiền/tháng',n_tot_s:'(loan cũ + HELOC)',n_rep:'Sau 10 năm',n_rep_s:'(HELOC trả gốc + lãi 20 năm)',
+  heloc_note:'Lãi HELOC thả nổi theo prime rate. Prime lên thì tiền tháng lên.',
+  v_low:'Lãi cũ thấp hơn lãi mới → HELOC thường đỡ hơn: giữ nguyên loan {a}%, chỉ trả lãi trên số rút. Mỗi tháng thêm ~{h} so với cash-out thêm ~{c}.',
+  v_high:'Lãi cũ không thấp hơn lãi mới → cash-out refi có thể đáng xem, rate cố định, 1 khoản trả. HELOC thêm ~{h}/tháng, cash-out thêm ~{c}/tháng.',
+  jumbo:'Loan mới {l} trên {L} là jumbo. Rate cash-out jumbo khác, hỏi lender.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi bảng so sánh này về email',f_sub:'Ken nhận được sẽ gửi lại tên lender HELOC và cash-out đang cho rate tốt. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'HELOC và cash-out khác nhau ra sao',ft_vid:'Video 3 phút',ft_est:'Lãi suất, LTV, closing cost là ước tính. Số thật tùy lender, điểm credit và appraisal.',ft_upd:'Cập nhật',ft_all:'Tất cả tools',
+  lang:'English',sms:'Chào Ken, tôi xem tool HELOC/cash-out: nhà {v}, nợ {d} lãi {r}%, cần rút {n}. HELOC thêm ~{io}/tháng, cash-out thêm ~{df}/tháng. Cho tôi hỏi thêm.',
+  subj:'So sánh HELOC / cash-out — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nGiá trị nhà: {v}\nNợ còn lại: {d}\nLãi cũ: {r}%\nP&I cũ: {op}/tháng\nCần rút: {nd}\n\nCASH-OUT REFI (lãi {cr}%, max LTV {lt}%)\nRút tối đa: {mc}\nLoan mới: {nl}\nP&I mới: {np}/tháng\nChênh: {df}/tháng\n\nHELOC (lãi {hr}%, max CLTV {cl}%)\nRút tối đa: {mh}\nInterest-only: {io}/tháng\nTổng tiền/tháng: {ht}\nSau 10 năm: {rp}/tháng\n\nƯớc tính, không phải báo giá.\nGửi từ tool T36 tools.kenlamrealty.com'},
+ en:{title:'Pull cash from your home: HELOC or cash-out refi?',sub:'Enter home value, balance, current rate and cash needed. See the max you can pull and the monthly cost.',
+  l_val:'Current home value',l_debt:'Loan balance',l_old:'Current loan rate',l_need:'Cash needed',l_oldpi:'Current P&amp;I per month',l_oldpi_s:'(blank = auto, 25 yrs left)',per_mo:'/mo',l_mode:'Method',
+  adv:'New rates, LTV, closing cost (estimates, editable)',l_cr:'New cash-out rate <small>(30y PMMS + 0.25)</small>',l_hr:'HELOC rate <small>(prime + 0.5)</small>',l_ltv:'Max cash-out LTV',l_cltv:'Max HELOC CLTV',l_cc:'Refi closing cost <small>(% of new loan, rolled in)</small>',
+  ltv_note:'Conventional cash-out max 80%. FHA cash-out also 80%. Some VA lenders go to 90%. HELOC 85% is an estimate and varies by bank.',
+  r_max:'Max cash you can pull',sub_cash:'Cash-out refi · new loan up to {p}% of value, after closing cost',sub_heloc:'HELOC · old loan + HELOC up to {p}% of value',
+  over:'You need {n}, above the max of {m}. The table below uses {m}.',
+  tag_sel:'· selected',est:'estimate',
+  n_newloan:'New loan',cc_info:'(incl. {c} closing)',n_oldpi:'Old P&amp;I',oldpi_auto:'(auto, {r}%, 25 yrs)',oldpi_in:'(your input)',n_newpi:'New P&amp;I',newpi_info:'({r}%, 30 yrs)',n_diff:'Monthly change',
+  rate_alert:'You give up {a}% to take {b}% on the whole {l}, not just the cash.',
+  n_io:'Interest-only/mo',n_io_s:'(first 10 yrs, draw period)',n_tot:'Total per month',n_tot_s:'(old loan + HELOC)',n_rep:'After 10 yrs',n_rep_s:'(HELOC principal + interest, 20 yrs)',
+  heloc_note:'HELOC rates float with prime. Prime goes up, your payment goes up.',
+  v_low:'Your old rate is lower than the new one → a HELOC is usually cheaper: you keep the {a}% loan and pay interest only on the cash. About {h}/mo more vs {c}/mo more for cash-out.',
+  v_high:'Your old rate is not lower than the new one → a cash-out refi may be worth a look: fixed rate, one payment. HELOC adds ~{h}/mo, cash-out adds ~{c}/mo.',
+  jumbo:'New loan {l} is above {L}, so it is jumbo. Jumbo cash-out rates differ, ask a lender.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this comparison to yourself',f_sub:'Ken will reply with HELOC and cash-out lenders offering good rates. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'HELOC vs cash-out explained',ft_vid:'3-min video',ft_est:'Rates, LTV and closing costs are estimates. Actual numbers depend on lender, credit and appraisal.',ft_upd:'Updated',ft_all:'All tools',
+  lang:'Tiếng Việt',sms:'Hi Ken, I used the HELOC/cash-out tool: home {v}, owe {d} at {r}%, need {n}. HELOC adds ~{io}/mo, cash-out adds ~{df}/mo. I have a question.',
+  subj:'HELOC / cash-out comparison — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nHome value: {v}\nBalance: {d}\nOld rate: {r}%\nOld P&I: {op}/mo\nCash needed: {nd}\n\nCASH-OUT REFI ({cr}%, max LTV {lt}%)\nMax cash: {mc}\nNew loan: {nl}\nNew P&I: {np}/mo\nChange: {df}/mo\n\nHELOC ({hr}%, max CLTV {cl}%)\nMax cash: {mh}\nInterest-only: {io}/mo\nTotal per month: {ht}\nAfter 10 yrs: {rp}/mo\n\nEstimates, not a quote.\nSent from tool T36 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const sfmt=n=>(n>=0?'+':'−')+fmt(Math.abs(n));
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const pct=x=>String(Math.round(x*1000)/1000);
+function pmt(P,ratePct,years){ if(P<=0) return 0; const r=ratePct/100/12,n=years*12; return r===0?P/n:P*r/(1-Math.pow(1+r,-n)); }
+/* Toàn bộ phép tính — tách riêng để test bằng node */
+function compute(i){
+  const oldPIauto=pmt(i.debt,i.oldRate,OLD_YEARS), oldPI=i.oldPI>0?i.oldPI:oldPIauto;
+  const cc=i.cc/100;
+  const maxCash=Math.max(0,i.val*i.ltv/100*(1-cc)-i.debt);
+  const maxHeloc=Math.max(0,i.val*i.cltv/100-i.debt);
+  const c=Math.min(i.need,maxCash), h=Math.min(i.need,maxHeloc);
+  const newLoan=(i.debt+c)/(1-cc), closing=newLoan*cc, newPI=pmt(newLoan,i.cashRate,NEW_YEARS), diff=newPI-oldPI;
+  const io=h*i.helocRate/100/12, hTot=oldPI+io, rep=pmt(h,i.helocRate,REPAY_YEARS);
+  return {oldPIauto,oldPI,maxCash,maxHeloc,c,h,newLoan,closing,newPI,diff,io,hTot,rep};
+}
+let mode='heloc', last={};
+
+function calc(){
+  const d=I18N[lang];
+  const i={val:num('val'),debt:num('debt'),oldRate:num('oldRate'),need:Math.max(0,num('need')),oldPI:num('oldPI'),
+    cashRate:num('cashRate'),helocRate:num('helocRate'),ltv:num('ltv'),cltv:num('cltv'),cc:Math.min(50,Math.max(0,num('cc')))};
+  const o=compute(i), max=mode==='cash'?o.maxCash:o.maxHeloc;
+  $('oldPI').placeholder=Math.round(o.oldPIauto);
+  $('maxOut').textContent=fmt(max);
+  $('maxSub').textContent=mode==='cash'?d.sub_cash.replace('{p}',pct(i.ltv)):d.sub_heloc.replace('{p}',pct(i.cltv));
+  const over=i.need>max+0.5;
+  $('overAlert').classList.toggle('hide',!over);
+  if(over) $('overAlert').textContent=d.over.replace('{n}',fmt(i.need)).replace(/\{m\}/g,fmt(max));
+  $('cmpCash').classList.toggle('sel',mode==='cash'); $('cmpHeloc').classList.toggle('sel',mode==='heloc');
+  $('cashTag').textContent=(mode==='cash'?d.tag_sel+' ':'')+'· '+pct(i.cashRate)+'% '+d.est;
+  $('helocTag').textContent=(mode==='heloc'?d.tag_sel+' ':'')+'· '+pct(i.helocRate)+'% '+d.est;
+  $('newLoan').textContent=fmt(o.newLoan); $('ccInfo').textContent=d.cc_info.replace('{c}',fmt(o.closing));
+  $('oldPIout').textContent=fmt(o.oldPI); $('oldPIinfo').textContent=i.oldPI>0?d.oldpi_in:d.oldpi_auto.replace('{r}',pct(i.oldRate));
+  $('newPI').textContent=fmt(o.newPI); $('newPIinfo').textContent=d.newpi_info.replace('{r}',pct(i.cashRate));
+  $('diff').textContent=sfmt(o.diff); $('diffLine').className='line '+(o.diff>0?'up':'down');
+  const lowOld=i.oldRate<i.cashRate;
+  $('rateAlert').classList.toggle('hide',!lowOld);
+  if(lowOld) $('rateAlert').textContent=d.rate_alert.replace('{a}',pct(i.oldRate)).replace('{b}',pct(i.cashRate)).replace('{l}',fmt(o.newLoan));
+  $('io').textContent=fmt(o.io); $('hTot').textContent=fmt(o.hTot); $('rep').textContent=fmt(o.rep);
+  $('verdict').textContent=(lowOld?d.v_low:d.v_high).replace('{a}',pct(i.oldRate)).replace('{h}',fmt(o.io)).replace('{c}',fmt(Math.max(0,o.diff)));
+  $('jumboNote').classList.toggle('hide',o.newLoan<=LIMIT);
+  $('jumboNote').textContent=d.jumbo.replace('{l}',fmt(o.newLoan)).replace('{L}',fmt(LIMIT));
+  last={v:fmt(i.val),d:fmt(i.debt),r:pct(i.oldRate),op:fmt(o.oldPI),nd:fmt(i.need),cr:pct(i.cashRate),lt:pct(i.ltv),mc:fmt(o.maxCash),nl:fmt(o.newLoan),np:fmt(o.newPI),df:sfmt(o.diff),
+    hr:pct(i.helocRate),cl:pct(i.cltv),mh:fmt(o.maxHeloc),io:fmt(o.io),ht:fmt(o.hTot),rp:fmt(o.rep)};
+  const s=d.sms.replace('{v}',last.v).replace('{d}',last.d).replace('{r}',last.r).replace('{n}',last.nd).replace('{io}',last.io).replace('{df}',last.df);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s);
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+$('cashRate').value=D_CASH_RATE; $('helocRate').value=D_HELOC_RATE; $('ltv').value=MAX_LTV; $('cltv').value=MAX_CLTV; $('cc').value=CC;
+['val','debt','oldRate','need','oldPI','cashRate','helocRate','ltv','cltv','cc'].forEach(id=>$(id).addEventListener('input',calc));
+const setMode=m=>{mode=m;$('mCash').setAttribute('aria-pressed',String(m==='cash'));$('mHeloc').setAttribute('aria-pressed',String(m==='heloc'));calc();};
+$('mCash').onclick=()=>setMode('cash'); $('mHeloc').onclick=()=>setMode('heloc');
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'\u2190 All tools':'\u2190 T\u1ea5t c\u1ea3 tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nên Làm Inspection Gì</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ===== Thêm cho timeline / checklist (T60, T63) — không đổi class cũ ===== */
+:root{--warn-soft:#F7ECE3}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--warn-soft:#33271E}}
+:root[data-theme="dark"]{--warn-soft:#33271E}
+.ctl input[type=date]{font-size:18px;min-height:50px}
+.more{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:0 14px}
+.more summary{cursor:pointer;padding:13px 0;font-size:14px;color:var(--muted);font-weight:500;list-style:none;display:flex;justify-content:space-between;gap:10px}
+.more summary::-webkit-details-marker{display:none}
+.more summary::after{content:'+';color:var(--brass);font-size:18px;line-height:1}
+.more[open] summary::after{content:'\2212'}
+.more .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;padding-bottom:14px}
+.more .ctl input{font-size:17px;padding:10px 6px}
+.more .field label{font-size:12px}
+.total .v.dt{font-size:36px;line-height:1.12;text-wrap:balance}
+.cd{margin-top:8px;font-size:15px;color:var(--muted)}
+.cd b{font-family:var(--display);font-size:30px;font-weight:500;color:var(--brass);font-variant-numeric:tabular-nums}
+.prog{display:grid;gap:6px;font-size:13px;color:var(--muted)}
+.prog b{color:var(--fg);font-weight:500}
+.tl{list-style:none;margin:0;padding:0}
+.grp{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);font-weight:500;padding:18px 0 10px;display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.grp:first-child{padding-top:4px}
+.grp .gd{letter-spacing:0;text-transform:none;color:var(--muted);font-weight:400;font-size:13px}
+.ms{position:relative;display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;padding:0 0 18px}
+.ms::before{content:'';position:absolute;left:13.5px;top:30px;bottom:2px;width:1px;background:var(--line)}
+.ms.last::before{display:none}
+.ck{position:relative;width:28px;height:28px;cursor:pointer;display:block}
+.ck input{position:absolute;inset:0;width:28px;height:28px;margin:0;opacity:0;cursor:pointer}
+.ck span{display:block;width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--panel)}
+.ms.key .ck span{border-color:var(--brass)}
+.ck input:checked+span{background:var(--brass);border-color:var(--brass)}
+.ck input:checked+span::after{content:'';position:absolute;left:10px;top:6px;width:6px;height:12px;border:solid #FFFDF8;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.ck input:focus-visible+span{outline:2px solid var(--brass);outline-offset:2px}
+.ms .top{display:flex;justify-content:space-between;gap:6px 10px;align-items:center;flex-wrap:wrap;min-height:28px}
+.ms .d{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.chip{font-size:11px;letter-spacing:.04em;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.today{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.chip.soon{border-color:var(--warn);color:var(--warn)}
+.chip.past{border-style:dashed}
+.ms .tt{display:block;width:100%;text-align:left;border:0;background:none;padding:2px 0 0;font:inherit;font-size:16px;font-weight:500;line-height:1.35;color:var(--fg);cursor:pointer}
+.ms .tt::after{content:' +';color:var(--brass);font-weight:400}
+.ms .tt[aria-expanded="true"]::after{content:' \2212'}
+.ms.key .tt{font-family:var(--display);font-size:22px;font-weight:500}
+.ms.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.why{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.55}
+.why[hidden]{display:none}
+.why a{color:var(--brass)}
+.ms .sub2{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;margin-top:6px;font-size:12px}
+.shift{color:var(--warn)}
+.gcal{color:var(--brass);text-decoration:none;white-space:nowrap}
+.gcal:hover{text-decoration:underline}
+.rules{font-size:13px;color:var(--muted);line-height:1.55;display:grid;gap:4px}
+.rules b{color:var(--fg);font-weight:500}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0;line-height:1.15}
+.panel ol,.panel ul{margin:0;padding-left:20px;display:grid;gap:7px;font-size:14px}
+.panel a{color:var(--brass)}
+.misread{font-size:14px;line-height:1.55;border-left:2px solid var(--brass);padding:2px 0 2px 14px}
+.misread b{font-weight:500}
+.warnbox{background:var(--warn-soft);border:1px solid var(--warn);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.warnbox h2{font-family:var(--display);font-weight:500;font-size:24px;margin:0;color:var(--warn);line-height:1.15}
+.warnbox ul{margin:0;padding-left:20px;display:grid;gap:7px;font-size:14px}
+.warnbox a{color:var(--warn)}
+.copied{font-size:13px;color:var(--ok);text-align:center}
+.copied[hidden]{display:none}
+.fallback{width:100%;min-height:160px;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel);color:var(--fg)}
+.fallback[hidden]{display:none}
+footer .src a{word-break:break-word}
+/* ===== Thêm cho T70 — không đổi class cũ ===== */
+.total .v.rg{font-size:46px;line-height:1.05}
+.seg3 button{padding:11px 6px;font-size:14px}
+.chip.must{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.chip.opt{border-color:var(--brass);color:var(--brass)}
+.ms .pr{font-size:14px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.trig{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:6px}
+.trig .chip{font-size:11px;white-space:normal;max-width:100%;line-height:1.4}
+.why b{color:var(--fg);font-weight:500}
+#dlLine .a{white-space:normal;text-align:right;min-width:0}
+#optLine b{font-size:22px}
+</style>
+<meta name="description" content="Chọn vài thông tin về căn nhà. Ra liền danh sách inspection nên làm, cái nào tùy, giá ước tính ở Bay Area.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t70/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Nên Làm Inspection Gì · Ken Lam Tools">
+<meta property="og:description" content="Chọn vài thông tin về căn nhà. Ra liền danh sách inspection nên làm, cái nào tùy, giá ước tính ở Bay Area.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t70/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title">Nhà này nên làm inspection gì?</h1>
+    <p class="sub" data-i="sub">Chọn vài thông tin về căn nhà. Ra liền danh sách inspection nên làm, cái nào tùy, giá ước tính ở Bay Area.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label data-i="l_type">Loại nhà</label>
+      <div class="seg seg3" role="group" id="gType">
+        <button type="button" data-v="sfr" aria-pressed="true" data-i="t_sfr">Nhà riêng</button>
+        <button type="button" data-v="th" aria-pressed="false">Townhouse</button>
+        <button type="button" data-v="condo" aria-pressed="false">Condo</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="year"><span data-i="l_year">Năm xây</span> <small data-i="l_year_s">(xem trên MLS)</small></label>
+        <div class="ctl"><input id="year" type="number" inputmode="numeric" min="1850" max="2027" step="1" value="1962"></div>
+      </div>
+      <div class="field">
+        <label data-i="l_sewer">Nước thải ra</label>
+        <div class="seg" role="group" id="gSewer">
+          <button type="button" data-v="sewer" aria-pressed="true">Sewer</button>
+          <button type="button" data-v="septic" aria-pressed="false">Septic</button>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label data-i="l_roof">Loại mái</label>
+      <div class="seg seg3" role="group" id="gRoof">
+        <button type="button" data-v="sh" aria-pressed="true">Shingle</button>
+        <button type="button" data-v="tile" aria-pressed="false" data-i="r_tile">Tile (ngói)</button>
+        <button type="button" data-v="flat" aria-pressed="false" data-i="r_flat">Mái bằng</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label data-i="l_pool">Hồ bơi / spa</label>
+        <div class="seg" role="group" id="gPool"><button type="button" data-v="1" aria-pressed="false" data-i="yes">Có</button><button type="button" data-v="0" aria-pressed="true" data-i="no">Không</button></div>
+      </div>
+      <div class="field">
+        <label data-i="l_fire">Ống khói / fireplace</label>
+        <div class="seg" role="group" id="gFire"><button type="button" data-v="1" aria-pressed="true" data-i="yes2">Có</button><button type="button" data-v="0" aria-pressed="false" data-i="no2">Không</button></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label><span data-i="l_hill">Đồi dốc</span> <small>(hillside)</small></label>
+        <div class="seg" role="group" id="gHill"><button type="button" data-v="1" aria-pressed="false" data-i="yes3">Có</button><button type="button" data-v="0" aria-pressed="true" data-i="no3">Không</button></div>
+      </div>
+      <div class="field">
+        <label><span data-i="l_adu">ADU / garage chuyển đổi</span></label>
+        <div class="seg" role="group" id="gAdu"><button type="button" data-v="1" aria-pressed="false" data-i="yes4">Có</button><button type="button" data-v="0" aria-pressed="true" data-i="no4">Không</button></div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="acc"><span data-i="l_acc">Ngày acceptance</span> <small data-i="l_acc_s">(không bắt buộc · để ra hạn 17 ngày)</small></label>
+      <div class="ctl"><input id="acc" type="date"></div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">Tổng ước tính cho mục “Nên làm”</div>
+      <div class="v rg" id="total">$0</div>
+      <div class="cd" id="optLine"></div>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_must">Nên làm</b></span><span class="a" id="nMust">0</span></div>
+      <div class="line"><span class="n"><b data-i="n_opt">Tùy nhà</b> <span data-i="n_opt_s">(làm khi thấy dấu hiệu)</span></span><span class="a" id="nOpt">0</span></div>
+      <div class="line" id="dlLine"><span class="n"><b data-i="n_dl">Làm xong trước</b> <span data-i="n_dl_s">(hạn inspection, Ngày 17)</span></span><span class="a" id="dl">—</span></div>
+    </div>
+    <div class="prog">
+      <div class="bar" aria-hidden="true"><i class="b1" id="progBar" style="width:0"></i></div>
+      <span><b id="progTxt">0/0</b> <span data-i="prog">mục đã đặt lịch · bấm vòng tròn để đánh dấu</span></span>
+    </div>
+    <ol class="tl" id="tl"></ol>
+    <div class="note" id="newNote" data-i="new_note">Nhà mới xây hay mới flip vẫn cần inspection. Flip đẹp ở bề mặt; mái, cống, điện bên trong có khi còn đồ cũ. Hỏi permit cho mọi phần đã sửa.</div>
+    <div class="note" id="ebNote" data-i="eb_note">Nhà ở Alameda, Albany, Berkeley, Emeryville, Oakland, Piedmont, El Cerrito, Kensington: bán nhà phải có EBMUD sewer lateral compliance certificate mới close được. Thường seller lo, nhưng ghi rõ trong hợp đồng.</div>
+  </section>
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video hướng dẫn"></video>
+
+  <section class="panel">
+    <h2 data-i="nx_h">Bước tiếp theo</h2>
+    <ol>
+      <li data-i="nx_1">Đặt home inspection ngay tuần đầu. Mọi inspection phải xong trong 17 ngày investigation contingency (RPA mặc định). Ra ngày thật bằng tool <a href="/t60/">T60</a>.</li>
+      <li data-i="nx_2">Xin seller mọi report đã có (pre-inspection, termite, sewer, roof). Đọc trước, rồi chỉ đặt thêm phần còn thiếu.</li>
+      <li data-i="nx_3">Termite company phải có license của <a href="https://www.pestboard.ca.gov/" target="_blank" rel="noopener">Structural Pest Control Board</a>. Roofer, plumber, electrician kiểm license trên <a href="https://www.cslb.ca.gov/" target="_blank" rel="noopener">cslb.ca.gov</a>.</li>
+      <li data-i="nx_4">Có lỗi lớn thì gửi Request for Repair trước Ngày 14–15, kèm trang report liên quan.</li>
+    </ol>
+    <p class="misread"><b data-i="mr_h">Nhiều người hiểu sai:</b> <span data-i="mr">Nhà mới xây hay mới flip thì khỏi inspection. Sai. Nhà flip thường đẹp ở sơn, sàn, bếp; còn mái, ống cống, panel điện có khi vẫn đồ 50 năm. Nhà mới xây cũng có lỗi thi công. Một home inspection vài trăm đô rẻ hơn nhiều so với một đường cống phải thay.</span></p>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Gửi kết quả qua email</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Hỏi Ken</a>
+    <a class="btn" id="videoBtn" href="/t70/web.mp4" target="_blank" rel="noopener" data-i="b_video">Xem video 15 giây</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Gửi danh sách inspection này về email</h2>
+    <p data-i="f_sub">Ken nhận được sẽ gửi lại tên vài inspector quen ở khu bạn mua. Không spam.</p>
+    <div class="field"><label for="fname" data-i="f_name">Tên</label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone" data-i="f_phone">Phone (không bắt buộc)</label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Hoặc text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Đọc thêm:</span> <a href="https://kenlamrealty.com/library#nen-lam-inspection-gi" target="_blank" rel="noopener" data-i="ft_lib">Đọc report inspection thế nào</a> · <a href="https://kenlamrealty.com/library#video-inspection" target="_blank" rel="noopener" data-i="ft_vid">Video: một buổi inspection</a></span>
+    <span data-i="ft_est">Giá là ước tính Bay Area 2026 từ bảng giá công khai, chưa phải báo giá. Giá thật tùy diện tích, tuổi nhà, đường vào attic, crawl space, cleanout.</span>
+    <span class="src"><span data-i="ft_src">Nguồn:</span> <a href="https://specialtyteam.com/wp-content/uploads/2026/10/Insp-Fee-Flyer-Oct-2026.pdf" target="_blank" rel="noopener">Specialty Inspections, Pleasanton (bảng giá 10/2026)</a> · <a href="https://www.behnamniahomeinspections.com/fremont-ca/" target="_blank" rel="noopener">Behnamnia Home Inspections, Fremont (2026)</a> · <a href="https://pipespy.com/sewer-camera-inspection" target="_blank" rel="noopener">Pipe Spy, Oakland (sewer camera)</a> · <a href="https://www.homeblue.com/home-inspection/bay-area-ca-home-inspection-cost.htm" target="_blank" rel="noopener">HomeBlue Bay Area</a> · <a href="https://homeadvisor.com/tloc/San-Jose-CA/Inspection-General-Home-Home-Inspector" target="_blank" rel="noopener">HomeAdvisor San Jose</a> · <a href="https://www.angi.com/articles/what-affects-cost-home-inspection.htm" target="_blank" rel="noopener">Angi (2025)</a> · <a href="https://www.angi.com/articles/how-much-does-structural-engineer-cost/ca/san-francisco" target="_blank" rel="noopener">Angi structural engineer SF</a> · <a href="https://homeguide.com/costs/chimney-inspection-cost" target="_blank" rel="noopener">HomeGuide chimney</a> · <a href="https://homeguide.com/costs/septic-tank-inspection-cost" target="_blank" rel="noopener">HomeGuide septic</a> · <a href="https://www.ebmud.com/wastewater/private-sewer-laterals" target="_blank" rel="noopener">EBMUD private sewer laterals</a> · <a href="https://www.epa.gov/lead/real-estate-disclosure" target="_blank" rel="noopener">EPA lead (trước 1978)</a> · <a href="https://www.cdph.ca.gov/Programs/CEH/DRSEM/Pages/EMB/Radon/Radon-Test-Results.aspx" target="_blank" rel="noopener">CDPH radon</a> · <a href="https://www.car.org/transactions/standardforms" target="_blank" rel="noopener">C.A.R. RPA 12/24</a></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 03/11/2026 · <a href="/" data-i="ft_all">Tất cả tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Giá ước tính Bay Area 2026 [thấp, cao] USD — sửa ở đây. Tra 03/11/2026. =====
+   home_sfr   [550,900]  Specialty Inspections Pleasanton (East/South Bay) flyer 10/2026: SFD $680 (<1,500sf) – $905 (3,501–4,000sf)
+                         https://specialtyteam.com/wp-content/uploads/2026/10/Insp-Fee-Flyer-Oct-2026.pdf ;
+                         Behnamnia Fremont 2026: từ $550 (≤1,500sf) – $1,000 (≤5,500sf) https://www.behnamniahomeinspections.com/fremont-ca/ ;
+                         HomeBlue Bay Area (05/2024) $390–$910. HomeAdvisor San Jose $195–$500 (thấp hơn thực tế Bay Area). KEN DUYỆT.
+   home_condo [450,650]  Specialty condo <2,500sf $610; Behnamnia từ $550; HomeBlue $390–$560 (<2,000sf). KEN DUYỆT.
+   termite    [250,500]  Specialty $405 (condo) – $515; HomeBlue $160–$240. KEN DUYỆT.
+   sewer      [200,450]  Pipe Spy Oakland $200 (+$250 nếu không có cleanout) https://pipespy.com/sewer-camera-inspection ;
+                         HomeBlue $240–$290; plumber-comparator SF $150–$600 (09/2026).
+   septic     [300,650]  HomeGuide home-purchase septic inspection $300–$650 (chưa gồm bơm hút) https://homeguide.com/costs/septic-tank-inspection-cost
+   roof       [200,400]  Specialty roof $235; Angi 2025 trung bình $230 (toàn quốc). Mái tile/flat cần roofer chuyên → cao hơn. KEN DUYỆT.
+   chimney    [250,600]  HomeGuide Level 2 $250–$600 https://homeguide.com/costs/chimney-inspection-cost ; Specialty chimney đầu tiên ~$250.
+   pool       [300,500]  Specialty pool/spa $450. KEN DUYỆT.
+   struct     [500,1200] Angi structural engineer SF, mua/bán nhà $500–$1,200 https://www.angi.com/articles/how-much-does-structural-engineer-cost/ca/san-francisco
+   geotech    [2000,3000] Berkeley Parents Network 04/2023: soils test + report $2,000–$2,500 (hillside). Ít nguồn — KEN DUYỆT.
+   mold       [300,700]  HomeAdvisor Hercules CA $250–$904 (tb $464); Angi 2025 tb $660.
+   hvac       [200,400]  Angi 2025 tb $300 (toàn quốc) — ước tính, KEN DUYỆT.
+   elec       [300,600]  Angi 2025 tb $340 (toàn quốc) — Bay Area cao hơn, ước tính, KEN DUYỆT.
+   plumb      [300,600]  Angi 2025 tb $575 (toàn quốc) — ước tính, KEN DUYỆT.
+   lead       [300,800]  Angi 2025 lead paint tb $340, asbestos tb $490 — ước tính, KEN DUYỆT.
+   radon      [150,300]  Angi 2025 tb $250. CDPH: radon tùy từng nhà, khuyên mọi nhà nên test.
+   oil        null       Không tìm được giá Bay Area đáng tin → "Hỏi báo giá", không cộng vào tổng.
+   EBMUD PSL: bán nhà, remodel >$100k, đổi đồng hồ nước → cần Compliance Certificate (https://www.ebmud.com/wastewater/private-sewer-laterals);
+     thành phố: Alameda, Albany, Berkeley, Emeryville, Oakland, Piedmont, Stege SD (El Cerrito, Kensington, Richmond Annex) — https://ebmud.com/download_file/1132/809
+   Năm kích hoạt (thói quen nghề, KEN DUYỆT): trước 1950 knob-and-tube; 1950–1990 panel Federal Pacific / Zinsco; trước 1975 ống galvanized;
+     1978–1995 polybutylene; trước 1978 lead paint (EPA 40 CFR 745, cấm sơn chì từ 1978); trước 1980 asbestos; trước 1980 foundation chưa bolt;
+     mái shingle >20 năm; HVAC >15 năm.
+   Hạn: investigation contingency 17 ngày (RPA 12/24 ¶3L(3), giống T60).
+*/
+const PRICE={home_sfr:[550,900],home_condo:[450,650],termite:[250,500],sewer:[200,450],septic:[300,650],roof:[200,400],chimney:[250,600],
+  pool:[300,500],struct:[500,1200],geotech:[2000,3000],mold:[300,700],hvac:[200,400],elec:[300,600],plumb:[300,600],lead:[300,800],radon:[150,300],oil:null,permit:[0,0]};
+const INSP_DAYS=17, TARGET_DAY=10, NOW_YEAR=2026;
+const UPDATED='03/11/2026';
+
+/* Luật chọn: trả [{k, st:'must'|'opt', why:[mã lý do]}]. Tách riêng để test bằng node. */
+function recommend(o){
+  const R=[], y=o.year, cd=o.type==='condo', sfr=o.type==='sfr';
+  const p=(k,st,why)=>R.push({k,st,why:why||[]});
+  p('home','must',['always']);
+  p('termite',cd?'opt':'must',[cd?'condo_hoa':'wood']);
+  if(o.septic) p('septic','must',['septic']);
+  else if(sfr) p('sewer','must',y<1990?['old_sewer','ebmud']:['ebmud']);
+  else p('sewer','opt',['hoa_sewer','ebmud']);
+  if(!cd){
+    if(o.roof==='flat') p('roof','must',['flat']);
+    else if(o.roof==='tile') p('roof',(y<1990&&sfr)?'must':'opt',['tile']);
+    else p('roof',(NOW_YEAR-y>=20&&sfr)?'must':'opt',NOW_YEAR-y>=20?['shingle_old']:['shingle']);
+  }
+  if(o.fire) p('chimney','must',['fire']);
+  if(o.pool) p('pool',cd?'opt':'must',[cd?'pool_hoa':'pool']);
+  if(o.hill) p('struct','must',['hill']); else if(!cd&&y<1980) p('struct','opt',['bolt']);
+  if(o.hill) p('geotech','opt',['geo']);
+  const elec=[]; if(y<1950)elec.push('knob'); else if(y<=1990)elec.push('fpe'); if(o.adu)elec.push('adu_elec');
+  if(elec.length) p('elec',y<1950?'must':'opt',elec);
+  const pl=[]; if(y<1975)pl.push('galv'); if(y>=1978&&y<=1995)pl.push('pb');
+  if(pl.length) p('plumb','opt',pl);
+  if(NOW_YEAR-y>=15) p('hvac','opt',['hvac']);
+  const md=[]; if(o.roof==='flat'&&!cd)md.push('flat_mold'); if(o.hill)md.push('hill_mold'); if(o.adu)md.push('adu_mold');
+  if(md.length) p('mold','opt',md);
+  const ld=[]; if(y<1978)ld.push('lead'); if(y<1980)ld.push('asb');
+  if(ld.length) p('lead','opt',ld);
+  if(sfr&&y<1950) p('oil','opt',['oil']);
+  p('radon','opt',['radon']);
+  if(o.adu) p('permit','must',['adu']);
+  return R;
+}
+function sumUp(R,type){
+  const m=[0,0],x=[0,0];
+  R.forEach(r=>{const pr=priceOf(r.k,type); if(!pr)return; const t=r.st==='must'?m:x; t[0]+=pr[0]; t[1]+=pr[1];});
+  return {m,x};
+}
+function priceOf(k,type){return k==='home'?PRICE[type==='condo'?'home_condo':'home_sfr']:PRICE[k];}
+
+const I18N={
+ vi:{title:'Nhà này nên làm inspection gì?',sub:'Chọn vài thông tin về căn nhà. Ra liền danh sách inspection nên làm, cái nào tùy, giá ước tính ở Bay Area.',
+  l_type:'Loại nhà',t_sfr:'Nhà riêng',l_year:'Năm xây',l_year_s:'(xem trên MLS)',l_sewer:'Nước thải ra',l_roof:'Loại mái',r_tile:'Tile (ngói)',r_flat:'Mái bằng',
+  l_pool:'Hồ bơi / spa',l_fire:'Ống khói / fireplace',l_hill:'Đồi dốc',l_adu:'ADU / garage chuyển đổi',yes:'Có',no:'Không',yes2:'Có',no2:'Không',yes3:'Có',no3:'Không',yes4:'Có',no4:'Không',
+  l_acc:'Ngày acceptance',l_acc_s:'(không bắt buộc · để ra hạn 17 ngày)',
+  r_total:'Tổng ước tính cho mục “Nên làm”',optLine:'Làm thêm mục Tùy: <b>+{r}</b>',optNone:'Không có mục Tùy có giá.',
+  n_must:'Nên làm',n_opt:'Tùy nhà',n_opt_s:'(làm khi thấy dấu hiệu)',n_dl:'Làm xong trước',n_dl_s:'(hạn inspection, Ngày 17)',dlNone:'Nhập ngày acceptance',
+  prog:'mục đã đặt lịch · bấm vòng tròn để đánh dấu',g_must:'Nên làm',g_opt:'Tùy',c_must:'Nên làm',c_opt:'Tùy',quote:'Hỏi báo giá',free:'$0 · tự tra',
+  gcal:'+ Google Calendar',gcalT:'Hạn inspection (Ngày 17)',gcalD:'Mọi inspection phải xong và quyết định trước hạn này. Ngày chính xác theo hợp đồng của bạn. tools.kenlamrealty.com',
+  new_note:'Nhà mới xây hay mới flip vẫn cần inspection. Flip đẹp ở bề mặt; mái, cống, điện bên trong có khi còn đồ cũ. Hỏi permit cho mọi phần đã sửa.',
+  eb_note:'Nhà ở Alameda, Albany, Berkeley, Emeryville, Oakland, Piedmont, El Cerrito, Kensington: bán nhà phải có EBMUD sewer lateral compliance certificate mới close được. Thường seller lo, nhưng ghi rõ trong hợp đồng.',
+  nx_h:'Bước tiếp theo',
+  nx_1:'Đặt home inspection ngay tuần đầu. Mọi inspection phải xong trong 17 ngày investigation contingency (RPA mặc định). Ra ngày thật bằng tool <a href="/t60/">T60</a>.',
+  nx_2:'Xin seller mọi report đã có (pre-inspection, termite, sewer, roof). Đọc trước, rồi chỉ đặt thêm phần còn thiếu.',
+  nx_3:'Termite company phải có license của <a href="https://www.pestboard.ca.gov/" target="_blank" rel="noopener">Structural Pest Control Board</a>. Roofer, plumber, electrician kiểm license trên <a href="https://www.cslb.ca.gov/" target="_blank" rel="noopener">cslb.ca.gov</a>.',
+  nx_4:'Có lỗi lớn thì gửi Request for Repair trước Ngày 14–15, kèm trang report liên quan.',
+  mr_h:'Nhiều người hiểu sai:',mr:'Nhà mới xây hay mới flip thì khỏi inspection. Sai. Nhà flip thường đẹp ở sơn, sàn, bếp; còn mái, ống cống, panel điện có khi vẫn đồ 50 năm. Nhà mới xây cũng có lỗi thi công. Một home inspection vài trăm đô rẻ hơn nhiều so với một đường cống phải thay.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi danh sách inspection này về email',f_sub:'Ken nhận được sẽ gửi lại tên vài inspector quen ở khu bạn mua. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Đọc report inspection thế nào',ft_vid:'Video: một buổi inspection',ft_est:'Giá là ước tính Bay Area 2026 từ bảng giá công khai, chưa phải báo giá. Giá thật tùy diện tích, tuổi nhà, đường vào attic, crawl space, cleanout.',ft_src:'Nguồn:',ft_upd:'Cập nhật',ft_all:'Tất cả tools',
+  lang:'English',wd:['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'],
+  types:{sfr:'Nhà riêng',th:'Townhouse',condo:'Condo'},
+  sms:'Chào Ken, tôi vừa xem tool inspection trên tools.kenlamrealty.com: {ty} xây {y}, nên làm {nm} mục, khoảng {t}. Cho tôi hỏi thêm.',
+  subj:'Danh sách inspection — {ty} xây {y} — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nNhà: {ty}, xây năm {y}\n{opts}\n\nNÊN LÀM (tổng {t}):\n{lm}\n\nTÙY:\n{lo}\n\nGửi từ tool T70 tools.kenlamrealty.com'},
+ en:{title:'Which inspections does this home need?',sub:'Pick a few facts about the home. Get the inspections to do, the optional ones, and estimated Bay Area prices.',
+  l_type:'Home type',t_sfr:'Single family',l_year:'Year built',l_year_s:'(see MLS)',l_sewer:'Wastewater goes to',l_roof:'Roof type',r_tile:'Tile',r_flat:'Flat',
+  l_pool:'Pool / spa',l_fire:'Chimney / fireplace',l_hill:'Hillside lot',l_adu:'ADU / garage conversion',yes:'Yes',no:'No',yes2:'Yes',no2:'No',yes3:'Yes',no3:'No',yes4:'Yes',no4:'No',
+  l_acc:'Acceptance date',l_acc_s:'(optional · shows the 17-day deadline)',
+  r_total:'Estimated total for “Recommended”',optLine:'Adding the optional ones: <b>+{r}</b>',optNone:'No priced optional items.',
+  n_must:'Recommended',n_opt:'Depends',n_opt_s:'(do it if you see signs)',n_dl:'Finish by',n_dl_s:'(inspection deadline, Day 17)',dlNone:'Enter acceptance date',
+  prog:'booked · tap a circle to check it off',g_must:'Recommended',g_opt:'Depends',c_must:'Recommended',c_opt:'Depends',quote:'Get a quote',free:'$0 · look it up',
+  gcal:'+ Google Calendar',gcalT:'Inspection deadline (Day 17)',gcalD:'All inspections done and decisions made before this date. Exact dates follow your contract. tools.kenlamrealty.com',
+  new_note:'New builds and fresh flips still need an inspection. Flips look good on the surface; roof, sewer and wiring may still be old. Ask for permits on all work.',
+  eb_note:'Homes in Alameda, Albany, Berkeley, Emeryville, Oakland, Piedmont, El Cerrito, Kensington: a sale needs an EBMUD sewer lateral compliance certificate to close. The seller usually handles it; put it in the contract.',
+  nx_h:'Next steps',
+  nx_1:'Book the home inspection in week one. Everything must be done within the 17-day investigation contingency (RPA default). Get real dates with tool <a href="/t60/">T60</a>.',
+  nx_2:'Ask the seller for every existing report (pre-inspection, termite, sewer, roof). Read them first, then book only what is missing.',
+  nx_3:'Termite companies need a <a href="https://www.pestboard.ca.gov/" target="_blank" rel="noopener">Structural Pest Control Board</a> license. Check roofers, plumbers and electricians at <a href="https://www.cslb.ca.gov/" target="_blank" rel="noopener">cslb.ca.gov</a>.',
+  nx_4:'Found something big? Send the Request for Repair by Day 14–15 with the report pages attached.',
+  mr_h:'Common mistake:',mr:'"It is new or just flipped, no inspection needed." Wrong. Flips shine in paint, floors and kitchens; the roof, sewer line and panel may still be 50 years old. New builds have construction defects too. A few hundred dollars of inspection costs far less than a new sewer line.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this inspection list to yourself',f_sub:'Ken will reply with a few inspectors he knows in your area. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'How to read an inspection report',ft_vid:'Video: an inspection day',ft_est:'Prices are 2026 Bay Area estimates from published price lists, not quotes. Actual prices depend on size, age and access to attic, crawl space and cleanout.',ft_src:'Sources:',ft_upd:'Updated',ft_all:'All tools',
+  lang:'Tiếng Việt',wd:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+  types:{sfr:'Single family',th:'Townhouse',condo:'Condo'},
+  sms:'Hi Ken, I used the inspection tool on tools.kenlamrealty.com: {ty} built {y}, {nm} recommended, about {t}. I have a question.',
+  subj:'Inspection list — {ty} built {y} — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nHome: {ty}, built {y}\n{opts}\n\nRECOMMENDED (total {t}):\n{lm}\n\nOPTIONAL:\n{lo}\n\nSent from tool T70 tools.kenlamrealty.com'}
+};
+/* Tên + kiểm gì */
+const ITEMS={
+ vi:{home:['Home inspection','Kiểm toàn nhà: mái nhìn từ ngoài, điện, nước, gas, foundation, attic, crawl space, cửa, máy móc. Là bản đồ để biết cần gọi chuyên gia nào thêm.'],
+  termite:['Termite / WDO (Section 1, 2)','Mối, mọt gỗ, nấm mục, gỗ bị nước. Report chia Section 1 (đang hư) và Section 2 (có thể hư). Ai trả sửa Section 1 là chuyện thương lượng.'],
+  sewer:['Sewer lateral camera','Luồn camera từ cleanout ra đường: ống nứt, gãy, rễ cây, võng. Thay đường cống có thể tốn hàng chục nghìn.'],
+  septic:['Septic inspection','Kiểm bể septic và leach field, thường kèm bơm hút. Hư leach field rất tốn.'],
+  roof:['Roof inspection (roofer)','Roofer lên mái: tuổi mái, chỗ dột, flashing, máng xối, còn bao nhiêu năm.'],
+  chimney:['Chimney Level 2','Camera trong ống khói: nứt flue, lệch, thiếu spark arrestor. NFPA khuyên Level 2 khi mua bán nhà.'],
+  pool:['Pool / spa','Bơm, lọc, heater, rò nước, nứt thành hồ, hàng rào và cửa an toàn theo luật CA.'],
+  struct:['Structural engineer / foundation','Kỹ sư kết cấu xem nứt, lún, foundation, bolt và cripple wall chống động đất.'],
+  geotech:['Geotech (địa chất)','Kỹ sư địa chất xem đất trượt, thoát nước, tường chắn. Dùng khi thấy nứt lớn, đất sụt, hoặc NHD báo landslide zone.'],
+  mold:['Mold','Lấy mẫu không khí hoặc bề mặt khi thấy vết ố, mùi ẩm, từng bị nước.'],
+  hvac:['HVAC','Thợ HVAC kiểm furnace, AC, heat exchanger nứt (CO), ống gió.'],
+  elec:['Electrical (thợ điện)','Thợ điện có license xem panel, dây, nối đất, tải điện.'],
+  plumb:['Plumbing','Thợ ống nước xem ống chính, áp lực, rò rỉ, water heater.'],
+  lead:['Lead paint / asbestos','Test sơn chì, asbestos trước khi đập tường, chà sàn, sửa lớn.'],
+  oil:['Oil tank sweep','Dò bồn dầu sưởi chôn dưới đất. Hiếm ở Bay Area, chỉ nhà rất cũ.'],
+  radon:['Radon','Khí phóng xạ tự nhiên từ đất. Ở Bay Area thường thấp, nhưng tùy từng nhà; test rẻ.'],
+  permit:['Kiểm permit ADU ở city','Tra hồ sơ permit ở city: ADU, garage chuyển đổi, phòng thêm có permit và final chưa. Không có permit thì không được tính là phòng hợp pháp.']},
+ en:{home:['Home inspection','Whole-house check: roof from outside, electrical, plumbing, gas, foundation, attic, crawl space, doors, appliances. The map for which specialists to call.'],
+  termite:['Termite / WDO (Section 1, 2)','Termites, wood-boring beetles, dry rot, water-damaged wood. Section 1 = active damage, Section 2 = conditions likely to cause it. Who pays for Section 1 is negotiated.'],
+  sewer:['Sewer lateral camera','A camera from the cleanout to the street: cracks, breaks, roots, sags. Replacing a lateral can cost tens of thousands.'],
+  septic:['Septic inspection','Tank and leach field check, often with pumping. A failed leach field is expensive.'],
+  roof:['Roof inspection (roofer)','A roofer on the roof: age, leaks, flashing, gutters, remaining life.'],
+  chimney:['Chimney Level 2','Camera inside the chimney: cracked flue, offsets, missing spark arrestor. NFPA calls for Level 2 at a property sale.'],
+  pool:['Pool / spa','Pump, filter, heater, leaks, cracked shell, and CA safety fencing and gates.'],
+  struct:['Structural engineer / foundation','A structural engineer looks at cracks, settling, foundation, bolting and cripple walls for earthquakes.'],
+  geotech:['Geotechnical','A geotech engineer checks slope stability, drainage, retaining walls. Use it for big cracks, soil movement, or a landslide zone on the NHD.'],
+  mold:['Mold','Air or surface samples when you see stains, smell damp, or know of past water.'],
+  hvac:['HVAC','An HVAC tech checks the furnace, AC, cracked heat exchanger (CO), ducts.'],
+  elec:['Electrical (electrician)','A licensed electrician reviews the panel, wiring, grounding and capacity.'],
+  plumb:['Plumbing','A plumber checks supply lines, pressure, leaks, water heater.'],
+  lead:['Lead paint / asbestos','Test for lead paint and asbestos before opening walls, sanding floors or remodeling.'],
+  oil:['Oil tank sweep','Scan for a buried heating oil tank. Rare in the Bay Area, very old homes only.'],
+  radon:['Radon','Natural radioactive gas from soil. Usually low in the Bay Area but varies house to house; testing is cheap.'],
+  permit:['City permit check for the ADU','Pull permit records at the city: ADU, garage conversion, additions permitted and finaled. Unpermitted space is not legal living space.']}
+};
+/* Lý do kích hoạt */
+const WHY={
+ vi:{always:'Mọi căn nhà',wood:'Nhà có gỗ, có đất quanh nhà',condo_hoa:'Condo: HOA lo phần ngoài, nhưng trong căn vẫn có thể có mối',septic:'Nhà dùng septic',old_sewer:'Xây trước 1990: ống đất sét, gang hay Orangeburg',ebmud:'Vùng EBMUD: bán nhà cần chứng nhận sewer lateral',hoa_sewer:'Hỏi HOA ai giữ ống cống ra đường',
+  flat:'Mái bằng hay đọng nước, dột',tile:'Ngói: inspector thường không đi lên được, cần roofer chuyên',shingle_old:'Nhà 20+ năm: mái shingle có thể đã hết tuổi',shingle:'Mái còn mới thì home inspection thường đủ',
+  fire:'Có ống khói / fireplace',pool:'Có hồ bơi / spa',pool_hoa:'Hồ chung thì HOA lo',hill:'Nhà trên đồi dốc',bolt:'Xây trước 1980: foundation có thể chưa bolt',geo:'Đồi dốc: nứt lớn hoặc landslide zone thì nên làm',
+  knob:'Trước 1950: dây knob-and-tube, bảo hiểm hay từ chối',fpe:'1950–1990: có thể có panel Federal Pacific hoặc Zinsco',adu_elec:'ADU / garage chuyển đổi: dây điện tự kéo',
+  galv:'Trước 1975: ống galvanized rỉ, nghẹt',pb:'1978–1995: có thể có ống polybutylene',hvac:'Nhà 15+ năm: furnace / AC có thể đã cũ',
+  flat_mold:'Mái bằng từng dột',hill_mold:'Đồi dốc: crawl space dễ ẩm',adu_mold:'Garage chuyển đổi hay ẩm',lead:'Trước 1978: có thể có sơn chì',asb:'Trước 1980: có thể có asbestos',oil:'Trước 1950: có thể từng sưởi bằng dầu',radon:'Rẻ, làm cho yên tâm',adu:'Có ADU / garage chuyển đổi'},
+ en:{always:'Every home',wood:'Wood framing with soil around the home',condo_hoa:'Condo: HOA covers the exterior, but the unit can still have pests',septic:'Home is on septic',old_sewer:'Built before 1990: clay, cast iron or Orangeburg pipe',ebmud:'EBMUD area: a sale needs a sewer lateral certificate',hoa_sewer:'Ask the HOA who owns the lateral',
+  flat:'Flat roofs pond water and leak',tile:'Tile: inspectors often cannot walk it; use a tile roofer',shingle_old:'Home 20+ years old: the shingle roof may be at end of life',shingle:'Newer roof: the home inspection is often enough',
+  fire:'Has a chimney / fireplace',pool:'Has a pool / spa',pool_hoa:'Shared pool is the HOA’s job',hill:'Hillside lot',bolt:'Built before 1980: foundation may not be bolted',geo:'Hillside: do it for big cracks or a landslide zone',
+  knob:'Before 1950: knob-and-tube wiring, often declined by insurers',fpe:'1950–1990: may have a Federal Pacific or Zinsco panel',adu_elec:'ADU / garage conversion: owner-run wiring',
+  galv:'Before 1975: galvanized pipes rust and clog',pb:'1978–1995: may have polybutylene pipe',hvac:'Home 15+ years old: furnace / AC may be old',
+  flat_mold:'Flat roofs leak',hill_mold:'Hillside: damp crawl spaces',adu_mold:'Garage conversions run damp',lead:'Before 1978: lead paint possible',asb:'Before 1980: asbestos possible',oil:'Before 1950: may once have heated with oil',radon:'Cheap peace of mind',adu:'Has an ADU / garage conversion'}
+};
+
+let lang='en', last={}, openWhy={};
+const S={type:'sfr',sewer:'sewer',roof:'sh',pool:'0',fire:'1',hill:'0',adu:'0'};
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const DAY=864e5, pad=n=>String(n).padStart(2,'0');
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const rng=a=>a[0]===a[1]?fmt(a[0]):fmt(a[0])+'–'+fmt(a[1]);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const parse=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||'');return m?new Date(Date.UTC(+m[1],+m[2]-1,+m[3])):null;};
+const iso=d=>d.toISOString().slice(0,10), add=(d,n)=>new Date(d.getTime()+n*DAY), ymd=d=>iso(d).replace(/-/g,'');
+/* hạn rơi T7/CN → ngày làm việc kế (chỉ cuối tuần; ngày lễ chính xác xem T60) */
+function perf(d){let x=d;while(x.getUTCDay()===0||x.getUTCDay()===6)x=add(x,1);return x;}
+const fdate=d=>I18N[lang].wd[d.getUTCDay()]+', '+(lang==='vi'?pad(d.getUTCDate())+'/'+pad(d.getUTCMonth()+1):pad(d.getUTCMonth()+1)+'/'+pad(d.getUTCDate()))+'/'+d.getUTCFullYear();
+function loadDone(){try{return JSON.parse(localStorage.getItem('kl_t70')||'{}')||{};}catch(e){return {};}}
+function saveDone(o){try{localStorage.setItem('kl_t70',JSON.stringify(o));}catch(e){}}
+
+function calc(){
+  const s=I18N[lang], It=ITEMS[lang], W=WHY[lang];
+  let y=parseInt($('year').value,10); if(!isFinite(y))y=1970; y=Math.max(1850,Math.min(2027,y));
+  const o={type:S.type,year:y,roof:S.roof,septic:S.sewer==='septic',pool:S.pool==='1',fire:S.fire==='1',hill:S.hill==='1',adu:S.adu==='1'};
+  const R=recommend(o), T=sumUp(R,o.type), done=loadDone();
+  $('total').textContent=rng(T.m);
+  $('optLine').innerHTML=T.x[1]>0?s.optLine.replace('{r}',rng(T.x)):s.optNone;
+  const nm=R.filter(r=>r.st==='must').length, no=R.length-nm;
+  $('nMust').textContent=nm; $('nOpt').textContent=no;
+  const A=parse($('acc').value);
+  if(A){const D=perf(add(A,INSP_DAYS));
+    $('dl').innerHTML=esc(fdate(D))+' · <a class="gcal" href="'+esc('https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(s.gcalT)+'&dates='+ymd(D)+'/'+ymd(add(D,1))+'&details='+encodeURIComponent(s.gcalD))+'" target="_blank" rel="noopener">'+esc(s.gcal)+'</a>';}
+  else $('dl').textContent=s.dlNone;
+  let html='',nd=0,lm=[],lo=[];
+  ['must','opt'].forEach(g=>{
+    const G=R.filter(r=>r.st===g); if(!G.length)return;
+    html+='<li class="grp">'+esc(g==='must'?s.g_must:s.g_opt)+'<span class="gd">'+G.length+'</span></li>';
+    G.forEach((r,i)=>{
+      const pr=priceOf(r.k,o.type), ptxt=!pr?s.quote:(pr[1]===0?s.free:rng(pr));
+      const isDone=!!done[r.k]; if(isDone)nd++;
+      const op=!!openWhy[r.k], last1=i===G.length-1;
+      html+='<li class="ms'+(g==='must'?' key':'')+(isDone?' done':'')+(last1?' last':'')+'">'
+        +'<label class="ck"><input type="checkbox" data-k="'+r.k+'"'+(isDone?' checked':'')+' aria-label="'+esc(It[r.k][0])+'"><span></span></label>'
+        +'<div><div class="top"><span class="chip '+g+'">'+esc(g==='must'?s.c_must:s.c_opt)+'</span><span class="pr">'+esc(ptxt)+'</span></div>'
+        +'<button type="button" class="tt" data-w="'+r.k+'" aria-expanded="'+op+'">'+esc(It[r.k][0])+'</button>'
+        +'<div class="trig">'+r.why.map(w=>'<span class="chip">'+esc(W[w])+'</span>').join('')+'</div>'
+        +'<div class="why" id="w_'+r.k+'"'+(op?'':' hidden')+'>'+esc(It[r.k][1])+'</div></div></li>';
+      (g==='must'?lm:lo).push('• '+It[r.k][0]+' — '+ptxt+' ('+r.why.map(w=>W[w]).join('; ')+')');
+    });
+  });
+  $('tl').innerHTML=html;
+  $('progTxt').textContent=nd+'/'+R.length; $('progBar').style.width=(R.length?nd/R.length*100:0)+'%';
+  $('newNote').classList.toggle('hide',y<NOW_YEAR-10);
+  $('ebNote').classList.toggle('hide',o.septic);
+  const ty=s.types[o.type];
+  const opts=[(lang==='vi'?'Mái: ':'Roof: ')+S.roof,S.sewer,(o.pool?'pool':''),(o.fire?'fireplace':''),(o.hill?'hillside':''),(o.adu?'ADU':'')].filter(Boolean).join(' · ');
+  last={ty,y,nm,t:rng(T.m),opts,lm:lm.join('\n')||'—',lo:lo.join('\n')||'—'};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s.sms.replace('{ty}',ty).replace('{y}',y).replace('{nm}',nm).replace('{t}',last.t));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+[['gType','type'],['gSewer','sewer'],['gRoof','roof'],['gPool','pool'],['gFire','fire'],['gHill','hill'],['gAdu','adu']].forEach(([id,key])=>{
+  $(id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S[key]=b.getAttribute('data-v');
+    $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));calc();});
+});
+['year','acc'].forEach(id=>$(id).addEventListener('input',calc));
+$('tl').addEventListener('change',e=>{const k=e.target.getAttribute('data-k');if(!k)return;const o=loadDone();if(e.target.checked)o[k]=1;else delete o[k];saveDone(o);calc();});
+$('tl').addEventListener('click',e=>{const b=e.target.closest('.tt');if(!b)return;const k=b.getAttribute('data-w');openWhy[k]=!openWhy[k];b.setAttribute('aria-expanded',openWhy[k]?'true':'false');$('w_'+k).hidden=!openWhy[k];});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const v=Object.assign({n,e,ph},last);
+  const fill=s=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'\u2190 All tools':'\u2190 T\u1ea5t c\u1ea3 tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

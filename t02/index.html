@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mua Được Nhà Bao Nhiêu</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* T02 — 3 mức DTI */
+.tiers{display:grid;gap:10px}
+.tier{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;align-items:baseline}
+.tier.main{border-color:var(--brass);background:var(--brass-soft)}
+.tier .tn{font-size:14px;font-weight:500;min-width:0}
+.tier .tp{font-family:var(--display);font-size:28px;line-height:1.1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tier .td{grid-column:1/-1;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+</style>
+<meta name="description" content="Nhập thu nhập, nợ và tiền down. Ra 3 mức giá theo DTI mà lender hay xài. Có tính thuế, bảo hiểm, PMI.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t02/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Mua Được Nhà Bao Nhiêu · Ken Lam Tools">
+<meta property="og:description" content="Nhập thu nhập, nợ và tiền down. Ra 3 mức giá theo DTI mà lender hay xài. Có tính thuế, bảo hiểm, PMI.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t02/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title">Với thu nhập này, mua được nhà giá bao nhiêu?</h1>
+    <p class="sub" data-i="sub">Nhập thu nhập, nợ và tiền down. Ra 3 mức giá theo DTI mà lender hay xài. Có tính thuế, bảo hiểm, PMI.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="income"><span data-i="l_inc">Thu nhập gộp cả nhà</span> <small data-i="l_inc_s">(trước thuế, 1 năm)</small></label>
+      <div class="ctl"><span class="pre">$</span><input id="income" type="number" inputmode="numeric" min="0" step="5000" value="220000"><span class="post" data-i="per_yr">/năm</span></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="debts"><span data-i="l_debt">Nợ hàng tháng</span> <small data-i="l_debt_s">(xe, thẻ, student loan)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="debts" type="number" inputmode="numeric" min="0" step="50" value="800"><span class="post" data-i="per_mo">/tháng</span></div>
+      </div>
+      <div class="field">
+        <label for="cash" data-i="l_cash">Tiền down có sẵn</label>
+        <div class="ctl"><span class="pre">$</span><input id="cash" type="number" inputmode="numeric" min="0" step="5000" value="200000"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="rate"><span data-i="l_rate">Lãi suất</span> <small data-i="l_rate_s">(sửa theo rate hôm nay)</small></label>
+        <div class="ctl"><input id="rate" type="number" inputmode="decimal" min="0" max="20" step="0.125" value="7.24"><span class="post">%</span></div>
+      </div>
+      <div class="field">
+        <label for="hoa"><span data-i="l_hoa">HOA</span> <small data-i="l_hoa_s">(không có thì để 0)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="hoa" type="number" inputmode="numeric" min="0" step="25" value="0"><span class="post" data-i="per_mo3">/tháng</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <label data-i="l_term">Thời hạn loan</label>
+      <div class="seg" role="group">
+        <button type="button" id="t30" aria-pressed="true" data-i="y30">30 năm</button>
+        <button type="button" id="t15" aria-pressed="false" data-i="y15">15 năm</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">Giá nhà mua được · mức Thường (DTI 43%)</div>
+      <div class="v"><span id="total">$0</span></div>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_mo">Tiền nhà mỗi tháng</b> <span data-i="n_mo_s">(P&amp;I + thuế + bảo hiểm + PMI + HOA)</span></span><span class="a" id="mo">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_loan">Số tiền vay</b> <span id="dpOut"></span></span><span class="a" id="loan">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_dti">DTI của bạn</b> <span data-i="n_dti_s">bây giờ → nếu mua mức Thường</span></span><span class="a" id="dti">0%</span></div>
+      <div class="line"><span class="n"><b data-i="n_fe">Front-end</b> <span data-i="n_fe_s">(chỉ tiền nhà / thu nhập)</span></span><span class="a" id="fe">0%</span></div>
+    </div>
+    <div class="tiers" id="tiers"></div>
+    <div class="note hide" id="overNote"></div>
+    <div class="note" id="pmiNote" data-i="pmi_note">Mức này down dưới 20% nên có PMI (ước tính). Down đủ 20% thì khỏi PMI, tiền tháng nhẹ hơn.</div>
+    <div class="note" id="jumboNote" data-i="jumbo_note">Loan trên $1,249,125 (Santa Clara 2026) là jumbo. Lender jumbo hay đòi DTI thấp hơn 43% và nhiều tiền dự trữ hơn. Hỏi lender.</div>
+    <div class="note" data-i="fe_note">Front-end 28% là mốc cũ để tham khảo: tiền nhà không quá 28% thu nhập gộp. Lender bây giờ coi back-end (tiền nhà + nợ) là chính.</div>
+  </section>
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video hướng dẫn"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Gửi kết quả qua email</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Hỏi Ken</a>
+    <a class="btn" id="videoBtn" href="/t02/web.mp4" target="_blank" rel="noopener" data-i="b_video">Xem video 15 giây</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Gửi bảng tính này về email</h2>
+    <p data-i="f_sub">Ken nhận được sẽ gửi lại bảng chi tiết + lãi suất hôm nay. Không spam.</p>
+    <div class="field"><label for="fname" data-i="f_name">Tên</label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone" data-i="f_phone">Phone (không bắt buộc)</label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Hoặc text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Đọc thêm:</span> <a href="https://kenlamrealty.com/library#mua-duoc-nha-bao-nhieu" target="_blank" rel="noopener" data-i="ft_lib">DTI là gì, lender tính sao</a> · <a href="https://kenlamrealty.com/library#video-dti" target="_blank" rel="noopener" data-i="ft_vid">Video 3 phút</a></span>
+    <span data-i="ft_est">Kết quả là ước tính. Lender sẽ tính theo credit, loại loan, tiền dự trữ và giấy tờ thu nhập thật. Nhớ để riêng tiền closing cost.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 03/11/2026 · <a href="/" data-i="ft_all">Tất cả tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số liệu Bắc Cali — sửa ở đây khi đổi (giống T01) =====
+   TAX_RATE: Santa Clara & Alameda ~1.25% giá mua/năm (1% Prop 13 + bonds/parcel tax trung bình). Ước tính — KEN DUYỆT.
+   INS_RATE: bảo hiểm nhà ước tính 0.30% giá nhà/năm. Ước tính — KEN DUYỆT.
+   PMI_TABLE: % loan/năm theo mức down (down < X% → rate), ước tính thông dụng 2026, tùy credit — KEN DUYỆT.
+   JUMBO: conforming limit 2026 Santa Clara/Alameda (high-cost), cùng số T01 — sửa khi FHFA công bố số mới.
+   DEFAULT_RATE: Freddie Mac PMMS 30-yr fixed 7.24% (15-yr 6.60%), tuần 29/10/2026.
+     Nguồn: https://www.freddiemac.com/pmms , https://fred.stlouisfed.org/series/MORTGAGE30US — tra 03/11/2026.
+     Đây là trung bình toàn quốc, rate thật của khách tùy credit/points — KEN DUYỆT.
+   DTI_TIERS: back-end DTI. 36% = trần Fannie Mae manual underwriting cơ bản; 50% = trần Fannie Mae DU (cần credit + reserves tốt).
+     Nguồn: https://selling-guide.fanniemae.com/sel/b3-6-02/debt-income-ratios — tra 03/11/2026.
+     43% = mốc General QM cũ của CFPB (đổi sang price-based từ 2021), nhiều lender vẫn xài làm mốc "thường" — KEN DUYỆT.
+*/
+const TAX_RATE=0.0125, INS_RATE=0.0030, JUMBO=1249125;
+const PMI_TABLE=[[5,0.011],[10,0.0085],[15,0.006],[20,0.004]];
+const DEFAULT_RATE={30:7.24,15:6.60};
+const DTI_TIERS=[{k:'safe',d:0.36},{k:'norm',d:0.43},{k:'max',d:0.50}];
+const FRONT_REF=0.28;
+const UPDATED='03/11/2026';
+
+const I18N={
+ vi:{title:'Với thu nhập này, mua được nhà giá bao nhiêu?',sub:'Nhập thu nhập, nợ và tiền down. Ra 3 mức giá theo DTI mà lender hay xài. Có tính thuế, bảo hiểm, PMI.',
+  l_inc:'Thu nhập gộp cả nhà ',l_inc_s:'(trước thuế, 1 năm)',per_yr:'/năm',l_debt:'Nợ hàng tháng ',l_debt_s:'(xe, thẻ, student loan)',per_mo:'/tháng',per_mo3:'/tháng',l_cash:'Tiền down có sẵn',
+  l_rate:'Lãi suất ',l_rate_s:'(sửa theo rate hôm nay)',l_hoa:'HOA ',l_hoa_s:'(không có thì để 0)',l_term:'Thời hạn loan',y30:'30 năm',y15:'15 năm',
+  r_total:'Giá nhà mua được · mức Thường (DTI 43%)',n_mo:'Tiền nhà mỗi tháng',n_mo_s:'(P&I + thuế + bảo hiểm + PMI + HOA)',n_loan:'Số tiền vay',n_dti:'DTI của bạn',n_dti_s:'bây giờ → nếu mua mức Thường',n_fe:'Front-end',n_fe_s:'(chỉ tiền nhà / thu nhập)',
+  t_safe:'An toàn',t_norm:'Thường',t_max:'Tối đa',t_line:'{m}/tháng · vay {l}',dp:'(down {d}%)',
+  over:'Nợ hiện tại đã chiếm {x}% thu nhập, cao hơn mức {t}%. Mức đó không mua được. Trả bớt nợ xe/thẻ trước sẽ mở thêm nhiều.',
+  pmi_note:'Mức này down dưới 20% nên có PMI (ước tính). Down đủ 20% thì khỏi PMI, tiền tháng nhẹ hơn.',
+  jumbo_note:'Loan trên $1,249,125 (Santa Clara 2026) là jumbo. Lender jumbo hay đòi DTI thấp hơn 43% và nhiều tiền dự trữ hơn. Hỏi lender.',
+  fe_note:'Front-end 28% là mốc cũ để tham khảo: tiền nhà không quá 28% thu nhập gộp. Lender bây giờ coi back-end (tiền nhà + nợ) là chính.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi bảng tính này về email',f_sub:'Ken nhận được sẽ gửi lại bảng chi tiết + lãi suất hôm nay. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'DTI là gì, lender tính sao',ft_vid:'Video 3 phút',ft_est:'Kết quả là ước tính. Lender sẽ tính theo credit, loại loan, tiền dự trữ và giấy tờ thu nhập thật. Nhớ để riêng tiền closing cost.',ft_upd:'Cập nhật',ft_all:'Tất cả tools',
+  lang:'English',sms:'Chào Ken, tôi vừa xài tool "mua được nhà bao nhiêu": thu nhập {i}/năm, nợ {db}/tháng, down {c}, lãi {r}% → mức Thường khoảng {p2}. Cho tôi hỏi thêm.',
+  subj:'Mua được nhà giá bao nhiêu — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nThu nhập gộp: {i}/năm\nNợ hàng tháng: {db}\nTiền down có sẵn: {c}\nLãi suất: {r}% · {y} năm\nHOA: {h}/tháng\n\nAN TOÀN (DTI 36%): giá {p1} · tiền nhà {m1}/tháng · vay {l1}\nTHƯỜNG (DTI 43%): giá {p2} · tiền nhà {m2}/tháng · vay {l2}\nTỐI ĐA (DTI 50%): giá {p3} · tiền nhà {m3}/tháng · vay {l3}\nDTI bây giờ: {d0} → mua mức Thường: {d2}\n\nGửi từ tool T02 tools.kenlamrealty.com'},
+ en:{title:'With this income, how much home can I buy?',sub:'Enter income, debts and cash for down payment. Get 3 price levels using the DTI limits lenders use. Tax, insurance and PMI included.',
+  l_inc:'Household gross income ',l_inc_s:'(before tax, per year)',per_yr:'/yr',l_debt:'Monthly debts ',l_debt_s:'(car, cards, student loan)',per_mo:'/mo',per_mo3:'/mo',l_cash:'Cash for down payment',
+  l_rate:'Interest rate ',l_rate_s:"(edit to today's rate)",l_hoa:'HOA ',l_hoa_s:'(0 if none)',l_term:'Loan term',y30:'30 yr',y15:'15 yr',
+  r_total:'Home price you can buy · Typical (43% DTI)',n_mo:'Monthly housing cost',n_mo_s:'(P&I + tax + insurance + PMI + HOA)',n_loan:'Loan amount',n_dti:'Your DTI',n_dti_s:'now → if you buy at Typical',n_fe:'Front-end',n_fe_s:'(housing only / income)',
+  t_safe:'Safe',t_norm:'Typical',t_max:'Maximum',t_line:'{m}/mo · loan {l}',dp:'({d}% down)',
+  over:'Your current debts already take {x}% of income, above the {t}% level. That level is out of reach. Paying down car/card debt opens up a lot.',
+  pmi_note:'This level is under 20% down, so PMI applies (estimate). With a full 20% down there is no PMI and the payment drops.',
+  jumbo_note:'Loans over $1,249,125 (Santa Clara 2026) are jumbo. Jumbo lenders often want DTI below 43% and more reserves. Ask a lender.',
+  fe_note:'The 28% front-end rule is an old guideline for reference: housing cost under 28% of gross income. Lenders now focus on back-end (housing + debts).',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this breakdown to yourself',f_sub:"Ken will reply with a detailed sheet and today's rate. No spam.",f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'What DTI is and how lenders use it',ft_vid:'3-min video',ft_est:'Results are estimates. A lender will decide based on credit, loan type, reserves and documented income. Keep closing costs separate.',ft_upd:'Updated',ft_all:'All tools',
+  lang:'Tiếng Việt',sms:'Hi Ken, I used the "how much home can I buy" tool: income {i}/yr, debts {db}/mo, down {c}, rate {r}% → Typical about {p2}. I have a question.',
+  subj:'How much home can I buy — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nGross income: {i}/yr\nMonthly debts: {db}\nCash for down: {c}\nRate: {r}% · {y} yr\nHOA: {h}/mo\n\nSAFE (36% DTI): price {p1} · housing {m1}/mo · loan {l1}\nTYPICAL (43% DTI): price {p2} · housing {m2}/mo · loan {l2}\nMAXIMUM (50% DTI): price {p3} · housing {m3}/mo · loan {l3}\nDTI now: {d0} → at Typical: {d2}\n\nSent from tool T02 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const pct=x=>(Math.round(x*1000)/10)+'%';
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+let term=30, last={};
+
+/* Tiền nhà/tháng cho giá P, tiền down có sẵn cash (down = min(cash, P)) */
+function housing(P,cash,rate,term,hoa){
+  const down=Math.min(cash,P), loan=Math.max(0,P-down), dp=P>0?down/P*100:100;
+  const r=rate/100/12, n=term*12;
+  const pi=loan<=0?0:(r===0?loan/n:loan*r/(1-Math.pow(1+r,-n)));
+  const tax=P*TAX_RATE/12, ins=P*INS_RATE/12;
+  let pmiRate=0; if(dp<20&&loan>0){ pmiRate=PMI_TABLE[PMI_TABLE.length-1][1]; for(const [lim,p] of PMI_TABLE){ if(dp<lim){pmiRate=p;break;} } }
+  const pmi=loan*pmiRate/12;
+  return {P,down,loan,dp,pi,tax,ins,pmi,hoa,total:pi+tax+ins+pmi+hoa};
+}
+/* Giá cao nhất mà tiền nhà <= maxH. Binary search vì thuế/PMI phụ thuộc giá (hàm tăng đơn điệu). */
+function solve(maxH,cash,rate,term,hoa){
+  if(maxH<=hoa) return null;
+  let lo=0, hi=50000000;
+  if(housing(hi,cash,rate,term,hoa).total<=maxH) return housing(hi,cash,rate,term,hoa);
+  for(let i=0;i<80;i++){ const mid=(lo+hi)/2; if(housing(mid,cash,rate,term,hoa).total<=maxH) lo=mid; else hi=mid; }
+  const P=Math.floor(lo/1000)*1000; /* làm tròn xuống $1,000 */
+  return housing(P,cash,rate,term,hoa);
+}
+function compute(income,debts,cash,rate,term,hoa){
+  const gm=income/12;
+  const tiers=DTI_TIERS.map(t=>({k:t.k,d:t.d,maxH:gm*t.d-debts,res:solve(gm*t.d-debts,cash,rate,term,hoa)}));
+  return {gm,dti0:gm>0?debts/gm:0,tiers};
+}
+
+function calc(){
+  const income=Math.max(0,num('income')), debts=Math.max(0,num('debts')), cash=Math.max(0,num('cash')), rate=num('rate'), hoa=Math.max(0,num('hoa'));
+  const d=I18N[lang], R=compute(income,debts,cash,rate,term,hoa);
+  const main=R.tiers[1].res;
+  $('total').textContent=main?fmt(main.P):'$0';
+  $('mo').textContent=main?fmt(main.total):'$0';
+  $('loan').textContent=main?fmt(main.loan):'$0';
+  $('dpOut').textContent=main?d.dp.replace('{d}',Math.round(main.dp*10)/10):'';
+  const d2=main&&R.gm>0?(main.total+debts)/R.gm:R.dti0;
+  $('dti').textContent=pct(R.dti0)+' → '+pct(d2);
+  $('fe').textContent=main&&R.gm>0?pct(main.total/R.gm):'0%';
+  $('tiers').innerHTML=R.tiers.map(t=>{
+    const r=t.res, name=d['t_'+t.k]+' · '+Math.round(t.d*100)+'%';
+    const line=r?d.t_line.replace('{m}',fmt(r.total)).replace('{l}',fmt(r.loan)):'—';
+    return '<div class="tier'+(t.k==='norm'?' main':'')+'"><span class="tn">'+name+'</span><span class="tp">'+(r?fmt(r.P):'$0')+'</span><span class="td">'+line+'</span></div>';
+  }).join('');
+  const blocked=R.tiers.filter(t=>!t.res);
+  if(blocked.length){ $('overNote').textContent=d.over.replace('{x}',Math.round(R.dti0*1000)/10).replace('{t}',Math.round(blocked[blocked.length-1].d*100)); }
+  $('overNote').classList.toggle('hide',!blocked.length);
+  $('pmiNote').classList.toggle('hide',!(main&&main.pmi>0));
+  $('jumboNote').classList.toggle('hide',!(main&&main.loan>JUMBO));
+  const g=i=>R.tiers[i].res||{P:0,total:0,loan:0};
+  last={i:fmt(income),db:fmt(debts),c:fmt(cash),r:rate,y:term,h:fmt(hoa),
+    p1:fmt(g(0).P),m1:fmt(g(0).total),l1:fmt(g(0).loan),p2:fmt(g(1).P),m2:fmt(g(1).total),l2:fmt(g(1).loan),p3:fmt(g(2).P),m3:fmt(g(2).total),l3:fmt(g(2).loan),
+    d0:pct(R.dti0),d2:pct(d2)};
+  const s=d.sms.replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s);
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+function setTerm(t){
+  const prev=term; term=t;
+  $('t30').setAttribute('aria-pressed',String(t===30)); $('t15').setAttribute('aria-pressed',String(t===15));
+  /* nếu khách chưa sửa lãi thì đổi theo rate PMMS của thời hạn mới */
+  if(parseFloat($('rate').value)===DEFAULT_RATE[prev]) $('rate').value=DEFAULT_RATE[t];
+  calc();
+}
+['income','debts','cash','rate','hoa'].forEach(id=>$(id).addEventListener('input',calc));
+$('t30').onclick=()=>setTerm(30);
+$('t15').onclick=()=>setTerm(15);
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'\u2190 All tools':'\u2190 T\u1ea5t c\u1ea3 tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

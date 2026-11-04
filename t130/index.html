@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mở Utility Theo City</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ===== Thêm cho timeline / checklist (T60, T63) — không đổi class cũ ===== */
+:root{--warn-soft:#F7ECE3}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--warn-soft:#33271E}}
+:root[data-theme="dark"]{--warn-soft:#33271E}
+.ctl input[type=date]{font-size:18px;min-height:50px}
+.more{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:0 14px}
+.more summary{cursor:pointer;padding:13px 0;font-size:14px;color:var(--muted);font-weight:500;list-style:none;display:flex;justify-content:space-between;gap:10px}
+.more summary::-webkit-details-marker{display:none}
+.more summary::after{content:'+';color:var(--brass);font-size:18px;line-height:1}
+.more[open] summary::after{content:'\2212'}
+.more .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;padding-bottom:14px}
+.more .ctl input{font-size:17px;padding:10px 6px}
+.more .field label{font-size:12px}
+.total .v.dt{font-size:36px;line-height:1.12;text-wrap:balance}
+.cd{margin-top:8px;font-size:15px;color:var(--muted)}
+.cd b{font-family:var(--display);font-size:30px;font-weight:500;color:var(--brass);font-variant-numeric:tabular-nums}
+.prog{display:grid;gap:6px;font-size:13px;color:var(--muted)}
+.prog b{color:var(--fg);font-weight:500}
+.tl{list-style:none;margin:0;padding:0}
+.grp{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);font-weight:500;padding:18px 0 10px;display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.grp:first-child{padding-top:4px}
+.grp .gd{letter-spacing:0;text-transform:none;color:var(--muted);font-weight:400;font-size:13px}
+.ms{position:relative;display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;padding:0 0 18px}
+.ms::before{content:'';position:absolute;left:13.5px;top:30px;bottom:2px;width:1px;background:var(--line)}
+.ms.last::before{display:none}
+.ck{position:relative;width:28px;height:28px;cursor:pointer;display:block}
+.ck input{position:absolute;inset:0;width:28px;height:28px;margin:0;opacity:0;cursor:pointer}
+.ck span{display:block;width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--panel)}
+.ms.key .ck span{border-color:var(--brass)}
+.ck input:checked+span{background:var(--brass);border-color:var(--brass)}
+.ck input:checked+span::after{content:'';position:absolute;left:10px;top:6px;width:6px;height:12px;border:solid #FFFDF8;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.ck input:focus-visible+span{outline:2px solid var(--brass);outline-offset:2px}
+.ms .top{display:flex;justify-content:space-between;gap:6px 10px;align-items:center;flex-wrap:wrap;min-height:28px}
+.ms .d{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.chip{font-size:11px;letter-spacing:.04em;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.today{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.chip.soon{border-color:var(--warn);color:var(--warn)}
+.chip.past{border-style:dashed}
+.ms .tt{display:block;width:100%;text-align:left;border:0;background:none;padding:2px 0 0;font:inherit;font-size:16px;font-weight:500;line-height:1.35;color:var(--fg);cursor:pointer}
+.ms .tt::after{content:' +';color:var(--brass);font-weight:400}
+.ms .tt[aria-expanded="true"]::after{content:' \2212'}
+.ms.key .tt{font-family:var(--display);font-size:22px;font-weight:500}
+.ms.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.why{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.55}
+.why[hidden]{display:none}
+.why a{color:var(--brass)}
+.ms .sub2{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;margin-top:6px;font-size:12px}
+.shift{color:var(--warn)}
+.gcal{color:var(--brass);text-decoration:none;white-space:nowrap}
+.gcal:hover{text-decoration:underline}
+.rules{font-size:13px;color:var(--muted);line-height:1.55;display:grid;gap:4px}
+.rules b{color:var(--fg);font-weight:500}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0;line-height:1.15}
+.panel ol,.panel ul{margin:0;padding-left:20px;display:grid;gap:7px;font-size:14px}
+.panel a{color:var(--brass)}
+.misread{font-size:14px;line-height:1.55;border-left:2px solid var(--brass);padding:2px 0 2px 14px}
+.misread b{font-weight:500}
+.warnbox{background:var(--warn-soft);border:1px solid var(--warn);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.warnbox h2{font-family:var(--display);font-weight:500;font-size:24px;margin:0;color:var(--warn);line-height:1.15}
+.warnbox ul{margin:0;padding-left:20px;display:grid;gap:7px;font-size:14px}
+.warnbox a{color:var(--warn)}
+.copied{font-size:13px;color:var(--ok);text-align:center}
+.copied[hidden]{display:none}
+.fallback{width:100%;min-height:160px;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel);color:var(--fg)}
+.fallback[hidden]{display:none}
+footer .src a{word-break:break-word}
+/* ===== Thêm cho T130 — không đổi class cũ ===== */
+.ms .sub2 a{color:var(--brass);text-decoration:none}
+.ms .sub2 a:hover{text-decoration:underline}
+.chip.dl{border-color:var(--brass);color:var(--fg)}
+.cd .y{font-family:var(--display);font-size:30px;font-weight:500;color:var(--brass);font-variant-numeric:tabular-nums}.ucard{border:1px solid var(--line);border-radius:12px;padding:14px 14px 12px;display:grid;gap:8px;background:var(--panel)}
+.ucard.done{border-color:var(--brass);background:var(--brass-soft)}
+.ucard .hd{display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;align-items:start}
+.ucard .svc{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.ucard .pn{font-family:var(--display);font-size:22px;font-weight:500;line-height:1.2;margin-top:2px}
+.ucard .pv{display:grid;gap:3px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.ucard .pv:first-of-type{border-top:0}
+.ucard .pv b{font-weight:500}
+.ucard .pv .ar{color:var(--muted);font-size:13px}
+.ucard .row{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;font-size:13px}
+.ucard a{color:var(--brass);text-decoration:none}
+.ucard a:hover{text-decoration:underline}
+.ucard .multi{font-size:13px;color:var(--warn);font-weight:500}
+.ucard .nt{font-size:13px;color:var(--muted);line-height:1.5}
+.ucards{display:grid;gap:10px}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl select:focus-visible{outline:none}
+.ctl .chev{color:var(--muted);font-size:14px;pointer-events:none}
+</style>
+<meta name="description" content="Chọn city và ngày dọn vào. Ra liền danh sách hãng điện, gas, nước, rác, internet đúng city, có số phone và ngày nên gọi.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t130/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Mở Utility Theo City · Ken Lam Tools">
+<meta property="og:description" content="Chọn city và ngày dọn vào. Ra liền danh sách hãng điện, gas, nước, rác, internet đúng city, có số phone và ngày nên gọi.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t130/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title">Dọn vào nhà mới, mở điện nước ở đâu?</h1>
+    <p class="sub" data-i="sub">Chọn city và ngày dọn vào. Ra liền danh sách hãng điện, gas, nước, rác, internet đúng city, có số phone và ngày nên gọi.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="row2">
+      <div class="field">
+        <label for="city"><span data-i="l_city">City</span> <small data-i="l_city_s">(nhà mới)</small></label>
+        <div class="ctl"><select id="city"></select><span class="chev">▾</span></div>
+      </div>
+      <div class="field">
+        <label for="mv"><span data-i="l_mv">Ngày dọn vào</span> <small data-i="l_mv_s">(hoặc ngày nhận nhà)</small></label>
+        <div class="ctl"><input id="mv" type="date"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">Dịch vụ cần mở</div>
+      <div class="v"><span id="nSvc">0</span> <small data-i="u_svc">dịch vụ</small></div>
+      <div class="cd" id="cdLine"></div>
+    </div>
+    <div class="prog">
+      <div class="bar" aria-hidden="true"><i class="b1" id="progBar" style="width:0"></i></div>
+      <span><b id="progTxt">0/0</b> <span data-i="prog">đã hẹn · bấm vòng tròn khi đã gọi xong</span></span>
+    </div>
+    <div class="note hide" id="multiNote" data-i="multi_note">City này có hơn một nhà cung cấp cho một dịch vụ. Tra theo địa chỉ bằng link trong thẻ trước khi gọi.</div>
+    <div class="ucards" id="cards"></div>
+  </section>
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video hướng dẫn"></video>
+
+  <section class="panel">
+    <h2 data-i="nx_h">Bước tiếp theo</h2>
+    <ol>
+      <li data-i="nx_1">Gọi điện và gas trước. PG&amp;E cho hẹn trước tới 60 ngày, có line tiếng Việt 1-800-298-8438.</li>
+      <li data-i="nx_2">Thẻ nào ghi "tra theo địa chỉ" thì bấm link tra cứu, đừng đoán theo city.</li>
+      <li data-i="nx_3">Internet: nhập địa chỉ ở <a href="https://broadbandmap.fcc.gov" target="_blank" rel="noopener">FCC National Broadband Map</a> để biết hãng nào kéo tới nhà, rồi hẹn kỹ thuật sớm.</li>
+      <li data-i="nx_4">Đổi địa chỉ USPS, DMV, IRS: <a href="/t102/">tool T102 — Đổi địa chỉ ở đâu</a>.</li>
+    </ol>
+    <p class="misread"><b data-i="mr_h">Nhiều người hiểu sai:</b> <span data-i="mr">"Điện mua từ San José Clean Energy (hay SVCE, Ava) thì PG&amp;E không gửi bill nữa." Sai. Ở các city này bạn chỉ mở account với PG&amp;E; phần mua điện tự chuyển qua chương trình của city (CCA). PG&amp;E vẫn lo dây điện, sửa chữa và gửi bill, trên bill có cả phần CCA.</span></p>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Gửi kết quả qua email</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Hỏi Ken</a>
+    <a class="btn" id="videoBtn" href="/t130/web.mp4" target="_blank" rel="noopener" data-i="b_video">Xem video 15 giây</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Gửi danh sách này về email</h2>
+    <p data-i="f_sub">Ken nhận được sẽ gửi lại danh sách có số phone, kèm checklist đổi địa chỉ. Không spam.</p>
+    <div class="field"><label for="fname" data-i="f_name">Tên</label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone" data-i="f_phone">Phone (không bắt buộc)</label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Hoặc text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Đọc thêm:</span> <a href="https://kenlamrealty.com/library#mo-utility-nha-moi" target="_blank" rel="noopener" data-i="ft_lib">Mở utility cho nhà mới</a> · <a href="https://kenlamrealty.com/library#video-utility" target="_blank" rel="noopener" data-i="ft_vid">Video 3 phút</a></span>
+    <span data-i="ft_est">Tên hãng, link, số phone tra trên trang chính thức ngày 03/11/2026. "Nên gọi trước" là khuyến nghị, không phải quy định. Một số khu có nhà cung cấp khác: luôn kiểm theo địa chỉ.</span>
+    <span class="src" id="srcLine"></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 03/11/2026 · <a href="/" data-i="ft_all">Tất cả tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== CITY_UTILS — mọi dữ liệu utility ở 1 chỗ. Sửa khi hãng / số phone đổi. =====
+   P = nhà cung cấp: n tên, url link chính thức, ph số phone (từ trang chính thức), min = thời gian báo trước tối thiểu hãng ghi (nếu có),
+       ar = khu phục vụ, src = trang đã tra, d = ngày tra.
+   C = city: danh sách thẻ {s: loại dịch vụ, p: [mã nhà cung cấp], m: nhiều nhà cung cấp → tra theo địa chỉ, lk: link tra cứu, nt: ghi chú}.
+   LEAD = số ngày "nên gọi trước" theo loại dịch vụ — KHUYẾN NGHỊ của tool, không phải quy định hãng. KEN DUYỆT.
+   Internet: không ghi số phone vì trang chính thức Xfinity / AT&T / Sonic không hiện số khi tra (chỉ có chat / JS) — để link.
+*/
+const D='03/11/2026';
+const LEAD={ew:7,elec:7,gas:7,city:7,water:7,wst:7,trash:7,net:14};
+const CITY_UTILS={
+ P:{
+  pge:{n:'PG&E',url:'https://www.pge.com/en/account/service-requests/start-stop-transfer-service.html',ph:['1-877-660-6789','1-800-298-8438|vi'],
+       min:{vi:'Hẹn trước được tới 60 ngày',en:'Can schedule up to 60 days ahead'},src:'https://www.pge.com/en/account/service-requests/start-stop-transfer-service.html ; https://www.pge.com/en/contact-us.html',d:D},
+  sjce:{n:'San José Clean Energy',url:'https://sanjosecleanenergy.org/faq/',ph:['833-432-2454'],src:'https://sanjosecleanenergy.org/faq/ ("New customers are automatically enrolled"; PG&E "remains the billing provider")',d:D},
+  svce:{n:'Silicon Valley Clean Energy',url:'https://svcleanenergy.org/',ph:['1-844-474-7823'],
+       ar:{vi:'Campbell, Cupertino, Gilroy, Los Altos, Los Altos Hills, Los Gatos, Milpitas, Monte Sereno, Morgan Hill, Mountain View, Saratoga, Sunnyvale, unincorporated Santa Clara County',en:'Campbell, Cupertino, Gilroy, Los Altos, Los Altos Hills, Los Gatos, Milpitas, Monte Sereno, Morgan Hill, Mountain View, Saratoga, Sunnyvale, unincorporated Santa Clara County'},src:'https://svcleanenergy.org/',d:D},
+  ava:{n:'Ava Community Energy',url:'https://avaenergy.org/community/who-we-serve/',ph:['833-699-3223'],
+       ar:{vi:'Berkeley, Dublin, Fremont, Hayward, Livermore, Newark, Oakland, Pleasanton, San Leandro, Union City, unincorporated Alameda County (không gồm city Alameda)',en:'Berkeley, Dublin, Fremont, Hayward, Livermore, Newark, Oakland, Pleasanton, San Leandro, Union City, unincorporated Alameda County (not the City of Alameda)'},src:'https://avaenergy.org/community/who-we-serve/ ; https://avaenergy.org/about-ava/contact-us/',d:D},
+  scu:{n:'City of Santa Clara Utilities (Silicon Valley Power)',url:'https://santaclaraca.gov/our-city/departments-a-f/finance/my-utilities-account/start-new-utility-services',ph:['408-615-2300'],
+       min:{vi:'Thường mất 1 ngày làm việc để mở',en:'Generally one full work day to turn on'},src:'https://www.santaclaraca.gov/services/utilities/frequently-asked-questions ; https://www.santaclaraca.gov/our-city/departments-a-f/finance/my-utilities-account/contact-us',d:D},
+  cpau:{n:'City of Palo Alto Utilities',url:'https://www.paloalto.gov/Departments/Utilities/Customer-Service/Start-Stop-or-Change-Utilities-Service',ph:['650-329-2161'],
+       min:{vi:'Tối thiểu 1 ngày làm việc trước ngày mở',en:'At least 1 business day before the start date'},src:'https://www.paloalto.gov/Departments/Utilities/Customer-Service/Start-Stop-or-Change-Utilities-Service',d:D},
+  amp:{n:'Alameda Municipal Power',url:'https://www.alamedamp.com/239',ph:['510-748-3900'],src:'https://www.alamedamp.com/ ; https://www.alamedaca.gov/Shortcut-Content/News-Media/Essential-City-Services-Who-to-Contact',d:D},
+  sjw:{n:'San Jose Water',url:'https://www.sjwater.com/customer-care/start-stop-or-transfer-service/',ph:['408-279-7900'],
+       min:{vi:'Tối thiểu 2 ngày làm việc trước ngày mở',en:'At least 2 business days before the service date'},src:'https://www.sjwater.com/customer-care/start-stop-or-transfer-service/ ; https://www.valleywater.org/find-my-retailer',d:D},
+  sjmw:{n:'San José Municipal Water',url:'https://sanjoseca.gov/your-government/departments-offices/environmental-services/water-utilities/drinking-water/customer-service',ph:['408-535-3500'],
+       ar:{vi:'Alviso, North San José (bắc Trimble Rd), Evergreen, Edenvale, Coyote Valley',en:'Alviso, North San José (north of Trimble Rd), Evergreen, Edenvale, Coyote Valley'},src:'https://www.valleywater.org/find-my-retailer ; customer service page',d:D},
+  gow:{n:'Great Oaks Water',url:'https://www.greatoakswater.com/',ph:['408-227-9540'],
+       ar:{vi:'Blossom Valley, Santa Teresa, Edenvale, Coyote Valley, Almaden Valley (một phần)',en:'Blossom Valley, Santa Teresa, Edenvale, Coyote Valley, Almaden Valley (parts)'},src:'https://www.greatoakswater.com/ ; phone: CPUC customer notice https://www.cpuc.ca.gov/-/media/cpuc-website/divisions/public-advisors/images/meeting-documents/great-oaks-water-company-proposed-notice-to-customers.pdf',d:D},
+  calla:{n:'Cal Water — Los Altos Suburban',url:'https://www.calwater.com/start-stop/',ph:['650-917-0152'],src:'https://www.calwater.com/customercare/city/ ; phone: https://www.cupertino.gov/Residents/Utilities',d:D},
+  callv:{n:'Cal Water — Livermore',url:'https://www.calwater.com/start-stop/',ph:['925-447-4900'],src:'https://calwater.com/district/livermore',d:D},
+  svw:{n:'City of Sunnyvale Utilities',url:'https://www.sunnyvale.ca.gov/homes-streets-and-property/utility-billing',ph:['408-730-7400'],
+       min:{vi:'Mở online mất khoảng 5 ngày làm việc; gấp thì gọi',en:'Online requests take about 5 business days; call if urgent'},src:'https://sunnyvale.prod.govaccess.org/homes-streets-and-property/utility-billing',d:D},
+  mvw:{n:'City of Mountain View Utility Billing',url:'https://www.mountainview.gov/our-city/departments/finance-and-administrative-services/billing/utility-billing',ph:['650-903-6317|opt1'],
+       min:{vi:'Gọi tối thiểu 1 ngày làm việc trước; không mở online, không mở cuối tuần/lễ',en:'Call at least 1 business day ahead; no online option, no weekends/holidays'},src:'https://mountainview.gov/our-city/departments/finance-and-administrative-services/billing/utility-billing',d:D},
+  milw:{n:'City of Milpitas Utilities',url:'https://milpitas.gov/270/Utility-Payment-Services',ph:['408-586-3100'],src:'https://milpitas.gov/270/Utility-Payment-Services',d:D},
+  mhw:{n:'City of Morgan Hill Utility Billing',url:'https://www.morganhill.ca.gov/ResWaterApp',ph:['408-779-7221'],
+       min:{vi:'Tối thiểu 1 ngày làm việc; mở trong ngày có phí $69',en:'At least 1 business day; same-day costs $69'},src:'https://www.morganhill.ca.gov/ResWaterApp',d:D},
+  gilw:{n:'City of Gilroy Utility Billing',url:'https://cityofgilroy.org/380/Water-Sewer',ph:['408-846-0420'],
+       min:{vi:'1 ngày làm việc; phí mở account $73',en:'1 business day; $73 new account charge'},src:'https://cityofgilroy.org/380/Water-Sewer',d:D},
+  acwd:{n:'Alameda County Water District (ACWD)',url:'https://acwd.org/117/Starting-Stopping-Service',ph:['510-668-4200'],
+       min:{vi:'Tối thiểu 1 ngày làm việc (trước 5 PM)',en:'At least 1 business day (before 5 PM)'},src:'https://acwd.org/117/Starting-Stopping-Service',d:D},
+  ebmud:{n:'EBMUD',url:'https://www.ebmud.com/customers/start-or-stop-service',ph:['1-866-403-2683'],
+       min:{vi:'Phí mở account $65 online, $80 qua phone',en:'Account fee $65 online, $80 by phone'},src:'https://www.ebmud.com/customers/start-or-stop-service ; service area: https://www.contracostalafco.org/wp-content/uploads/2025/06/13.-Section-10-Municipal-Utility-District.pdf',d:D},
+  hayw:{n:'City of Hayward Water',url:'https://hayward-ca.gov/residents/utilities',ph:['510-583-4600'],ar:{vi:'Phần lớn Hayward',en:'Most of Hayward'},src:'https://hayward-ca.gov/residents/utilities',d:D},
+  plw:{n:'City of Pleasanton Utility Billing',url:'https://cityofpleasantonca.gov/?p=38776',ph:['925-931-5500'],
+       min:{vi:'Phí mở $15 + cọc $200 (hoàn lại) nếu khách mới',en:'$15 setup + $200 refundable deposit for new customers'},src:'https://cityofpleasantonca.gov/?p=38776',d:D},
+  lmw:{n:'Livermore Municipal Water',url:'https://livermoreca.gov/departments/administrative-services/finance/utility-billing/start-or-stop-service',ph:[],src:'https://livermoreca.gov/departments/administrative-services/finance/utility-billing/start-or-stop-service',d:D},
+  dsrsd:{n:'Dublin San Ramon Services District (DSRSD)',url:'https://www.dsrsd.com/Residents/My-Account-Residential/Start-or-Stop-Service',ph:['925-828-0515'],src:'https://www.dsrsd.com/',d:D},
+  sjrp:{n:'City of San José Recycle Plus',url:'https://sanjoseca.gov/your-government/departments-offices/environmental-services/recycling-garbage/residents',ph:['408-535-3500|311'],src:'https://sanjoseca.gov/your-government/departments-offices/environmental-services/recycling-garbage/residents ; billing: https://sanjoseca.gov/your-government/departments-offices/environmental-services/rates-fees',d:D},
+  wvr:{n:'West Valley Recycles',url:'https://www.westvalleyrecycles.com/',ph:['408-283-9250'],ar:{vi:'Campbell, Los Gatos, Monte Sereno, Saratoga',en:'Campbell, Los Gatos, Monte Sereno, Saratoga'},src:'https://www.westvalleyrecycles.com/ ; https://campbellca.gov/1412/Garbage-Recycling ; https://losgatosca.gov/2168/Solid-Waste-Management',d:D},
+  recsb:{n:'Recology South Bay',url:'https://www.cupertino.gov/Residents/Utilities',ph:['408-725-4020'],src:'https://www.cupertino.gov/Residents/Utilities',d:D},
+  recsv:{n:'Recology South Valley',url:'https://morganhill.ca.gov/106/Garbage-Recycling',ph:['408-842-3358'],src:'https://morganhill.ca.gov/106/Garbage-Recycling ; https://cityofgilroy.org/314/Recology-South-Valley',d:D},
+  gwpa:{n:'GreenWaste of Palo Alto',url:'https://www.paloalto.gov/Departments/Public-Works/Zero-Waste/What-Goes-Where/Curbside-Collection-Services',ph:['650-493-4894'],src:'https://www.paloalto.gov/Departments/Public-Works/Zero-Waste/What-Goes-Where/Curbside-Collection-Services',d:D},
+  milsan:{n:'Milpitas Sanitation',url:'https://www.milpitas.gov/Directory.aspx?did=65',ph:['408-988-4500'],src:'https://www.milpitas.gov/Directory.aspx?did=65',d:D},
+  oakwm:{n:'WM (rác, compost) + California Waste Solutions (tái chế)',url:'https://www.oaklandrecycles.com/contact/',ph:['510-613-8710|WM','510-625-5263|CWS'],src:'https://www.oaklandrecycles.com/contact/ ; https://www.oaklandca.gov/topics/residential-trash-and-recycling-services',d:D},
+  brk:{n:'City of Berkeley Zero Waste + Ecology Center (tái chế)',url:'https://www.berkeleyca.gov/city-services/trash-recycling/residential-waste-services',ph:['510-981-7270|City','510-527-5555|Ecology Center'],src:'https://www.berkeleyca.gov/city-services/trash-recycling/residential-waste-services',d:D},
+  repfr:{n:'Republic Services',url:'https://www.fremont.gov/government/departments/environmental-services/recycling-compost-garbage',ph:['510-657-3500'],src:'https://www.fremont.gov/government/departments/environmental-services/recycling-compost-garbage ; https://www.republicservices.com/municipality/fremont-ca',d:D},
+  repnw:{n:'Republic Services',url:'https://www.newarkca.gov/residents/utilities',ph:['510-657-3500'],src:'https://www.newarkca.gov/residents/utilities',d:D},
+  repuc:{n:'Republic Services (rác) + Tri-CED (tái chế, compost)',url:'https://www.unioncityca.gov/298/Single-Family-Residential-Services',ph:['510-657-3500|Republic','510-429-8030|Tri-CED'],src:'https://www.unioncityca.gov/298/Single-Family-Residential-Services',d:D},
+  wmhay:{n:'Waste Management of Alameda County',url:'https://hayward-ca.gov/residents/utilities',ph:['510-537-5500'],src:'https://hayward-ca.gov/residents/utilities ("All properties go through Waste Management to start garbage service")',d:D},
+  acisl:{n:'Alameda County Industries (ACI)',url:'https://www.sanleandro.org/1141/Service-Providers',ph:['510-357-7282'],src:'https://www.sanleandro.org/1141/Service-Providers',d:D},
+  wmol:{n:'WM — khu Oro Loma Sanitary District',url:'https://www.sanleandro.org/1141/Service-Providers',ph:['510-613-8710|WM','510-276-4700|Oro Loma'],src:'https://www.sanleandro.org/1141/Service-Providers',d:D},
+  aciala:{n:'Alameda County Industries (ACI)',url:'https://www.alamedacountyindustries.com/alameda/',ph:['510-483-1400'],src:'https://www.alamedaca.gov/Shortcut-Content/News-Media/Essential-City-Services-Who-to-Contact',d:D},
+  pgs:{n:'Pleasanton Garbage Service',url:'https://www.pleasantongarbageservice.com',ph:['925-846-2042'],src:'https://www.cityofpleasantonca.gov/your-community/garbage-recycling/',d:D},
+  lsi:{n:'Livermore Sanitation',url:'https://www.livermoreca.gov/departments/public-works/environmental-services/residential-service',ph:['925-449-7300'],src:'https://www.livermoreca.gov/departments/public-works/environmental-services/residential-service',d:D},
+  avi:{n:'Amador Valley Industries (AVI)',url:'https://www.dublin.ca.gov/2672/Compost-Recycling-Garbage',ph:['925-479-9545'],src:'https://www.dublin.ca.gov/2672/Compost-Recycling-Garbage',d:D},
+  cvsan:{n:'Castro Valley Sanitary District (CVSan)',url:'https://cvsan.org/',ph:['510-537-0757'],src:'https://cvsan.org/',d:D},
+  orolo:{n:'Oro Loma Sanitary District',url:'https://orolomasanitarydistrict.ca.gov/solid-waste-welcome-page',ph:['510-276-4700'],src:'https://www.sanleandro.org/1141/Service-Providers',d:D},
+  rstuff:{n:'Santa Clara County Recycling Hotline',url:'https://www.recyclestuff.org/',ph:['800-533-8414'],src:'https://www.recyclestuff.org/',d:D},
+  xfin:{n:'Comcast Xfinity',url:'https://www.xfinity.com',ph:[],src:'https://www.xfinity.com',d:D},
+  att:{n:'AT&T',url:'https://www.att.com/internet/',ph:[],src:'https://www.att.com/support/contact-us/',d:D},
+  sonic:{n:'Sonic',url:'https://www.sonic.com',ph:[],src:'https://www.sonic.com',d:D}
+ },
+ LK:{vw:'https://www.valleywater.org/find-my-retailer',sw:'https://resource.stopwaste.org/curbside',fcc:'https://broadbandmap.fcc.gov',
+     sjres:'https://sanjoseca.gov/your-government/departments-offices/environmental-services/recycling-garbage/residents',lv:'https://livermoreca.gov/departments/administrative-services/finance/utility-billing/start-or-stop-service',
+     cup:'https://www.cupertino.gov/Residents/Utilities',hay:'https://hayward-ca.gov/residents/utilities',sl:'https://www.sanleandro.org/1141/Service-Providers'},
+ /* Nguồn chung cho nước Santa Clara County: https://www.valleywater.org/find-my-retailer (tra 03/11/2026) */
+ C:{
+  sj:[{s:'ew',p:['pge','sjce'],nt:'cca'},{s:'water',p:['sjw','sjmw','gow'],m:1,lk:'vw'},{s:'trash',p:['sjrp'],lk:'sjres',nt:'sjtax'},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  sc:[{s:'city',p:['scu'],nt:'scu'},{s:'gas',p:['pge']},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  sv:[{s:'ew',p:['pge','svce'],nt:'cca'},{s:'wst',p:['svw'],nt:'svw'},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  mv:[{s:'ew',p:['pge','svce'],nt:'cca'},{s:'wst',p:['mvw'],nt:'mvw'},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  pa:[{s:'city',p:['cpau'],nt:'cpau'},{s:'trash',p:['gwpa']},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  mp:[{s:'ew',p:['pge','svce'],nt:'cca'},{s:'water',p:['milw']},{s:'trash',p:['milsan']},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  cu:[{s:'ew',p:['pge','svce'],nt:'cca'},{s:'water',p:['sjw','calla'],m:1,lk:'cup',nt:'cuw'},{s:'trash',p:['recsb']},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  cb:[{s:'ew',p:['pge','svce'],nt:'cca'},{s:'water',p:['sjw']},{s:'trash',p:['wvr']},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  lg:[{s:'ew',p:['pge','svce'],nt:'cca'},{s:'water',p:['sjw']},{s:'trash',p:['wvr']},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  sa:[{s:'ew',p:['pge','svce'],nt:'cca'},{s:'water',p:['sjw'],lk:'vw',nt:'chk'},{s:'trash',p:['wvr']},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  mh:[{s:'ew',p:['pge','svce'],nt:'cca'},{s:'water',p:['mhw']},{s:'trash',p:['recsv']},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  gi:[{s:'ew',p:['pge','svce'],nt:'cca'},{s:'water',p:['gilw']},{s:'trash',p:['recsv']},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  osc:[{s:'ew',p:['pge','svce'],nt:'ccaosc'},{s:'water',p:['sjw','calla'],m:1,lk:'vw',nt:'osw'},{s:'trash',p:['rstuff'],m:1,nt:'ost'},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  oak:[{s:'ew',p:['pge','ava'],nt:'cca'},{s:'water',p:['ebmud']},{s:'trash',p:['oakwm']},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  brk:[{s:'ew',p:['pge','ava'],nt:'cca'},{s:'water',p:['ebmud']},{s:'trash',p:['brk'],nt:'brk'},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  fre:[{s:'ew',p:['pge','ava'],nt:'cca'},{s:'water',p:['acwd']},{s:'trash',p:['repfr']},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  hay:[{s:'ew',p:['pge','ava'],nt:'cca'},{s:'water',p:['hayw','ebmud'],m:1,lk:'hay',nt:'hayw'},{s:'trash',p:['wmhay']},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  sl:[{s:'ew',p:['pge','ava'],nt:'cca'},{s:'water',p:['ebmud']},{s:'trash',p:['acisl','wmol'],m:1,lk:'sl'},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  ala:[{s:'elec',p:['amp'],nt:'amp'},{s:'gas',p:['pge']},{s:'water',p:['ebmud']},{s:'trash',p:['aciala']},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  uc:[{s:'ew',p:['pge','ava'],nt:'cca'},{s:'water',p:['acwd']},{s:'trash',p:['repuc']},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  nw:[{s:'ew',p:['pge','ava'],nt:'cca'},{s:'water',p:['acwd']},{s:'trash',p:['repnw']},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  pl:[{s:'ew',p:['pge','ava'],nt:'cca'},{s:'water',p:['plw']},{s:'trash',p:['pgs']},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  lv:[{s:'ew',p:['pge','ava'],nt:'cca'},{s:'water',p:['lmw','callv'],m:1,lk:'lv'},{s:'trash',p:['lsi']},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  du:[{s:'ew',p:['pge','ava'],nt:'cca'},{s:'water',p:['dsrsd']},{s:'trash',p:['avi']},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}],
+  cv:[{s:'ew',p:['pge','ava'],nt:'cca'},{s:'water',p:['ebmud'],lk:'sw',nt:'cvw'},{s:'trash',p:['cvsan','orolo'],m:1,lk:'sw'},{s:'net',p:['xfin','att','sonic'],lk:'fcc',nt:'net'}]
+ }
+};
+/* Danh sách city — giống T21 */
+const CITIES=[['sj','San Jose','SC'],['sc','Santa Clara','SC'],['sv','Sunnyvale','SC'],['mv','Mountain View','SC'],['pa','Palo Alto','SC'],['mp','Milpitas','SC'],['cu','Cupertino','SC'],['cb','Campbell','SC'],['lg','Los Gatos','SC'],['sa','Saratoga','SC'],['mh','Morgan Hill','SC'],['gi','Gilroy','SC'],['osc','Other Santa Clara County','SC'],
+ ['oak','Oakland','AL'],['brk','Berkeley','AL'],['fre','Fremont','AL'],['hay','Hayward','AL'],['sl','San Leandro','AL'],['ala','Alameda','AL'],['uc','Union City','AL'],['nw','Newark','AL'],['pl','Pleasanton','AL'],['lv','Livermore','AL'],['du','Dublin','AL'],['cv','Castro Valley / unincorporated Alameda','AL']];
+const UPDATED='03/11/2026';
+
+const I18N={
+ vi:{title:'Dọn vào nhà mới, mở điện nước ở đâu?',sub:'Chọn city và ngày dọn vào. Ra liền danh sách hãng điện, gas, nước, rác, internet đúng city, có số phone và ngày nên gọi.',
+  l_city:'City',l_city_s:'(nhà mới)',l_mv:'Ngày dọn vào',l_mv_s:'(hoặc ngày nhận nhà)',
+  r_total:'Dịch vụ cần mở',u_svc:'dịch vụ',cd_line:'Gọi cái đầu tiên trước: <b>{d}</b>',
+  prog:'đã hẹn · bấm vòng tròn khi đã gọi xong',multi_note:'City này có hơn một nhà cung cấp cho một dịch vụ. Tra theo địa chỉ bằng link trong thẻ trước khi gọi.',
+  S:{ew:'Điện & gas',elec:'Điện',gas:'Gas',city:'Utility của city',water:'Nước',wst:'Nước, sewer & rác',trash:'Rác & tái chế',net:'Internet'},
+  call:'Nên gọi trước {n} ngày · {d}',minL:'Hãng ghi:',multi:'Nhiều nhà cung cấp — tra theo địa chỉ',look:'Tra theo địa chỉ ↗',site:'Trang chính thức ↗',ar:'Khu:',noPh:'Số phone: xem trên trang',vi:'tiếng Việt',
+  gcal:'+ Google Calendar',calT:'Gọi mở {s}: {p}',calD:'Dọn vào: {m}\n{p}\n{u}\nDanh sách: tools.kenlamrealty.com (T130)',
+  NT:{cca:'Chỉ cần mở account PG&E. Phần mua điện tự vào {c} (CCA của city), không đăng ký riêng. PG&E vẫn gửi bill.',
+   ccaosc:'Unincorporated Santa Clara County, Los Altos, Los Altos Hills, Monte Sereno: điện mua qua Silicon Valley Clean Energy, mở account ở PG&E.',
+   sjtax:'Nhà single-family: phí rác tính trên property tax bill của county, không phải mở account. Hãng thu rác theo khu, tra ở link. Condo/apartment chung thùng: owner hoặc HOA/quản lý trả.',
+   scu:'Một account city gồm điện (Silicon Valley Power), nước, sewer và rác (Mission Trail). Gas vẫn là PG&E, bill riêng.',
+   cpau:'City lo điện, gas, nước, sewer. Không cần gọi PG&E.',
+   amp:'Điện của city (AMP), không phải PG&E. Gas vẫn là PG&E.',
+   svw:'Một account city gồm nước, sewer, rác (Specialty Solid Waste). Vài khu nhỏ phía nam có nước Cal Water: tra ở valleywater.org/find-my-retailer.',
+   mvw:'Một account city gồm nước, sewer, rác (Recology Mountain View). Vài khu quanh Grant Rd / Hwy 85 có nước Cal Water.',
+   cuw:'San Jose Water: phía nam Hwy 280. Cal Water: khu Homestead tới Stevens Creek. Tra bản đồ Service Finder của city.',
+   chk:'Saratoga có vài khu nước riêng. Kiểm theo địa chỉ trước khi gọi.',
+   osw:'Unincorporated và Los Altos, Los Altos Hills, Monte Sereno: hãng nước theo địa chỉ (Cal Water, San Jose Water, Purissima Hills…).',
+   ost:'Hãng rác theo từng city / khu. Gọi hotline county hoặc hỏi city.',
+   brk:'Rác, compost: City (510) 981-7270. Tái chế: Ecology Center (510) 527-5555. Owner nhà 1–4 căn gọi mở.',
+   hayw:'Phần lớn Hayward dùng nước city, một số khu dùng EBMUD. Kiểm theo địa chỉ.',
+   cvw:'Castro Valley, San Lorenzo, Ashland, Cherryland, Fairview nằm trong vùng EBMUD. Khu unincorporated khác: kiểm theo địa chỉ.',
+   net:'Hãng nào kéo tới nhà tùy địa chỉ. Tra FCC map trước, hẹn kỹ thuật sớm vì lịch hay kín.'},
+  nx_h:'Bước tiếp theo',nx_1:'Gọi điện và gas trước. PG&amp;E cho hẹn trước tới 60 ngày, có line tiếng Việt 1-800-298-8438.',
+  nx_2:'Thẻ nào ghi "tra theo địa chỉ" thì bấm link tra cứu, đừng đoán theo city.',
+  nx_3:'Internet: nhập địa chỉ ở <a href="https://broadbandmap.fcc.gov" target="_blank" rel="noopener">FCC National Broadband Map</a> để biết hãng nào kéo tới nhà, rồi hẹn kỹ thuật sớm.',
+  nx_4:'Đổi địa chỉ USPS, DMV, IRS: <a href="/t102/">tool T102 — Đổi địa chỉ ở đâu</a>.',
+  mr_h:'Nhiều người hiểu sai:',mr:'"Điện mua từ San José Clean Energy (hay SVCE, Ava) thì PG&amp;E không gửi bill nữa." Sai. Ở các city này bạn chỉ mở account với PG&amp;E; phần mua điện tự chuyển qua chương trình của city (CCA). PG&amp;E vẫn lo dây điện, sửa chữa và gửi bill, trên bill có cả phần CCA.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi danh sách này về email',f_sub:'Ken nhận được sẽ gửi lại danh sách có số phone, kèm checklist đổi địa chỉ. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Mở utility cho nhà mới',ft_vid:'Video 3 phút',ft_est:'Tên hãng, link, số phone tra trên trang chính thức ngày 03/11/2026. "Nên gọi trước" là khuyến nghị, không phải quy định. Một số khu có nhà cung cấp khác: luôn kiểm theo địa chỉ.',ft_src:'Nguồn:',ft_upd:'Cập nhật',ft_all:'Tất cả tools',
+  lang:'English',wd:['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'],
+  sms:'Chào Ken, tôi dọn vào nhà ở {c} ngày {d}, đang xem danh sách mở utility trên tools.kenlamrealty.com. Cho tôi hỏi thêm.',
+  subj:'Mở utility — {c} — dọn {d} — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\nCity: {c}\nNgày dọn vào: {d}\nDịch vụ cần mở: {x}\nĐã hẹn: {p}\n\n{list}\n\nGửi từ tool T130 tools.kenlamrealty.com'},
+ en:{title:'Moving in. Who do I call for utilities?',sub:'Pick your city and move-in date. Get the power, gas, water, garbage and internet providers for that city, with phone numbers and when to call.',
+  l_city:'City',l_city_s:'(new home)',l_mv:'Move-in date',l_mv_s:'(or key handover)',
+  r_total:'Services to set up',u_svc:'services',cd_line:'Make the first call by <b>{d}</b>',
+  prog:'scheduled · tap a circle once you have called',multi_note:'This city has more than one provider for a service. Check by address with the link on the card before calling.',
+  S:{ew:'Power & gas',elec:'Electricity',gas:'Gas',city:'City utilities',water:'Water',wst:'Water, sewer & garbage',trash:'Garbage & recycling',net:'Internet'},
+  call:'Call {n} days ahead · {d}',minL:'Provider says:',multi:'Several providers — check by address',look:'Check by address ↗',site:'Official site ↗',ar:'Area:',noPh:'Phone: see website',vi:'Vietnamese',
+  gcal:'+ Google Calendar',calT:'Call to start {s}: {p}',calD:'Move-in: {m}\n{p}\n{u}\nList: tools.kenlamrealty.com (T130)',
+  NT:{cca:'Just open a PG&E account. Your power supply goes to {c} (the city CCA) automatically, no separate sign-up. PG&E still sends the bill.',
+   ccaosc:'Unincorporated Santa Clara County, Los Altos, Los Altos Hills, Monte Sereno: power is supplied by Silicon Valley Clean Energy, open the account with PG&E.',
+   sjtax:'Single-family homes: garbage is billed on the county property tax bill, no account to open. The hauler depends on your area, look it up at the link. Condos/apartments with shared bins: owner or HOA/manager pays.',
+   scu:'One city account covers electricity (Silicon Valley Power), water, sewer and garbage (Mission Trail). Gas is still PG&E, billed separately.',
+   cpau:'The city provides electricity, gas, water and sewer. No PG&E call needed.',
+   amp:'City-owned electricity (AMP), not PG&E. Gas is still PG&E.',
+   svw:'One city account covers water, sewer and garbage (Specialty Solid Waste). A few small areas get Cal Water: check valleywater.org/find-my-retailer.',
+   mvw:'One city account covers water, sewer and garbage (Recology Mountain View). A few areas near Grant Rd / Hwy 85 get Cal Water.',
+   cuw:'San Jose Water: south of Hwy 280. Cal Water: Homestead to Stevens Creek area. Use the city Service Finder map.',
+   chk:'Saratoga has a few separate water areas. Check your address before calling.',
+   osw:'Unincorporated areas and Los Altos, Los Altos Hills, Monte Sereno: water provider depends on address (Cal Water, San Jose Water, Purissima Hills…).',
+   ost:'Garbage hauler depends on city / area. Call the county hotline or ask the city.',
+   brk:'Trash, compost: City (510) 981-7270. Recycling: Ecology Center (510) 527-5555. Owners of 1–4 unit homes call to start.',
+   hayw:'Most of Hayward gets city water, some areas get EBMUD. Check by address.',
+   cvw:'Castro Valley, San Lorenzo, Ashland, Cherryland, Fairview are in EBMUD. Other unincorporated areas: check by address.',
+   net:'Which providers reach your home depends on the address. Check the FCC map first and book the install early, slots fill up.'},
+  nx_h:'Next steps',nx_1:'Call power and gas first. PG&amp;E lets you schedule up to 60 days ahead; Vietnamese line 1-800-298-8438.',
+  nx_2:'If a card says "check by address", use the lookup link, do not guess by city.',
+  nx_3:'Internet: enter your address on the <a href="https://broadbandmap.fcc.gov" target="_blank" rel="noopener">FCC National Broadband Map</a> to see who serves it, then book the install early.',
+  nx_4:'Change your address with USPS, DMV, IRS: <a href="/t102/">tool T102 — Where to change your address</a>.',
+  mr_h:'Common mistake:',mr:'"If my power comes from San José Clean Energy (or SVCE, Ava), PG&amp;E stops billing me." Wrong. In these cities you only open a PG&amp;E account; your power supply moves to the city program (CCA) automatically. PG&amp;E still runs the lines, does repairs and sends the bill, with the CCA charges on it.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this list to yourself',f_sub:'Ken will reply with the list and phone numbers, plus the address change checklist. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'Setting up utilities in a new home',ft_vid:'3-min video',ft_est:'Providers, links and phone numbers checked on official sites on 11/03/2026. "Call ahead" days are a suggestion, not a rule. Some areas have other providers: always check by address.',ft_src:'Sources:',ft_upd:'Updated',ft_all:'All tools',
+  lang:'Tiếng Việt',wd:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+  sms:'Hi Ken, I am moving into a home in {c} on {d} and using the utility list on tools.kenlamrealty.com. I have a question.',
+  subj:'Utilities — {c} — move-in {d} — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\nCity: {c}\nMove-in: {d}\nServices to set up: {x}\nScheduled: {p}\n\n{list}\n\nSent from tool T130 tools.kenlamrealty.com'}
+};
+
+let lang='en', last={};
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const DAY=864e5, pad=n=>String(n).padStart(2,'0');
+const parse=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||'');return m?new Date(Date.UTC(+m[1],+m[2]-1,+m[3])):null;};
+const iso=d=>d.toISOString().slice(0,10);
+const add=(d,n)=>new Date(d.getTime()+n*DAY);
+const ddmmyyyy=d=>lang==='vi'?pad(d.getUTCDate())+'/'+pad(d.getUTCMonth()+1)+'/'+d.getUTCFullYear():pad(d.getUTCMonth()+1)+'/'+pad(d.getUTCDate())+'/'+d.getUTCFullYear();
+const fdate=d=>I18N[lang].wd[d.getUTCDay()]+', '+ddmmyyyy(d);
+const ymd=d=>iso(d).replace(/-/g,'');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function todayUTC(){const t=new Date();return new Date(Date.UTC(t.getFullYear(),t.getMonth(),t.getDate()));}
+function gcal(title,d,details){return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+ymd(d)+'/'+ymd(add(d,1))+'&details='+encodeURIComponent(details);}
+function load(k,def){try{return JSON.parse(localStorage.getItem(k)||'null')||def;}catch(e){return def;}}
+function save(k,o){try{localStorage.setItem(k,JSON.stringify(o));}catch(e){}}
+function phLink(raw){const [n,tag]=raw.split('|'), s=I18N[lang];
+  const lab=tag==='vi'?' ('+s.vi+')':tag==='opt1'?' (option 1)':tag?' ('+tag+')':'';
+  return '<a href="tel:+1'+n.replace(/\D/g,'').replace(/^1(?=\d{10}$)/,'')+'">'+esc(n)+'</a>'+esc(lab);}
+
+/* Logic thuần (test được bằng node) */
+function plan(cityId,M){
+  const cards=CITY_UTILS.C[cityId]||[];
+  return cards.map((c,i)=>({c,i,lead:LEAD[c.s],call:add(M,-LEAD[c.s])}));
+}
+function cityName(id){const c=CITIES.find(x=>x[0]===id);return c?c[1]:id;}
+function calc(){
+  const s=I18N[lang], P=CITY_UTILS.P, id=$('city').value||'sj';
+  let M=parse($('mv').value); if(!M)M=add(todayUTC(),30);
+  try{localStorage.setItem('kl_t130_city',id);}catch(e){}
+  const rows=plan(id,M), done=load('kl_t130_done_'+id,{});
+  $('nSvc').textContent=rows.length;
+  const first=rows.reduce((a,r)=>!a||r.call<a?r.call:a,null);
+  $('cdLine').innerHTML=s.cd_line.replace('{d}',esc(fdate(first)));
+  $('multiNote').classList.toggle('hide',!rows.some(r=>r.c.m));
+  let html='', nDone=0, txt=[], srcs=new Set();
+  rows.forEach(r=>{
+    const c=r.c, k=c.s+r.i, isDone=!!done[k]; if(isDone)nDone++;
+    const pnames=c.p.map(x=>P[x].n).join(' + ');
+    const cca=c.p.map(x=>P[x]).find(p=>/Clean Energy|Ava/.test(p.n));
+    let body='';
+    if(c.m) body+='<div class="multi">'+esc(s.multi)+'</div>';
+    c.p.forEach(x=>{const p=P[x]; srcs.add(p.src.split(' ; ')[0].split(' (')[0]);
+      body+='<div class="pv"><b>'+esc(p.n)+'</b>'+(p.ar?'<span class="ar">'+esc(s.ar)+' '+esc(p.ar[lang])+'</span>':'')
+        +'<span class="row"><a href="'+esc(p.url)+'" target="_blank" rel="noopener">'+esc(s.site)+'</a>'
+        +(p.ph.length?p.ph.map(phLink).join(' · '):'<span class="ar">'+esc(s.noPh)+'</span>')+'</span>'
+        +(p.min?'<span class="ar">'+esc(s.minL)+' '+esc(p.min[lang])+'</span>':'')+'</div>';});
+    if(c.lk){srcs.add(CITY_UTILS.LK[c.lk]); body+='<div class="row"><a href="'+esc(CITY_UTILS.LK[c.lk])+'" target="_blank" rel="noopener">'+esc(s.look)+'</a></div>';}
+    if(c.nt) body+='<div class="nt">'+esc(s.NT[c.nt].replace('{c}',cca?cca.n:''))+'</div>';
+    const url=P[c.p[0]].url;
+    body+='<div class="row"><span class="chip dl">'+esc(s.call.replace('{n}',r.lead).replace('{d}',ddmmyyyy(r.call)))+'</span>'
+      +'<a class="gcal" href="'+esc(gcal(s.calT.replace('{s}',s.S[c.s]).replace('{p}',pnames),r.call,s.calD.replace('{m}',fdate(M)).replace('{p}',c.p.map(x=>P[x].n+(P[x].ph.length?' '+P[x].ph.map(q=>q.split('|')[0]).join(' / '):'')).join('\n')).replace('{u}',url)))+'" target="_blank" rel="noopener">'+esc(s.gcal)+'</a></div>';
+    html+='<div class="ucard'+(isDone?' done':'')+'"><div class="hd"><label class="ck"><input type="checkbox" data-k="'+k+'"'+(isDone?' checked':'')+' aria-label="'+esc(s.S[c.s])+'"><span></span></label>'
+      +'<div><div class="svc">'+esc(s.S[c.s])+'</div><div class="pn">'+esc(c.m?s.multi:pnames)+'</div></div></div>'+body+'</div>';
+    txt.push((isDone?'[x] ':'[ ] ')+s.S[c.s]+': '+c.p.map(x=>P[x].n+(P[x].ph.length?' '+P[x].ph.map(q=>q.split('|')[0]).join(' / '):'')).join(' | ')+' — '+s.call.replace('{n}',r.lead).replace('{d}',ddmmyyyy(r.call)));
+  });
+  $('cards').innerHTML=html;
+  $('progTxt').textContent=nDone+'/'+rows.length; $('progBar').style.width=(rows.length?nDone/rows.length*100:0)+'%';
+  $('srcLine').innerHTML='<span>'+esc(s.ft_src)+'</span> '+[...srcs].map(u=>'<a href="'+esc(u)+'" target="_blank" rel="noopener">'+esc(u.replace(/^https?:\/\/(www\.)?/,'').split('/')[0])+'</a>').join(' · ');
+  last={id,c:cityName(id),d:ddmmyyyy(M),x:rows.length,p:nDone+'/'+rows.length,list:txt.join('\n')};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s.sms.replace('{c}',last.c).replace('{d}',last.d));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+$('city').innerHTML='<optgroup label="Santa Clara County">'+CITIES.filter(c=>c[2]==='SC').map(c=>'<option value="'+c[0]+'">'+c[1]+'</option>').join('')+'</optgroup>'
+  +'<optgroup label="Alameda County">'+CITIES.filter(c=>c[2]==='AL').map(c=>'<option value="'+c[0]+'">'+c[1]+'</option>').join('')+'</optgroup>';
+(function(){let c=null;try{c=localStorage.getItem('kl_t130_city');}catch(e){} if(c&&CITY_UTILS.C[c])$('city').value=c; $('mv').value=iso(add(todayUTC(),30));})();
+$('city').addEventListener('input',calc); $('city').addEventListener('change',calc);
+$('mv').addEventListener('input',calc);
+$('cards').addEventListener('change',e=>{const k=e.target.getAttribute('data-k');if(!k)return;const key='kl_t130_done_'+last.id,o=load(key,{});if(e.target.checked)o[k]=1;else delete o[k];save(key,o);calc();});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const v={n,e,ph,c:last.c,d:last.d,x:last.x,p:last.p,list:last.list};
+  const fill=s=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'\u2190 All tools':'\u2190 T\u1ea5t c\u1ea3 tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

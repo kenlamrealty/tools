@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trả Thêm Mỗi Tháng</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ===== thêm cho T33 ===== */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl input[type=month]{font-size:18px;min-height:50px}
+.more{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:0 14px}
+.more summary{cursor:pointer;padding:13px 0;font-size:14px;font-weight:500;color:var(--fg);list-style:none;display:flex;justify-content:space-between;gap:10px}
+.more summary::-webkit-details-marker{display:none}
+.more summary::after{content:'+';color:var(--brass);font-size:18px;line-height:1}
+.more[open] summary::after{content:'–'}
+.more[open] summary{border-bottom:1px solid var(--line);margin-bottom:14px}
+.more .inputs{padding-bottom:16px}
+.more .ctl{background:var(--bg)}
+.save{font-size:15px;color:var(--muted);margin-top:8px}
+.save b{font-family:var(--display);font-weight:500;font-size:32px;color:var(--brass);font-variant-numeric:tabular-nums}
+.line .a s{color:var(--muted);font-weight:400;text-decoration:none;margin-right:6px}
+.line .a s::after{content:' →';color:var(--muted)}
+.ltv{display:grid;gap:8px}
+.ltv h3,.amort h3{font-family:var(--display);font-size:20px;font-weight:400;margin:0}
+.track{position:relative;height:8px;border-radius:999px;background:var(--line);margin:8px 0 4px}
+.track .fill{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:var(--brass)}
+.track .mk{position:absolute;top:-5px;width:2px;height:18px;background:var(--fg);border-radius:1px}
+.track .mk.m78{background:var(--warn)}
+.ltv .scale{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.amort{display:grid;gap:10px}
+.tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:10px;max-width:100%}
+.tblwrap.tall{max-height:440px;overflow-y:auto}
+.am{width:100%;min-width:340px;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums}
+.am th,.am td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.am th:first-child,.am td:first-child{text-align:left}
+.am thead th{position:sticky;top:0;background:var(--panel);font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.am tr.x td{background:var(--brass-soft)}
+.am tbody tr:last-child td{border-bottom:0}
+.linkbtn{justify-self:start;border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:14px;padding:8px 14px;border-radius:999px;cursor:pointer}
+.linkbtn:hover{border-color:var(--brass)}
+.am.yr{min-width:0}
+.am.yr th,.am.yr td{padding:7px 6px}
+.am.yr th:first-child,.am.yr td:first-child{padding-left:10px}
+.am.yr th:last-child,.am.yr td:last-child{padding-right:10px}
+</style>
+<meta name="description" content="Nhập loan và số tiền trả thêm. Ra liền: sớm mấy năm, đỡ bao nhiêu tiền lãi, bảng trả nợ từng năm.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t33/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Trả Thêm Mỗi Tháng · Ken Lam Tools">
+<meta property="og:description" content="Nhập loan và số tiền trả thêm. Ra liền: sớm mấy năm, đỡ bao nhiêu tiền lãi, bảng trả nợ từng năm.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t33/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title">Trả thêm mỗi tháng thì trả hết nợ nhà sớm bao lâu?</h1>
+    <p class="sub" data-i="sub">Nhập loan và số tiền trả thêm. Ra liền: sớm mấy năm, đỡ bao nhiêu tiền lãi, bảng trả nợ từng năm.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="loan" data-i="l_loan">Số tiền vay</label>
+      <div class="ctl"><span class="pre">$</span><input id="loan" type="number" inputmode="numeric" min="0" step="5000" value="960000"></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="rate" data-i="l_rate">Lãi suất</label>
+        <div class="ctl"><input id="rate" type="number" inputmode="decimal" min="0" max="20" step="0.01" value="7.24"><span class="post">%</span></div>
+      </div>
+      <div class="field">
+        <label data-i="l_term">Thời hạn loan</label>
+        <div class="seg" role="group">
+          <button type="button" id="t30" aria-pressed="true" data-i="y30">30 năm</button>
+          <button type="button" id="t15" aria-pressed="false" data-i="y15">15 năm</button>
+        </div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="extra" data-i="l_extra">Trả thêm mỗi tháng</label>
+        <div class="ctl"><span class="pre">$</span><input id="extra" type="number" inputmode="numeric" min="0" step="50" value="500"><span class="post" data-i="per_mo">/tháng</span></div>
+      </div>
+      <div class="field">
+        <label for="start" data-i="l_start">Tháng trả đầu tiên</label>
+        <div class="ctl"><input id="start" type="month" value="2026-12"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="lump"><span data-i="l_lump">Trả thêm 1 lần/năm</span> <small data-i="l_lump_s">(bonus, tax refund)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="lump" type="number" inputmode="numeric" min="0" step="500" value="0"></div>
+      </div>
+      <div class="field">
+        <label for="lumpM" data-i="l_lumpM">Vào tháng</label>
+        <div class="ctl"><select id="lumpM" aria-label="Month"></select></div>
+      </div>
+    </div>
+    <details class="more">
+      <summary data-i="more">Tùy chọn: giá mua (để tính mốc bỏ PMI)</summary>
+      <div class="inputs">
+        <div class="field">
+          <label for="price" data-i="l_price">Giá mua nhà</label>
+          <div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" min="0" step="5000" placeholder="1200000"></div>
+        </div>
+        <div class="note" data-i="n_price">PMI tính theo giá mua (hoặc appraisal lúc mua), không theo số vay. Down dưới 20% thì nhập giá mua để biết đúng tháng bỏ PMI.</div>
+      </div>
+    </details>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_k">Trả hết sớm</div>
+      <div class="v" id="early">0</div>
+      <div class="save" id="save"></div>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_pi">Gốc + lãi</b> <span data-i="n_pi_s">(P&amp;I bắt buộc)</span></span><span class="a" id="pi">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_pay">Trả mỗi tháng</b> <span data-i="n_pay_s">(có trả thêm)</span></span><span class="a" id="pay">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_end">Ngày trả hết</b> <span data-i="n_end_s">(cũ → mới)</span></span><span class="a" id="end">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_int">Tổng tiền lãi</b> <span data-i="n_int_s">(cũ → mới)</span></span><span class="a" id="int">—</span></div>
+    </div>
+
+    <div class="ltv">
+      <h3 data-i="ltv_t">Mốc bỏ PMI</h3>
+      <div class="track" aria-hidden="true"><i class="fill" id="fill"></i><i class="mk" id="mk80"></i><i class="mk m78" id="mk78"></i></div>
+      <div class="scale"><span id="sc0"></span><span id="sc1"></span></div>
+      <div class="meta" id="ltvTxt"></div>
+      <div class="note" id="ltvNote"></div>
+    </div>
+
+    <div class="amort">
+      <h3 data-i="am_t">Bảng trả nợ theo năm</h3>
+      <div class="tblwrap"><table class="am yr" id="yearTbl"></table></div>
+      <button class="linkbtn" type="button" id="moBtn" data-i="mo_open">Xem từng tháng</button>
+      <div class="tblwrap tall" id="moWrap" hidden><table class="am" id="moTbl"></table></div>
+    </div>
+  </section>
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video hướng dẫn"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Gửi kết quả qua email</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Hỏi Ken</a>
+    <a class="btn" id="videoBtn" href="/t33/web.mp4" target="_blank" rel="noopener" data-i="b_video">Xem video 15 giây</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Gửi bảng trả nợ này về email</h2>
+    <p data-i="f_sub">Ken nhận được sẽ gửi lại bảng đầy đủ, và coi giùm có nên refinance hay recast không. Không spam.</p>
+    <div class="field"><label for="fname" data-i="f_name">Tên</label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone" data-i="f_phone">Phone (không bắt buộc)</label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Hoặc text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Đọc thêm:</span> <a href="https://kenlamrealty.com/library#tra-them-moi-thang" target="_blank" rel="noopener" data-i="ft_lib">Trả thêm tiền gốc có đáng không</a> · <a href="https://kenlamrealty.com/library#video-tra-them" target="_blank" rel="noopener" data-i="ft_vid">Video 3 phút</a></span>
+    <span data-i="ft_est">Tính cho loan fixed, trả đúng hạn, tiền trả thêm đi thẳng vào gốc. Hỏi lender loan có phạt trả sớm (prepayment penalty) không.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 03/11/2026 · <a href="/" data-i="ft_all">Tất cả tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Quy tắc PMI — sửa ở đây khi đổi =====
+   Tra ngày 03/11/2026. Homeowners Protection Act (loan thường, conventional):
+   - LTV_REQ 80%: xin bỏ PMI khi nợ gốc xuống 80% giá trị ban đầu (giá mua hoặc appraisal, cái nào thấp hơn);
+     tính theo lịch gốc hoặc theo số đã trả thực tế (trả thêm thì tới sớm hơn). Cần trả đúng hạn, lender có thể đòi appraisal.
+   - LTV_AUTO 78%: lender tự bỏ PMI khi nợ tới 78% theo LỊCH TRẢ GỐC (không tính tiền trả thêm).
+   Nguồn: https://www.consumerfinance.gov/ask-cfpb/when-can-i-remove-private-mortgage-insurance-pmi-from-my-loan-en-202/
+   FHA MIP có luật riêng (không áp dụng mốc này). Không có giá mua → tool tính mốc theo số tiền vay gốc.
+*/
+const LTV_REQ=0.80, LTV_AUTO=0.78;
+const UPDATED='03/11/2026';
+
+/*CALC*/
+function amort(p){
+  const L=Math.max(0,p.loan), r=p.rate/100/12, n=p.term*12;
+  const pi=L<=0?0:(r===0?L/n:L*r/(1-Math.pow(1+r,-n)));
+  const ym=k=>{const t=p.startM-1+k; return {y:p.startY+Math.floor(t/12), m:t%12+1};};
+  const run=(extraM,lump)=>{
+    let bal=L, totInt=0; const rows=[];
+    for(let k=0;k<n+1&&bal>0.005;k++){
+      const d=ym(k), int=bal*r;
+      const want=pi+extraM+(lump>0&&d.m===p.lumpM?lump:0);
+      const prin=Math.min(bal,want-int), pay=prin+int;
+      bal=Math.max(0,bal-prin); totInt+=int;
+      rows.push({k:k+1,y:d.y,m:d.m,pay,prin,int,bal,x:lump>0&&d.m===p.lumpM});
+    }
+    return {rows,totInt};
+  };
+  const base=run(0,0), now=run(Math.max(0,p.extraM),Math.max(0,p.lump));
+  const V=p.price>0?p.price:L;
+  const first=(rows,lim)=>{ if(L<=lim+0.005) return 0; const o=rows.find(o=>o.bal<=lim+0.005); return o?o.k:null; };
+  const m80=first(now.rows,LTV_REQ*V), m78=first(base.rows,LTV_AUTO*V);
+  const years={}; now.rows.forEach(o=>{const a=years[o.y]||(years[o.y]={y:o.y,prin:0,int:0,bal:0}); a.prin+=o.prin; a.int+=o.int; a.bal=o.bal;});
+  const nOld=base.rows.length, nNew=now.rows.length, saved=Math.max(0,nOld-nNew);
+  return {pi,n,nOld,nNew,saved,sy:Math.floor(saved/12),sm:saved%12,intOld:base.totInt,intNew:now.totInt,intSaved:base.totInt-now.totInt,
+    endOld:ym(nOld-1),endNew:ym(nNew-1),m80,m78,V,hasPrice:p.price>0,pmi:p.price>0?L>LTV_REQ*p.price+0.005:true,
+    rows:now.rows,years:Object.values(years),ym};
+}
+/*END CALC*/
+
+const MON={vi:['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'],
+ en:['January','February','March','April','May','June','July','August','September','October','November','December']};
+const MS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const I18N={
+ vi:{title:'Trả thêm mỗi tháng thì trả hết nợ nhà sớm bao lâu?',sub:'Nhập loan và số tiền trả thêm. Ra liền: sớm mấy năm, đỡ bao nhiêu tiền lãi, bảng trả nợ từng năm.',
+  l_loan:'Số tiền vay',l_rate:'Lãi suất',l_term:'Thời hạn loan',y30:'30 năm',y15:'15 năm',l_extra:'Trả thêm mỗi tháng',per_mo:'/tháng',l_start:'Tháng trả đầu tiên',
+  l_lump:'Trả thêm 1 lần/năm',l_lump_s:'(bonus, tax refund)',l_lumpM:'Vào tháng',more:'Tùy chọn: giá mua (để tính mốc bỏ PMI)',l_price:'Giá mua nhà',
+  n_price:'PMI tính theo giá mua (hoặc appraisal lúc mua), không theo số vay. Down dưới 20% thì nhập giá mua để biết đúng tháng bỏ PMI.',
+  r_k:'Trả hết sớm',u_y:'năm',u_m:'tháng',none:'Chưa trả thêm',save:'Tiết kiệm <b>{x}</b> tiền lãi',save0:'Nhập số trả thêm để xem đỡ bao nhiêu tiền lãi.',
+  n_pi:'Gốc + lãi',n_pi_s:'(P&amp;I bắt buộc)',n_pay:'Trả mỗi tháng',n_pay_s:'(có trả thêm)',n_end:'Ngày trả hết',n_end_s:'(cũ → mới)',n_int:'Tổng tiền lãi',n_int_s:'(cũ → mới)',
+  ltv_t:'Mốc bỏ PMI',ltv_t2:'Mốc nợ còn 80% / 78%',
+  l80:'<b>80%</b> — xin bỏ PMI: <b>{d}</b> (sau {k} tháng)',l78:'<b>78%</b> — lender tự bỏ: <b>{d}</b> (sau {k} tháng, theo lịch gốc)',
+  l80b:'<b>80%</b> số vay gốc: <b>{d}</b> (sau {k} tháng)',l78b:'<b>78%</b> số vay gốc: <b>{d}</b> (sau {k} tháng, theo lịch gốc)',
+  ltv_none:'Vay từ 80% giá mua trở xuống → loan thường không có PMI.',
+  ltv_note_p:'Mốc 80% tính theo số anh chị trả thật (có trả thêm). Mốc 78% luật tính theo lịch gốc, trả thêm không làm nó tới sớm. Phải trả đúng hạn, lender có thể đòi appraisal. FHA có luật MIP riêng.',
+  ltv_note_np:'Chưa có giá mua nên đang tính theo số vay gốc. PMI thật dựa trên giá mua: mở "Tùy chọn" ở trên và nhập giá mua.',
+  sc0:'Bắt đầu',sc1:'Hết hạn {d}',
+  am_t:'Bảng trả nợ theo năm',h_y:'Năm',h_p:'Gốc trả',h_i:'Lãi trả',h_b:'Còn nợ',h_m:'Tháng',h_pay:'Trả',
+  mo_open:'Xem từng tháng',mo_close:'Ẩn bảng từng tháng',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi bảng trả nợ này về email',f_sub:'Ken nhận được sẽ gửi lại bảng đầy đủ, và coi giùm có nên refinance hay recast không. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Trả thêm tiền gốc có đáng không',ft_vid:'Video 3 phút',ft_est:'Tính cho loan fixed, trả đúng hạn, tiền trả thêm đi thẳng vào gốc. Hỏi lender loan có phạt trả sớm (prepayment penalty) không.',ft_upd:'Cập nhật',ft_all:'Tất cả tools',
+  lang:'English',
+  sms:'Chào Ken, tôi vừa xài tool Trả thêm mỗi tháng: vay {l}, lãi {r}%, {t} năm, trả thêm {e}/tháng → trả hết sớm {early}, đỡ {s} tiền lãi. Cho tôi hỏi thêm.',
+  subj:'Bảng trả nợ, trả thêm mỗi tháng — {nm}',
+  body:'Tên: {nm}\nEmail: {em}\nPhone: {ph}\n\nVay: {l}\nLãi: {r}% · {t} năm\nTháng trả đầu: {st}\nTrả thêm: {e}/tháng + {lp} mỗi năm ({lm})\nGiá mua: {pr}\n\nP&I: {pi}/tháng · Trả mỗi tháng: {pay}\nTrả hết: {eo} → {en}\nTRẢ HẾT SỚM: {early}\nTổng lãi: {io} → {in}\nTIẾT KIỆM: {s}\nMốc 80%: {d80} · 78%: {d78}\n\nGửi từ tool T33 tools.kenlamrealty.com'},
+ en:{title:'Pay a little extra each month: how much sooner is the house paid off?',sub:'Enter your loan and the extra amount. See right away: years saved, interest saved, and a year-by-year schedule.',
+  l_loan:'Loan amount',l_rate:'Interest rate',l_term:'Loan term',y30:'30 yr',y15:'15 yr',l_extra:'Extra each month',per_mo:'/mo',l_start:'First payment month',
+  l_lump:'Extra once a year',l_lump_s:'(bonus, tax refund)',l_lumpM:'In month',more:'Optional: purchase price (for PMI dates)',l_price:'Purchase price',
+  n_price:'PMI is based on the purchase price (or appraisal at purchase), not the loan amount. If you put down less than 20%, enter the price to get the right PMI month.',
+  r_k:'Paid off early by',u_y:'yr',u_m:'mo',none:'No extra yet',save:'Save <b>{x}</b> in interest',save0:'Enter an extra amount to see the interest you save.',
+  n_pi:'Principal + interest',n_pi_s:'(required P&amp;I)',n_pay:'Monthly payment',n_pay_s:'(with extra)',n_end:'Payoff date',n_end_s:'(old → new)',n_int:'Total interest',n_int_s:'(old → new)',
+  ltv_t:'PMI milestones',ltv_t2:'80% / 78% balance milestones',
+  l80:'<b>80%</b> — request PMI removal: <b>{d}</b> (after {k} months)',l78:'<b>78%</b> — lender drops it: <b>{d}</b> (after {k} months, original schedule)',
+  l80b:'<b>80%</b> of original loan: <b>{d}</b> (after {k} months)',l78b:'<b>78%</b> of original loan: <b>{d}</b> (after {k} months, original schedule)',
+  ltv_none:'Loan is 80% of the price or less, so a conventional loan has no PMI.',
+  ltv_note_p:'The 80% date uses what you actually pay (extra included). By law the 78% date follows the original schedule, so extra payments do not move it. You must be current, and the lender may ask for an appraisal. FHA MIP has its own rules.',
+  ltv_note_np:'No purchase price yet, so this uses the original loan amount. Real PMI is based on the purchase price: open "Optional" above and enter it.',
+  sc0:'Start',sc1:'Term ends {d}',
+  am_t:'Yearly amortization',h_y:'Year',h_p:'Principal',h_i:'Interest',h_b:'Balance',h_m:'Month',h_pay:'Paid',
+  mo_open:'Show every month',mo_close:'Hide monthly table',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this schedule to yourself',f_sub:'Ken will reply with the full schedule and check whether a refinance or recast makes sense. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'Is paying extra principal worth it',ft_vid:'3-min video',ft_est:'For fixed-rate loans paid on time, with extra going straight to principal. Ask your lender about prepayment penalties.',ft_upd:'Updated',ft_all:'All tools',
+  lang:'Tiếng Việt',
+  sms:'Hi Ken, I ran the Extra Payment tool: loan {l}, {r}%, {t} yr, extra {e}/mo → paid off {early} early, {s} interest saved. I have a question.',
+  subj:'Amortization with extra payments — {nm}',
+  body:'Name: {nm}\nEmail: {em}\nPhone: {ph}\n\nLoan: {l}\nRate: {r}% · {t} yr\nFirst payment: {st}\nExtra: {e}/mo + {lp} yearly ({lm})\nPurchase price: {pr}\n\nP&I: {pi}/mo · Monthly payment: {pay}\nPayoff: {eo} → {en}\nPAID OFF EARLY: {early}\nTotal interest: {io} → {in}\nSAVED: {s}\n80% date: {d80} · 78%: {d78}\n\nSent from tool T33 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const T=(k,o)=>I18N[lang][k].replace(/\{(\w+)\}/g,(m,x)=>o&&o[x]!=null?o[x]:m);
+const dstr=d=>lang==='vi'?('0'+d.m).slice(-2)+'/'+d.y:MS[d.m-1]+' '+d.y;
+let term=30, last={}, R=null;
+
+(function(){ /* tháng trả đầu mặc định = tháng sau nữa (thường trả lần đầu sau khi close 1 tháng) */
+  const t=new Date(), d=new Date(t.getFullYear(),t.getMonth()+2,1);
+  $('start').value=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2);
+})();
+function readStart(){
+  const m=/^(\d{4})-(\d{1,2})/.exec($('start').value||''); const t=new Date();
+  return m&&+m[2]>=1&&+m[2]<=12?{y:+m[1],m:+m[2]}:{y:t.getFullYear(),m:t.getMonth()+1};
+}
+function fillMonths(){
+  const sel=$('lumpM'), v=sel.value||'12';
+  sel.innerHTML=MON[lang].map((s,i)=>`<option value="${i+1}">${s}</option>`).join(''); sel.value=v;
+}
+function monthTable(){
+  const h=`<thead><tr><th>${T('h_m')}</th><th>${T('h_pay')}</th><th>${T('h_p')}</th><th>${T('h_i')}</th><th>${T('h_b')}</th></tr></thead>`;
+  $('moTbl').innerHTML=h+'<tbody>'+R.rows.map(o=>`<tr${o.x?' class="x"':''}><td>${('0'+o.m).slice(-2)}/${o.y}</td><td>${fmt(o.pay)}</td><td>${fmt(o.prin)}</td><td>${fmt(o.int)}</td><td>${fmt(o.bal)}</td></tr>`).join('')+'</tbody>';
+}
+function calc(){
+  const s=readStart();
+  const p={loan:num('loan'),rate:num('rate'),term,startY:s.y,startM:s.m,extraM:num('extra'),lump:num('lump'),lumpM:+$('lumpM').value||12,price:num('price')};
+  R=amort(p);
+  const early=R.saved>0?`${R.sy?R.sy+' <small>'+T('u_y')+'</small> ':''}${R.sm||!R.sy?R.sm+' <small>'+T('u_m')+'</small>':''}`:T('none');
+  $('early').innerHTML=early; $('early').style.fontSize=R.saved>0?'':'34px';
+  $('save').innerHTML=R.intSaved>0.5?T('save',{x:fmt(R.intSaved)}):T('save0');
+  $('pi').textContent=fmt(R.pi); $('pay').textContent=fmt(R.pi+Math.max(0,p.extraM));
+  const eo=dstr(R.endOld), en=dstr(R.endNew);
+  $('end').innerHTML=R.saved>0?`<s>${eo}</s>${en}`:eo;
+  $('int').innerHTML=R.intSaved>0.5?`<s>${fmt(R.intOld)}</s>${fmt(R.intNew)}`:fmt(R.intOld);
+  /* LTV */
+  const pos=k=>Math.min(100,k/R.nOld*100)+'%';
+  $('fill').style.width=pos(R.nNew);
+  const dk=k=>k===0?'—':dstr(R.ym(k-1));
+  let d80='—', d78='—';
+  if(R.hasPrice&&!R.pmi){
+    $('ltvTxt').innerHTML=T('ltv_none'); $('mk80').style.display=$('mk78').style.display='none';
+  }else{
+    const a=R.hasPrice?'l80':'l80b', b=R.hasPrice?'l78':'l78b';
+    d80=R.m80!=null?dk(R.m80):'—'; d78=R.m78!=null?dk(R.m78):'—';
+    $('ltvTxt').innerHTML=`<span>${T(a,{d:d80,k:R.m80??'—'})}</span><span>${T(b,{d:d78,k:R.m78??'—'})}</span>`;
+    $('mk80').style.display=R.m80?'':'none'; $('mk78').style.display=R.m78?'':'none';
+    if(R.m80) $('mk80').style.left='calc('+pos(R.m80)+' - 1px)'; if(R.m78) $('mk78').style.left='calc('+pos(R.m78)+' - 1px)';
+  }
+  document.querySelector('.ltv h3').innerHTML=R.hasPrice?T('ltv_t'):T('ltv_t2');
+  $('ltvNote').innerHTML=R.hasPrice?T('ltv_note_p'):T('ltv_note_np'); $('ltvNote').classList.toggle('hide',R.hasPrice&&!R.pmi);
+  $('sc0').textContent=T('sc0')+' '+dstr({y:s.y,m:s.m}); $('sc1').textContent=T('sc1',{d:eo});
+  /* bảng năm */
+  $('yearTbl').innerHTML=`<thead><tr><th>${T('h_y')}</th><th>${T('h_p')}</th><th>${T('h_i')}</th><th>${T('h_b')}</th></tr></thead><tbody>`+
+    R.years.map(o=>`<tr><td>${o.y}</td><td>${fmt(o.prin)}</td><td>${fmt(o.int)}</td><td>${fmt(o.bal)}</td></tr>`).join('')+'</tbody>';
+  if(!$('moWrap').hidden) monthTable();
+  const earlyTxt=R.saved>0?(R.sy?R.sy+' '+T('u_y')+' ':'')+(R.sm?R.sm+' '+T('u_m'):''):'0';
+  last={l:fmt(p.loan),r:p.rate,t:term,e:fmt(Math.max(0,p.extraM)),lp:fmt(Math.max(0,p.lump)),lm:MON[lang][p.lumpM-1],st:dstr(s),pr:p.price>0?fmt(p.price):'—',
+    pi:fmt(R.pi),pay:fmt(R.pi+Math.max(0,p.extraM)),eo,en,early:earlyTxt.trim(),io:fmt(R.intOld),in:fmt(R.intNew),s:fmt(Math.max(0,R.intSaved)),d80,d78};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(T('sms',last));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('moBtn').innerHTML=$('moWrap').hidden?d.mo_open:d.mo_close;
+  fillMonths(); $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+['loan','rate','extra','start','lump','price'].forEach(id=>$(id).addEventListener('input',calc));
+$('lumpM').addEventListener('change',calc); $('start').addEventListener('change',calc);
+$('t30').onclick=()=>{term=30;$('t30').setAttribute('aria-pressed','true');$('t15').setAttribute('aria-pressed','false');calc();};
+$('t15').onclick=()=>{term=15;$('t15').setAttribute('aria-pressed','true');$('t30').setAttribute('aria-pressed','false');calc();};
+$('moBtn').onclick=()=>{const w=$('moWrap'); w.hidden=!w.hidden; if(!w.hidden) monthTable(); $('moBtn').innerHTML=w.hidden?T('mo_open'):T('mo_close');};
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], o=Object.assign({},last,{nm:$('fname').value.trim()||'—',em:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'});
+  const fill=s=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+fillMonths();
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'\u2190 All tools':'\u2190 T\u1ea5t c\u1ea3 tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

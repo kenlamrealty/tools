@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tính DTI</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- Thêm cho T31/T35 (không đổi class cũ) ---- */
+.seg.s3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.seg.s3 button{padding:11px 4px;font-size:14px}
+.seg.sm button{padding:11px 6px;font-size:14px;white-space:nowrap}
+.field .hint{font-size:12px;color:var(--muted);line-height:1.4}
+.field .hint a{color:var(--brass);text-decoration:none}
+.unitrow{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:8px}
+.total .sub2{margin-top:10px;font-size:15px;color:var(--muted);line-height:1.45}
+.total .sub2 b{color:var(--fg);font-weight:500}
+.total .v.warn{color:var(--warn)}
+.verdict{font-size:15px;line-height:1.5;border-left:2px solid var(--ok);padding:2px 0 2px 12px;margin:0}
+.verdict.bad{border-left-color:var(--warn)}
+.verdict b{font-weight:500}
+.line.good .a{color:var(--ok)}
+.line.bad .a{color:var(--warn)}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.cmp>div{padding:14px;display:grid;gap:10px;align-content:start;min-width:0}
+.cmp>div+div{border-left:1px solid var(--line);background:var(--brass-soft)}
+.cmp h3{font-family:var(--display);font-weight:400;font-size:21px;margin:0;line-height:1.1}
+.cmp dl{margin:0;display:grid;gap:8px}
+.cmp dt{font-size:12px;color:var(--muted);line-height:1.3}
+.cmp dd{margin:0;font-size:16px;font-weight:500;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.gauge{display:grid;gap:4px}
+.gauge .gt{position:relative;height:10px;border-radius:999px;overflow:hidden;display:flex;background:var(--line)}
+.gauge .gt i{display:block;height:100%}
+.gauge .z1{background:#A9B7A0}
+.gauge .z2{background:var(--brass)}
+.gauge .z3{background:#CBB7A3}
+.gauge .z4{background:var(--warn)}
+.gauge .pin{position:relative;height:18px}
+.gauge .pin b{position:absolute;top:0;transform:translateX(-50%);font-size:12px;font-weight:600;color:var(--fg);white-space:nowrap;font-variant-numeric:tabular-nums}
+.gauge .pin b::after{content:"";position:absolute;left:50%;top:16px;width:2px;height:16px;margin-left:-1px;background:var(--fg);border-radius:1px}
+.gauge .ticks{position:relative;height:16px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.gauge .ticks span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}
+.gauge .zl{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin-top:4px}
+.gauge .zl i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.nolist{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px}
+.nolist li{font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 10px;text-decoration:line-through;text-decoration-color:var(--line)}
+.sec-k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.next-steps{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.next-steps h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.next-steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.next-steps a{color:var(--brass)}
+.myth{font-size:14px;line-height:1.5;border-left:2px solid var(--brass);padding:2px 0 2px 12px;margin:0}
+.myth b{font-weight:500}
+.srcs a{word-break:break-word}
+</style>
+<meta name="description" content="Nhập thu nhập, các khoản nợ trên credit report và tiền nhà dự định. Ra liền DTI và còn cách mức duyệt bao xa.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t35/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Tính DTI · Ken Lam Tools">
+<meta property="og:description" content="Nhập thu nhập, các khoản nợ trên credit report và tiền nhà dự định. Ra liền DTI và còn cách mức duyệt bao xa.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t35/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title">DTI của tôi bao nhiêu, lender có duyệt không?</h1>
+    <p class="sub" data-i="sub">Nhập thu nhập, các khoản nợ trên credit report và tiền nhà dự định. Ra liền DTI và còn cách mức duyệt bao xa.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="inc"><span data-i="l_inc">Thu nhập gộp </span><small data-i="l_inc_s">(trước thuế, cả nhà đứng tên loan)</small></label>
+      <div class="unitrow">
+        <div class="ctl"><span class="pre">$</span><input id="inc" type="number" inputmode="numeric" min="0" step="100" value="18000"></div>
+        <div class="seg sm" role="group" id="incSeg">
+          <button type="button" data-m="mo" aria-pressed="true" data-i="s_mo">/tháng</button>
+          <button type="button" data-m="yr" aria-pressed="false" data-i="s_yr">/năm</button>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_type">Loại loan</span></label>
+      <div class="seg" role="group" id="typeSeg">
+        <button type="button" data-t="conv" aria-pressed="true">Conventional</button>
+        <button type="button" data-t="fha" aria-pressed="false">FHA</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="car"><span data-i="l_car">Xe </span><small data-i="l_car_s">(loan/lease)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="car" type="number" inputmode="numeric" min="0" step="25" value="650"><span class="post" data-i="pm1">/tháng</span></div>
+      </div>
+      <div class="field">
+        <label for="card"><span data-i="l_card">Thẻ tín dụng </span><small data-i="l_card_s">(minimum)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="card" type="number" inputmode="numeric" min="0" step="10" value="220"><span class="post" data-i="pm2">/tháng</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="slp"><span data-i="l_slp">Student loan </span><small data-i="l_slp_s">(tiền trả)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="slp" type="number" inputmode="numeric" min="0" step="10" value="0"><span class="post" data-i="pm3">/tháng</span></div>
+      </div>
+      <div class="field">
+        <label for="slb"><span data-i="l_slb">Nợ student loan </span><small data-i="l_slb_s">(nếu deferred / $0)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="slb" type="number" inputmode="numeric" min="0" step="1000" value="45000"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="cs"><span data-i="l_cs">Child support </span><small data-i="l_cs_s">(theo tòa)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="cs" type="number" inputmode="numeric" min="0" step="25" value="0"><span class="post" data-i="pm4">/tháng</span></div>
+      </div>
+      <div class="field">
+        <label for="oth"><span data-i="l_oth">Nợ khác </span><small data-i="l_oth_s">(personal loan…)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="oth" type="number" inputmode="numeric" min="0" step="25" value="0"><span class="post" data-i="pm5">/tháng</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="house"><span data-i="l_house">Tiền nhà dự định </span><small data-i="l_house_s">(gốc + lãi + thuế + bảo hiểm + HOA + PMI)</small></label>
+      <div class="ctl"><span class="pre">$</span><input id="house" type="number" inputmode="numeric" min="0" step="50" value="7400"><span class="post" data-i="pm6">/tháng</span></div>
+      <span class="hint" data-i="h_house">Chưa biết? Tính bằng tool <a href="/t01/">T01 — Tiền nhà hàng tháng</a>.</span>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_back">Back-end DTI (tổng nợ / thu nhập)</div>
+      <div class="v" id="backV"><span id="back">0</span><small>%</small></div>
+      <div class="sub2" id="topSub"></div>
+    </div>
+    <div class="gauge" aria-hidden="true">
+      <div class="pin"><b id="pin">0%</b></div>
+      <div class="gt"><i class="z1" id="z1"></i><i class="z2" id="z2"></i><i class="z3" id="z3"></i><i class="z4" id="z4"></i></div>
+      <div class="ticks" id="ticks"></div>
+      <div class="zl" id="zl"></div>
+    </div>
+    <p class="verdict" id="verdict"></p>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_front">Front-end DTI</b> <span data-i="n_front_s">(chỉ tiền nhà)</span></span><span class="a" id="front">0%</span></div>
+      <div class="line"><span class="n"><b data-i="n_inc">Thu nhập gộp</b></span><span class="a" id="incOut">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_house">Tiền nhà mới</b></span><span class="a" id="houseOut">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_debt">Nợ khác lender tính</b></span><span class="a" id="debtOut">$0</span></div>
+      <div class="line" id="slLine"><span class="n"><b data-i="n_sl">Student loan lender tính</b> <span id="slRule"></span></span><span class="a" id="slOut">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_total">Tổng nợ/tháng</b></span><span class="a" id="totOut">$0</span></div>
+    </div>
+    <div class="note" id="fixNote"></div>
+    <div>
+      <div class="sec-k" data-i="no_k">Không tính vào DTI</div>
+      <ul class="nolist" id="nolist"></ul>
+    </div>
+  </section>
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video hướng dẫn"></video>
+
+  <section class="next-steps">
+    <h2 data-i="ns_h">Bước tiếp theo</h2>
+    <ol>
+      <li data-i="ns1">Trả bớt thẻ trước khi lender kéo credit cho pre-approval. Trả trước ngày ra statement để balance báo lên thấp, minimum cũng thấp theo.</li>
+      <li data-i="ns2">Student loan đang trả theo income-driven plan: xin giấy xác nhận số tiền trả thật. Conventional cho dùng số đó, kể cả $0 nếu có giấy. Xem <a href="https://studentaid.gov/manage-loans/repayment/plans/income-driven" target="_blank" rel="noopener">studentaid.gov</a>.</li>
+      <li data-i="ns3">Đổi DTI ra giá nhà mua được: tool <a href="/t02/">T02 — Mua được nhà bao nhiêu</a>.</li>
+      <li data-i="ns4">Chuẩn bị giấy tờ cho lender: tool <a href="/t34/">T34 — Pre-approval cần giấy gì</a>.</li>
+    </ol>
+    <p class="myth"><b data-i="my_k">Nhiều người hiểu sai:</b> <span data-i="my_v">Tiền điện, điện thoại, bảo hiểm xe làm DTI cao. Không. Lender chỉ tính nợ trên credit report, nợ theo giấy tòa và tiền nhà mới. Ngược lại, student loan đang deferred vẫn bị tính, dù tháng này bạn trả $0.</span></p>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Gửi kết quả qua email</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Hỏi Ken</a>
+    <a class="btn" id="videoBtn" href="/t35/web.mp4" target="_blank" rel="noopener" data-i="b_video">Xem video 15 giây</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Gửi bảng DTI này về email</h2>
+    <p data-i="f_sub">Ken nhận được sẽ chỉ cách hạ DTI và giới thiệu lender người Việt nếu bạn cần. Không spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Tên</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (không bắt buộc)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Hoặc text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Đọc thêm:</span> <a href="https://kenlamrealty.com/library#tinh-dti" target="_blank" rel="noopener" data-i="ft_lib">DTI là gì, lender tính ra sao</a> · <a href="https://kenlamrealty.com/library#video-dti" target="_blank" rel="noopener" data-i="ft_vid">Video 3 phút</a></span>
+    <span data-i="ft_est">Mức duyệt là hướng dẫn chung của Fannie Mae và FHA. Duyệt thật tùy AUS, credit, tiền dự trữ và từng lender. Đây không phải cam kết cho vay.</span>
+    <span class="srcs"><span data-i="ft_src">Nguồn:</span> <a href="https://selling-guide.fanniemae.com/sel/b3-6-02/debt-income-ratios" target="_blank" rel="noopener">Fannie Mae B3-6-02 (DTI 36/45/50%)</a> · <a href="https://selling-guide.fanniemae.com/sel/b3-6-05/monthly-debt-obligations" target="_blank" rel="noopener">B3-6-05 (nợ hàng tháng, student loan 1%)</a> · <a href="https://www.hud.gov/program_offices/housing/sfh/handbook_4000-1" target="_blank" rel="noopener">HUD Handbook 4000.1</a> · <a href="https://archives.hud.gov/news/2021/2021-13hsgml.pdf" target="_blank" rel="noopener">HUD ML 2021-13 (student loan 0.5%)</a> · <a href="https://www.consumerfinance.gov/ask-cfpb/what-is-a-debt-to-income-ratio-en-1791/" target="_blank" rel="noopener">CFPB — DTI là gì</a></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 03/11/2026 · <a href="/" data-i="ft_all">Tất cả tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Quy định DTI — sửa ở đây khi đổi (tra 03/11/2026) =====
+   Conventional (Fannie Mae B3-6-02, https://selling-guide.fanniemae.com/sel/b3-6-02/debt-income-ratios):
+     manual tối đa 36%, lên 45% nếu đủ credit + reserves; DU tối đa 50%.
+   Student loan deferred / $0 (Fannie B3-6-05, https://selling-guide.fanniemae.com/sel/b3-6-05/monthly-debt-obligations):
+     1% balance hoặc payment trả dần đủ theo giấy tờ; income-driven plan có giấy $0 thì được dùng $0.
+   FHA (HUD Handbook 4000.1 + ML 2021-13, https://archives.hud.gov/news/2021/2021-13hsgml.pdf):
+     student loan báo $0 → 0.5% balance. Manual underwriting không có compensating factor: 31% / 43%.
+     FHA_AUS_MAX 56.9%: KEN DUYỆT — không phải trần chính thức của HUD; là mức thực tế hay thấy được
+     TOTAL Scorecard "Accept" (lender overlay có thể thấp hơn). Ghi "ước tính" trong UI.
+   GOOD 36 / TARGET 43: mốc tham khảo thông dụng (Fannie manual 36%, FHA manual 43%). */
+const RULES={
+  good:36, target:43,
+  conv:{max:50, slPct:0.01, maxLbl:'DU'},
+  fha:{max:56.9, slPct:0.005, manualFront:31, manualBack:43, maxLbl:'AUS'}
+};
+const SCALE=65; /* thanh đo 0–65% */
+const UPDATED='03/11/2026';
+
+/*CORE*/
+function dti(o){
+  const R=RULES[o.type], inc=Math.max(0,o.inc);
+  const slQ=o.slp>0?o.slp:Math.max(0,o.slb)*R.slPct;
+  const debts=Math.max(0,o.car)+Math.max(0,o.card)+slQ+Math.max(0,o.cs)+Math.max(0,o.oth);
+  const house=Math.max(0,o.house), total=debts+house;
+  const back=inc>0?total/inc*100:0, front=inc>0?house/inc*100:0;
+  const t=RULES.target/100;
+  const cut=Math.max(0,total-t*inc), addInc=inc>0?Math.max(0,total/t-inc):0, room=Math.max(0,t*inc-total);
+  const houseMax=Math.max(0,t*inc-debts);
+  const zone=back<=RULES.good?1:back<=RULES.target?2:back<=R.max?3:4;
+  return {slQ,slAuto:!(o.slp>0)&&o.slb>0,debts,house,total,back,front,cut,addInc,room,houseMax,zone,max:R.max,cutTooBig:cut>debts};
+}
+/*END CORE*/
+
+const I18N={
+ vi:{title:'DTI của tôi bao nhiêu, lender có duyệt không?',sub:'Nhập thu nhập, các khoản nợ trên credit report và tiền nhà dự định. Ra liền DTI và còn cách mức duyệt bao xa.',
+  l_inc:'Thu nhập gộp ',l_inc_s:'(trước thuế, cả nhà đứng tên loan)',s_mo:'/tháng',s_yr:'/năm',l_type:'Loại loan',
+  l_car:'Xe ',l_car_s:'(loan/lease)',l_card:'Thẻ tín dụng ',l_card_s:'(minimum)',l_slp:'Student loan ',l_slp_s:'(tiền trả)',l_slb:'Nợ student loan ',l_slb_s:'(nếu deferred / $0)',
+  l_cs:'Child support ',l_cs_s:'(theo tòa)',l_oth:'Nợ khác ',l_oth_s:'(personal loan…)',l_house:'Tiền nhà dự định ',l_house_s:'(gốc + lãi + thuế + bảo hiểm + HOA + PMI)',
+  pm1:'/tháng',pm2:'/tháng',pm3:'/tháng',pm4:'/tháng',pm5:'/tháng',pm6:'/tháng',
+  h_house:'Chưa biết? Tính bằng tool <a href="/t01/">T01 — Tiền nhà hàng tháng</a>.',
+  r_back:'Back-end DTI (tổng nợ / thu nhập)',sub2:'Front-end <b>{f}%</b> · Tổng nợ <b>{t}/tháng</b> trên thu nhập <b>{i}/tháng</b>.',
+  z1:'Tốt ≤36%',z2:'Thường duyệt ≤43%',z3_conv:'Cần hồ sơ mạnh ≤50% (DU)',z3_fha:'Cần AUS duyệt ≤~56.9%',z4:'Quá mức',
+  v1:'<b>Đẹp.</b> DTI {b}% — lender nào cũng dễ. Còn dư khoảng <b>{r}/tháng</b> trước khi chạm 43%.',
+  v2:'<b>Ổn.</b> DTI {b}% — mức thường được duyệt. Còn dư khoảng <b>{r}/tháng</b> trước khi chạm 43%.',
+  v3_conv:'<b>Sát nút.</b> DTI {b}% — Conventional chỉ duyệt qua DU (tối đa 50%), cần credit tốt và tiền dự trữ.',
+  v3_fha:'<b>Sát nút.</b> DTI {b}% — FHA có thể duyệt nếu AUS (TOTAL Scorecard) cho Accept. Hồ sơ manual thì trần 43%.',
+  v4_conv:'<b>Quá mức.</b> DTI {b}% — vượt 50%, Conventional không duyệt. Hạ nợ, tăng thu nhập, hoặc nhà rẻ hơn.',
+  v4_fha:'<b>Quá mức.</b> DTI {b}% — vượt khoảng 56.9%, FHA khó được Accept. Hạ nợ, tăng thu nhập, hoặc nhà rẻ hơn.',
+  fix:'Muốn xuống <b>43%</b>: bớt <b>{c}/tháng</b> nợ, hoặc tăng <b>{a}/tháng</b> thu nhập (<b>{ay}/năm</b>), hoặc chọn nhà có tiền tháng tối đa <b>{hm}</b>.',
+  fix_big:'Muốn xuống <b>43%</b>: trả hết nợ khác vẫn chưa đủ. Cần tăng <b>{a}/tháng</b> thu nhập (<b>{ay}/năm</b>), hoặc chọn nhà có tiền tháng tối đa <b>{hm}</b>.',
+  fix_ok:'Ở mức 43%, tiền nhà tối đa khoảng <b>{hm}/tháng</b> với nợ hiện tại.',
+  fha_front:' FHA manual còn xét front-end tối đa 31%.',
+  sl_c:'(1% balance — Conventional)',sl_f:'(0.5% balance — FHA)',sl_p:'(theo tiền trả)',
+  n_front:'Front-end DTI',n_front_s:'(chỉ tiền nhà)',n_inc:'Thu nhập gộp',n_house:'Tiền nhà mới',n_debt:'Nợ khác lender tính',n_sl:'Student loan lender tính',n_total:'Tổng nợ/tháng',
+  no_k:'Không tính vào DTI',nolist:['Tiền điện, gas, nước','Internet, điện thoại','Bảo hiểm xe','Bảo hiểm sức khỏe','Ăn uống, xăng','Thẻ đã trả hết, balance $0'],
+  ns_h:'Bước tiếp theo',
+  ns1:'Trả bớt thẻ trước khi lender kéo credit cho pre-approval. Trả trước ngày ra statement để balance báo lên thấp, minimum cũng thấp theo.',
+  ns2:'Student loan đang trả theo income-driven plan: xin giấy xác nhận số tiền trả thật. Conventional cho dùng số đó, kể cả $0 nếu có giấy. Xem <a href="https://studentaid.gov/manage-loans/repayment/plans/income-driven" target="_blank" rel="noopener">studentaid.gov</a>.',
+  ns3:'Đổi DTI ra giá nhà mua được: tool <a href="/t02/">T02 — Mua được nhà bao nhiêu</a>.',
+  ns4:'Chuẩn bị giấy tờ cho lender: tool <a href="/t34/">T34 — Pre-approval cần giấy gì</a>.',
+  my_k:'Nhiều người hiểu sai:',my_v:'Tiền điện, điện thoại, bảo hiểm xe làm DTI cao. Không. Lender chỉ tính nợ trên credit report, nợ theo giấy tòa và tiền nhà mới. Ngược lại, student loan đang deferred vẫn bị tính, dù tháng này bạn trả $0.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi bảng DTI này về email',f_sub:'Ken nhận được sẽ chỉ cách hạ DTI và giới thiệu lender người Việt nếu bạn cần. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'DTI là gì, lender tính ra sao',ft_vid:'Video 3 phút',ft_est:'Mức duyệt là hướng dẫn chung của Fannie Mae và FHA. Duyệt thật tùy AUS, credit, tiền dự trữ và từng lender. Đây không phải cam kết cho vay.',
+  ft_src:'Nguồn:',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa tính DTI trên tools.kenlamrealty.com: thu nhập {i}/tháng, tiền nhà {h}, tổng nợ {t} → DTI {b}% ({ty}). Cho tôi hỏi cách hạ DTI.',
+  subj:'Bảng tính DTI — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nLoại loan: {ty}\nThu nhập gộp: {i}/tháng\nXe: {car}\nThẻ (minimum): {card}\nStudent loan lender tính: {sl}\nChild support: {cs}\nNợ khác: {oth}\nTiền nhà dự định: {h}\n\nTổng nợ: {t}/tháng\nFront-end DTI: {f}%\nBack-end DTI: {b}%\n{fx}\n\nGửi từ tool T35 tools.kenlamrealty.com'},
+ en:{title:'What is my DTI, and will a lender approve it?',sub:'Enter income, the debts on your credit report and your planned house payment. See your DTI live and how far you are from approval.',
+  l_inc:'Gross income ',l_inc_s:'(before tax, everyone on the loan)',s_mo:'/mo',s_yr:'/yr',l_type:'Loan type',
+  l_car:'Car ',l_car_s:'(loan/lease)',l_card:'Credit cards ',l_card_s:'(minimum)',l_slp:'Student loan ',l_slp_s:'(payment)',l_slb:'Student loan balance ',l_slb_s:'(if deferred / $0)',
+  l_cs:'Child support ',l_cs_s:'(court-ordered)',l_oth:'Other debt ',l_oth_s:'(personal loan…)',l_house:'Planned house payment ',l_house_s:'(P&I + tax + insurance + HOA + PMI)',
+  pm1:'/mo',pm2:'/mo',pm3:'/mo',pm4:'/mo',pm5:'/mo',pm6:'/mo',
+  h_house:'Not sure? Use tool <a href="/t01/">T01 — Monthly payment</a>.',
+  r_back:'Back-end DTI (all debt / income)',sub2:'Front-end <b>{f}%</b> · Total debt <b>{t}/mo</b> on income of <b>{i}/mo</b>.',
+  z1:'Great ≤36%',z2:'Usually approved ≤43%',z3_conv:'Strong file needed ≤50% (DU)',z3_fha:'Needs AUS approval ≤~56.9%',z4:'Too high',
+  v1:'<b>Great.</b> DTI {b}% — easy for any lender. About <b>{r}/mo</b> of room before 43%.',
+  v2:'<b>Good.</b> DTI {b}% — a commonly approved level. About <b>{r}/mo</b> of room before 43%.',
+  v3_conv:'<b>Tight.</b> DTI {b}% — Conventional only through DU (max 50%), with good credit and reserves.',
+  v3_fha:'<b>Tight.</b> DTI {b}% — FHA can work if the AUS (TOTAL Scorecard) returns Accept. Manual files cap at 43%.',
+  v4_conv:'<b>Too high.</b> DTI {b}% — over 50%, Conventional will not approve. Cut debt, raise income or pick a cheaper home.',
+  v4_fha:'<b>Too high.</b> DTI {b}% — above about 56.9%, FHA Accept is unlikely. Cut debt, raise income or pick a cheaper home.',
+  fix:'To get to <b>43%</b>: cut <b>{c}/mo</b> of debt, or add <b>{a}/mo</b> income (<b>{ay}/yr</b>), or pick a home with a payment of at most <b>{hm}</b>.',
+  fix_big:'To get to <b>43%</b>: paying off all other debt is not enough. Add <b>{a}/mo</b> income (<b>{ay}/yr</b>), or pick a home with a payment of at most <b>{hm}</b>.',
+  fix_ok:'At 43%, your max house payment is about <b>{hm}/mo</b> with your current debts.',
+  fha_front:' FHA manual files also check front-end at 31% max.',
+  sl_c:'(1% of balance — Conventional)',sl_f:'(0.5% of balance — FHA)',sl_p:'(actual payment)',
+  n_front:'Front-end DTI',n_front_s:'(housing only)',n_inc:'Gross income',n_house:'New house payment',n_debt:'Other debts counted',n_sl:'Student loan counted',n_total:'Total debt/mo',
+  no_k:'Not counted in DTI',nolist:['Electric, gas, water','Internet, phone','Car insurance','Health insurance','Food, gas for the car','Cards paid off to $0'],
+  ns_h:'Next steps',
+  ns1:'Pay cards down before the lender pulls credit for pre-approval. Pay before the statement date so a lower balance — and lower minimum — gets reported.',
+  ns2:'On an income-driven student loan plan: get a letter showing your actual payment. Conventional can use it, even $0 with proof. See <a href="https://studentaid.gov/manage-loans/repayment/plans/income-driven" target="_blank" rel="noopener">studentaid.gov</a>.',
+  ns3:'Turn DTI into a home price: tool <a href="/t02/">T02 — How much home can I buy</a>.',
+  ns4:'Get your documents ready: tool <a href="/t34/">T34 — Pre-approval documents</a>.',
+  my_k:'Common myth:',my_v:"Utilities, phone and car insurance push your DTI up. They don't. Lenders count debts on your credit report, court-ordered payments and the new house payment. On the other hand, a deferred student loan still counts even if you pay $0 this month.",
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this DTI breakdown to yourself',f_sub:'Ken will reply with ways to lower your DTI and a Vietnamese-speaking lender if you need one. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'What DTI is and how lenders count it',ft_vid:'3-min video',ft_est:'Limits are general Fannie Mae and FHA guidelines. Real approval depends on the AUS, credit, reserves and each lender. This is not a loan commitment.',
+  ft_src:'Sources:',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I ran the DTI tool on tools.kenlamrealty.com: income {i}/mo, house {h}, total debt {t} → DTI {b}% ({ty}). How can I lower it?',
+  subj:'DTI breakdown — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nLoan type: {ty}\nGross income: {i}/mo\nCar: {car}\nCards (minimum): {card}\nStudent loan counted: {sl}\nChild support: {cs}\nOther: {oth}\nPlanned house payment: {h}\n\nTotal debt: {t}/mo\nFront-end DTI: {f}%\nBack-end DTI: {b}%\n{fx}\n\nSent from tool T35 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const T=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+const p1=n=>(Math.round(n*10)/10).toFixed(1);
+let incMode='mo', type='conv', last={};
+
+function calc(){
+  const d=I18N[lang], incMo=incMode==='yr'?num('inc')/12:num('inc');
+  const o={inc:incMo,type,car:num('car'),card:num('card'),slp:num('slp'),slb:num('slb'),cs:num('cs'),oth:num('oth'),house:num('house')};
+  const r=dti(o), R=RULES[type];
+  $('back').textContent=p1(r.back);
+  $('backV').classList.toggle('warn',r.zone===4);
+  $('topSub').innerHTML=T(d.sub2,{f:p1(r.front),t:fmt(r.total),i:fmt(incMo)});
+  /* gauge */
+  const w=x=>Math.max(0,Math.min(SCALE,x))/SCALE*100;
+  $('z1').style.width=w(RULES.good)+'%'; $('z2').style.width=(w(RULES.target)-w(RULES.good))+'%';
+  $('z3').style.width=(w(R.max)-w(RULES.target))+'%'; $('z4').style.width=(100-w(R.max))+'%';
+  const pinPos=Math.max(6,Math.min(94,w(r.back)));
+  $('pin').style.left=pinPos+'%'; $('pin').textContent=p1(r.back)+'%';
+  $('ticks').innerHTML=[RULES.good,RULES.target,R.max].map(t=>'<span style="left:'+w(t)+'%">'+t+'%</span>').join('');
+  const zl=[['#A9B7A0',d.z1],['var(--brass)',d.z2],['#CBB7A3',type==='fha'?d.z3_fha:d.z3_conv],['var(--warn)',d.z4]];
+  $('zl').innerHTML=zl.map(z=>'<span><i style="background:'+z[0]+'"></i>'+z[1]+'</span>').join('');
+  /* verdict */
+  const vk=r.zone===1?'v1':r.zone===2?'v2':r.zone===3?'v3_'+type:'v4_'+type;
+  $('verdict').innerHTML=T(d[vk],{b:p1(r.back),r:fmt(r.room)}); $('verdict').classList.toggle('bad',r.zone>=3);
+  /* fix */
+  let fx;
+  if(r.back>RULES.target) fx=T(r.cutTooBig?d.fix_big:d.fix,{c:fmt(r.cut),a:fmt(r.addInc),ay:fmt(r.addInc*12),hm:fmt(r.houseMax)});
+  else fx=T(d.fix_ok,{hm:fmt(r.houseMax)});
+  if(type==='fha'&&r.front>R.manualFront) fx+=d.fha_front;
+  $('fixNote').innerHTML=fx;
+  /* lines */
+  $('front').textContent=p1(r.front)+'%'; $('incOut').textContent=fmt(incMo); $('houseOut').textContent=fmt(r.house);
+  $('debtOut').textContent=fmt(r.debts-r.slQ); $('slOut').textContent=fmt(r.slQ); $('totOut').textContent=fmt(r.total);
+  $('slLine').style.display=r.slQ>0?'':'none';
+  $('slRule').textContent=r.slAuto?(type==='fha'?d.sl_f:d.sl_c):d.sl_p;
+  $('nolist').innerHTML=d.nolist.map(x=>'<li>'+x+'</li>').join('');
+  const ty=type==='fha'?'FHA':'Conventional';
+  last={ty,i:fmt(incMo),car:fmt(o.car),card:fmt(o.card),sl:fmt(r.slQ),cs:fmt(o.cs),oth:fmt(o.oth),h:fmt(r.house),t:fmt(r.total),f:p1(r.front),b:p1(r.back),fx:fx.replace(/<[^>]+>/g,'')};
+  const s=T(d.sms,{i:last.i,h:last.h,t:last.t,b:last.b,ty});
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s);
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null&&typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+['inc','car','card','slp','slb','cs','oth','house'].forEach(id=>$(id).addEventListener('input',calc));
+document.querySelectorAll('#incSeg button').forEach(b=>b.onclick=()=>{
+  const m=b.dataset.m; if(m===incMode) return;
+  const v=num('inc'); $('inc').value=m==='yr'?Math.round(v*12):Math.round(v/12); $('inc').step=m==='yr'?'1000':'100';
+  incMode=m; document.querySelectorAll('#incSeg button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); calc();
+});
+document.querySelectorAll('#typeSeg button').forEach(b=>b.onclick=()=>{
+  type=b.dataset.t; document.querySelectorAll('#typeSeg button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); calc();
+});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'\u2190 All tools':'\u2190 T\u1ea5t c\u1ea3 tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
