@@ -100,6 +100,21 @@ footer a{color:var(--brass);text-decoration:none}
 footer a:hover{text-decoration:underline}
 footer .who{color:var(--fg)}
 @media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+.loan .pay{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.loan .pay .amt{font-family:var(--display);font-weight:400;font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
+.loan .pay small{color:var(--muted);font-size:14px}
+.loan .pay .tag{margin-left:auto;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);font-weight:600}
+.specs3{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:8px}
+.specs3 span b{display:block;font-size:15px;color:var(--fg);font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap;margin-top:2px}
+.loan.best{border-color:var(--brass);box-shadow:0 0 0 1px var(--brass) inset}
+.nolist{border:1px solid var(--line);border-radius:10px;padding:0 14px}
+.nolist summary{cursor:pointer;padding:12px 0;font-size:14px;color:var(--muted);list-style:none;display:flex;justify-content:space-between;align-items:center}
+.nolist summary::-webkit-details-marker{display:none}
+.nolist summary::after{content:'+';font-size:18px;color:var(--brass)}
+.nolist[open] summary::after{content:'–'}
+.nolist ul{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:10px}
+.nolist li{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px}
+.nolist li b{display:block;color:var(--fg);font-weight:500;font-size:14px;margin-bottom:2px}
 </style>
 <meta name="description" content="Mobile or manufactured home loans in the Bay Area: chattel, FHA Title I, FHA Title II, Fannie Mae, Freddie Mac CHOICEHome, VA, CalHFA or cash. See which ones fit your home and the monthly payment for each.">
 <link rel="canonical" href="https://tools.kenlamrealty.com/t164/">
@@ -353,7 +368,7 @@ const I18N={
   r_total:'Lowest monthly payment you likely qualify for',per_mo:'/mo',m_ok:'Yes',m_maybe:'Maybe',m_no:'No',
   best:'with <b>{n}</b> · loan {l} at about {r}% for {y} years',best_maybe:'Nothing is a clear yes. Lowest "maybe": <b>{n}</b>, {l} at about {r}%.',best_none:'No loan fits as entered. Cash, or change the home or land setup.',
   st_ok:'Likely eligible',st_maybe:'Maybe',st_no:'No',
-  sp_rate:'Rate (est.)',sp_term:'Max term',sp_down:'Min down',sp_pay:'Payment',yrs:'yrs',
+  sp_rate:'Rate (est.)',sp_term:'Max term',sp_down:'Min down',sp_pay:'Payment',s3_rate:'Rate (est.)',s3_term:'Term',s3_down:'Down from',tag_best:'Lowest',if_down:'with {x}% down',no_sum:'Doesn\'t fit ({n}) · tap to see why',yrs:'yrs',
   n_chattel:'Chattel loan (home only)',n_t1:'FHA Title I',n_t2:'FHA Title II (30-yr FHA)',n_fnma:'Fannie Mae MH / MH Advantage',n_fre:'Freddie Mac CHOICEHome',n_va:'VA loan',n_cal:'CalHFA (first-time buyer)',n_cash:'Cash',
   w_chattel_ok:'The usual loan in a park. Home is the collateral, land is not. The lender and the park both have to approve.',
   w_chattel_low:'Some chattel lenders start around 575–620. Expect a bigger down payment and a higher rate.',
@@ -402,7 +417,7 @@ const I18N={
   r_total:'Tiền trả tháng thấp nhất mà mình có khả năng được duyệt',per_mo:'/tháng',m_ok:'Được',m_maybe:'Có thể',m_no:'Không',
   best:'với <b>{n}</b> · vay {l}, lãi khoảng {r}%, {y} năm',best_maybe:'Chưa có loại nào chắc. Loại "có thể" rẻ nhất: <b>{n}</b>, vay {l}, lãi khoảng {r}%.',best_none:'Như số đang nhập thì không loại vay nào hợp. Trả cash, hoặc đổi nhà / đổi chỗ đất.',
   st_ok:'Đủ điều kiện',st_maybe:'Có thể',st_no:'Không',
-  sp_rate:'Lãi (ước tính)',sp_term:'Tối đa',sp_down:'Down tối thiểu',sp_pay:'Trả tháng',yrs:'năm',
+  sp_rate:'Lãi (ước tính)',sp_term:'Tối đa',sp_down:'Down tối thiểu',sp_pay:'Trả tháng',s3_rate:'Lãi (ước tính)',s3_term:'Thời hạn',s3_down:'Down từ',tag_best:'Rẻ nhất',if_down:'nếu down {x}%',no_sum:'Không hợp ({n}) · bấm xem lý do',yrs:'năm',
   n_chattel:'Vay chattel (chỉ căn nhà)',n_t1:'FHA Title I',n_t2:'FHA Title II (FHA 30 năm)',n_fnma:'Fannie Mae MH / MH Advantage',n_fre:'Freddie Mac CHOICEHome',n_va:'Vay VA',n_cal:'CalHFA (mua lần đầu)',n_cash:'Tiền mặt',
   w_chattel_ok:'Loại vay phổ biến nhất trong park. Thế chấp căn nhà, không có đất. Lender với park đều phải duyệt.',
   w_chattel_low:'Vài lender chattel nhận từ khoảng 575–620. Phải down nhiều hơn, lãi cao hơn.',
@@ -549,15 +564,18 @@ function calc(){
   $('nOk').textContent=cnt.ok; $('nMaybe').textContent=cnt.maybe; $('nNo').textContent=cnt.no;
   const order={ok:0,maybe:1,no:2};
   const sorted=m.rows.slice().sort((a,c)=>order[a.status]-order[c.status]||(a.k==='cash')-(c.k==='cash')||a.pay-c.pay);
-  $('list').innerHTML=sorted.map(r=>{
+  const yes=sorted.filter(r=>r.status!=='no'), nos=sorted.filter(r=>r.status==='no');
+  const nolistOpen=!!(document.querySelector('#list details')||{}).open;
+  $('list').innerHTML=yes.map(r=>{
     const why=r.why.map(w=>fill(d[w[0]],w[1]||{})).join(' ');
-    const specs=r.k==='cash'?'':'<div class="specs">'+
-      '<span>'+d.sp_rate+'<b>'+r.rate[0]+'–'+r.rate[1]+'%</b></span>'+
-      '<span>'+d.sp_term+'<b>'+r.term+' '+d.yrs+'</b></span>'+
-      '<span>'+d.sp_down+'<b>'+(+r.minDown.toFixed(1))+'%</b></span>'+
-      '<span>'+d.sp_pay+'<b>'+(r.status==='no'?'—':fmt(r.pay))+'</b></span></div>';
-    return '<div class="loan '+(r.status==='no'?'no':'')+(b&&r===b?' best':'')+'"><div class="hd"><b>'+d['n_'+r.k]+'</b><span class="badge '+r.status+'">'+d['st_'+r.status]+'</span></div>'+specs+'<p class="why">'+why+'</p></div>';
-  }).join('');
+    const isBest=b&&r===b;
+    const pay=r.k==='cash'?'':'<div class="pay"><span class="amt">'+fmt(r.pay)+'</span><small>'+d.per_mo+(r.minDown>i.down+0.05?' · '+fill(d.if_down,{x:+r.minDown.toFixed(1)}):'')+'</small>'+(isBest?'<span class="tag">'+d.tag_best+'</span>':'')+'</div>'+
+      '<div class="specs3"><span>'+d.s3_rate+'<b>'+r.rate[0]+'–'+r.rate[1]+'%</b></span>'+
+      '<span>'+d.s3_term+'<b>'+r.term+' '+d.yrs+'</b></span>'+
+      '<span>'+d.s3_down+'<b>'+(+r.minDown.toFixed(1))+'%</b></span></div>';
+    return '<div class="loan'+(isBest?' best':'')+'"><div class="hd"><b>'+d['n_'+r.k]+'</b><span class="badge '+r.status+'">'+d['st_'+r.status]+'</span></div>'+pay+'<p class="why">'+why+'</p></div>';
+  }).join('')+(nos.length?'<details class="nolist"'+(nolistOpen?' open':'')+'><summary>'+fill(d.no_sum,{n:nos.length})+'</summary><ul>'+
+    nos.map(r=>'<li><b>'+d['n_'+r.k]+'</b>'+r.why.map(w=>fill(d[w[0]],w[1]||{})).join(' ')+'</li>').join('')+'</ul></details>':'');
   $('parkNote').textContent=st.land==='park'?d.park_note:d.own_note;
   const rowsTxt=sorted.map(r=>d['n_'+r.k]+': '+d['st_'+r.status]+(r.k==='cash'||r.status==='no'?'':' · '+r.rate[0]+'–'+r.rate[1]+'% · '+r.term+' '+d.yrs+' · '+fmt(r.pay)+d.per_mo)).join('\n');
   last={p:fmt(i.price),d:i.down,cr:CR_LABEL[st.cr],land:st.land==='park'?d.o_park:d.o_own,fnd:(st.fnd?d.yes:d.no)+' ('+d.l_fnd.replace('?','')+')',
