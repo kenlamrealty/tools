@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A Home's History · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ===== Thêm cho checklist (copy từ T132) — không đổi class cũ ===== */
+:root{--warn-soft:#F7ECE3}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--warn-soft:#33271E}}
+:root[data-theme="dark"]{--warn-soft:#33271E}
+.ctl input[type=month]{font-size:18px;min-height:50px}
+.ctl input[type=text]{font-size:18px}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl select:focus-visible{outline:none}
+.ctl .chev{color:var(--muted);font-size:14px;pointer-events:none}
+.more{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:0 14px}
+.more summary{cursor:pointer;padding:13px 0;font-size:14px;color:var(--muted);font-weight:500;list-style:none;display:flex;justify-content:space-between;gap:10px}
+.more summary::-webkit-details-marker{display:none}
+.more summary::after{content:'+';color:var(--brass);font-size:18px;line-height:1}
+.more[open] summary::after{content:'\2212'}
+.more .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;padding-bottom:14px}
+@media (max-width:380px){.more .grid{grid-template-columns:1fr}}
+.more .ctl input{font-size:17px;padding:10px 6px}
+.prog{display:grid;gap:6px;font-size:13px;color:var(--muted)}
+.prog b{color:var(--fg);font-weight:500}
+.tl{list-style:none;margin:0;padding:0}
+.grp{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);font-weight:500;padding:18px 0 10px;display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.grp:first-child{padding-top:4px}
+.ms{position:relative;display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;padding:0 0 18px}
+.ms::before{content:'';position:absolute;left:13.5px;top:30px;bottom:2px;width:1px;background:var(--line)}
+.ms.last::before{display:none}
+.ck{position:relative;width:28px;height:28px;cursor:pointer;display:block}
+.ck input{position:absolute;inset:0;width:28px;height:28px;margin:0;opacity:0;cursor:pointer}
+.ck span{display:block;width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--panel)}
+.ck input:checked+span{background:var(--brass);border-color:var(--brass)}
+.ck input:checked+span::after{content:'';position:absolute;left:10px;top:6px;width:6px;height:12px;border:solid #FFFDF8;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.ck input:focus-visible+span{outline:2px solid var(--brass);outline-offset:2px}
+.ms .tt{display:block;width:100%;text-align:left;border:0;background:none;padding:2px 0 0;font:inherit;font-size:16px;font-weight:500;line-height:1.35;color:var(--fg);cursor:pointer}
+.ms .tt::after{content:' +';color:var(--brass);font-weight:400}
+.ms .tt[aria-expanded="true"]::after{content:' \2212'}
+.ms.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.why{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.55}
+.why[hidden]{display:none}
+.why a{color:var(--brass)}
+.ms .sub2{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-top:6px;font-size:13px}
+.ms .sub2 a{color:var(--brass);text-decoration:none;font-weight:500}
+.ms .sub2 a:hover{text-decoration:underline}
+.ms .sub2 .tip{color:var(--muted);font-size:12px;width:100%}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0;line-height:1.15}
+.panel ol,.panel ul{margin:0;padding-left:20px;display:grid;gap:7px;font-size:14px}
+.panel a{color:var(--brass)}
+.misread{font-size:14px;line-height:1.55;border-left:2px solid var(--brass);padding:2px 0 2px 14px;margin:0}
+.misread b{font-weight:500}
+.warnbox{background:var(--warn-soft);border:1px solid var(--warn);border-radius:14px;padding:16px 18px;display:grid;gap:8px}
+.warnbox h2{font-family:var(--display);font-weight:500;font-size:22px;margin:0;color:var(--warn);line-height:1.15}
+.warnbox ul{margin:0;padding-left:20px;display:grid;gap:7px;font-size:14px}
+.warnbox a{color:var(--warn)}
+.warnbox[hidden]{display:none}
+footer .src a{word-break:break-word}
+/* ===== Thêm cho T140 ===== */
+.sec{font-family:var(--display);font-weight:400;font-size:26px;margin:6px 0 0;line-height:1.15}
+.sec small{display:block;font-family:var(--body);font-size:14px;color:var(--muted);margin-top:4px}
+.addrbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px}
+.addrbar b{font-weight:500;overflow-wrap:anywhere}
+.mini{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 12px;border-radius:999px;cursor:pointer}
+.mini:hover{border-color:var(--brass)}
+.line.hide{display:none}
+.field[hidden]{display:none}
+</style>
+<meta name="description" content="Type an address and get the official county and city pages for past sales, deeds, permits and hazard zones, plus a quick appreciation calculator.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t140/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="A Home's History · Ken Lam Tools">
+<meta property="og:description" content="Type an address and get the official county and city pages for past sales, deeds, permits and hazard zones, plus a quick appreciation calculator.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t140/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">What's this home's history?</h1>
+    <p class="sub" data-i="sub">Type the address. Get the exact county and city pages to check past sales, deeds, permits and hazard zones. Then see how fast it has gained value.</p>
+  </header>
+
+  <section class="inputs" aria-label="Address">
+    <div class="field">
+      <label for="addr"><span data-i="l_addr">Street address </span><small data-i="l_addr_s">(number + street, no city)</small></label>
+      <div class="ctl"><input id="addr" type="text" autocomplete="street-address" placeholder="123 Main St" value=""></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="city"><span data-i="l_city">City</span></label>
+        <div class="ctl"><select id="city">
+          <option value="sj">San Jose</option>
+          <option value="sc">Santa Clara</option>
+          <option value="mil">Milpitas</option>
+          <option value="fre">Fremont</option>
+          <option value="oak">Oakland</option>
+          <option value="hay">Hayward</option>
+          <option value="oth" data-i="o_other">Other city</option>
+        </select><span class="chev" aria-hidden="true">▾</span></div>
+      </div>
+      <div class="field">
+        <label><span data-i="l_county">County</span></label>
+        <div class="seg" role="group">
+          <button type="button" id="cSC" aria-pressed="true">Santa Clara</button>
+          <button type="button" id="cAL" aria-pressed="false">Alameda</button>
+        </div>
+      </div>
+    </div>
+    <div class="field" id="otherWrap" hidden>
+      <label for="cityOther"><span data-i="l_other">City name</span></label>
+      <div class="ctl"><input id="cityOther" type="text" placeholder="Sunnyvale" value=""></div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_steps">Your lookup list</div>
+      <div class="v"><span id="doneN">0</span><small> / <span id="allN">9</span> <span data-i="r_done">checked</span></small></div>
+    </div>
+    <div class="prog"><div class="bar" aria-hidden="true"><i class="b1" id="pbar" style="width:0%"></i></div></div>
+    <div class="addrbar"><span><span data-i="r_for">For</span>: <b id="addrShow">—</b></span><button class="mini" type="button" id="copyAddr" data-i="b_copyaddr">Copy address</button></div>
+    <ul class="tl" id="steps"></ul>
+  </section>
+
+  <h2 class="sec" data-i="s_calc">How fast has it gained value?<small>Use the sale prices you found above.</small></h2>
+  <section class="inputs" aria-label="Appreciation inputs">
+    <div class="row2">
+      <div class="field">
+        <label for="p2"><span data-i="l_p2">Last sale price</span></label>
+        <div class="ctl"><span class="pre">$</span><input id="p2" type="number" inputmode="numeric" min="0" step="5000" value="1250000"></div>
+      </div>
+      <div class="field">
+        <label for="d2"><span data-i="l_d2">Last sale date</span></label>
+        <div class="ctl"><input id="d2" type="month" value="2021-03" placeholder="2021-03"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="p1"><span data-i="l_p1">Earlier sale </span><small data-i="opt">(optional)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="p1" type="number" inputmode="numeric" min="0" step="5000" value="780000"></div>
+      </div>
+      <div class="field">
+        <label for="d1"><span data-i="l_d1">Earlier sale date</span></label>
+        <div class="ctl"><input id="d1" type="month" value="2015-06" placeholder="2015-06"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="g"><span data-i="l_g">Your yearly % for today's estimate </span><small data-i="l_g_s">(try 2–5)</small></label>
+      <div class="ctl"><input id="g" type="number" inputmode="decimal" min="-20" max="30" step="0.5" value="3"><span class="post" data-i="per_yr">%/yr</span></div>
+    </div>
+    <details class="more" id="moreBox">
+      <summary data-i="m_sum">Looking at a listing? Add asking price + assessed value</summary>
+      <div class="grid">
+        <div class="field">
+          <label for="ask"><span data-i="l_ask">Asking price</span></label>
+          <div class="ctl"><span class="pre">$</span><input id="ask" type="number" inputmode="numeric" min="0" step="5000" value="1598000"></div>
+        </div>
+        <div class="field">
+          <label for="av"><span data-i="l_av">Assessed value </span><small data-i="l_av_s">(from assessor)</small></label>
+          <div class="ctl"><span class="pre">$</span><input id="av" type="number" inputmode="numeric" min="0" step="1000" value="1380000"></div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" id="bigK">Yearly appreciation</div>
+      <div class="v"><span id="big">0%</span> <small data-i="per_yr2">/yr</small></div>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_held">Held since last sale</b></span><span class="a" id="held">0</span></div>
+      <div class="line"><span class="n"><b data-i="n_estG">Today's estimate</b> <span id="estGs">at 3%/yr</span></span><span class="a" id="estG">$0</span></div>
+      <div class="line" id="lnEstC"><span class="n"><b data-i="n_estC">If the old pace kept going</b> <span id="estCs"></span></span><span class="a" id="estC">$0</span></div>
+      <div class="line" id="lnAsk"><span class="n"><b data-i="n_ask">Asking price implies</b> <span data-i="n_ask_s">since last sale</span></span><span class="a" id="askR">0%/yr</span></div>
+      <div class="line" id="lnTax"><span class="n"><b data-i="n_tax">Property tax after you buy</b> <span data-i="n_tax_s">~1.25%, estimate</span></span><span class="a" id="taxR">$0</span></div>
+    </div>
+    <div class="meta"><span id="metaTxt"></span></div>
+    <div class="note" data-i="calc_note">Estimates only, not an appraisal. A past pace rarely repeats. Compare with 3 to 5 recent sales of similar homes nearby.</div>
+  </section>
+
+  <section class="warnbox" id="flags" hidden>
+    <h2 data-i="w_title">Worth a closer look</h2>
+    <ul id="flagList"></ul>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="tips_title">What to look for</h2>
+    <ul>
+      <li data-i="tip1"><b>Flip with no permits.</b> Bought, then resold within 1 to 2 years for a lot more? Look for permits for the kitchen, baths, electrical panel, roof. Big remodel + no permits = you inherit the risk.</li>
+      <li data-i="tip2"><b>Many sales in a short time.</b> 3 sales in 5 years can mean a problem owners keep finding: noise, drainage, foundation, a neighbor. Ask why.</li>
+      <li data-i="tip3"><b>Square footage mismatch.</b> Listing says 1,850 sq ft, county record says 1,400? Often an addition or garage conversion without a permit.</li>
+      <li data-i="tip4"><b>Assessed value far below price.</b> Normal under Prop 13 for long-held homes. Your tax resets to about 1.25% of your price, not the seller's bill. <a href="/t12/">See your new tax (T12)</a>.</li>
+    </ul>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="next_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">Tick through the list above before you write an offer, not after.</li>
+      <li data-i="nx2">Ask the listing agent for the permit history and the disclosures (TDS, SPQ). Compare with what you found.</li>
+      <li data-i="nx3">Ask your escrow or title company for a free property profile: deed history, liens, APN in one page.</li>
+      <li data-i="nx4">Found work with no permit? Get the contractor or inspector to price legalizing it, then adjust your offer. Estimate property tax with <a href="/t12/">T12</a>.</li>
+    </ol>
+  </section>
+
+  <p class="misread" data-i="myth"><b>A common mistake:</b> "Zillow's price history is complete." It isn't. Sales off the MLS, family transfers and trust deeds can be missing or show the wrong date. The official record is the deed at the County Recorder.</p>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t140/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this lookup list to yourself</h2>
+    <p data-i="f_sub">Ken can pull the MLS history and a title profile for this address. No spam.</p>
+    <div class="field"><label for="fname" data-i="f_name">Name</label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone" data-i="f_phone">Phone (optional)</label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#lich-su-can-nha" target="_blank" rel="noopener" data-i="ft_lib">How to research a home's past</a> · <a href="https://kenlamrealty.com/library#video-lich-su-can-nha" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span data-i="ft_est">Links go to official county and city sites; Zillow and Redfin are private sites. Appreciation and tax are estimates, not an appraisal.</span>
+    <span class="src"><span data-i="ft_src">Sources</span>: <a href="https://www.sccassessor.org/online-services/property-search/searching-records-buying-maps" target="_blank" rel="noopener">SCC Assessor, property records</a> · <a href="https://www.santaclaracounty.gov/node/286" target="_blank" rel="noopener">SCC Clerk-Recorder</a> · <a href="https://www.acgov.org/assessor/" target="_blank" rel="noopener">Alameda Assessor</a> · <a href="https://auditor.alamedacountyca.gov/clerk-recorder/" target="_blank" rel="noopener">Alameda Clerk-Recorder</a> · <a href="https://apps.acgov.org/auditor/clerk/transfertax.htm" target="_blank" rel="noopener">Alameda transfer tax</a> · <a href="https://www.sanjoseca.gov/business/development-services-permit-center/online-permits-at-sjpermits-org/how-to-check-your-permit-status" target="_blank" rel="noopener">San José SJPermits</a> · <a href="https://oaklandca.gov/services/online-permit-center" target="_blank" rel="noopener">Oakland Permit Center</a> · <a href="https://www.oaklandca.gov/Planning-Building/Planning-Building-Records-Requests/Report-of-Residential-Record-3R-Report" target="_blank" rel="noopener">Oakland 3R Report</a> · <a href="https://osfm.fire.ca.gov/what-we-do/community-wildfire-preparedness-and-mitigation/fire-hazard-severity-zones" target="_blank" rel="noopener">CAL FIRE FHSZ</a> · <a href="https://msc.fema.gov/portal/home" target="_blank" rel="noopener">FEMA Flood Map</a> · <a href="https://www.conservation.ca.gov/cgs/sh/eqzapp" target="_blank" rel="noopener">CGS EQ Zapp</a> · <a href="https://www.sccassessor.org/apps/static/SupplementalFAQ.htm" target="_blank" rel="noopener">Prop 13 reassessment</a> <span data-i="ft_chk">(checked 04/11/2026)</span></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== LINKS — sửa ở đây khi trang chính thức đổi địa chỉ (tra 04/11/2026) =====
+   SCC Assessor real property search: https://www.sccassessor.org/index.php/online-services/property-search/real-property
+     Trang https://www.sccassessor.org/online-services/property-search/searching-records-buying-maps (tra 04/11/2026):
+     online cho xem assessed value, APN, document number, địa chỉ, parcel map; KHÔNG cho tên chủ; giá bán (indicated sale price)
+     chỉ lấy tại văn phòng 130 West Tasman Drive, San Jose. Không có tham số địa chỉ trong URL → khách tự gõ (có nút Copy).
+   SCC Clerk-Recorder: https://www.santaclaracounty.gov/node/286 (trang chính thức, 110 West Tasman Dr). KEN DUYỆT: link trang tìm records online.
+   Alameda Assessor: https://www.acgov.org/assessor/ ; tra thuế/assessed value: https://www.acgov.org/propertytax/
+   Alameda Clerk-Recorder: https://auditor.alamedacountyca.gov/clerk-recorder/ (acgov.org/auditor/clerk/propertysearch.htm redirect tới đây, 04/11/2026).
+   Documentary transfer tax county: $1.10 / $1,000 (Santa Clara & Alameda) — https://apps.acgov.org/auditor/clerk/transfertax.htm
+   SJPermits: https://www.sjpermits.org/ — mẹo tìm theo địa chỉ (chỉ số nhà + tên đường, bỏ N/S/E/W, bỏ Ave/St):
+     https://www.sanjoseca.gov/business/development-services-permit-center/online-permits-at-sjpermits-org/how-to-check-your-permit-status
+   Accela Citizen Access (Oakland / Fremont "COF" / Santa Clara): aca-prod.accela.com/<AGENCY>/
+     Link tìm nhanh: /Cap/GlobalSearchResults.aspx?QueryText=<địa chỉ> — KEN DUYỆT bấm thử 1 lần; nếu hỏng thì dùng link portal.
+   Oakland 3R Report (permit history, chỉ chủ nhà xin được, phí từ $2,119.30, ~2 tháng):
+     https://www.oaklandca.gov/Planning-Building/Planning-Building-Records-Requests/Report-of-Residential-Record-3R-Report
+   CAL FIRE / OSFM FHSZ: https://osfm.fire.ca.gov/what-we-do/community-wildfire-preparedness-and-mitigation/fire-hazard-severity-zones
+   FEMA MSC: https://msc.fema.gov/portal/search?AddressQuery=<địa chỉ>
+   CGS EQ Zapp: https://maps.conservation.ca.gov/cgs/EQZApp/app/ (giới thiệu: https://www.conservation.ca.gov/cgs/sh/eqzapp)
+   Prop 13: đổi chủ → reassess theo giá mua; supplemental bill — https://www.sccassessor.org/apps/static/SupplementalFAQ.htm
+   TAX_RATE 1.25% (Santa Clara & Alameda, giống T01). PROP13_GAP: assessed < 60% giá → cảnh báo (KEN DUYỆT ngưỡng). */
+const TAX_RATE=0.0125, PROP13_GAP=0.60, FLIP_MONTHS=24, FLIP_GAIN=0.20, SHORT_HOLD_YEARS=3;
+const UPDATED='04/11/2026';
+const CITY={
+  sj:{name:'San Jose',county:'sc',permit:'https://www.sjpermits.org/',kind:'sj'},
+  sc:{name:'Santa Clara',county:'sc',permit:'https://aca-prod.accela.com/SANTACLARA/',aca:'SANTACLARA'},
+  mil:{name:'Milpitas',county:'sc'},
+  fre:{name:'Fremont',county:'al',permit:'https://aca-prod.accela.com/COF/',aca:'COF'},
+  oak:{name:'Oakland',county:'al',permit:'https://aca-prod.accela.com/OAKLAND/Default.aspx',aca:'OAKLAND',kind:'oak'},
+  hay:{name:'Hayward',county:'al'},
+  oth:{name:'',county:null}
+};
+const L={
+  sccAssessor:'https://www.sccassessor.org/index.php/online-services/property-search/real-property',
+  sccRecorder:'https://www.santaclaracounty.gov/node/286',
+  alAssessor:'https://www.acgov.org/assessor/',
+  alTax:'https://www.acgov.org/propertytax/',
+  alRecorder:'https://auditor.alamedacountyca.gov/clerk-recorder/',
+  oak3r:'https://www.oaklandca.gov/Planning-Building/Planning-Building-Records-Requests/Report-of-Residential-Record-3R-Report',
+  fhsz:'https://osfm.fire.ca.gov/what-we-do/community-wildfire-preparedness-and-mitigation/fire-hazard-severity-zones',
+  fema:'https://msc.fema.gov/portal/search',
+  eq:'https://maps.conservation.ca.gov/cgs/EQZApp/app/'
+};
+
+const I18N={
+ en:{title:"What's this home's history?",sub:'Type the address. Get the exact county and city pages to check past sales, deeds, permits and hazard zones. Then see how fast it has gained value.',
+  l_addr:'Street address ',l_addr_s:'(number + street, no city)',l_city:'City',l_county:'County',o_other:'Other city',l_other:'City name',
+  r_steps:'Your lookup list',r_done:'checked',r_for:'For',b_copyaddr:'Copy address',copied:'Copied',noaddr:'type an address above',
+  g_sales:'1 · Past sales',g_rec:'2 · Official county record',g_perm:'3 · Permits',g_haz:'4 · Hazard zones',
+  open:'Open',search:'Search this address',portal:'Open portal',
+  s_zil:'Zillow price history',w_zil:'Shows past sales and listings, pulled from the MLS and county data. Fast, but not complete: off-MLS sales and family transfers can be missing.',
+  s_red:'Redfin sale history and old listing photos',w_red:'Old listing photos show what the home looked like before. Compare to today to spot remodels, then check those remodels have permits.',
+  s_asr_sc:'Santa Clara County Assessor: APN and assessed value',w_asr_sc:'The online search shows assessed value, APN, last document number and the parcel map. It does not show owner names. Past sale prices are only given at the Assessor office, 130 W Tasman Dr, San Jose.',
+  s_asr_al:'Alameda County: APN, assessed value, tax bill',w_asr_al:'Look up the parcel by address to get the APN, assessed value and the current tax bill. Write down the APN, you need it for the recorder.',
+  s_rec:'County Recorder: deed history',w_rec:'Every sale and transfer is a recorded deed. The index is searched by owner name or document number, not always by address. Tip: the deed\'s Documentary Transfer Tax line divided by 1.10, times 1,000, is roughly the sale price (county rate $1.10 per $1,000). Faster: ask a title company for a free property profile.',
+  s_perm:'City permit history',w_perm:'Match permits to what you see: added bath, converted garage, ADU, new roof, new electrical panel. Work done with no permit becomes your problem after closing.',
+  t_sj:'On SJPermits, use Property Information search. Type the house number and street name only: no N/S/E/W, no Ave/St.',
+  t_aca:'On the portal: Search for permits, pick Building, search by address.',
+  t_oak:'Oakland also sells a 3R Report (full permit history). Only the owner can order it, fee from $2,119, about 2 months. Ask the seller if they have one.',
+  t_oth:'Search for the city\'s building permit lookup. Or call the city Building Division and ask for the permit history by address.',
+  s_sqft:'Compare square feet and bed/bath: county vs listing',w_sqft:'If the listing is much bigger than the county record, ask what was added and whether it has a permit. Lenders and appraisers may only count permitted space.',
+  s_fire:'CAL FIRE fire hazard zone',w_fire:'A High or Very High zone means higher insurance, defensible-space rules and a required disclosure. Get an insurance quote before you remove contingencies.',
+  s_flood:'FEMA flood zone',w_flood:'Zone A or AE with a federally backed loan means flood insurance is required. Zone X is lower risk, still not zero.',
+  s_eq:'CGS earthquake zones (fault, liquefaction, landslide)',w_eq:'These zones also show up in the NHD report in escrow. Checking now means no surprise after you are in contract.',
+  s_calc:'How fast has it gained value?<small>Use the sale prices you found above.</small>',
+  l_p2:'Last sale price',l_d2:'Last sale date',l_p1:'Earlier sale ',opt:'(optional)',l_d1:'Earlier sale date',l_g:"Your yearly % for today's estimate ",l_g_s:'(try 2–5)',per_yr:'%/yr',per_yr2:'/yr',
+  m_sum:'Looking at a listing? Add asking price + assessed value',l_ask:'Asking price',l_av:'Assessed value ',l_av_s:'(from assessor)',
+  k_cagr:'Yearly appreciation, {a} → {b} sales',k_ask:'Yearly gain the asking price implies',k_user:'Yearly % you chose',
+  n_held:'Held since last sale',n_estG:"Today's estimate",n_estC:'If the old pace kept going',n_ask:'Asking price implies',n_ask_s:'since last sale',n_tax:'Property tax after you buy',n_tax_s:'~1.25%, estimate',
+  at:'at {r}%/yr',yrs:'{n} yrs',peryr:'%/yr',
+  meta:'Total gain {a} → {b}: <b>{g}</b> over {y} years.',meta2:'Seller\'s tax today about <b>{t}/yr</b> on assessed {av}.',
+  calc_note:'Estimates only, not an appraisal. A past pace rarely repeats. Compare with 3 to 5 recent sales of similar homes nearby.',
+  w_title:'Worth a closer look',
+  f_flip:'Resold within {m} months for {p} more. Classic flip pattern: check permits for the remodel before you offer.',
+  f_recent:'Last sale was {m} months ago and the asking price is {p} higher. Ask what work was done and see the permits.',
+  f_short:'Two sales only {y} years apart. Ask why the last owners moved so soon.',
+  f_p13:'Assessed value is only {pct} of the price. Normal under Prop 13, but your tax resets to about {t}/yr (seller pays about {s}/yr). <a href="/t12/">Check with T12</a>.',
+  tips_title:'What to look for',
+  tip1:'<b>Flip with no permits.</b> Bought, then resold within 1 to 2 years for a lot more? Look for permits for the kitchen, baths, electrical panel, roof. Big remodel + no permits = you inherit the risk.',
+  tip2:'<b>Many sales in a short time.</b> 3 sales in 5 years can mean a problem owners keep finding: noise, drainage, foundation, a neighbor. Ask why.',
+  tip3:'<b>Square footage mismatch.</b> Listing says 1,850 sq ft, county record says 1,400? Often an addition or garage conversion without a permit.',
+  tip4:'<b>Assessed value far below price.</b> Normal under Prop 13 for long-held homes. Your tax resets to about 1.25% of your price, not the seller\'s bill. <a href="/t12/">See your new tax (T12)</a>.',
+  next_title:'Next steps',
+  nx1:'Tick through the list above before you write an offer, not after.',
+  nx2:'Ask the listing agent for the permit history and the disclosures (TDS, SPQ). Compare with what you found.',
+  nx3:'Ask your escrow or title company for a free property profile: deed history, liens, APN in one page.',
+  nx4:'Found work with no permit? Get the contractor or inspector to price legalizing it, then adjust your offer. Estimate property tax with <a href="/t12/">T12</a>.',
+  myth:'<b>A common mistake:</b> "Zillow\'s price history is complete." It isn\'t. Sales off the MLS, family transfers and trust deeds can be missing or show the wrong date. The official record is the deed at the County Recorder.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this lookup list to yourself',f_sub:'Ken can pull the MLS history and a title profile for this address. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:"How to research a home's past",ft_vid:'3-min video',ft_est:'Links go to official county and city sites; Zillow and Redfin are private sites. Appreciation and tax are estimates, not an appraisal.',ft_src:'Sources',ft_chk:'(checked 04/11/2026)',ft_upd:'Updated',ft_all:'All tools',
+  lang:'Tiếng Việt',
+  sms:'Hi Ken, I am looking at {a} ({c}). Last sale {p2} in {d2}. Can you pull the MLS history and permits?',
+  subj:'Home history lookup — {a}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nAddress: {a}, {c} ({co} County)\nLast sale: {p2} ({d2})\nEarlier sale: {p1} ({d1})\nYearly appreciation: {big}\nToday estimate at {g}%/yr: {estG}\nAsking: {ask} → implies {askR}\nAssessed: {av}\nFlags: {flags}\nChecked: {done}/{all} lookups\n\nSent from tool T140 tools.kenlamrealty.com'},
+ vi:{title:'Căn nhà này có lịch sử gì?',sub:'Gõ địa chỉ. Tool đưa đúng trang của county và city để coi nhà bán mấy lần, giá bao nhiêu, có permit không, có nằm vùng cháy, lụt, động đất không. Rồi tính nhà lên giá nhanh cỡ nào.',
+  l_addr:'Địa chỉ ',l_addr_s:'(số nhà + tên đường, không cần city)',l_city:'City',l_county:'County',o_other:'City khác',l_other:'Tên city',
+  r_steps:'Danh sách cần tra',r_done:'đã xong',r_for:'Nhà',b_copyaddr:'Copy địa chỉ',copied:'Đã copy',noaddr:'gõ địa chỉ ở trên',
+  g_sales:'1 · Lịch sử mua bán',g_rec:'2 · Hồ sơ chính thức của county',g_perm:'3 · Permit',g_haz:'4 · Vùng rủi ro',
+  open:'Mở',search:'Tìm địa chỉ này',portal:'Mở trang permit',
+  s_zil:'Lịch sử giá trên Zillow',w_zil:'Coi nhanh các lần bán và lần đăng bán, lấy từ MLS và dữ liệu county. Nhanh nhưng không đủ: bán ngoài MLS, sang tên trong gia đình hay bị thiếu.',
+  s_red:'Lịch sử bán + hình cũ trên Redfin',w_red:'Hình lúc đăng bán lần trước cho thấy nhà hồi đó ra sao. So với bây giờ để biết sửa gì, rồi coi chỗ sửa đó có permit không.',
+  s_asr_sc:'Assessor Santa Clara County: APN và assessed value',w_asr_sc:'Tra online thấy assessed value, APN, số document lần sang tên gần nhất và bản đồ lô đất. Không hiện tên chủ. Giá bán cũ thì phải tới văn phòng Assessor, 130 W Tasman Dr, San Jose.',
+  s_asr_al:'Alameda County: APN, assessed value, bill thuế',w_asr_al:'Tra theo địa chỉ để lấy APN, assessed value và bill thuế năm nay. Ghi lại APN, qua Recorder sẽ cần.',
+  s_rec:'County Recorder: lịch sử deed (giấy sang tên)',w_rec:'Mỗi lần bán hay sang tên đều có deed ghi ở county. Tra theo tên chủ hoặc số document, không phải lúc nào cũng tra được bằng địa chỉ. Mẹo: dòng Documentary Transfer Tax trên deed chia 1.10 rồi nhân 1,000 là ra gần đúng giá bán (county tính $1.10 mỗi $1,000). Nhanh nhất: nhờ title company in "property profile", miễn phí.',
+  s_perm:'Lịch sử permit của city',w_perm:'So permit với nhà thật: thêm phòng tắm, đổi garage thành phòng, ADU, mái mới, panel điện mới. Làm không permit thì sau khi mua là chuyện của mình.',
+  t_sj:'Trên SJPermits, bấm Property Information. Gõ số nhà và tên đường thôi: bỏ N/S/E/W, bỏ Ave/St.',
+  t_aca:'Vô portal: Search for permits, chọn Building, tìm theo địa chỉ.',
+  t_oak:'Oakland có bán 3R Report (toàn bộ lịch sử permit). Chỉ chủ nhà xin được, phí từ $2,119, chờ khoảng 2 tháng. Hỏi người bán có sẵn không.',
+  t_oth:'Tìm trang tra permit của city đó. Hoặc gọi Building Division của city, hỏi lịch sử permit theo địa chỉ.',
+  s_sqft:'So diện tích, số phòng: county với listing',w_sqft:'Listing lớn hơn hồ sơ county nhiều thì hỏi phần nào làm thêm, có permit không. Lender và appraiser có thể chỉ tính phần có permit.',
+  s_fire:'Vùng cháy rừng CAL FIRE',w_fire:'Vùng High hay Very High thì bảo hiểm mắc hơn, phải dọn cây quanh nhà, và người bán phải khai. Xin giá bảo hiểm trước khi bỏ contingency.',
+  s_flood:'Vùng lụt FEMA',w_flood:'Zone A hay AE mà vay loan có bảo lãnh liên bang thì bắt buộc mua bảo hiểm lụt. Zone X rủi ro thấp, nhưng không phải bằng 0.',
+  s_eq:'Vùng động đất CGS (đứt gãy, đất hóa lỏng, sạt lở)',w_eq:'Mấy vùng này cũng có trong NHD report lúc escrow. Coi trước thì không bị bất ngờ sau khi đã ký.',
+  s_calc:'Nhà này lên giá nhanh cỡ nào?<small>Dùng giá bán bạn vừa tra ở trên.</small>',
+  l_p2:'Giá bán lần gần nhất',l_d2:'Tháng/năm bán',l_p1:'Lần bán trước đó ',opt:'(nếu có)',l_d1:'Tháng/năm bán',l_g:'% lên giá mỗi năm để ước tính hôm nay ',l_g_s:'(thử 2–5)',per_yr:'%/năm',per_yr2:'/năm',
+  m_sum:'Đang coi nhà đăng bán? Thêm giá đăng + assessed value',l_ask:'Giá đăng bán',l_av:'Assessed value ',l_av_s:'(trên Assessor)',
+  k_cagr:'Lên giá mỗi năm, giữa 2 lần bán {a} → {b}',k_ask:'Giá đăng bán tương đương lên mỗi năm',k_user:'% mỗi năm bạn chọn',
+  n_held:'Đã giữ từ lần bán gần nhất',n_estG:'Ước tính giá hôm nay',n_estC:'Nếu cứ lên như hồi trước',n_ask:'Giá đăng tương đương',n_ask_s:'từ lần bán gần nhất',n_tax:'Thuế nhà sau khi mua',n_tax_s:'~1.25%, ước tính',
+  at:'theo {r}%/năm',yrs:'{n} năm',peryr:'%/năm',
+  meta:'Tổng lên {a} → {b}: <b>{g}</b> trong {y} năm.',meta2:'Thuế người bán đang trả khoảng <b>{t}/năm</b> trên assessed {av}.',
+  calc_note:'Chỉ là ước tính, không phải appraisal. Tốc độ cũ ít khi lặp lại. So thêm 3 tới 5 căn tương tự mới bán gần đó.',
+  w_title:'Nên coi kỹ',
+  f_flip:'Mua rồi bán lại trong {m} tháng, cao hơn {p}. Kiểu flip: coi permit phần sửa trước khi viết offer.',
+  f_recent:'Lần bán gần nhất mới {m} tháng, giá đăng cao hơn {p}. Hỏi sửa gì và xin coi permit.',
+  f_short:'Hai lần bán cách nhau có {y} năm. Hỏi vì sao chủ trước dọn đi sớm vậy.',
+  f_p13:'Assessed value chỉ bằng {pct} giá nhà. Bình thường theo Prop 13, nhưng thuế của bạn sẽ tính lại khoảng {t}/năm (người bán đang trả khoảng {s}/năm). <a href="/t12/">Tính bằng T12</a>.',
+  tips_title:'Coi kỹ mấy điểm này',
+  tip1:'<b>Flip mà không permit.</b> Mua xong 1–2 năm bán lại giá cao hơn nhiều? Tìm permit cho bếp, phòng tắm, panel điện, mái. Sửa lớn mà không permit thì người mua gánh rủi ro.',
+  tip2:'<b>Bán nhiều lần trong thời gian ngắn.</b> 5 năm bán 3 lần có khi là nhà có tật mà chủ nào cũng gặp: ồn, thoát nước, móng, hàng xóm. Phải hỏi.',
+  tip3:'<b>Diện tích không khớp.</b> Listing ghi 1,850 sq ft mà county ghi 1,400? Thường là cơi nới hoặc đổi garage không permit.',
+  tip4:'<b>Assessed value thấp hơn giá bán nhiều.</b> Nhà giữ lâu thì bình thường, do Prop 13. Thuế của bạn tính lại khoảng 1.25% giá bạn mua, không phải theo bill của người bán. <a href="/t12/">Coi thuế mới (T12)</a>.',
+  next_title:'Bước tiếp theo',
+  nx1:'Tra hết danh sách ở trên trước khi viết offer, đừng để sau.',
+  nx2:'Xin agent bên bán lịch sử permit và disclosure (TDS, SPQ). So với những gì bạn tra được.',
+  nx3:'Nhờ escrow hoặc title company in "property profile" miễn phí: lịch sử deed, lien, APN trong 1 trang.',
+  nx4:'Thấy phần làm không permit? Nhờ thợ hoặc inspector báo giá làm lại cho hợp lệ, rồi tính vô giá offer. Ước tính thuế nhà bằng <a href="/t12/">T12</a>.',
+  myth:'<b>Nhiều người hiểu sai:</b> "Lịch sử giá trên Zillow là đủ." Không đủ. Bán ngoài MLS, sang tên trong gia đình, chuyển vô trust có thể bị thiếu hoặc sai ngày. Hồ sơ chính thức là deed ở County Recorder.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi danh sách này về email',f_sub:'Ken có thể kéo lịch sử MLS và property profile cho địa chỉ này. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Cách tra lịch sử một căn nhà',ft_vid:'Video 3 phút',ft_est:'Link dẫn tới trang chính thức của county và city; Zillow, Redfin là trang tư nhân. Lên giá và thuế là ước tính, không phải appraisal.',ft_src:'Nguồn',ft_chk:'(tra 04/11/2026)',ft_upd:'Cập nhật',ft_all:'Tất cả tools',
+  lang:'English',
+  sms:'Chào Ken, tôi đang coi nhà {a} ({c}). Bán lần gần nhất {p2} vào {d2}. Ken kéo giùm lịch sử MLS và permit được không?',
+  subj:'Tra lịch sử căn nhà — {a}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nĐịa chỉ: {a}, {c} ({co} County)\nBán gần nhất: {p2} ({d2})\nBán trước đó: {p1} ({d1})\nLên giá mỗi năm: {big}\nƯớc tính hôm nay theo {g}%/năm: {estG}\nGiá đăng: {ask} → tương đương {askR}\nAssessed: {av}\nCảnh báo: {flags}\nĐã tra: {done}/{all}\n\nGửi từ tool T140 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'-$':'$')+Math.abs(Math.round(n)).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const pct1=x=>(Math.round(x*1000)/10).toFixed(1);
+
+/* ===== Hàm thuần (test bằng node) ===== */
+function parseYM(s){const m=/^(\d{4})-(\d{1,2})/.exec(String(s||'').trim());if(!m)return null;const y=+m[1],mo=+m[2];if(mo<1||mo>12)return null;return y+(mo-1)/12;}
+function todayY(d){return d.getFullYear()+d.getMonth()/12+(d.getDate()-1)/365;}
+function cagr(p1,p2,years){if(!(p1>0&&p2>0&&years>0))return null;return Math.pow(p2/p1,1/years)-1;}
+function grow(p,r,years){return p*Math.pow(1+r,Math.max(0,years));}
+function analyze(o){
+  /* o: {p1,y1,p2,y2,g(%),ask,av,now(year fraction)} */
+  const out={flags:[]};
+  out.held=o.y2!=null?Math.max(0,o.now-o.y2):null;
+  out.estG=o.p2>0&&out.held!=null?grow(o.p2,o.g/100,out.held):null;
+  out.gap=(o.y1!=null&&o.y2!=null)?o.y2-o.y1:null;
+  out.c=(o.p1>0&&out.gap>0)?cagr(o.p1,o.p2,out.gap):null;
+  out.estC=out.c!=null&&out.held!=null?grow(o.p2,out.c,out.held):null;
+  out.askR=(o.ask>0&&o.p2>0&&out.held>0)?cagr(o.p2,o.ask,out.held):null;
+  if(out.c!=null){out.big=out.c;out.bigK='cagr';}
+  else if(out.askR!=null){out.big=out.askR;out.bigK='ask';}
+  else {out.big=o.g/100;out.bigK='user';}
+  const price=o.ask>0?o.ask:(out.estG||0);
+  out.taxNew=price*TAX_RATE; out.taxOld=o.av>0?o.av*TAX_RATE:null;
+  if(out.gap!=null&&out.gap>0&&out.gap*12<=FLIP_MONTHS&&o.p1>0&&o.p2/o.p1-1>=FLIP_GAIN) out.flags.push({k:'flip',m:Math.round(out.gap*12),p:o.p2/o.p1-1});
+  else if(out.gap!=null&&out.gap>0&&out.gap<SHORT_HOLD_YEARS) out.flags.push({k:'short',y:out.gap});
+  if(out.held!=null&&out.held*12<=FLIP_MONTHS&&o.ask>0&&o.p2>0&&o.ask/o.p2-1>=FLIP_GAIN) out.flags.push({k:'recent',m:Math.round(out.held*12),p:o.ask/o.p2-1});
+  if(o.av>0&&price>0&&o.av/price<PROP13_GAP) out.flags.push({k:'p13',pct:o.av/price,t:out.taxNew,s:out.taxOld});
+  return out;
+}
+function zillowURL(full){return 'https://www.zillow.com/homes/'+encodeURIComponent(full).replace(/%20/g,'-').replace(/%2C/g,',')+'_rb/';}
+function acaSearch(agency,a){return 'https://aca-prod.accela.com/'+agency+'/Cap/GlobalSearchResults.aspx?QueryText='+encodeURIComponent(a);}
+function gsearch(q){return 'https://www.google.com/search?q='+encodeURIComponent(q);}
+
+let cityK='sj', county='sc', last={};
+function cityName(){return cityK==='oth'?($('cityOther').value.trim()||''):CITY[cityK].name;}
+function getAddr(){return $('addr').value.trim().replace(/\s+/g,' ');}
+function fullAddr(){const a=getAddr(),c=cityName();return a?(a+(c?', '+c:'')+', CA'):'';}
+
+/* Tick state: lưu theo địa chỉ */
+const CK_KEY='kl_t140_ck';
+function loadCk(){try{return JSON.parse(localStorage.getItem(CK_KEY)||'{}')||{};}catch(e){return {};}}
+function saveCk(o){try{localStorage.setItem(CK_KEY,JSON.stringify(o));}catch(e){}}
+let ckAll=loadCk();
+function ckId(){return (getAddr().toLowerCase()||'_')+'|'+cityK;}
+
+function stepsData(){
+  const d=I18N[lang], a=getAddr(), full=fullAddr(), c=CITY[cityK], cn=cityName();
+  const S=[];
+  S.push({g:'g_sales',id:'zil',t:d.s_zil,w:d.w_zil,links:[[a?d.search:d.open,a?zillowURL(full):'https://www.zillow.com/']]});
+  S.push({g:'g_sales',id:'red',t:d.s_red,w:d.w_red,links:[[a?d.search:d.open,a?gsearch('site:redfin.com "'+a+'" '+cn):'https://www.redfin.com/']]});
+  if(county==='sc'){
+    S.push({g:'g_rec',id:'asr',t:d.s_asr_sc,w:d.w_asr_sc,links:[[d.open,L.sccAssessor]]});
+    S.push({g:'g_rec',id:'rec',t:d.s_rec,w:d.w_rec,links:[[d.open,L.sccRecorder]]});
+  }else{
+    S.push({g:'g_rec',id:'asr',t:d.s_asr_al,w:d.w_asr_al,links:[[d.open,L.alTax],['Assessor',L.alAssessor]]});
+    S.push({g:'g_rec',id:'rec',t:d.s_rec,w:d.w_rec,links:[[d.open,L.alRecorder]]});
+  }
+  let pl=[],tip='';
+  if(c.kind==='sj'){pl=[[d.portal,c.permit]];tip=d.t_sj;}
+  else if(c.aca){pl=a?[[d.search,acaSearch(c.aca,a)],[d.portal,c.permit]]:[[d.portal,c.permit]];tip=d.t_aca;if(c.kind==='oak'){pl.push(['3R Report',L.oak3r]);tip+=' '+d.t_oak;}}
+  else {pl=[[d.search,gsearch((cn||'')+' CA building permit search by address')]];tip=d.t_oth;}
+  S.push({g:'g_perm',id:'perm',t:d.s_perm+(cn?' · '+cn:''),w:d.w_perm,links:pl,tip});
+  S.push({g:'g_perm',id:'sqft',t:d.s_sqft,w:d.w_sqft,links:[]});
+  S.push({g:'g_haz',id:'fire',t:d.s_fire,w:d.w_fire,links:[[d.open,L.fhsz]]});
+  S.push({g:'g_haz',id:'flood',t:d.s_flood,w:d.w_flood,links:[[a?d.search:d.open,a?L.fema+'?AddressQuery='+encodeURIComponent(full):L.fema]]});
+  S.push({g:'g_haz',id:'eq',t:d.s_eq,w:d.w_eq,links:[[d.open,L.eq]]});
+  return S;
+}
+let openWhy={};
+function renderSteps(){
+  const d=I18N[lang], S=stepsData(), done=ckAll[ckId()]||[];
+  let html='', g='';
+  S.forEach((s,i)=>{
+    if(s.g!==g){g=s.g;html+='<li class="grp">'+d[g]+'</li>';}
+    const nextG=S[i+1]?S[i+1].g:null, isLast=nextG!==s.g, on=done.includes(s.id), op=!!openWhy[s.id];
+    html+='<li class="ms'+(on?' done':'')+(isLast?' last':'')+'"><label class="ck"><input type="checkbox" data-ck="'+s.id+'"'+(on?' checked':'')+' aria-label="'+s.t.replace(/"/g,'&quot;')+'"><span></span></label><div>'
+      +'<button type="button" class="tt" data-w="'+s.id+'" aria-expanded="'+op+'">'+s.t+'</button>'
+      +'<div class="why" id="why_'+s.id+'"'+(op?'':' hidden')+'>'+s.w+'</div>'
+      +(s.links.length||s.tip?'<div class="sub2">'+s.links.map(l=>'<a href="'+l[1]+'" target="_blank" rel="noopener">'+l[0]+' ↗</a>').join('')+(s.tip?'<span class="tip">'+s.tip+'</span>':'')+'</div>':'')
+      +'</div></li>';
+  });
+  $('steps').innerHTML=html;
+  const n=S.filter(s=>done.includes(s.id)).length;
+  $('doneN').textContent=n; $('allN').textContent=S.length; $('pbar').style.width=(n/S.length*100)+'%';
+  $('addrShow').textContent=fullAddr()||d.noaddr;
+  last.done=n; last.all=S.length;
+}
+$('steps').addEventListener('change',e=>{const id=e.target.getAttribute('data-ck');if(!id)return;const k=ckId();let arr=ckAll[k]||[];arr=e.target.checked?[...new Set([...arr,id])]:arr.filter(x=>x!==id);ckAll[k]=arr;saveCk(ckAll);renderSteps();});
+$('steps').addEventListener('click',e=>{const b=e.target.closest('[data-w]');if(!b)return;const id=b.getAttribute('data-w');openWhy[id]=!openWhy[id];b.setAttribute('aria-expanded',openWhy[id]);$('why_'+id).hidden=!openWhy[id];});
+
+function ymLabel(s){const m=/^(\d{4})-(\d{1,2})/.exec(s||'');if(!m)return '—';return (lang==='vi'?(+m[2])+'/'+m[1]:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m[2]-1]+' '+m[1]);}
+function calc(){
+  const d=I18N[lang];
+  const o={p1:num('p1'),y1:parseYM($('d1').value),p2:num('p2'),y2:parseYM($('d2').value),g:num('g'),ask:num('ask'),av:num('av'),now:todayY(new Date())};
+  const r=analyze(o);
+  const yr1=($('d1').value||'').slice(0,4), yr2=($('d2').value||'').slice(0,4);
+  $('bigK').textContent=r.bigK==='cagr'?d.k_cagr.replace('{a}',yr1).replace('{b}',yr2):(r.bigK==='ask'?d.k_ask:d.k_user);
+  $('big').textContent=pct1(r.big)+'%';
+  $('held').textContent=r.held!=null?d.yrs.replace('{n}',r.held.toFixed(1)):'—';
+  $('estGs').textContent=d.at.replace('{r}',o.g);
+  $('estG').textContent=r.estG!=null?fmt(r.estG):'—';
+  $('lnEstC').classList.toggle('hide',r.estC==null);
+  if(r.estC!=null){$('estCs').textContent=d.at.replace('{r}',pct1(r.c)); $('estC').textContent=fmt(r.estC);}
+  $('lnAsk').classList.toggle('hide',r.askR==null);
+  if(r.askR!=null) $('askR').textContent=pct1(r.askR)+d.peryr;
+  $('lnTax').classList.toggle('hide',!(r.taxNew>0));
+  $('taxR').textContent=fmt(r.taxNew)+(lang==='vi'?'/năm':'/yr');
+  let meta='';
+  if(r.c!=null) meta+=d.meta.replace('{a}',fmt(o.p1)).replace('{b}',fmt(o.p2)).replace('{g}',pct1(o.p2/o.p1-1)+'%').replace('{y}',r.gap.toFixed(1));
+  if(r.taxOld!=null) meta+=(meta?'<br>':'')+d.meta2.replace('{t}',fmt(r.taxOld)).replace('{av}',fmt(o.av));
+  $('metaTxt').innerHTML=meta;
+  const F=r.flags.map(f=>{
+    if(f.k==='flip') return d.f_flip.replace('{m}',f.m).replace('{p}',Math.round(f.p*100)+'%');
+    if(f.k==='recent') return d.f_recent.replace('{m}',f.m).replace('{p}',Math.round(f.p*100)+'%');
+    if(f.k==='short') return d.f_short.replace('{y}',f.y.toFixed(1));
+    if(f.k==='p13') return d.f_p13.replace('{pct}',Math.round(f.pct*100)+'%').replace('{t}',fmt(f.t)).replace('{s}',fmt(f.s));
+  });
+  $('flags').hidden=!F.length; $('flagList').innerHTML=F.map(x=>'<li>'+x+'</li>').join('');
+  const cn=cityName();
+  Object.assign(last,{a:fullAddr()||'—',c:cn||'—',co:county==='sc'?'Santa Clara':'Alameda',p2:fmt(o.p2),d2:ymLabel($('d2').value),p1:o.p1>0?fmt(o.p1):'—',d1:o.p1>0?ymLabel($('d1').value):'—',
+    big:pct1(r.big)+'%',g:o.g,estG:r.estG!=null?fmt(r.estG):'—',ask:o.ask>0?fmt(o.ask):'—',askR:r.askR!=null?pct1(r.askR)+'%/yr':'—',av:o.av>0?fmt(o.av):'—',
+    flags:F.length?F.map(x=>x.replace(/<[^>]+>/g,'')).join(' | '):'—'});
+  const s=d.sms.replace('{a}',last.a).replace('{c}',last.c).replace('{p2}',last.p2).replace('{d2}',last.d2);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s);
+}
+function setCounty(c){county=c;$('cSC').setAttribute('aria-pressed',c==='sc');$('cAL').setAttribute('aria-pressed',c==='al');}
+function refresh(){renderSteps();calc();}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; refresh();
+}
+$('city').addEventListener('change',()=>{cityK=$('city').value;$('otherWrap').hidden=cityK!=='oth';if(CITY[cityK].county)setCounty(CITY[cityK].county);refresh();});
+$('cSC').onclick=()=>{setCounty('sc');refresh();};
+$('cAL').onclick=()=>{setCounty('al');refresh();};
+['addr','cityOther'].forEach(id=>$(id).addEventListener('input',refresh));
+['p1','d1','p2','d2','g','ask','av'].forEach(id=>{$(id).addEventListener('input',calc);$(id).addEventListener('change',calc);});
+$('copyAddr').onclick=async()=>{const t=fullAddr();if(!t){$('addr').focus();return;}try{await navigator.clipboard.writeText(t);$('copyAddr').textContent=I18N[lang].copied;setTimeout(()=>{$('copyAddr').textContent=I18N[lang].b_copyaddr},1500);}catch(e){$('addr').select();}};
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'\u2190 All tools':'\u2190 T\u1ea5t c\u1ea3 tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
