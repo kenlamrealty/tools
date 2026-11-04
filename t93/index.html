@@ -1,0 +1,1165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Find a Contractor</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+
+/* ---- Thêm cho checklist T07/T34 (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.seg.s3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.seg.s3 button{padding:11px 4px;font-size:14px}
+.seg.s4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.seg.s4 button{padding:11px 4px;font-size:14px}
+@media (max-width:380px){.seg.s4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.total .today{margin-top:10px;font-size:15px;color:var(--muted);line-height:1.45}
+.total .today b{color:var(--fg);font-weight:500}
+.total .today .late{color:var(--warn);font-weight:500}
+.prog{display:grid;gap:6px}
+.prog .pl{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+.prog .pl b{color:var(--fg);font-weight:500;font-variant-numeric:tabular-nums}
+.prog .bar i{background:var(--brass);transition:width .2s}
+.phase{display:grid;gap:0;border-top:1px solid var(--line);padding-top:12px}
+.phase+.phase{margin-top:6px}
+.ph-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding-bottom:4px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;margin:0;line-height:1.15;min-width:0}
+.ph-h .c{font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ph-d{font-size:12px;color:var(--muted);letter-spacing:.04em;margin-bottom:4px}
+.task{display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.task:last-child{border-bottom:0}
+.task input[type=checkbox]{appearance:none;-webkit-appearance:none;width:20px;height:20px;margin:2px 0 0;border:1.5px solid var(--line);border-radius:6px;background:var(--panel);cursor:pointer;display:grid;place-content:center}
+.task input[type=checkbox]:checked{background:var(--brass);border-color:var(--brass)}
+.task input[type=checkbox]:checked::after{content:"";width:5px;height:10px;border:solid #FFFDF8;border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.task .tt{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;padding:0;cursor:pointer}
+.task .tt::after{content:" +";color:var(--muted);font-size:13px}
+.task .tt[aria-expanded="true"]::after{content:" –"}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .td{font-size:12px;color:var(--muted);margin-top:3px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-variant-numeric:tabular-nums}
+.task .td .dl{color:var(--brass);font-weight:500;letter-spacing:.04em;text-transform:uppercase;font-size:11px}
+.task .td .lt{color:var(--warn);font-weight:500}
+.task .td a{color:var(--brass);text-decoration:none}
+.task .td a:hover{text-decoration:underline}
+.task .why{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.5}
+.task .why a{color:var(--brass)}
+.task.next .tt{font-weight:500}
+.task.next{background:linear-gradient(90deg,var(--brass-soft),transparent 70%);margin:0 -10px;padding-left:10px;padding-right:10px;border-radius:8px}
+.next-steps{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.next-steps h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.next-steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.next-steps a{color:var(--brass)}
+.myth{font-size:14px;line-height:1.5;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel)}
+.cmp>div{padding:16px;display:grid;gap:8px;align-content:start}
+.cmp>div+div{border-left:1px solid var(--line);background:var(--brass-soft)}
+.cmp h3{font-family:var(--display);font-weight:400;font-size:22px;margin:0}
+.cmp ul{margin:0;padding-left:16px;font-size:14px;display:grid;gap:5px;color:var(--fg)}
+.cmp .tag{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.checks label{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:8px 13px;font-size:14px;color:var(--muted);cursor:pointer;user-select:none}
+.checks input{accent-color:var(--brass);margin:0}
+.checks label:has(input:checked){background:var(--brass-soft);color:var(--fg);border-color:var(--brass)}
+.dont{display:grid;gap:8px;margin:0;padding:0;list-style:none;font-size:14px}
+.dont li{display:grid;grid-template-columns:18px minmax(0,1fr);gap:6px}
+.dont li::before{content:"✕";color:var(--warn);font-size:12px;line-height:1.6}
+.srcs a{word-break:break-word}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:12px}
+.card h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0;line-height:1.15}
+.card .lead{font-size:14px;color:var(--muted);margin:0}
+.wt{display:grid;gap:0;border-top:1px solid var(--line)}
+.wt .r{display:grid;grid-template-columns:minmax(0,38%) minmax(0,1fr);gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.wt .r:last-child{border-bottom:0}
+.wt .r b{font-weight:500}
+.wt .r span{color:var(--fg)}
+@media (max-width:380px){.wt .r{grid-template-columns:minmax(0,1fr);gap:2px}}
+.cmp .price{font-family:var(--display);font-size:24px;line-height:1.1}
+.cmp .price small{font-family:var(--body);font-size:12px;color:var(--muted)}
+@media (max-width:420px){.cmp{grid-template-columns:minmax(0,1fr)}.cmp>div+div{border-left:0;border-top:1px solid var(--line)}}
+.steps{margin:0;padding-left:20px;display:grid;gap:8px;font-size:14px}
+.card a{color:var(--brass)}
+
+
+/* ---- Thêm cho "Find & vet a pro" T73/T81/T93 (không đổi class cũ) ---- */
+.checks.chips label{font-size:14px}
+.checks.chips input{position:absolute;opacity:0;width:1px;height:1px}
+.checks.chips label:has(input:focus-visible){outline:2px solid var(--brass);outline-offset:2px}
+.qhead{display:grid;gap:4px}
+.qhead h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0;line-height:1.1}
+.qhead p{margin:0;font-size:14px;color:var(--muted)}
+.qt{border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:12px}
+.qt-h{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;align-items:center}
+.qt-tag{width:30px;height:30px;border-radius:999px;display:grid;place-content:center;background:var(--brass-soft);color:var(--brass);font-family:var(--display);font-size:20px}
+.qt .ctl input{font-size:17px;padding:10px 6px}
+.qt .seg button{padding:9px 6px;font-size:14px}
+.qt .row2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.qt .ctl{padding:0 8px}
+.qt .field label{font-size:12px}
+.total .who2{margin-top:10px;font-size:15px;color:var(--muted)}
+.total .who2 b{color:var(--fg);font-weight:500}
+.line.best .a{color:var(--brass)}
+.line .n .fl{display:block;font-size:12px;color:var(--warn);margin-top:2px}
+.line .n .ok2{display:block;font-size:12px;color:var(--ok);margin-top:2px}
+.trusted{background:var(--panel);border:1px dashed var(--brass);border-radius:14px;padding:20px;display:grid;gap:10px;text-align:left}
+.trusted h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.trusted p{margin:0;font-size:14px;color:var(--muted)}
+.trusted .soon{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.vlink{display:inline-flex;align-items:center;gap:6px;color:var(--brass);text-decoration:none;font-weight:500}
+.vlink:hover{text-decoration:underline}
+.rules{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px}
+.rules b{font-weight:500}
+.rules .s{display:block;font-size:12px;color:var(--muted)}
+.gcal{display:inline-flex;margin-top:8px;font-size:13px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+.gcal:hover{border-color:var(--brass)}
+
+</style>
+<meta name="description" content="How to vet a Bay Area contractor: the right CSLB license (B, C-36, C-10, C-20, C-39), handyman $1,000 limit, deposit max, 3-day cancel, 10 questions and a 3-bid score card.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t93/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Find a Contractor · Ken Lam Tools">
+<meta property="og:description" content="How to vet a Bay Area contractor: the right CSLB license (B, C-36, C-10, C-20, C-39), handyman $1,000 limit, deposit max, 3-day cancel, 10 questions and a 3-bid score card.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t93/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">How do I pick a contractor I can trust?</h1>
+    <p class="sub" data-i="sub">Pick the trade. See the license it needs, the Bay Area price, what to ask. Then score up to 3 bids.</p>
+  </header>
+
+  <section class="inputs" aria-label="Pro type">
+    <div class="field">
+      <label><span data-i="l_type">What kind of pro?</span></label>
+      <div class="checks chips" id="chips" role="radiogroup"></div>
+    </div>
+  </section>
+
+  <section class="card" aria-live="polite">
+    <h2 id="abName"></h2>
+    <div class="wt">
+      <div class="r"><b data-i="ab_what">What they do</b><span id="abWhat"></span></div>
+      <div class="r"><b data-i="ab_when">When you need one</b><span id="abWhen"></span></div>
+      <div class="r"><b data-i="ab_price">Bay Area price</b><span id="abPrice"></span></div>
+      <div class="r"><b data-i="ab_verify">How to verify</b><span id="abVerify"></span></div>
+    </div>
+    <p class="lead" data-i="ab_est">Prices are Bay Area estimates (2025–2026 cost guides, same as T90). Your scope decides the real number.</p>
+  </section>
+
+  <section class="card">
+    <h2 data-i="x_h">California rules that protect you</h2>
+    <ol class="rules">
+      <li data-i="x1"><b>Handyman: under $1,000 total, labor and materials together.</b> Only if the job needs no permit, they hire no helpers, and it is not a bigger job split up. <span class="s">B&amp;P §7048 · $1,000 since 1/1/2025</span></li>
+      <li data-i="x2"><b>Deposit: no more than 10% or $1,000, whichever is less.</b> Pay the rest only as work gets done. <span class="s">B&amp;P §7159 · CSLB</span></li>
+      <li data-i="x3"><b>3 business days to cancel</b> (5 if you are 65+) when you sign anywhere other than the contractor's place of business. Cancel in writing. <span class="s">Civil Code §1689.6 · CSLB</span></li>
+      <li data-i="x4"><b>Every change in writing.</b> Get the "Notice to Owner" about mechanics liens. Ask for lien releases from subs and suppliers. <span class="s">CSLB</span></li>
+      <li data-i="x5"><b>Permits:</b> the contract should say the contractor pulls them and the fee is in the price. Check what needs one at <a href="/t92/">T92</a>. <span class="s">CSLB</span></li>
+      <li data-i="x6"><b>A "B" general contractor</b> can take a plumbing-only or electrical-only job only if they also hold that license, or the job has 2+ unrelated trades. <span class="s">B&amp;P §7057</span></li>
+      <li data-i="x7"><b>The $25,000 license bond is not insurance.</b> It is small. Ask for liability and workers' comp too. <span class="s">CSLB</span></li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2 data-i="cx_h">Signed at home? Your cancel deadline</h2>
+    <div class="row2">
+      <div class="field"><label for="cxDate"><span data-i="cx_date">Date you signed</span></label><div class="ctl"><input id="cxDate" type="date"></div></div>
+      <div class="field"><label><span data-i="cx_sen">Are you 65+?</span></label><div class="seg" role="group"><button type="button" id="sen0" aria-pressed="true" data-i="no">No</button><button type="button" id="sen1" aria-pressed="false" data-i="yes">Yes</button></div></div>
+    </div>
+    <div class="meta"><span><span data-i="cx_out">Cancel in writing by midnight on</span> <b id="cxOut">—</b></span></div>
+    <a class="gcal" id="cxCal" href="#" target="_blank" rel="noopener" data-i="cx_cal">Add to Google Calendar</a>
+    <p class="lead" data-i="cx_note">Sundays do not count. Some holidays also do not count (Civil Code §1689.5): if one falls in the window, you get one more day. Does not apply if you signed at the contractor's office.</p>
+  </section>
+
+  <section class="inputs" aria-label="Quotes">
+    <div class="qhead"><h2 data-i="q_h">Compare up to 3 bids</h2><p data-i="q_sub">Same scope, different contractors. Enter each bid. The score updates as you type.</p></div>
+    <div class="qt">
+      <div class="qt-h"><span class="qt-tag">A</span><div class="ctl"><input id="n0" type="text" autocomplete="off" value="Contractor A" aria-label="Contractor A"></div></div>
+      <div class="row2">
+        <div class="field"><label for="p0"><span data-i="f_price">Price</span></label><div class="ctl"><span class="pre">$</span><input id="p0" type="number" inputmode="numeric" min="0" step="500" value="32000"></div></div>
+        <div class="field"><label for="r0"><span data-i="f_rate">Reviews </span><small data-i="f_rate_s">(0–5 stars)</small></label><div class="ctl"><input id="r0" type="number" inputmode="decimal" min="0" max="5" step="0.1" value="4.7"><span class="post">★</span></div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="d0"><span data-i="f_days">Can start in</span></label><div class="ctl"><input id="d0" type="number" inputmode="numeric" min="0" step="1" value="21"><span class="post" data-i="u_days">days</span></div></div>
+        <div class="field"><label for="w0"><span data-i="f_warr">Warranty</span></label><div class="ctl"><input id="w0" type="number" inputmode="numeric" min="0" step="1" value="12"><span class="post" data-i="u_mo">months</span></div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label><span data-i="f_lic">License verified</span></label><div class="seg" role="group" data-q="0" data-f="lic"><button type="button" data-v="1" data-i="yes">Yes</button><button type="button" data-v="0" data-i="no">No</button></div></div>
+        <div class="field"><label><span data-i="f_ins">Insured</span></label><div class="seg" role="group" data-q="0" data-f="ins"><button type="button" data-v="1" data-i="yes">Yes</button><button type="button" data-v="0" data-i="no">No</button></div></div>
+      </div>
+    </div>
+    <div class="qt">
+      <div class="qt-h"><span class="qt-tag">B</span><div class="ctl"><input id="n1" type="text" autocomplete="off" value="Contractor B" aria-label="Contractor B"></div></div>
+      <div class="row2">
+        <div class="field"><label for="p1"><span data-i="f_price">Price</span></label><div class="ctl"><span class="pre">$</span><input id="p1" type="number" inputmode="numeric" min="0" step="500" value="21500"></div></div>
+        <div class="field"><label for="r1"><span data-i="f_rate">Reviews </span><small data-i="f_rate_s">(0–5 stars)</small></label><div class="ctl"><input id="r1" type="number" inputmode="decimal" min="0" max="5" step="0.1" value="4.9"><span class="post">★</span></div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="d1"><span data-i="f_days">Can start in</span></label><div class="ctl"><input id="d1" type="number" inputmode="numeric" min="0" step="1" value="7"><span class="post" data-i="u_days">days</span></div></div>
+        <div class="field"><label for="w1"><span data-i="f_warr">Warranty</span></label><div class="ctl"><input id="w1" type="number" inputmode="numeric" min="0" step="1" value="12"><span class="post" data-i="u_mo">months</span></div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label><span data-i="f_lic">License verified</span></label><div class="seg" role="group" data-q="1" data-f="lic"><button type="button" data-v="1" data-i="yes">Yes</button><button type="button" data-v="0" data-i="no">No</button></div></div>
+        <div class="field"><label><span data-i="f_ins">Insured</span></label><div class="seg" role="group" data-q="1" data-f="ins"><button type="button" data-v="1" data-i="yes">Yes</button><button type="button" data-v="0" data-i="no">No</button></div></div>
+      </div>
+    </div>
+    <div class="qt">
+      <div class="qt-h"><span class="qt-tag">C</span><div class="ctl"><input id="n2" type="text" autocomplete="off" value="Contractor C" aria-label="Contractor C"></div></div>
+      <div class="row2">
+        <div class="field"><label for="p2"><span data-i="f_price">Price</span></label><div class="ctl"><span class="pre">$</span><input id="p2" type="number" inputmode="numeric" min="0" step="500" value="36800"></div></div>
+        <div class="field"><label for="r2"><span data-i="f_rate">Reviews </span><small data-i="f_rate_s">(0–5 stars)</small></label><div class="ctl"><input id="r2" type="number" inputmode="decimal" min="0" max="5" step="0.1" value="4.5"><span class="post">★</span></div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="d2"><span data-i="f_days">Can start in</span></label><div class="ctl"><input id="d2" type="number" inputmode="numeric" min="0" step="1" value="35"><span class="post" data-i="u_days">days</span></div></div>
+        <div class="field"><label for="w2"><span data-i="f_warr">Warranty</span></label><div class="ctl"><input id="w2" type="number" inputmode="numeric" min="0" step="1" value="24"><span class="post" data-i="u_mo">months</span></div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label><span data-i="f_lic">License verified</span></label><div class="seg" role="group" data-q="2" data-f="lic"><button type="button" data-v="1" data-i="yes">Yes</button><button type="button" data-v="0" data-i="no">No</button></div></div>
+        <div class="field"><label><span data-i="f_ins">Insured</span></label><div class="seg" role="group" data-q="2" data-f="ins"><button type="button" data-v="1" data-i="yes">Yes</button><button type="button" data-v="0" data-i="no">No</button></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_k">Best pick score</div>
+      <div class="v"><span id="total">0</span> <small>/100</small></div>
+      <div class="who2" id="bestWho"></div>
+    </div>
+    <div class="lines" id="qLines"></div>
+    <div class="meta"><span><span data-i="dep_k">Most the best pick can ask as a deposit</span>: <b id="depOut">$0</b></span></div>
+    <div class="note" data-i="r_how">Score out of 100: price 30, license checked 25, insurance 15, reviews 15, warranty 10 (24 months = full), how soon 5. Not checked = max 40.</div>
+    <div class="note hide" id="noneNote" data-i="none_note">No bid has a checked license yet. Look each one up at CSLB before you sign or pay anything.</div>
+  </section>
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video"></video>
+
+  <section class="card">
+    <div class="ph-h"><h2 data-i="ck_h">10 questions to ask</h2></div>
+    <p class="lead" data-i="ck_sub">Tap a question to see why it matters. Tick it once you have the answer.</p>
+    <div class="prog"><div class="pl"><span data-i="ck_pk">Progress</span><b id="ckProg"></b></div><div class="bar"><i id="ckBar" style="width:0"></i></div></div>
+    <div id="ckList"></div>
+  </section>
+
+  <section class="card">
+    <h2 data-i="rf_h">Red flags: walk away</h2>
+    <ul class="dont" id="rfList"></ul>
+  </section>
+
+  <section class="trusted">
+    <span class="soon" data-i="tl_soon">Coming soon</span>
+    <h2 data-i="tl_h">Ken's trusted list</h2>
+    <p data-i="tl_p">Ken is putting together contractors his clients have used and liked. Until then, text him and he will send names that fit your job and city.</p>
+    <a class="btn primary" id="refBtn" href="sms:4086662825" data-i="tl_btn">Text Ken for a referral</a>
+  </section>
+
+  <section class="next-steps">
+    <h2 data-i="ns_h">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Look up each license at <a class="vlink" href="https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/CheckLicense.aspx" target="_blank" rel="noopener">CSLB</a>: active, right class, bond and workers' comp on file, no complaints.</li>
+      <li data-i="ns2">Get 3 written bids for the same scope. Use <a href="/t90/">T90</a> to sanity-check the price.</li>
+      <li data-i="ns3">Check permits at <a href="/t92/">T92</a>. Make the contract say who pulls them.</li>
+      <li data-i="ns4">Sign only a written contract with a payment schedule tied to finished work. Deposit max 10% or $1,000.</li>
+    </ol>
+    <p class="myth"><b data-i="my_k">Common mistake:</b> <span data-i="my_v">Thinking a handyman can do any job under $1,000. Only if it needs no permit and they work alone. Swapping a water heater needs a permit, so it needs a licensed plumber even if it is cheap. Splitting a big job into small bills is not allowed (B&P §7048).</span></p>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t93/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this comparison to yourself</h2>
+    <p data-i="f_sub">Ken will look at the bids with you. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#find-contractor" target="_blank" rel="noopener" data-i="ft_lib">Hiring a contractor in California</a> · <a href="https://kenlamrealty.com/library#video-find-contractor" target="_blank" rel="noopener" data-i="ft_vid">Video: check a CSLB license</a></span>
+    <span data-i="ft_est">Prices and scores are estimates to help you compare. Not legal advice and not a guarantee of quality. Ken Lam Realty does not endorse any contractor on this page.</span>
+    <span class="srcs"><span data-i="ft_src">Sources:</span> <a href="https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/CheckLicense.aspx" target="_blank" rel="noopener">CSLB license check</a> · <a href="https://california.public.law/codes/business_and_professions_code_section_7048" target="_blank" rel="noopener">B&amp;P §7048 (minor work)</a> · <a href="https://www.cslb.ca.gov/Resources/IndustryBulletins/2024/AB%202622%20Implementation.FINAL.pdf" target="_blank" rel="noopener">CSLB: AB 2622 $1,000 from 1/1/2025</a> · <a href="https://web.cslb.ca.gov/Consumers/Hire_A_Contractor/Home_Improvement_Contracts/Homeowner_Checklists.aspx" target="_blank" rel="noopener">CSLB homeowner checklist (deposit)</a> · <a href="https://web.cslb.ca.gov/Consumers/Hire_A_Contractor/Home_Improvement_Contracts/Warnings_And_Exceptions.aspx" target="_blank" rel="noopener">CSLB warnings &amp; exceptions (cancel)</a> · <a href="https://law.counselstack.com/statute/ca/CIV/1689.6." target="_blank" rel="noopener">Civil Code §1689.6</a> · <a href="https://www.cslb.ca.gov/About_Us/Library/Licensing_Classifications" target="_blank" rel="noopener">CSLB license classes</a> · <a href="https://www2.cslb.ca.gov/about_us/library/licensing_classifications/Licensing_Classifications_Detail.aspx?Class=B" target="_blank" rel="noopener">CSLB: B contractor (B&amp;P §7057)</a> · <a href="https://cslb.ca.gov/Contractors/maintain_license/bond_information/bond_requirements.aspx" target="_blank" rel="noopener">CSLB bond $25,000</a> · <a href="https://www.jlconline.com/cost-vs-value/2025/san-francisco-ca/" target="_blank" rel="noopener">Cost vs. Value 2025 SF</a> · <a href="https://www.nextlevelplumbingservices.com/blog/water-heater-replacement-cost-bay-area/" target="_blank" rel="noopener">Water heater Bay Area</a> · <a href="https://quartzconstructionremodeling.com/how-much-does-whole-house-repipe-cost-bay-area-california-2025/" target="_blank" rel="noopener">Repipe Bay Area</a> · <a href="https://www.nextlevelplumbingservices.com/blog/sewer-lateral-replacement-bay-area-cost/" target="_blank" rel="noopener">Sewer lateral Bay Area</a> · <a href="https://alphaomegaelectric.org/electrical-panel-installation-pricing/" target="_blank" rel="noopener">Panel upgrade</a> · <a href="https://galaxyservices.com/bay-area-hvac-costs/" target="_blank" rel="noopener">HVAC Bay Area</a> · <a href="https://hamilton-exteriors.com/blog/roof-replacement-cost-bay-area" target="_blank" rel="noopener">Roof Bay Area</a></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== T93 — Find a contractor. Số liệu tra 03–04/11/2026. Sửa ở đây khi đổi. =====
+   KHÔNG nêu tên công ty nào — Ken thêm vendor đã duyệt sau.
+   HANDYMAN_LIMIT $1,000: B&P §7048 — tổng labor + materials + mọi thứ dưới $1,000, việc nhỏ, KHÔNG cần permit, không thuê người phụ,
+     không chia nhỏ job để né. https://california.public.law/codes/business_and_professions_code_section_7048 ; tăng từ $500 lên $1,000 từ 01/01/2025 (AB 2622) https://www.cslb.ca.gov/Resources/IndustryBulletins/2024/AB%202622%20Implementation.FINAL.pdf
+   DEPOSIT: tối đa 10% giá hợp đồng hoặc $1,000, cái nào ít hơn — B&P §7159, CSLB https://web.cslb.ca.gov/Consumers/Hire_A_Contractor/Home_Improvement_Contracts/Homeowner_Checklists.aspx
+   HỦY HỢP ĐỒNG: 3 business days (5 nếu 65+) sau ngày ký, trừ khi ký ở văn phòng contractor hoặc giá dưới $25; service & repair dưới $750 ngoại lệ.
+     Civil Code §1689.6 https://law.counselstack.com/statute/ca/CIV/1689.6. ; CSLB https://web.cslb.ca.gov/Consumers/Hire_A_Contractor/Home_Improvement_Contracts/Warnings_And_Exceptions.aspx
+     Đếm: bỏ Chủ nhật. §1689.5 còn bỏ một số ngày lễ — tool CHƯA trừ ngày lễ, ghi chú cho khách. KEN DUYỆT.
+   B contractor (B&P §7057): nhận job 1 nghề (ống nước, điện…) chỉ khi có license nghề đó hoặc job có 2+ nghề không liên quan (không tính framing/carpentry). https://www2.cslb.ca.gov/about_us/library/licensing_classifications/Licensing_Classifications_Detail.aspx?Class=B
+   Bond $25,000 https://cslb.ca.gov/Contractors/maintain_license/bond_information/bond_requirements.aspx. Tên class: https://www.cslb.ca.gov/About_Us/Library/Licensing_Classifications
+   Giá (lấy lại từ T90 /t90/, ƯỚC TÍNH, KEN DUYỆT):
+     bath midrange $27,300–37,000; major kitchen midrange $83,000–112,300 — CvV 2025 SF ±15% https://www.jlconline.com/cost-vs-value/2025/san-francisco-ca/
+     water heater tank $2,200–4,500 https://www.nextlevelplumbingservices.com/blog/water-heater-replacement-cost-bay-area/; repipe PEX ~$5–9/sqft https://quartzconstructionremodeling.com/how-much-does-whole-house-repipe-cost-bay-area-california-2025/; sewer lateral $150–300/ft https://www.nextlevelplumbingservices.com/blog/sewer-lateral-replacement-bay-area-cost/
+     panel 200A $2,500–6,000 https://alphaomegaelectric.org/electrical-panel-installation-pricing/; furnace $7,500–12,000, AC $7,000–12,500, heat pump ducted $14,000–22,000 https://galaxyservices.com/bay-area-hvac-costs/
+     roof asphalt tear-off $975–1,200 / square (100 sqft) https://hamilton-exteriors.com/blog/roof-replacement-cost-bay-area
+   Thang điểm (W, avMax 60 ngày, warrFull 24 tháng, capNoLic 40) là cách chấm của tool — KEN DUYỆT.
+*/
+const HANDYMAN_LIMIT=1000, DEPOSIT_PCT=0.10, DEPOSIT_CAP=1000, CANCEL_DAYS=3, CANCEL_DAYS_65=5;
+const C={"code": "T93", "key": "t93", "types": ["gen", "plumb", "elec", "hvac", "roof", "handy"], "W": {"price": 30, "lic": 25, "ins": 15, "rev": 15, "avail": 5, "warr": 10}, "avMax": 60, "warrFull": 24, "capNoLic": 40, "defType": null, "LOW": 0.7, "HIGH": 1.4, "defaults": [{"lic": 1, "ins": 1}, {"lic": 0, "ins": 0}, {"lic": 1, "ins": 1}]};
+const UPDATED='04/11/2026';
+const DATA={
+"en": {
+"quote": "Quote",
+"r_empty": "Type at least one price to compare.",
+"fl_nolic": "license not checked",
+"fl_noins": "no insurance proof",
+"fl_low": "much cheaper than the others: check what is left out",
+"fl_high": "much higher: ask what is extra",
+"fl_ok": "checks out",
+"ck_prog": "{x}/{y}",
+"r_best": "Best pick:",
+"r_best_nolic": "Top score, license not checked:",
+"sms": "Hi Ken, I am comparing {t} bids on tools.kenlamrealty.com. Best so far: {b} ({s}/100, {p}). Can you take a look?",
+"ref_sms": "Hi Ken, can you refer a {t} you trust? My city: ",
+"qCommon": [
+[
+"What is your CSLB license number and class?",
+"Look it up yourself. The class must match the job (C-36 plumbing, C-10 electrical, and so on)."
+],
+[
+"Do you carry workers' comp and liability insurance? Can I get the certificate?",
+"If a worker gets hurt on your property without workers' comp, it can land on you."
+],
+[
+"Who pulls the permits, and is the fee in the price?",
+"No permit means trouble at resale and with insurance."
+],
+[
+"Can I get a written, itemized bid with start and finish dates?",
+"You can only compare bids that list the same items."
+],
+[
+"What is the payment schedule?",
+"Deposit max 10% or $1,000. After that, pay for work that is done, not ahead."
+],
+[
+"Who are your subcontractors, and will you give me lien releases?",
+"An unpaid sub or supplier can put a lien on your house even if you paid the contractor."
+],
+[
+"What is your warranty, in writing?",
+"Know how long and what it covers: labor, parts, or both."
+]
+],
+"rfCommon": [
+"Asks for more than 10% or $1,000 up front.",
+"Cash only, or wants the check made out to a person, not the business.",
+"Says \"we don't need a permit for this\" on work that does.",
+"License name or number does not match the bid, or the license is expired.",
+"Knocked on your door and pushes you to sign today.",
+"No written contract."
+],
+"types": {
+"gen": {
+"chip": "General (B)",
+"name": "General contractor (B or B-2)",
+"what": "Runs remodels with several trades: framing, drywall, plumbing, electrical, finishes. Hires and schedules the subs.",
+"when": "Kitchen or bath remodels, additions, ADUs, anything with 2+ trades.",
+"price": "Bath mid-range <b>$27,300–37,000</b> · major kitchen mid-range <b>$83,000–112,300</b> (estimate). More at <a href=\"/t90/\">T90</a>.",
+"verify": "Class B (General Building) or B-2 (Residential Remodeling). Check at <a class=\"vlink\" href=\"https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/CheckLicense.aspx\" target=\"_blank\" rel=\"noopener\">CSLB</a>.",
+"q": [
+[
+"Who is on site every day, you or a foreman?",
+"Remodels go wrong when nobody is in charge."
+],
+[
+"How do you handle change orders and their price?",
+"Change orders are where budgets blow up. Get the process in writing."
+],
+[
+"Can I see 3 recent local jobs and call those owners?",
+"Recent and local beats a big portfolio from years ago."
+]
+],
+"rf": [
+"Bid is one number with no line items.",
+"Wants to start before permits are issued."
+]
+},
+"plumb": {
+"chip": "Plumbing",
+"name": "Plumber (C-36)",
+"what": "Water lines, drains, water heaters, gas lines, fixtures, repipes and sewer laterals.",
+"when": "Leaks, water heater swap, repipe, sewer lateral, new bath plumbing.",
+"price": "Water heater (tank) <b>$2,200–4,500</b> · repipe <b>~$5–9</b>/sqft · sewer lateral <b>$150–300</b>/ft (estimate)",
+"verify": "Class C-36 (Plumbing). Sewer work may be C-42. Check at <a class=\"vlink\" href=\"https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/CheckLicense.aspx\" target=\"_blank\" rel=\"noopener\">CSLB</a>.",
+"q": [
+[
+"Is the permit and city inspection included?",
+"Water heaters and repipes need permits in most Bay Area cities."
+],
+[
+"PEX or copper, and why?",
+"Both work. The price gap is big, so know what you are paying for."
+],
+[
+"Does the price include patching walls?",
+"Repipe bids often leave drywall patching out."
+]
+],
+"rf": [
+"Replaces a water heater with no permit.",
+"Says the whole sewer must go before showing camera video."
+]
+},
+"elec": {
+"chip": "Electrical",
+"name": "Electrician (C-10)",
+"what": "Panels, circuits, outlets, EV chargers, rewiring, lighting.",
+"when": "Panel upgrade, EV charger, old wiring, adding circuits for a kitchen or ADU.",
+"price": "200A panel <b>$2,500–6,000</b> (estimate; underground service can cost much more)",
+"verify": "Class C-10 (Electrical). Check at <a class=\"vlink\" href=\"https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/CheckLicense.aspx\" target=\"_blank\" rel=\"noopener\">CSLB</a>.",
+"q": [
+[
+"Who coordinates with PG&E for the shutoff?",
+"Panel jobs wait on PG&E. Ask who books it and how long it takes."
+],
+[
+"Is a load calculation included?",
+"It tells you if you need a bigger panel at all."
+],
+[
+"Is the permit and final inspection included?",
+"Unpermitted electrical work is a red flag for buyers and insurers."
+]
+],
+"rf": [
+"Handyman offers to swap your panel.",
+"No permit for a panel or new circuit."
+]
+},
+"hvac": {
+"chip": "HVAC",
+"name": "HVAC contractor (C-20)",
+"what": "Furnaces, AC, heat pumps, ducts, ventilation.",
+"when": "Old furnace or AC, switching to a heat pump, no AC in a hot summer.",
+"price": "Furnace <b>$7,500–12,000</b> · AC <b>$7,000–12,500</b> · ducted heat pump <b>$14,000–22,000</b> (estimate)",
+"verify": "Class C-20 (Warm-Air Heating, Ventilating and Air-Conditioning). Check at <a class=\"vlink\" href=\"https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/CheckLicense.aspx\" target=\"_blank\" rel=\"noopener\">CSLB</a>.",
+"q": [
+[
+"Did you size the system for my house (load calculation)?",
+"Too big or too small costs you in comfort and bills."
+],
+[
+"Do the ducts need work, and is that in the price?",
+"Leaky old ducts can waste a new system."
+],
+[
+"Which rebates apply, and who files them?",
+"Heat pump rebates change often. Ask who does the paperwork."
+]
+],
+"rf": [
+"Sizes the system by looking at the old unit only.",
+"Will not put brand and model in writing."
+]
+},
+"roof": {
+"chip": "Roofing",
+"name": "Roofer (C-39)",
+"what": "Tear-off and re-roof, repairs, flashing, gutters, roof certifications.",
+"when": "Leaks, roof over ~20 years, before or after a sale, or a roof cert for a buyer.",
+"price": "Asphalt tear-off <b>$975–1,200</b> per square (100 sqft) · about $19,500–24,000 for 20 squares (estimate)",
+"verify": "Class C-39 (Roofing). Check at <a class=\"vlink\" href=\"https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/CheckLicense.aspx\" target=\"_blank\" rel=\"noopener\">CSLB</a>.",
+"q": [
+[
+"Tear-off or overlay? How many layers are there now?",
+"Overlays cost less but hide problems and shorten life."
+],
+[
+"What happens if you find rotted sheathing?",
+"Get the per-sheet price in the contract up front."
+],
+[
+"What is the labor warranty, and the material warranty?",
+"They are two different warranties. Get both in writing."
+]
+],
+"rf": [
+"Door-to-door \"storm\" offer.",
+"No C-39 license number on the bid."
+]
+},
+"handy": {
+"chip": "Handyman",
+"name": "Handyman (no license)",
+"what": "Small repairs: patching, caulking, hanging doors, fixing a fence board, assembling things.",
+"when": "Small jobs under $1,000 total that need no permit.",
+"price": "Must be <b>under $1,000</b> total by law, labor and materials together. Above that you need a licensed contractor.",
+"verify": "No license needed under the limit. If they show a license number, check it at <a class=\"vlink\" href=\"https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/CheckLicense.aspx\" target=\"_blank\" rel=\"noopener\">CSLB</a>. If they advertise as a \"contractor\", they need a license.",
+"q": [
+[
+"Is the total, with materials, under $1,000?",
+"Over $1,000 total, the law requires a licensed contractor (B&P §7048)."
+],
+[
+"Does any part of this need a permit?",
+"If it needs a permit, an unlicensed handyman cannot do it at any price."
+],
+[
+"Will anyone help you on this job?",
+"The exemption is lost if they hire a helper."
+]
+],
+"rf": [
+"Offers to break a big job into several small bills.",
+"Offers electrical panel, water heater or gas line work."
+]
+}
+}
+},
+"vi": {
+"quote": "Báo giá",
+"r_empty": "Nhập ít nhất 1 giá để so.",
+"fl_nolic": "chưa tra license",
+"fl_noins": "không có giấy bảo hiểm",
+"fl_low": "rẻ hơn mấy chỗ kia nhiều: coi họ bỏ bớt gì",
+"fl_high": "mắc hơn nhiều: hỏi họ làm thêm gì",
+"fl_ok": "ổn",
+"ck_prog": "{x}/{y}",
+"r_best": "Nên chọn:",
+"r_best_nolic": "Điểm cao nhất, chưa tra license:",
+"sms": "Chào Ken, tôi đang so báo giá {t} trên tools.kenlamrealty.com. Tốt nhất: {b} ({s}/100, {p}). Ken coi giùm được không?",
+"ref_sms": "Chào Ken, Ken giới thiệu giùm {t} Ken tin được không? Tôi ở city: ",
+"qCommon": [
+[
+"Số license CSLB mấy, class gì?",
+"Tự tra. Class phải đúng việc (C-36 ống nước, C-10 điện…)."
+],
+[
+"Có workers' comp và bảo hiểm liability không? Cho tôi giấy được không?",
+"Thợ bị thương trong nhà bạn mà không có workers' comp thì có thể đổ lên đầu bạn."
+],
+[
+"Ai xin permit, phí có trong giá chưa?",
+"Không permit là rắc rối khi bán nhà và với bảo hiểm."
+],
+[
+"Cho tôi báo giá bằng giấy, ghi từng món, ngày bắt đầu và xong?",
+"Chỉ so được báo giá ghi cùng mấy món."
+],
+[
+"Trả tiền theo lịch nào?",
+"Cọc tối đa 10% hoặc $1,000. Sau đó làm xong phần nào trả phần đó, không trả trước."
+],
+[
+"Thợ phụ là ai, có đưa lien release không?",
+"Thợ phụ hay chỗ bán vật liệu không được trả có thể đặt lien lên nhà bạn dù bạn đã trả contractor."
+],
+[
+"Bảo hành gì, có giấy không?",
+"Biết bao lâu và bao gì: công, đồ, hay cả hai."
+]
+],
+"rfCommon": [
+"Đòi cọc hơn 10% hoặc hơn $1,000.",
+"Chỉ lấy tiền mặt, hoặc bắt viết check cho cá nhân thay vì công ty.",
+"Nói \"việc này khỏi permit\" mà thật ra cần.",
+"Tên hay số license không khớp báo giá, hoặc license hết hạn.",
+"Gõ cửa tới nhà rồi hối ký liền hôm nay.",
+"Không có hợp đồng bằng giấy."
+],
+"types": {
+"gen": {
+"chip": "Tổng (B)",
+"name": "General contractor (B hoặc B-2)",
+"what": "Lo remodel có nhiều nghề: khung, drywall, ống nước, điện, hoàn thiện. Thuê và xếp lịch thợ phụ.",
+"when": "Sửa bếp, phòng tắm, cơi nới, ADU, việc gì có 2 nghề trở lên.",
+"price": "Phòng tắm tầm trung <b>$27,300–37,000</b> · bếp làm lớn tầm trung <b>$83,000–112,300</b> (ước tính). Thêm ở <a href=\"/t90/\">T90</a>.",
+"verify": "Class B (General Building) hoặc B-2 (Residential Remodeling). Tra ở <a class=\"vlink\" href=\"https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/CheckLicense.aspx\" target=\"_blank\" rel=\"noopener\">CSLB</a>.",
+"q": [
+[
+"Ai có mặt mỗi ngày, anh hay foreman?",
+"Remodel hư khi không ai đứng coi."
+],
+[
+"Đổi việc (change order) thì tính giá sao?",
+"Tiền vượt hay tới từ change order. Ghi cách làm ra giấy."
+],
+[
+"Cho tôi coi 3 job gần đây trong vùng và gọi chủ nhà được không?",
+"Gần đây và gần nhà quý hơn album đẹp từ mấy năm trước."
+]
+],
+"rf": [
+"Báo giá một con số, không ghi món.",
+"Muốn làm trước khi có permit."
+]
+},
+"plumb": {
+"chip": "Ống nước",
+"name": "Thợ ống nước (C-36)",
+"what": "Ống nước, ống thoát, máy nước nóng, ống gas, thiết bị, thay ống cả nhà, ống cống ra đường.",
+"when": "Rỉ nước, thay máy nước nóng, thay ống, ống cống, làm ống cho phòng tắm mới.",
+"price": "Máy nước nóng (bình) <b>$2,200–4,500</b> · thay ống <b>~$5–9</b>/sqft · ống cống <b>$150–300</b>/ft (ước tính)",
+"verify": "Class C-36 (Plumbing). Việc ống cống có thể là C-42. Tra ở <a class=\"vlink\" href=\"https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/CheckLicense.aspx\" target=\"_blank\" rel=\"noopener\">CSLB</a>.",
+"q": [
+[
+"Có gồm permit và city inspect chưa?",
+"Máy nước nóng và thay ống cần permit ở hầu hết city Bay Area."
+],
+[
+"PEX hay đồng, vì sao?",
+"Cái nào cũng được. Giá chênh nhiều nên phải biết mình trả cho cái gì."
+],
+[
+"Giá có gồm vá tường không?",
+"Báo giá thay ống hay bỏ phần vá drywall."
+]
+],
+"rf": [
+"Thay máy nước nóng không permit.",
+"Nói phải thay nguyên ống cống trước khi cho coi video camera."
+]
+},
+"elec": {
+"chip": "Điện",
+"name": "Thợ điện (C-10)",
+"what": "Panel, mạch điện, ổ cắm, sạc xe điện, đi dây lại, đèn.",
+"when": "Nâng panel, gắn sạc EV, dây điện cũ, thêm mạch cho bếp hay ADU.",
+"price": "Panel 200A <b>$2,500–6,000</b> (ước tính; điện đi ngầm có thể mắc hơn nhiều)",
+"verify": "Class C-10 (Electrical). Tra ở <a class=\"vlink\" href=\"https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/CheckLicense.aspx\" target=\"_blank\" rel=\"noopener\">CSLB</a>.",
+"q": [
+[
+"Ai hẹn PG&E cắt điện?",
+"Làm panel phải chờ PG&E. Hỏi ai đặt lịch và bao lâu."
+],
+[
+"Có tính tải (load calculation) không?",
+"Biết có cần panel lớn hơn thật không."
+],
+[
+"Có gồm permit và final inspection chưa?",
+"Điện làm chui là cờ đỏ với buyer và bảo hiểm."
+]
+],
+"rf": [
+"Handyman đòi thay panel.",
+"Thay panel hay thêm mạch mà không permit."
+]
+},
+"hvac": {
+"chip": "Sưởi/Lạnh",
+"name": "Thợ HVAC (C-20)",
+"what": "Lò sưởi, máy lạnh, heat pump, ống gió, thông gió.",
+"when": "Lò sưởi hay máy lạnh cũ, đổi qua heat pump, mùa hè nóng mà không có AC.",
+"price": "Lò sưởi <b>$7,500–12,000</b> · AC <b>$7,000–12,500</b> · heat pump có ống <b>$14,000–22,000</b> (ước tính)",
+"verify": "Class C-20 (Warm-Air Heating, Ventilating and Air-Conditioning). Tra ở <a class=\"vlink\" href=\"https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/CheckLicense.aspx\" target=\"_blank\" rel=\"noopener\">CSLB</a>.",
+"q": [
+[
+"Có tính cỡ máy theo nhà tôi (load calculation) không?",
+"Máy lớn quá hay nhỏ quá đều tốn tiền điện và khó chịu."
+],
+[
+"Ống gió có cần sửa không, có trong giá chưa?",
+"Ống gió cũ rò thì máy mới cũng phí."
+],
+[
+"Được rebate gì, ai lo giấy tờ?",
+"Rebate heat pump đổi hoài. Hỏi ai làm giấy."
+]
+],
+"rf": [
+"Chọn cỡ máy chỉ bằng cách nhìn máy cũ.",
+"Không chịu ghi hiệu và model ra giấy."
+]
+},
+"roof": {
+"chip": "Mái",
+"name": "Thợ mái (C-39)",
+"what": "Lột mái làm lại, sửa dột, flashing, máng xối, roof certification.",
+"when": "Dột, mái trên khoảng 20 năm, trước hay sau khi bán, hoặc buyer đòi roof cert.",
+"price": "Lột mái shingle làm lại <b>$975–1,200</b> mỗi square (100 sqft) · khoảng $19,500–24,000 cho 20 square (ước tính)",
+"verify": "Class C-39 (Roofing). Tra ở <a class=\"vlink\" href=\"https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/CheckLicense.aspx\" target=\"_blank\" rel=\"noopener\">CSLB</a>.",
+"q": [
+[
+"Lột mái hay lợp chồng lên? Mái giờ có mấy lớp?",
+"Lợp chồng rẻ hơn nhưng giấu lỗi và mau hư."
+],
+[
+"Gặp ván mái mục thì sao?",
+"Ghi giá mỗi tấm vô hợp đồng từ đầu."
+],
+[
+"Bảo hành công bao lâu, bảo hành vật liệu bao lâu?",
+"Là 2 bảo hành khác nhau. Lấy cả hai bằng giấy."
+]
+],
+"rf": [
+"Gõ cửa nói \"mái bị bão hư\".",
+"Báo giá không có số license C-39."
+]
+},
+"handy": {
+"chip": "Handyman",
+"name": "Handyman (không license)",
+"what": "Sửa vặt: vá tường, trét keo, treo cửa, thay miếng hàng rào, ráp đồ.",
+"when": "Việc nhỏ dưới $1,000 tổng, không cần permit.",
+"price": "Luật bắt <b>dưới $1,000</b> tổng, tính chung công và vật liệu. Trên đó phải contractor có license.",
+"verify": "Dưới mức đó không cần license. Nếu họ đưa số license, tra ở <a class=\"vlink\" href=\"https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/CheckLicense.aspx\" target=\"_blank\" rel=\"noopener\">CSLB</a>. Quảng cáo là \"contractor\" thì phải có license.",
+"q": [
+[
+"Tổng tiền, tính luôn đồ, có dưới $1,000 không?",
+"Trên $1,000 tổng, luật bắt contractor có license (B&P §7048)."
+],
+[
+"Có phần nào cần permit không?",
+"Việc cần permit thì handyman không license không được làm, rẻ cỡ nào cũng vậy."
+],
+[
+"Có ai phụ anh làm việc này không?",
+"Thuê người phụ là mất quyền miễn license."
+]
+],
+"rf": [
+"Đề nghị chia job lớn ra nhiều hóa đơn nhỏ.",
+"Nhận làm panel điện, máy nước nóng hay ống gas."
+]
+}
+}
+}
+};
+const I18N={
+"en": {
+"l_type": "What kind of pro?",
+"ab_what": "What they do",
+"ab_when": "When you need one",
+"ab_price": "Bay Area price",
+"ab_verify": "How to verify",
+"f_price": "Price",
+"f_rate": "Reviews ",
+"f_rate_s": "(0–5 stars)",
+"f_days": "Can start in",
+"u_days": "days",
+"f_warr": "Warranty",
+"u_mo": "months",
+"f_ins": "Insured",
+"yes": "Yes",
+"no": "No",
+"r_k": "Best pick score",
+"ck_pk": "Asked",
+"rf_h": "Red flags: walk away",
+"tl_soon": "Coming soon",
+"tl_h": "Ken's trusted list",
+"tl_btn": "Text Ken for a referral",
+"ns_h": "Next steps",
+"my_k": "Common mistake:",
+"b_email": "Email me the comparison",
+"b_sms": "Ask Ken",
+"b_video": "Watch 15-sec video",
+"f_name": "Name",
+"f_phone": "Phone (optional)",
+"f_send": "Send",
+"f_ok": "Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",
+"f_or": "Or text:",
+"f_copy": "Copy",
+"ft_read": "Read more:",
+"ft_src": "Sources:",
+"ft_upd": "Updated",
+"ft_all": "All tools",
+"lang": "Tiếng Việt",
+"title": "How do I pick a contractor I can trust?",
+"sub": "Pick the trade. See the license it needs, the Bay Area price, what to ask. Then score up to 3 bids.",
+"ab_est": "Prices are Bay Area estimates (2025–2026 cost guides, same as T90). Your scope decides the real number.",
+"q_h": "Compare up to 3 bids",
+"q_sub": "Same scope, different contractors. Enter each bid. The score updates as you type.",
+"f_lic": "License # checked",
+"r_how": "Score out of 100: price 30, license checked 25, insurance 15, reviews 15, warranty 10 (24 months = full), how soon 5. Not checked = max 40.",
+"none_note": "No bid has a checked license yet. Look each one up at CSLB before you sign or pay anything.",
+"ck_h": "10 questions to ask",
+"ck_sub": "Tap a question to see why it matters. Tick it once you have the answer.",
+"tl_p": "Ken is putting together contractors his clients have used and liked. Until then, text him and he will send names that fit your job and city.",
+"my_v": "Thinking a handyman can do any job under $1,000. Only if it needs no permit and they work alone. Swapping a water heater needs a permit, so it needs a licensed plumber even if it is cheap. Splitting a big job into small bills is not allowed (B&P §7048).",
+"f_title": "Email this comparison to yourself",
+"f_sub": "Ken will look at the bids with you. No spam.",
+"ft_lib": "Hiring a contractor in California",
+"ft_vid": "Video: check a CSLB license",
+"ft_est": "Prices and scores are estimates to help you compare. Not legal advice and not a guarantee of quality. Ken Lam Realty does not endorse any contractor on this page.",
+"x_h": "California rules that protect you",
+"cx_h": "Signed at home? Your cancel deadline",
+"cx_date": "Date you signed",
+"cx_sen": "Are you 65+?",
+"cx_out": "Cancel in writing by midnight on",
+"cx_cal": "Add to Google Calendar",
+"cx_note": "Sundays do not count. Some holidays also do not count (Civil Code §1689.5): if one falls in the window, you get one more day. Does not apply if you signed at the contractor's office.",
+"dep_k": "Most the best pick can ask as a deposit",
+"cal_t": "Last day to cancel contractor contract (in writing)",
+"cal_d": "Cancel in writing before midnight. Civil Code §1689.6. From tools.kenlamrealty.com/t93/",
+"subj": "Contractor bids compared — {n}",
+"body": "Name: {n}\nEmail: {e}\nPhone: {ph}\n\nTrade: {type}\n{rows}\n\nBest pick: {best} ({score}/100, {bp})\nMax deposit: {dep}\n\nSent from tool T93 tools.kenlamrealty.com",
+"x1": "<b>Handyman: under $1,000 total, labor and materials together.</b> Only if the job needs no permit, they hire no helpers, and it is not a bigger job split up. <span class=\"s\">B&amp;P §7048 · $1,000 since 1/1/2025</span>",
+"x2": "<b>Deposit: no more than 10% or $1,000, whichever is less.</b> Pay the rest only as work gets done. <span class=\"s\">B&amp;P §7159 · CSLB</span>",
+"x3": "<b>3 business days to cancel</b> (5 if you are 65+) when you sign anywhere other than the contractor's place of business. Cancel in writing. <span class=\"s\">Civil Code §1689.6 · CSLB</span>",
+"x4": "<b>Every change in writing.</b> Get the \"Notice to Owner\" about mechanics liens. Ask for lien releases from subs and suppliers. <span class=\"s\">CSLB</span>",
+"x5": "<b>Permits:</b> the contract should say the contractor pulls them and the fee is in the price. Check what needs one at <a href=\"/t92/\">T92</a>. <span class=\"s\">CSLB</span>",
+"x6": "<b>A \"B\" general contractor</b> can take a plumbing-only or electrical-only job only if they also hold that license, or the job has 2+ unrelated trades. <span class=\"s\">B&amp;P §7057</span>",
+"x7": "<b>The $25,000 license bond is not insurance.</b> It is small. Ask for liability and workers' comp too. <span class=\"s\">CSLB</span>",
+"ns1": "Look up each license at <a class=\"vlink\" href=\"https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/CheckLicense.aspx\" target=\"_blank\" rel=\"noopener\">CSLB</a>: active, right class, bond and workers' comp on file, no complaints.",
+"ns2": "Get 3 written bids for the same scope. Use <a href=\"/t90/\">T90</a> to sanity-check the price.",
+"ns3": "Check permits at <a href=\"/t92/\">T92</a>. Make the contract say who pulls them.",
+"ns4": "Sign only a written contract with a payment schedule tied to finished work. Deposit max 10% or $1,000."
+},
+"vi": {
+"l_type": "Bạn cần thợ gì?",
+"ab_what": "Họ làm gì",
+"ab_when": "Khi nào cần",
+"ab_price": "Giá Bay Area",
+"ab_verify": "Kiểm tra ở đâu",
+"f_price": "Giá báo",
+"f_rate": "Review ",
+"f_rate_s": "(0–5 sao)",
+"f_days": "Bao lâu làm được",
+"u_days": "ngày",
+"f_warr": "Bảo hành",
+"u_mo": "tháng",
+"f_ins": "Có bảo hiểm",
+"yes": "Có",
+"no": "Không",
+"r_k": "Điểm của báo giá tốt nhất",
+"ck_pk": "Đã hỏi",
+"rf_h": "Thấy mấy cái này thì đi",
+"tl_soon": "Sắp có",
+"tl_h": "Danh sách Ken tin",
+"tl_btn": "Nhắn Ken xin người quen",
+"ns_h": "Bước tiếp theo",
+"my_k": "Nhiều người hiểu sai:",
+"b_email": "Gửi bảng so sánh qua email",
+"b_sms": "Hỏi Ken",
+"b_video": "Xem video 15 giây",
+"f_name": "Tên",
+"f_phone": "Phone (không bắt buộc)",
+"f_send": "Gửi",
+"f_ok": "Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.",
+"f_or": "Hoặc text:",
+"f_copy": "Copy",
+"ft_read": "Đọc thêm:",
+"ft_src": "Nguồn:",
+"ft_upd": "Cập nhật",
+"ft_all": "Tất cả tools",
+"lang": "English",
+"title": "Chọn contractor sao cho khỏi bị gạt?",
+"sub": "Chọn nghề. Coi cần license gì, giá Bay Area, hỏi gì. Rồi chấm tối đa 3 báo giá.",
+"ab_est": "Giá là ước tính Bay Area (bảng giá 2025–2026, giống T90). Số thật tùy việc của bạn.",
+"q_h": "So tối đa 3 báo giá",
+"q_sub": "Cùng một việc, contractor khác nhau. Nhập từng giá. Điểm tự tính khi gõ.",
+"f_lic": "Đã tra số license",
+"r_how": "Điểm trên 100: giá 30, đã tra license 25, bảo hiểm 15, review 15, bảo hành 10 (24 tháng là đủ điểm), làm sớm 5. Chưa tra thì tối đa 40.",
+"none_note": "Chưa tra license của ai hết. Tra từng người ở CSLB trước khi ký hay đưa tiền.",
+"ck_h": "10 câu nên hỏi",
+"ck_sub": "Bấm vô câu hỏi để coi vì sao. Hỏi xong thì tick.",
+"tl_p": "Ken đang gom danh sách contractor mà khách của Ken đã xài và thấy được. Trong lúc chờ, nhắn Ken, Ken gửi tên hợp với việc và city của bạn.",
+"my_v": "Tưởng handyman làm việc gì dưới $1,000 cũng được. Chỉ khi việc không cần permit và họ làm một mình. Thay máy nước nóng cần permit, nên phải thợ ống nước có license dù rẻ. Chia job lớn ra nhiều hóa đơn nhỏ là phạm luật (B&P §7048).",
+"f_title": "Gửi bảng so sánh này về email",
+"f_sub": "Ken coi báo giá cùng bạn. Không spam.",
+"ft_lib": "Thuê contractor ở California",
+"ft_vid": "Video: tra license CSLB",
+"ft_est": "Giá và điểm là ước tính để dễ so, không phải tư vấn luật, không bảo đảm chất lượng. Ken Lam Realty không giới thiệu contractor nào trên trang này.",
+"x_h": "Luật California bảo vệ bạn",
+"cx_h": "Ký ở nhà? Hạn chót để hủy",
+"cx_date": "Ngày ký",
+"cx_sen": "65 tuổi trở lên?",
+"cx_out": "Hủy bằng giấy trước nửa đêm ngày",
+"cx_cal": "Thêm vào Google Calendar",
+"cx_note": "Chủ nhật không tính. Một số ngày lễ cũng không tính (Civil Code §1689.5): nếu có ngày lễ trong khoảng đó thì được thêm 1 ngày. Không áp dụng nếu ký ở văn phòng contractor.",
+"dep_k": "Cọc tối đa báo giá được chọn được đòi",
+"cal_t": "Ngày cuối hủy hợp đồng contractor (bằng giấy)",
+"cal_d": "Hủy bằng giấy trước nửa đêm. Civil Code §1689.6. Từ tools.kenlamrealty.com/t93/",
+"subj": "So sánh báo giá contractor — {n}",
+"body": "Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nNghề: {type}\n{rows}\n\nChọn: {best} ({score}/100, {bp})\nCọc tối đa: {dep}\n\nGửi từ tool T93 tools.kenlamrealty.com",
+"x1": "<b>Handyman: dưới $1,000 tổng, tính chung công và vật liệu.</b> Chỉ khi việc không cần permit, không thuê người phụ, và không phải job lớn chia nhỏ ra. <span class=\"s\">B&amp;P §7048 · $1,000 từ 1/1/2025</span>",
+"x2": "<b>Tiền cọc: tối đa 10% hoặc $1,000, cái nào ít hơn.</b> Phần còn lại làm tới đâu trả tới đó. <span class=\"s\">B&amp;P §7159 · CSLB</span>",
+"x3": "<b>3 ngày làm việc để hủy</b> (65 tuổi trở lên là 5) nếu ký ở chỗ khác ngoài văn phòng của contractor. Hủy bằng giấy. <span class=\"s\">Civil Code §1689.6 · CSLB</span>",
+"x4": "<b>Đổi gì cũng ghi giấy.</b> Đòi tờ \"Notice to Owner\" về mechanics lien. Xin lien release của thợ phụ và chỗ bán vật liệu. <span class=\"s\">CSLB</span>",
+"x5": "<b>Permit:</b> hợp đồng nên ghi contractor xin permit và phí nằm trong giá. Coi việc nào cần permit ở <a href=\"/t92/\">T92</a>. <span class=\"s\">CSLB</span>",
+"x6": "<b>Contractor \"B\" tổng quát</b> chỉ nhận job toàn ống nước hay toàn điện khi có thêm license đó, hoặc job có 2+ nghề khác nhau. <span class=\"s\">B&amp;P §7057</span>",
+"x7": "<b>Bond $25,000 của license không phải bảo hiểm.</b> Số nhỏ lắm. Hỏi thêm liability và workers' comp. <span class=\"s\">CSLB</span>",
+"ns1": "Tra license từng người ở <a class=\"vlink\" href=\"https://www.cslb.ca.gov/OnlineServices/CheckLicenseII/CheckLicense.aspx\" target=\"_blank\" rel=\"noopener\">CSLB</a>: còn hiệu lực, đúng class, có bond và workers' comp, không bị khiếu nại.",
+"ns2": "Xin 3 báo giá bằng giấy cho cùng một việc. Coi giá có hợp lý không bằng <a href=\"/t90/\">T90</a>.",
+"ns3": "Coi việc có cần permit không ở <a href=\"/t92/\">T92</a>. Ghi trong hợp đồng ai xin.",
+"ns4": "Chỉ ký hợp đồng bằng giấy, trả tiền theo phần việc đã xong. Cọc tối đa 10% hoặc $1,000."
+}
+};
+
+let senior=0;
+function extraInit(){
+  try{const t=new Date(); $('cxDate').value=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');}catch(e){}
+  $('cxDate').addEventListener('input',cancelUI);
+  $('sen0').onclick=()=>{senior=0;$('sen0').setAttribute('aria-pressed','true');$('sen1').setAttribute('aria-pressed','false');cancelUI();};
+  $('sen1').onclick=()=>{senior=1;$('sen1').setAttribute('aria-pressed','true');$('sen0').setAttribute('aria-pressed','false');cancelUI();};
+}
+function maxDeposit(p){return Math.min(DEPOSIT_CAP,p*DEPOSIT_PCT);}
+function cancelUI(){
+  const d=cancelBy($('cxDate').value||'',senior?CANCEL_DAYS_65:CANCEL_DAYS), L=I18N[lang];
+  if(!d){$('cxOut').textContent='—';$('cxCal').removeAttribute('href');return;}
+  const y=d.getUTCFullYear(),m=d.getUTCMonth()+1,dd=d.getUTCDate();
+  const wd=(lang==='vi'?['CN','T2','T3','T4','T5','T6','T7']:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'])[d.getUTCDay()];
+  $('cxOut').textContent=wd+' '+(lang==='vi'?String(dd).padStart(2,'0')+'/'+String(m).padStart(2,'0')+'/'+y:String(m).padStart(2,'0')+'/'+String(dd).padStart(2,'0')+'/'+y);
+  const n=new Date(Date.UTC(y,m-1,dd+1)), ymd=x=>x.getUTCFullYear()+String(x.getUTCMonth()+1).padStart(2,'0')+String(x.getUTCDate()).padStart(2,'0');
+  $('cxCal').href='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(L.cal_t)+'&dates='+ymd(d)+'/'+ymd(n)+'&details='+encodeURIComponent(L.cal_d);
+}
+function extraCalc(R){
+  $('depOut').textContent=R.best?fmt(maxDeposit(R.best.price)):'—';
+  last.dep=R.best?fmt(maxDeposit(R.best.price)):'—';
+  cancelUI();
+}
+
+
+/*PURE-START*/
+function scoreQuotes(qs,C){
+  const W=C.W;
+  const v=qs.map((q,i)=>Object.assign({i:i},q)).filter(q=>q.price>0);
+  if(!v.length) return {list:[],best:null,anyLic:false};
+  const ps=v.map(q=>q.price).sort((a,b)=>a-b);
+  const med=ps.length%2?ps[(ps.length-1)/2]:(ps[ps.length/2-1]+ps[ps.length/2])/2;
+  const min=ps[0];
+  const cl=(x,a,b)=>Math.min(b,Math.max(a,x));
+  v.forEach(q=>{
+    const p=W.price*min/q.price, l=q.lic?W.lic:0, s=q.ins?W.ins:0;
+    const r=W.rev*cl(q.rating||0,0,5)/5;
+    const a=W.avail*Math.max(0,1-cl(q.days||0,0,1e6)/C.avMax);
+    const w=W.warr*Math.min(1,cl(q.warr||0,0,1e6)/C.warrFull);
+    let t=p+l+s+r+a+w; if(!q.lic) t=Math.min(t,C.capNoLic);
+    q.score=Math.round(t);
+    q.flags=[];
+    if(!q.lic) q.flags.push('nolic');
+    if(!q.ins) q.flags.push('noins');
+    if(v.length>=2&&q.price<C.LOW*med) q.flags.push('low');
+    if(v.length>=2&&q.price>C.HIGH*med) q.flags.push('high');
+  });
+  const rank=(a,b)=>b.score-a.score||a.price-b.price;
+  const lic=v.filter(q=>q.lic).sort(rank);
+  const best=lic.length?lic[0]:v.slice().sort(rank)[0];
+  return {list:v,best:best,anyLic:lic.length>0};
+}
+/* Hạn hủy hợp đồng: đếm ngày làm việc sau ngày ký, bỏ Chủ nhật (Civil Code §1689.6; định nghĩa business day §1689.5 — KEN DUYỆT ngày lễ). */
+function cancelBy(ymd,days){
+  const p=ymd.split('-').map(Number); if(p.length<3||!p[0]) return null;
+  const d=new Date(Date.UTC(p[0],p[1]-1,p[2])); let n=0;
+  while(n<days){ d.setUTCDate(d.getUTCDate()+1); if(d.getUTCDay()!==0) n++; }
+  return d;
+}
+/*PURE-END*/
+
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let ptype=C.defType||C.types[0], last={};
+const QS=[{lic:1,ins:1},{lic:0,ins:1},{lic:1,ins:1}];
+C.defaults.forEach((d,i)=>{QS[i].lic=d.lic;QS[i].ins=d.ins;});
+let CK={}; try{CK=JSON.parse(localStorage.getItem('kl_'+C.key+'_ck')||'{}')||{};}catch(e){CK={};}
+function saveCK(){try{localStorage.setItem('kl_'+C.key+'_ck',JSON.stringify(CK));}catch(e){}}
+
+function renderChips(){
+  const D=DATA[lang];
+  $('chips').innerHTML=C.types.map(t=>'<label><input type="radio" name="ptype" value="'+t+'"'+(t===ptype?' checked':'')+'>'+esc(D.types[t].chip)+'</label>').join('');
+  $('chips').querySelectorAll('input').forEach(el=>el.addEventListener('change',()=>{ptype=el.value;try{localStorage.setItem('kl_'+C.key+'_type',ptype)}catch(e){} renderType(); calc();}));
+}
+function renderType(){
+  const D=DATA[lang], T=D.types[ptype];
+  $('abName').textContent=T.name;
+  $('abWhat').innerHTML=T.what; $('abWhen').innerHTML=T.when; $('abPrice').innerHTML=T.price;
+  $('abVerify').innerHTML=T.verify;
+  /* checklist */
+  const Q=D.qCommon.map((q,i)=>({id:'c'+i,q:q[0],w:q[1]})).concat(T.q.map((q,i)=>({id:ptype+i,q:q[0],w:q[1]})));
+  $('ckList').innerHTML=Q.map(x=>'<div class="task'+(CK[x.id]?' done':'')+'" data-id="'+x.id+'"><input type="checkbox" aria-label="'+esc(x.q)+'"'+(CK[x.id]?' checked':'')+'><div><button type="button" class="tt" aria-expanded="false">'+x.q+'</button><div class="why" hidden>'+x.w+'</div></div></div>').join('');
+  $('ckList').querySelectorAll('.task').forEach(el=>{
+    const id=el.dataset.id, cb=el.querySelector('input'), bt=el.querySelector('.tt'), why=el.querySelector('.why');
+    cb.addEventListener('change',()=>{CK[id]=cb.checked; if(!cb.checked) delete CK[id]; el.classList.toggle('done',cb.checked); saveCK(); prog();});
+    bt.addEventListener('click',()=>{const o=why.hidden; why.hidden=!o; bt.setAttribute('aria-expanded',o?'true':'false');});
+  });
+  prog();
+  $('rfList').innerHTML=D.rfCommon.concat(T.rf).map(r=>'<li><span>'+r+'</span></li>').join('');
+  const rs=D.ref_sms.replace('{t}',T.name);
+  $('refBtn').href='sms:4086662825?&body='+encodeURIComponent(rs);
+}
+function prog(){
+  const ids=[...$('ckList').querySelectorAll('.task')].map(e=>e.dataset.id), n=ids.filter(i=>CK[i]).length;
+  $('ckProg').textContent=DATA[lang].ck_prog.replace('{x}',n).replace('{y}',ids.length);
+  $('ckBar').style.width=(ids.length?n/ids.length*100:0)+'%';
+}
+function readQuotes(){
+  return [0,1,2].map(i=>({name:$('n'+i).value.trim()||(DATA[lang].quote+' '+'ABC'[i]),price:parseFloat($('p'+i).value)||0,lic:QS[i].lic,ins:QS[i].ins,
+    rating:parseFloat($('r'+i).value)||0,days:parseFloat($('d'+i).value)||0,warr:parseFloat($('w'+i).value)||0}));
+}
+function calc(){
+  const D=DATA[lang], qs=readQuotes(), R=scoreQuotes(qs,C), T=D.types[ptype];
+  if(!R.best){ $('total').textContent='—'; $('bestWho').innerHTML=D.r_empty; $('qLines').innerHTML=''; }
+  else{
+    $('total').textContent=R.best.score;
+    $('bestWho').innerHTML=(R.anyLic?D.r_best:D.r_best_nolic)+' <b>'+esc(R.best.name)+'</b> · '+fmt(R.best.price);
+    $('qLines').innerHTML=R.list.map(q=>{
+      const fl=q.flags.map(f=>D['fl_'+f]).join(' · ');
+      return '<div class="line'+(q===R.best?' best':'')+'"><span class="n"><b>'+'ABC'[q.i]+' · '+esc(q.name)+'</b> '+fmt(q.price)+(fl?'<span class="fl">'+fl+'</span>':'<span class="ok2">'+D.fl_ok+'</span>')+'</span><span class="a">'+q.score+'<small style="font-weight:400;color:var(--muted)">/100</small></span></div>';
+    }).join('');
+  }
+  $('noneNote').classList.toggle('hide',!(R.best&&!R.anyLic));
+  last={type:T.name,best:R.best?R.best.name:'—',score:R.best?R.best.score:'—',bp:R.best?fmt(R.best.price):'—',
+    rows:R.list.map(q=>'ABC'[q.i]+'. '+q.name+': '+fmt(q.price)+' | lic '+(q.lic?'Y':'N')+' | ins '+(q.ins?'Y':'N')+' | '+q.rating+'★ | '+q.days+'d | '+q.warr+'mo → '+q.score+'/100').join('\n')};
+  if(typeof extraCalc==='function') extraCalc(R);
+  const s=D.sms.replace('{t}',last.type).replace('{b}',last.best).replace('{s}',last.score).replace('{p}',last.bp);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s);
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  renderChips(); renderType(); calc();
+}
+try{const t=localStorage.getItem('kl_'+C.key+'_type'); if(t&&C.types.includes(t)) ptype=t;}catch(e){}
+[0,1,2].forEach(i=>{['n','p','r','d','w'].forEach(k=>$(k+i).addEventListener('input',calc));});
+document.querySelectorAll('.seg[data-q]').forEach(sg=>{
+  const i=+sg.dataset.q, f=sg.dataset.f;
+  sg.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{QS[i][f]=+b.dataset.v; sg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); calc();}));
+  sg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',(+x.dataset.v===QS[i][f])?'true':'false'));
+});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+if(typeof extraInit==='function') extraInit();
+applyLang();
+
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'\u2190 All tools':'\u2190 T\u1ea5t c\u1ea3 tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
