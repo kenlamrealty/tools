@@ -159,6 +159,8 @@ footer .who{color:var(--fg)}
 .steps a{color:var(--brass)}
 dialog{border:0;border-radius:14px;padding:0;max-width:min(960px,94vw);background:#000}
 dialog::backdrop{background:rgba(0,0,0,.7)}
+html.embed dialog{position:absolute;margin:0 auto;bottom:auto}
+html.embed body{padding-top:8px}
 dialog video{display:block;width:100%;max-height:80vh}
 dialog button{position:absolute;top:8px;right:8px;border:0;border-radius:999px;background:rgba(255,255,255,.9);font:inherit;padding:6px 12px;cursor:pointer}
 </style>
@@ -352,7 +354,9 @@ function jump(id){
   if(!BYID[id]) return;
   $('q').value=''; cat='all'; letter=''; onlySaved=false; onlyVid=false; open[id]=true; hl=id;
   const i=TERMS.indexOf(BYID[id]); shown=Math.max(PAGE,i+1); renderChips(); render();
-  const el=$(id); if(el){ const sm=matchMedia('(prefers-reduced-motion: reduce)').matches; el.scrollIntoView({behavior:sm?'auto':'smooth',block:'start'}); }
+  const el=$(id);
+  if(el&&EMBED){ setTimeout(()=>{ klSend(true); try{ parent.postMessage({klToolsScroll:Math.round(el.getBoundingClientRect().top+window.scrollY)},'*'); }catch(e){} },60); }
+  else if(el){ const sm=matchMedia('(prefers-reduced-motion: reduce)').matches; el.scrollIntoView({behavior:sm?'auto':'smooth',block:'start'}); }
   try{ history.replaceState(null,'','#'+id); }catch(e){}
 }
 function play(id){ const v=$('dlgV'); v.src='v/'+id+'.mp4'; $('dlg').showModal(); v.play().catch(()=>{}); }
@@ -380,6 +384,25 @@ $('sendBtn').onclick=()=>{
   $('sent').hidden=false;
 };
 $('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){} };
+/* embed mode: kenlamrealty.com/tu-dien-dia-oc iframes this page with ?embed=1 (cao tự co giãn qua postMessage klToolsHeight) */
+const EMBED=/[?&]embed=1/.test(location.search);
+let klSend=()=>{};
+if(EMBED){
+  document.documentElement.classList.add('embed');
+  let lastY=0;
+  document.addEventListener('click',e=>{ if(e.pageY) lastY=e.pageY;
+    const a=e.target.closest('a[href]'); if(!a) return; const h=a.getAttribute('href');
+    if(h.startsWith('#')||a.target==='_blank') return;
+    if(h.startsWith('/')) a.href='https://tools.kenlamrealty.com'+h;
+    a.target='_top'; },true);
+  const dlg=$('dlg'); const sm=dlg.showModal.bind(dlg);
+  dlg.showModal=()=>{ dlg.style.top=Math.max(12,lastY-260)+'px'; sm(); };
+  let lastH=0; const send=(force)=>{ const w=document.querySelector('.wrap'); const h=Math.ceil(w.getBoundingClientRect().bottom+window.scrollY+24);
+    if(force!==true&&Math.abs(h-lastH)<4) return; lastH=h; try{ parent.postMessage({klToolsHeight:h},'*'); }catch(e){} };
+  klSend=send;
+  window.addEventListener('load',send); window.addEventListener('resize',send);
+  new ResizeObserver(send).observe(document.body); setInterval(send,1500);
+}
 applyLang();
 const h0=decodeURIComponent(location.hash.slice(1)); if(h0&&BYID[h0]) jump(h0);
 </script>
