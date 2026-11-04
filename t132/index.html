@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lịch Bảo Trì Nhà Theo Mùa</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ===== Thêm cho timeline / checklist (T60, T63) — không đổi class cũ ===== */
+:root{--warn-soft:#F7ECE3}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--warn-soft:#33271E}}
+:root[data-theme="dark"]{--warn-soft:#33271E}
+.ctl input[type=date]{font-size:18px;min-height:50px}
+.more{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:0 14px}
+.more summary{cursor:pointer;padding:13px 0;font-size:14px;color:var(--muted);font-weight:500;list-style:none;display:flex;justify-content:space-between;gap:10px}
+.more summary::-webkit-details-marker{display:none}
+.more summary::after{content:'+';color:var(--brass);font-size:18px;line-height:1}
+.more[open] summary::after{content:'\2212'}
+.more .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;padding-bottom:14px}
+.more .ctl input{font-size:17px;padding:10px 6px}
+.more .field label{font-size:12px}
+.total .v.dt{font-size:36px;line-height:1.12;text-wrap:balance}
+.cd{margin-top:8px;font-size:15px;color:var(--muted)}
+.cd b{font-family:var(--display);font-size:30px;font-weight:500;color:var(--brass);font-variant-numeric:tabular-nums}
+.prog{display:grid;gap:6px;font-size:13px;color:var(--muted)}
+.prog b{color:var(--fg);font-weight:500}
+.tl{list-style:none;margin:0;padding:0}
+.grp{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);font-weight:500;padding:18px 0 10px;display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.grp:first-child{padding-top:4px}
+.grp .gd{letter-spacing:0;text-transform:none;color:var(--muted);font-weight:400;font-size:13px}
+.ms{position:relative;display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;padding:0 0 18px}
+.ms::before{content:'';position:absolute;left:13.5px;top:30px;bottom:2px;width:1px;background:var(--line)}
+.ms.last::before{display:none}
+.ck{position:relative;width:28px;height:28px;cursor:pointer;display:block}
+.ck input{position:absolute;inset:0;width:28px;height:28px;margin:0;opacity:0;cursor:pointer}
+.ck span{display:block;width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--panel)}
+.ms.key .ck span{border-color:var(--brass)}
+.ck input:checked+span{background:var(--brass);border-color:var(--brass)}
+.ck input:checked+span::after{content:'';position:absolute;left:10px;top:6px;width:6px;height:12px;border:solid #FFFDF8;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.ck input:focus-visible+span{outline:2px solid var(--brass);outline-offset:2px}
+.ms .top{display:flex;justify-content:space-between;gap:6px 10px;align-items:center;flex-wrap:wrap;min-height:28px}
+.ms .d{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.chip{font-size:11px;letter-spacing:.04em;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.today{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.chip.soon{border-color:var(--warn);color:var(--warn)}
+.chip.past{border-style:dashed}
+.ms .tt{display:block;width:100%;text-align:left;border:0;background:none;padding:2px 0 0;font:inherit;font-size:16px;font-weight:500;line-height:1.35;color:var(--fg);cursor:pointer}
+.ms .tt::after{content:' +';color:var(--brass);font-weight:400}
+.ms .tt[aria-expanded="true"]::after{content:' \2212'}
+.ms.key .tt{font-family:var(--display);font-size:22px;font-weight:500}
+.ms.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.why{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.55}
+.why[hidden]{display:none}
+.why a{color:var(--brass)}
+.ms .sub2{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;margin-top:6px;font-size:12px}
+.shift{color:var(--warn)}
+.gcal{color:var(--brass);text-decoration:none;white-space:nowrap}
+.gcal:hover{text-decoration:underline}
+.rules{font-size:13px;color:var(--muted);line-height:1.55;display:grid;gap:4px}
+.rules b{color:var(--fg);font-weight:500}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0;line-height:1.15}
+.panel ol,.panel ul{margin:0;padding-left:20px;display:grid;gap:7px;font-size:14px}
+.panel a{color:var(--brass)}
+.misread{font-size:14px;line-height:1.55;border-left:2px solid var(--brass);padding:2px 0 2px 14px}
+.misread b{font-weight:500}
+.warnbox{background:var(--warn-soft);border:1px solid var(--warn);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.warnbox h2{font-family:var(--display);font-weight:500;font-size:24px;margin:0;color:var(--warn);line-height:1.15}
+.warnbox ul{margin:0;padding-left:20px;display:grid;gap:7px;font-size:14px}
+.warnbox a{color:var(--warn)}
+.copied{font-size:13px;color:var(--ok);text-align:center}
+.copied[hidden]{display:none}
+.fallback{width:100%;min-height:160px;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel);color:var(--fg)}
+.fallback[hidden]{display:none}
+footer .src a{word-break:break-word}
+/* ===== Thêm cho T132 — không đổi class cũ ===== */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl select:focus-visible{outline:none}
+.ctl .chev{color:var(--muted);font-size:14px;pointer-events:none}
+.tog{display:flex;flex-wrap:wrap;gap:8px}
+.tog button{border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-size:14px;padding:8px 14px;border-radius:999px;cursor:pointer}
+.tog button[aria-pressed="true"]{background:var(--brass-soft);border-color:var(--brass);color:var(--fg);font-weight:500}
+.mstrip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.mstrip button{border:1px solid var(--line);border-top-width:3px;background:var(--panel);color:var(--muted);font:inherit;font-size:12px;padding:7px 0 6px;border-radius:8px;cursor:pointer;display:grid;gap:0;justify-items:center;min-width:0}
+.mstrip button b{font-weight:500;color:var(--fg);font-size:14px}
+.mstrip button.rain{border-top-color:#A9B7A0}
+.mstrip button.dry{border-top-color:#CBB7A3}
+.mstrip button[aria-pressed="true"]{background:var(--brass-soft);border-color:var(--brass)}
+.mstrip button.now b{color:var(--brass)}
+.chip.diy{border-color:var(--ok);color:var(--ok)}
+.chip.pro{border-color:var(--warn);color:var(--warn)}
+.cost{font-size:12px;color:var(--muted)}
+.ms .sub2 a{color:var(--brass);text-decoration:none}
+.ms .sub2 a:hover{text-decoration:underline}
+.seasonk{font-size:13px;color:var(--muted)}
+</style>
+<meta name="description" content="Chọn loại nhà, năm xây, nhà có gì. Ra liền lịch 12 tháng việc cần làm theo khí hậu Bay Area: mùa mưa, mùa cháy rừng, động đất. Tick được từng việc.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t132/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Lịch Bảo Trì Nhà Theo Mùa · Ken Lam Tools">
+<meta property="og:description" content="Chọn loại nhà, năm xây, nhà có gì. Ra liền lịch 12 tháng việc cần làm theo khí hậu Bay Area: mùa mưa, mùa cháy rừng, động đất. Tick được từng việc.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t132/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title">Tháng này nhà mình cần làm gì?</h1>
+    <p class="sub" data-i="sub">Chọn loại nhà và nhà có gì. Ra liền lịch 12 tháng theo thời tiết Bay Area: mùa mưa, mùa cháy rừng, động đất.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label><span data-i="l_ht">Loại nhà</span></label>
+      <div class="seg" role="group" id="htSeg">
+        <button type="button" data-v="house" aria-pressed="true" data-i="ht_house">Nhà riêng</button>
+        <button type="button" data-v="th" aria-pressed="false">Townhouse</button>
+        <button type="button" data-v="condo" aria-pressed="false">Condo</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="yb"><span data-i="l_yb">Năm xây</span></label>
+        <div class="ctl"><input id="yb" type="number" inputmode="numeric" min="1850" max="2026" step="1" value="1978"></div>
+      </div>
+      <div class="field">
+        <label><span data-i="l_fz">Vùng cháy rừng?</span> <small data-i="l_fz_s">(FHSZ)</small></label>
+        <div class="seg" role="group" id="fzSeg">
+          <button type="button" data-v="y" aria-pressed="false" data-i="yes">Có</button>
+          <button type="button" data-v="n" aria-pressed="true" data-i="no">Không</button>
+          <button type="button" data-v="u" aria-pressed="false" data-i="unsure">Chưa biết</button>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_has">Nhà có</span> <small data-i="l_has_s">(bấm để chọn)</small></label>
+      <div class="tog" id="hasTog">
+        <button type="button" data-v="pool" aria-pressed="false" data-i="h_pool">Hồ bơi</button>
+        <button type="button" data-v="fp" aria-pressed="true" data-i="h_fp">Lò sưởi củi</button>
+        <button type="button" data-v="lawn" aria-pressed="true" data-i="h_lawn">Cỏ / sprinkler</button>
+        <button type="button" data-v="solar" aria-pressed="false" data-i="h_solar">Solar</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="hvac"><span data-i="l_hvac">Máy lạnh / sưởi</span></label>
+        <div class="ctl"><select id="hvac"></select><span class="chev">▾</span></div>
+      </div>
+      <div class="field">
+        <label for="roof"><span data-i="l_roof">Loại mái</span></label>
+        <div class="ctl"><select id="roof"></select><span class="chev">▾</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="wh"><span data-i="l_wh">Máy nước nóng</span></label>
+        <div class="ctl"><select id="wh"></select><span class="chev">▾</span></div>
+      </div>
+      <div class="field">
+        <label for="wa"><span data-i="l_wa">Tuổi máy nước nóng</span></label>
+        <div class="ctl"><input id="wa" type="number" inputmode="numeric" min="0" max="40" step="1" value="9"><span class="post" data-i="u_yr">năm</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" id="rK">Việc tháng này</div>
+      <div class="v"><span id="nTask">0</span> <small data-i="u_task">việc</small></div>
+      <div class="cd" id="cdLine"></div>
+    </div>
+    <div class="mstrip" id="mstrip" role="group" aria-label="Months"></div>
+    <div class="legend">
+      <span><i style="background:#A9B7A0"></i><span data-i="lg_rain">Mùa mưa (khoảng T11–T3)</span></span>
+      <span><i style="background:#CBB7A3"></i><span data-i="lg_dry">Mùa khô, cháy rừng</span></span>
+    </div>
+    <div class="prog">
+      <div class="bar" aria-hidden="true"><i class="b1" id="progBar" style="width:0"></i></div>
+      <span><b id="progTxt">0/0</b> <span data-i="prog">việc xong trong tháng · bấm vòng tròn khi làm xong</span></span>
+    </div>
+    <div class="note hide" id="fzNote" data-i="fz_note">Chưa biết nhà có nằm trong vùng cháy rừng không? Gõ địa chỉ vào <a href="https://experience.arcgis.com/experience/5065c998b4b0462f9ec3c6c226c610a9" target="_blank" rel="noopener">bản đồ FHSZ của CAL FIRE</a>, mất 1 phút. Tool tạm hiện luôn việc vùng cháy rừng cho chắc.</div>
+    <div class="note hide" id="hoaNote"></div>
+    <div class="note hide" id="oldNote" data-i="old_note">Nhà xây trước 1980: ống cống thường là đất sét, móng có thể chưa bắt bu-lông. Tool đã thêm thông cống mỗi năm và kiểm gia cố móng.</div>
+    <div class="note hide" id="whNote"></div>
+    <ol class="tl" id="list"></ol>
+  </section>
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video hướng dẫn"></video>
+
+  <section class="panel">
+    <h2 data-i="nx_h">Bước tiếp theo</h2>
+    <ol>
+      <li data-i="nx_1">Bấm "Thêm vào Google Calendar" ở việc chính mỗi tháng. Tick xong thì tool nhớ trên máy này.</li>
+      <li data-i="nx_2">Việc ghi "Thuê thợ": tra license ở <a href="https://www.cslb.ca.gov" target="_blank" rel="noopener">CSLB</a>. Job từ $1,000 (cả công lẫn vật tư) hoặc cần permit thì thợ phải có license. Đặt cọc không quá 10%.</li>
+      <li data-i="nx_3">Kiểm mối thì chọn công ty có đăng ký với <a href="https://pestboard.ca.gov/about/consumer.shtml" target="_blank" rel="noopener">Structural Pest Control Board</a> (916-561-8708).</li>
+      <li data-i="nx_4">Nhà gần đồi? Tra <a href="https://experience.arcgis.com/experience/5065c998b4b0462f9ec3c6c226c610a9" target="_blank" rel="noopener">bản đồ cháy rừng CAL FIRE</a>, rồi coi bảo hiểm đủ chưa: <a href="/t133/">tool T133 — Bảo hiểm nhà cần gì</a>.</li>
+    </ol>
+    <p class="misread"><b data-i="mr_h">Nhiều người hiểu sai:</b> <span data-i="mr">"Nhà mới xây thì khỏi bảo trì." Sai. Lọc gió, báo khói, máng xối, bình nước nóng vẫn phải làm y như nhà cũ. Ở California, builder được giảm trách nhiệm nếu hư do chủ nhà không làm theo lịch bảo trì builder đưa (Civil Code §907). Giữ lại hóa đơn, hình chụp mỗi lần làm.</span></p>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Gửi kết quả qua email</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Hỏi Ken</a>
+    <a class="btn" id="videoBtn" href="/t132/web.mp4" target="_blank" rel="noopener" data-i="b_video">Xem video 15 giây</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Gửi lịch 12 tháng này về email</h2>
+    <p data-i="f_sub">Ken nhận được sẽ gửi lại lịch đầy đủ, kèm vài số thợ quen trong vùng. Không spam.</p>
+    <div class="field"><label for="fname" data-i="f_name">Tên</label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone" data-i="f_phone">Phone (không bắt buộc)</label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Hoặc text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Đọc thêm:</span> <a href="https://kenlamrealty.com/library#bao-tri-nha-theo-mua" target="_blank" rel="noopener" data-i="ft_lib">Bảo trì nhà theo mùa ở Bay Area</a> · <a href="https://kenlamrealty.com/library#video-bao-tri-nha" target="_blank" rel="noopener" data-i="ft_vid">Video 3 phút</a></span>
+    <span data-i="ft_est">Giá là ước tính thô cho Bay Area, chưa phải báo giá. Tháng làm việc là gợi ý theo thời tiết, không phải luật. Làm theo sách hướng dẫn của hãng máy khi khác với tool.</span>
+    <span class="src" id="srcLine"></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 04/11/2026 · <a href="/" data-i="ft_all">Tất cả tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Nguồn & số liệu T132 — sửa ở đây khi đổi (tra ngày 04/11/2026) =====
+   - Lọc gió: ENERGY STAR "kiểm/thay lọc mỗi tháng", tune-up máy lạnh mùa xuân, sưởi mùa thu
+     https://www.energystar.gov/saveathome/heating-cooling/maintenance-checklist  (04/11/2026)
+   - Báo khói: test mỗi tháng, thay pin 9V mỗi năm, thay alarm 10 năm; CA từ 07/2014 alarm pin phải là pin 10 năm gắn liền
+     https://sf-fire.org/node/235  (SF Fire Dept, 04/11/2026)
+   - Defensible space Zone 0/1/2, cỏ ≤ 4 inch, cành cách ống khói 10 ft: https://www.readyforwildfire.org/prepare-for-wildfire/defensible-space (04/11/2026)
+   - Zone 0: Board of Forestry thông qua bản khẩn cấp 19/08/2026, gửi OAL 28/08/2026, chưa có hiệu lực tới khi OAL duyệt; nhà cũ áp dụng dần 3–5 năm;
+     LRA chỉ áp dụng trong Very High FHSZ: https://bbklaw.com/resources/la090926-california-board-of-forestry-adopts-emergency-zone-0-regulations-under-ab-3074 (04/11/2026) — KEN DUYỆT khi OAL duyệt
+   - Bản đồ FHSZ: SRA hiệu lực 01/04/2024; LRA công bố 4 đợt 10/02–24/03/2025:
+     https://osfm.fire.ca.gov/what-we-do/community-wildfire-preparedness-and-mitigation/fire-hazard-severity-zones (04/11/2026)
+   - Đai bình nước nóng bắt buộc mọi bình (H&S Code §19211): https://law.justia.com/codes/california/code-hsc/division-13/part-3/chapter-2/article-8/section-19211/ (04/11/2026)
+   - Mối: dấu hiệu, mối cánh bay mùa xuân/thu, SPCB 916-561-8708: https://pestboard.ca.gov/forms/factsheets/termites.pdf (04/11/2026)
+   - Spare the Air mùa đông 01/11 – cuối tháng 2, cấm đốt củi ngày có alert: https://www.baaqmd.gov/News-and-Events/Page-Resources/2019-News/110119-WSTA (04/11/2026)
+   - CSLB: job dưới $1,000 (công + vật tư, không permit, không thuê thợ) mới được làm không license, từ 01/01/2025; cọc ≤10%:
+     https://www.cslb.ca.gov/Resources/PressReleases/2024/AB2622.FINAL.pdf (04/11/2026)
+   - CEA: nhà khung gỗ trước 1980, không móng slab, chưa retrofit → không được chọn deductible 5%/10%:
+     https://earthquakeauthority.com/california-earthquake-insurance-policies/homeowners/coverages-and-deductibles (04/11/2026)
+   - Civil Code §907 (builder & bảo trì): https://law.justia.com/codes/california/code-civ/division-2/part-2/title-7/chapter-3/section-907/ (04/11/2026)
+   - Mùa mưa ~T11–T3, tháng gợi ý, giá $ = ƯỚC TÍNH thô Bay Area 2026 — KEN DUYỆT. Không có nguồn chính thức cho giá dịch vụ.
+   - Tuổi bình nước nóng: cảnh báo khi bình chứa ≥10 năm, tankless ≥15 năm — ƯỚC TÍNH thông dụng, KEN DUYỆT.
+*/
+const UPDATED='04/11/2026';
+const WH_OLD={tank:10,tankless:15};       /* KEN DUYỆT */
+const OLD_HOME=1980;                       /* mốc CEA cho retrofit */
+const SRC=['https://www.energystar.gov/saveathome/heating-cooling/maintenance-checklist','https://sf-fire.org/node/235','https://www.readyforwildfire.org/prepare-for-wildfire/defensible-space','https://osfm.fire.ca.gov/what-we-do/community-wildfire-preparedness-and-mitigation/fire-hazard-severity-zones','https://bbklaw.com/resources/la090926-california-board-of-forestry-adopts-emergency-zone-0-regulations-under-ab-3074','https://law.justia.com/codes/california/code-hsc/division-13/part-3/chapter-2/article-8/section-19211/','https://pestboard.ca.gov/forms/factsheets/termites.pdf','https://www.baaqmd.gov/News-and-Events/Page-Resources/2019-News/110119-WSTA','https://www.cslb.ca.gov/Resources/PressReleases/2024/AB2622.FINAL.pdf','https://earthquakeauthority.com/california-earthquake-insurance-policies/homeowners/coverages-and-deductibles','https://law.justia.com/codes/california/code-civ/division-2/part-2/title-7/chapter-3/section-907/'];
+const SRC_NAME={'energystar.gov':'ENERGY STAR','sf-fire.org':'SF Fire Dept','readyforwildfire.org':'CAL FIRE','osfm.fire.ca.gov':'CAL FIRE OSFM (FHSZ)','bbklaw.com':'Zone 0 (BB&K)','pestboard.ca.gov':'SPCB','baaqmd.gov':'BAAQMD','cslb.ca.gov':'CSLB','earthquakeauthority.com':'CEA'};
+const MAP='https://experience.arcgis.com/experience/5065c998b4b0462f9ec3c6c226c610a9';
+
+/*PURE-START*/
+const RAIN=[11,12,1,2,3], DRY=[5,6,7,8,9,10];
+/* who: d = tự làm, p = thuê thợ, b = tự làm hoặc thuê. c = [thấp, cao] $ ước tính, null = hỏi giá. p = độ ưu tiên (việc chính tháng = p cao nhất) */
+const TASKS=[
+ {id:'smoke',m:[1,2,3,4,5,6,7,8,9,10,11,12],p:20,w:'d',c:[0,0],f:s=>true},
+ {id:'batt',m:[11],p:70,w:'d',c:[10,30],f:s=>true},
+ {id:'filter',m:[1,4,7,10],p:40,w:'d',c:[15,60],f:s=>['central','hp','mini'].includes(s.hvac)},
+ {id:'cool',m:[4],p:62,w:'p',c:[100,250],f:s=>['central','hp','mini'].includes(s.hvac)},
+ {id:'heat',m:[10],p:60,w:'p',c:[100,250],f:s=>['central','hp','wall'].includes(s.hvac)},
+ {id:'gutter',m:[10],p:90,w:'b',c:[150,400],f:s=>s.ht!=='condo'},
+ {id:'gutter2',m:[2],p:55,w:'d',c:[0,0],f:s=>s.ht!=='condo'},
+ {id:'roof',m:[9],p:75,w:'b',c:[150,400],f:s=>s.ht!=='condo'},
+ {id:'flat',m:[3],p:50,w:'d',c:[0,0],f:s=>s.ht!=='condo'&&s.roof==='flat'},
+ {id:'drain',m:[11],p:85,w:'d',c:[0,50],f:s=>s.ht!=='condo'},
+ {id:'leak',m:[1],p:65,w:'d',c:[0,0],f:s=>true},
+ {id:'rainwalk',m:[12],p:60,w:'d',c:[0,0],f:s=>s.ht!=='condo'},
+ {id:'pipes',m:[12],p:30,w:'d',c:[10,30],f:s=>s.ht!=='condo'},
+ {id:'sprOff',m:[11],p:45,w:'d',c:[0,0],f:s=>s.lawn&&s.ht!=='condo'},
+ {id:'sprOn',m:[3],p:45,w:'d',c:[0,50],f:s=>s.lawn&&s.ht!=='condo'},
+ {id:'weeds',m:[5],p:80,w:'b',c:[0,500],f:s=>s.ht!=='condo'&&s.fz==='n'},
+ {id:'dspace',m:[5],p:88,w:'b',c:[200,2000],f:s=>s.ht!=='condo'&&s.fz!=='n'},
+ {id:'zone0',m:[6],p:80,w:'d',c:[0,500],f:s=>s.ht!=='condo'&&s.fz!=='n'},
+ {id:'psps',m:[6],p:58,w:'d',c:[30,100],f:s=>true},
+ {id:'flush',m:[3],p:66,w:'b',c:[0,200],f:s=>s.wh!=='tankless'},
+ {id:'descale',m:[3],p:66,w:'p',c:[150,300],f:s=>s.wh==='tankless'},
+ {id:'hpwhf',m:[3,9],p:35,w:'d',c:[0,0],f:s=>s.wh==='hp'},
+ {id:'whplan',m:[9],p:50,w:'p',c:null,f:s=>s.wa>=(s.wh==='tankless'?WH_OLD.tankless:WH_OLD.tank)},
+ {id:'quake',m:[10],p:70,w:'d',c:[20,60],f:s=>true},
+ {id:'retro',m:[10],p:64,w:'p',c:null,f:s=>s.ht==='house'&&s.yb>0&&s.yb<OLD_HOME},
+ {id:'sewer',m:[9],p:68,w:'p',c:[150,400],f:s=>s.ht!=='condo'&&s.yb>0&&s.yb<OLD_HOME},
+ {id:'sewerN',m:[9],p:40,w:'d',c:[0,0],f:s=>s.ht!=='condo'&&!(s.yb>0&&s.yb<OLD_HOME)},
+ {id:'termite',m:[4],p:60,w:'b',c:[0,300],f:s=>s.ht!=='condo'},
+ {id:'chimney',m:[9],p:65,w:'p',c:[150,350],f:s=>s.fp},
+ {id:'sta',m:[11],p:40,w:'d',c:[0,0],f:s=>s.fp},
+ {id:'poolOpen',m:[4],p:50,w:'b',c:[20,80],f:s=>s.pool},
+ {id:'poolMid',m:[7],p:52,w:'b',c:[0,40],f:s=>s.pool},
+ {id:'poolWin',m:[11],p:40,w:'d',c:[0,0],f:s=>s.pool},
+ {id:'solar',m:[4],p:48,w:'b',c:[0,300],f:s=>s.solar},
+ {id:'solar2',m:[10],p:35,w:'d',c:[0,0],f:s=>s.solar},
+ {id:'dryer',m:[2],p:60,w:'b',c:[0,200],f:s=>true},
+ {id:'caulk',m:[8],p:60,w:'d',c:[20,100],f:s=>s.ht!=='condo'},
+ {id:'rodent',m:[11],p:42,w:'d',c:[10,50],f:s=>s.ht!=='condo'},
+ {id:'shutoff',m:[1],p:55,w:'d',c:[0,0],f:s=>true},
+ {id:'gfci',m:[1,7],p:30,w:'d',c:[0,0],f:s=>true},
+ {id:'garage',m:[7],p:45,w:'d',c:[0,0],f:s=>s.ht!=='condo'},
+ {id:'ext',m:[1],p:32,w:'d',c:[0,60],f:s=>true},
+ {id:'hoa',m:[1],p:50,w:'d',c:[0,0],f:s=>s.ht!=='house'},
+ {id:'newhome',m:[1],p:45,w:'d',c:[0,0],f:s=>s.yb>=2016}
+];
+function plan(s,mo){
+  const rows=TASKS.filter(t=>t.m.includes(mo)&&t.f(s)).sort((a,b)=>b.p-a.p);
+  return rows;
+}
+function yearCount(s){let n=0;for(let mo=1;mo<=12;mo++)n+=plan(s,mo).length;return n;}
+function costText(c,unit){ if(!c) return null; if(c[0]===0&&c[1]===0) return '$0'; return '$'+c[0].toLocaleString('en-US')+'–$'+c[1].toLocaleString('en-US'); }
+/*PURE-END*/
+
+const I18N={
+ vi:{title:'Tháng này nhà mình cần làm gì?',sub:'Chọn loại nhà và nhà có gì. Ra liền lịch 12 tháng theo thời tiết Bay Area: mùa mưa, mùa cháy rừng, động đất.',
+  l_ht:'Loại nhà',ht_house:'Nhà riêng',l_yb:'Năm xây',l_fz:'Vùng cháy rừng?',l_fz_s:'(FHSZ)',yes:'Có',no:'Không',unsure:'Chưa biết',
+  l_has:'Nhà có',l_has_s:'(bấm để chọn)',h_pool:'Hồ bơi',h_fp:'Lò sưởi củi',h_lawn:'Cỏ / sprinkler',h_solar:'Solar',
+  l_hvac:'Máy lạnh / sưởi',l_roof:'Loại mái',l_wh:'Máy nước nóng',l_wa:'Tuổi máy nước nóng',u_yr:'năm',
+  HVAC:{central:'Furnace + AC trung tâm',hp:'Heat pump',mini:'Mini-split',wall:'Lò sưởi tường / sàn',none:'Không có'},
+  ROOF:{comp:'Ngói giấy (shingle)',tile:'Ngói đất / bê tông',flat:'Mái bằng',shake:'Ngói gỗ (shake)',metal:'Mái tôn / kim loại'},
+  WH:{gas:'Bình gas',elec:'Bình điện',hp:'Heat pump (bình)',tankless:'Tankless'},
+  u_task:'việc',rK:'Việc {m}',rKnow:'Việc {m} (tháng này)',cd:'Cả năm: <b>{y}</b> việc · Việc chính: {k}',season:{rain:'Mùa mưa',dry:'Mùa khô, cháy rừng',spring:'Cuối mùa mưa'},
+  lg_rain:'Mùa mưa (khoảng T11–T3)',lg_dry:'Mùa khô, cháy rừng',prog:'việc xong trong tháng · bấm vòng tròn khi làm xong',
+  MS:['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'],ML:['tháng 1','tháng 2','tháng 3','tháng 4','tháng 5','tháng 6','tháng 7','tháng 8','tháng 9','tháng 10','tháng 11','tháng 12'],
+  g_key:'Việc chính',g_more:'Việc khác trong tháng',
+  W:{d:'Tự làm',p:'Thuê thợ',b:'Tự làm hoặc thuê'},est:'(ước tính)',ask:'hỏi 2–3 giá',gcal:'Thêm vào Google Calendar',calD:'Lịch bảo trì nhà — tools.kenlamrealty.com/t132/',
+  fz_note:'Chưa biết nhà có nằm trong vùng cháy rừng không? Gõ địa chỉ vào <a href="'+MAP+'" target="_blank" rel="noopener">bản đồ FHSZ của CAL FIRE</a>, mất 1 phút. Tool tạm hiện luôn việc vùng cháy rừng cho chắc.',
+  hoa_condo:'Condo: mái, máng xối, cỏ, mối bên ngoài thường do HOA lo. Tool chỉ hiện việc trong căn. Đọc CC&amp;Rs để chắc.',
+  hoa_th:'Townhouse: tùy HOA. Tool vẫn hiện việc bên ngoài. Hỏi HOA phần nào họ lo rồi bỏ qua việc đó.',
+  old_note:'Nhà xây trước 1980: ống cống thường là đất sét, móng có thể chưa bắt bu-lông. Tool đã thêm thông cống mỗi năm và kiểm gia cố móng.',
+  wh_note:'Máy nước nóng {a} năm, gần hết tuổi (bình chứa thường khoảng 10–12 năm, tankless lâu hơn, ước tính). Tháng 9 có việc hỏi giá thay trước khi hư giữa mùa lạnh.',
+  T:{
+   smoke:['Bấm test báo khói và báo CO','Bấm giữ nút test tới khi kêu, mỗi tháng một lần. Báo khói xài khoảng 10 năm thì thay, coi ngày in sau lưng. Nhà có gas, lò sưởi hay garage dính nhà thì phải có báo CO.'],
+   batt:['Thay pin báo khói, báo CO (tuần đổi giờ)','Đầu tháng 11 đổi giờ mùa đông, nhớ luôn. Loại pin 9V thay mỗi năm. Loại pin 10 năm gắn liền thì khỏi thay pin, chỉ thay cả cái khi hết hạn.'],
+   filter:['Thay hoặc rửa lọc gió máy lạnh / sưởi','ENERGY STAR khuyên kiểm lọc mỗi tháng, thay ít nhất 3 tháng một lần. Mùa khói cháy rừng thì thay sớm hơn. Lọc bẩn làm máy chạy hao điện, mau hư.'],
+   cool:['Hẹn thợ kiểm máy lạnh trước mùa nóng','Kiểm máy lạnh vào mùa xuân, trước khi thợ kín lịch. Thợ châm gas, rửa dàn nóng, kiểm ống nước xả.'],
+   heat:['Hẹn thợ kiểm lò sưởi trước mùa lạnh','Kiểm sưởi vào mùa thu. Lò gas cần kiểm rò CO và ống khói thải. Lò sưởi tường thì hút bụi, kiểm đèn mồi.'],
+   gutter:['Dọn máng xối và ống xả trước mùa mưa','Mùa mưa Bay Area thường bắt đầu khoảng tháng 11. Máng nghẹt lá thì nước tràn xuống chân tường, thấm móng, mục mái hiên. Leo thang cao thì nên thuê thợ.'],
+   gutter2:['Kiểm máng xối lại sau mấy trận mưa lớn','Lá rụng mùa đông làm nghẹt lại. Đứng dưới đất coi nước có tràn mép máng khi mưa không.'],
+   roof:['Kiểm mái nhà trước mùa mưa','{ROOF} Đứng dưới đất nhìn bằng ống nhòm cũng được. Thấy hư thì gọi thợ sửa trước tháng 11.'],
+   flat:['Dọn rác ở lỗ thoát nước mái bằng','Mái bằng đọng nước là thấm. Cuối mùa mưa dọn lá, kiểm chỗ phồng hay nứt.'],
+   drain:['Kiểm thoát nước quanh nhà','Ống xả máng xối phải đổ ra xa móng ít nhất 1–2 m. Đất quanh nhà dốc ra ngoài. Miệng cống trước nhà không bị lá bít.'],
+   leak:['Sau trận mưa lớn: soi trần, attic, khung cửa sổ','Vết ố vàng trên trần, mùi ẩm trong tủ là dấu thấm. Bắt sớm thì sửa vài trăm, để lâu thành mốc và mục gỗ.'],
+   rainwalk:['Đi một vòng quanh nhà khi trời đang mưa','Coi nước đọng chỗ nào sát móng, ống xả nào tràn. Chụp hình lại để sửa trong mùa khô.'],
+   pipes:['Bọc ống nước ngoài trời khi có báo sương giá','Bay Area ít khi đông đá, nhưng có đêm xuống gần 0°C. Bọc ống, vòi tưới lộ thiên cho chắc.'],
+   sprOff:['Giảm hoặc tắt hẹn giờ tưới khi mưa','Mưa rồi mà sprinkler vẫn chạy là phí nước và đọng nước sát móng.'],
+   sprOn:['Mở lại sprinkler, kiểm đầu tưới bể hoặc xì','Chạy từng khu, coi đầu nào phun vào tường nhà hay ra đường. Chỉnh lại cho đúng.'],
+   weeds:['Cắt cỏ khô, dọn lá khô quanh nhà','Cỏ khô mùa hè bắt lửa rất nhanh. Cắt thấp khoảng 4 inch (10 cm). Nhiều city có lệnh dọn cỏ dại vào mùa này.'],
+   dspace:['Dọn defensible space 100 feet quanh nhà','Luật California bắt buộc ở vùng cháy rừng: 5–30 ft dọn sạch cây khô, tỉa cành; 30–100 ft cắt cỏ ≤ 4 inch, giãn cây. Cành cây cách ống khói 10 ft. Coi chi tiết ở <a href="https://www.readyforwildfire.org/prepare-for-wildfire/defensible-space" target="_blank" rel="noopener">CAL FIRE</a>.'],
+   zone0:['Zone 0: dọn sạch 5 feet sát nhà','Bỏ mulch gỗ, lá khô, củi, đồ dễ cháy sát tường; không để củi dưới deck. Board of Forestry đã thông qua luật Zone 0 ngày 19/08/2026, đang chờ duyệt, nhà cũ áp dụng dần 3–5 năm. Làm trước thì hãng bảo hiểm cho giảm giá (Safer from Wildfires). Coi <a href="/t133/">T133</a>.'],
+   psps:['Chuẩn bị cúp điện mùa cháy rừng (PSPS)','PG&amp;E có thể cắt điện khi gió mạnh. Sạc dự phòng, đèn pin, cập nhật số phone với PG&amp;E để nhận báo. Solar không có pin thì cúp điện vẫn tắt.'],
+   flush:['Xả cặn bình nước nóng','Cặn đóng đáy làm bình kêu lụp bụp, hao gas, mau thủng. Xả mỗi năm, làm theo sách hướng dẫn của hãng. Không tự làm được thì gọi thợ.'],
+   descale:['Súc rửa (descale) máy nước nóng tankless','Nước Bay Area có độ cứng, cặn vôi bám làm máy báo lỗi. Hãng thường khuyên súc mỗi năm.'],
+   hpwhf:['Rửa lọc gió máy nước nóng heat pump','Lọc bẩn thì máy chạy chậm, hao điện. Rút ra rửa nước, phơi khô, gắn lại.'],
+   whplan:['Hỏi giá thay máy nước nóng ({AGE} năm)','Bình hư thường là rò nước dưới đáy. Thay chủ động thì chọn được giá và loại, khỏi tắm nước lạnh. Thay bình thường cần permit, chọn thợ có license.'],
+   quake:['Tháng tập động đất: kiểm đai bình nước nóng, bộ đồ khẩn cấp','Luật California bắt mọi bình nước nóng phải có đai chống ngã (H&amp;S Code §19211). Biết chỗ khóa gas, nước. Chuẩn bị nước uống, đèn, thuốc. Coi bảo hiểm động đất ở <a href="/t133/">T133</a>.'],
+   retro:['Nhà trước 1980: coi móng đã gia cố (brace &amp; bolt) chưa','Nhà khung gỗ cũ không bắt bu-lông vào móng dễ trượt khi động đất. CEA không cho chọn deductible 5–10% nếu nhà kiểu này chưa retrofit. Hỏi thợ có license.'],
+   sewer:['Thông cống chính qua cleanout (rooter)','Nhà cũ hay có ống đất sét, rễ cây chui vào. Làm trước mùa mưa, nghẹt giữa mùa là nước trào ngược vào nhà. Nên làm mỗi năm, có thể quay camera.'],
+   sewerN:['Biết chỗ nắp cleanout cống chính','Thường ở sân trước hay hông nhà. Khi nghẹt, thợ cần chỗ này. Nhà mới thì thông 2–3 năm một lần là đủ (ước tính).'],
+   termite:['Soi mối quanh nhà','Dấu hiệu: vụn như mùn cưa, ống đất dọc móng, mối cánh bay ra mùa xuân hay mùa thu. Gỗ không được chạm đất. Thấy nghi thì gọi công ty có đăng ký SPCB, nhiều công ty kiểm miễn phí.'],
+   chimney:['Thuê thợ quét và kiểm ống khói','Creosote đóng trong ống là nguyên nhân cháy ống khói. Kiểm luôn lưới chắn tàn lửa trên đầu ống.'],
+   sta:['Mùa Spare the Air: coi trước khi đốt củi','Từ 1/11 tới cuối tháng 2, ngày có alert thì cấm đốt củi trong nhà lẫn ngoài sân. Lò gas, điện thì được. Coi ở sparetheair.org.'],
+   poolOpen:['Mở mùa hồ bơi: rửa lọc, kiểm bơm, cân hóa chất','Kiểm luôn cửa rào hồ có tự đóng, tự khóa không. Nhà có con nhỏ thì đây là việc số 1.'],
+   poolMid:['Rửa lọc hồ bơi giữa hè, kiểm rào an toàn','Hè chạy bơm nhiều, lọc mau nghẹt. Áp suất lọc lên cao là tới lúc rửa.'],
+   poolWin:['Hồ bơi mùa đông: vớt lá, giảm giờ chạy bơm','Lá mục làm nước xanh rêu. Giảm giờ chạy bơm để tiết kiệm điện.'],
+   solar:['Kiểm solar: coi app sản lượng, rửa bụi phấn hoa','So sản lượng với cùng kỳ năm ngoái. Tụt nhiều thì gọi bên lắp. Rửa panel theo hướng dẫn hãng, đừng leo mái một mình.'],
+   solar2:['Coi lại sản lượng solar sau mùa khói, bụi','Khói cháy rừng, bụi mùa khô làm giảm điện. Cần thì rửa panel trước mùa mưa.'],
+   dryer:['Làm sạch ống xả máy sấy','Xơ vải bít ống là nguyên nhân cháy nhà hay gặp. Sấy lâu khô hơn bình thường là dấu hiệu.'],
+   caulk:['Trám khe cửa sổ, cửa ra vào; sơn chỗ gỗ trần','Mùa khô là lúc sơn, trám tốt nhất. Gỗ trần ngấm mưa là mục.{LEAD}'],
+   rodent:['Bịt lỗ hở quanh nhà trước khi chuột vào','Trời mưa lạnh chuột tìm chỗ ấm. Bịt lỗ quanh ống, lưới thông gió bị rách.'],
+   shutoff:['Tìm và thử van khóa nước chính, van gas','Chỉ khóa gas khi ngửi mùi gas hay nghe xì. Khóa rồi thì phải để PG&amp;E tới mở lại. Để sẵn cờ lê gần van.'],
+   gfci:['Bấm test / reset ổ điện GFCI','Ổ GFCI ở bếp, nhà tắm, ngoài trời. Bấm test phải cúp, bấm reset có lại. Không cúp là ổ hư.'],
+   garage:['Test cửa garage tự đảo chiều','Đặt cuộn giấy dưới cửa rồi đóng. Cửa phải tự quay lên khi chạm. Không quay là nguy hiểm cho trẻ nhỏ.'],
+   ext:['Kiểm bình chữa cháy (kim ở vùng xanh)','Để 1 bình ở bếp, 1 bình ở garage. Kim lệch khỏi vùng xanh thì thay.'],
+   hoa:['Đọc lịch bảo trì của HOA, ghi lại phần mình lo','Mỗi HOA chia khác nhau: cửa sổ, ống nước trong tường, deck. Biết trước thì khỏi cãi khi có hư.'],
+   newhome:['Nhà mới: giữ sổ bảo trì của builder','Builder ở California phải đưa lịch bảo trì. Không làm theo thì builder được giảm trách nhiệm khi hư (Civil Code §907). Giữ hóa đơn, hình chụp.']},
+  ROOFTIP:{comp:'Ngói giấy: coi tấm nào cong, bong, mất hạt sạn.',tile:'Ngói đất/bê tông: coi viên nào bể, lệch. Đừng tự đi lên, dễ bể thêm.',flat:'Mái bằng: coi chỗ phồng, nứt, lỗ thoát nước bị bít.',shake:'Ngói gỗ: dễ bắt lửa và mau mục. Coi chỗ nứt, rêu. Khi thay mái, hỏi thợ loại Class A để được bảo hiểm cho giảm giá.',metal:'Mái tôn: coi ốc vít lỏng, chỗ rỉ, keo chỗ nối.'},
+  LEAD:' Nhà xây trước 1978 có thể có sơn chì: đừng chà nhám khô, thuê thợ có chứng chỉ RRP.',
+  nx_h:'Bước tiếp theo',nx_1:'Bấm "Thêm vào Google Calendar" ở việc chính mỗi tháng. Tick xong thì tool nhớ trên máy này.',
+  nx_2:'Việc ghi "Thuê thợ": tra license ở <a href="https://www.cslb.ca.gov" target="_blank" rel="noopener">CSLB</a>. Job từ $1,000 (cả công lẫn vật tư) hoặc cần permit thì thợ phải có license. Đặt cọc không quá 10%.',
+  nx_3:'Kiểm mối thì chọn công ty có đăng ký với <a href="https://pestboard.ca.gov/about/consumer.shtml" target="_blank" rel="noopener">Structural Pest Control Board</a> (916-561-8708).',
+  nx_4:'Nhà gần đồi? Tra <a href="'+MAP+'" target="_blank" rel="noopener">bản đồ cháy rừng CAL FIRE</a>, rồi coi bảo hiểm đủ chưa: <a href="/t133/">tool T133 — Bảo hiểm nhà cần gì</a>.',
+  mr_h:'Nhiều người hiểu sai:',mr:'"Nhà mới xây thì khỏi bảo trì." Sai. Lọc gió, báo khói, máng xối, bình nước nóng vẫn phải làm y như nhà cũ. Ở California, builder được giảm trách nhiệm nếu hư do chủ nhà không làm theo lịch bảo trì builder đưa (Civil Code §907). Giữ lại hóa đơn, hình chụp mỗi lần làm.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi lịch 12 tháng này về email',f_sub:'Ken nhận được sẽ gửi lại lịch đầy đủ, kèm vài số thợ quen trong vùng. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Bảo trì nhà theo mùa ở Bay Area',ft_vid:'Video 3 phút',ft_est:'Giá là ước tính thô cho Bay Area, chưa phải báo giá. Tháng làm việc là gợi ý theo thời tiết, không phải luật. Làm theo sách hướng dẫn của hãng máy khi khác với tool.',ft_src:'Nguồn:',ft_upd:'Cập nhật',ft_all:'Tất cả tools',
+  lang:'English',HT:{house:'nhà riêng',th:'townhouse',condo:'condo'},
+  sms:'Chào Ken, tôi vừa làm lịch bảo trì nhà trên tools.kenlamrealty.com: {ht}, xây năm {yb}. Tháng này {n} việc. Cho tôi xin số thợ quen.',
+  subj:'Lịch bảo trì nhà 12 tháng — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nLoại nhà: {ht}\nNăm xây: {yb}\nVùng cháy rừng: {fz}\nNhà có: {has}\nMáy lạnh/sưởi: {hvac}\nMáy nước nóng: {wh}, {wa} năm\nMái: {roof}\n\nCả năm: {y} việc\n\n{list}\n\nGửi từ tool T132 tools.kenlamrealty.com'},
+ en:{title:'What does my home need this month?',sub:'Pick your home type and what it has. Get a 12-month plan built for Bay Area weather: rainy season, fire season, earthquakes.',
+  l_ht:'Home type',ht_house:'House',l_yb:'Year built',l_fz:'Fire hazard zone?',l_fz_s:'(FHSZ)',yes:'Yes',no:'No',unsure:'Not sure',
+  l_has:'Home has',l_has_s:'(tap to select)',h_pool:'Pool',h_fp:'Wood fireplace',h_lawn:'Lawn / sprinklers',h_solar:'Solar',
+  l_hvac:'Heating / cooling',l_roof:'Roof type',l_wh:'Water heater',l_wa:'Water heater age',u_yr:'yrs',
+  HVAC:{central:'Central furnace + AC',hp:'Heat pump',mini:'Mini-split',wall:'Wall / floor heater',none:'None'},
+  ROOF:{comp:'Composition shingle',tile:'Clay / concrete tile',flat:'Flat roof',shake:'Wood shake',metal:'Metal'},
+  WH:{gas:'Gas tank',elec:'Electric tank',hp:'Heat pump (tank)',tankless:'Tankless'},
+  u_task:'tasks',rK:'Tasks in {m}',rKnow:'Tasks in {m} (this month)',cd:'Whole year: <b>{y}</b> tasks · Main task: {k}',season:{rain:'Rainy season',dry:'Dry / fire season',spring:'End of rainy season'},
+  lg_rain:'Rainy season (about Nov–Mar)',lg_dry:'Dry / fire season',prog:'done this month · tap a circle when finished',
+  MS:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],ML:['January','February','March','April','May','June','July','August','September','October','November','December'],
+  g_key:'Main task',g_more:'Other tasks this month',
+  W:{d:'DIY',p:'Hire a pro',b:'DIY or pro'},est:'(estimate)',ask:'get 2–3 quotes',gcal:'Add to Google Calendar',calD:'Home maintenance plan — tools.kenlamrealty.com/t132/',
+  fz_note:'Not sure if you are in a fire hazard zone? Type your address into the <a href="'+MAP+'" target="_blank" rel="noopener">CAL FIRE FHSZ map</a>, it takes a minute. Until then the tool shows the wildfire tasks to be safe.',
+  hoa_condo:'Condo: the roof, gutters, landscaping and exterior pest work are usually the HOA’s job. The tool only shows tasks inside your unit. Check your CC&amp;Rs.',
+  hoa_th:'Townhouse: depends on the HOA. The tool still shows exterior tasks. Ask the HOA what they handle and skip those.',
+  old_note:'Built before 1980: sewer lines are often clay and the house may not be bolted to its foundation. The tool added a yearly sewer cleaning and a retrofit check.',
+  wh_note:'Your water heater is {a} years old, near the end of its life (tanks often last about 10–12 years, tankless longer; estimate). September has a task to get replacement quotes before it fails in winter.',
+  T:{
+   smoke:['Test smoke and CO alarms','Hold the test button until it sounds, once a month. Replace smoke alarms about every 10 years; the date is printed on the back. Homes with gas, a fireplace or an attached garage need CO alarms.'],
+   batt:['Change smoke and CO alarm batteries (clock-change week)','Clocks fall back in early November, a good reminder. Change 9V batteries every year. Sealed 10-year alarms need no battery; replace the whole unit when it expires.'],
+   filter:['Replace or wash the HVAC filter','ENERGY STAR says check the filter monthly and change it at least every 3 months. Change it sooner during wildfire smoke. A dirty filter wastes power and wears the system.'],
+   cool:['Book an AC tune-up before summer','Service cooling in spring, before contractors get busy. They check refrigerant, clean the outdoor coil and the condensate drain.'],
+   heat:['Book a heating tune-up before winter','Service heating in fall. Gas furnaces need a CO and flue check. Wall heaters need dusting and a pilot check.'],
+   gutter:['Clean gutters and downspouts before the rain','Bay Area rainy season usually starts around November. Clogged gutters spill water at the foundation and rot the eaves. Hire out anything that needs a tall ladder.'],
+   gutter2:['Re-check gutters after big storms','Winter leaves clog them again. From the ground, watch whether water spills over the edge in the rain.'],
+   roof:['Inspect the roof before the rain','{ROOF} Binoculars from the ground work fine. Get any damage fixed before November.'],
+   flat:['Clear the drains on a flat roof','Standing water on a flat roof means leaks. At the end of the rainy season clear leaves and look for blisters or cracks.'],
+   drain:['Check drainage around the house','Downspouts should empty at least 3–6 ft from the foundation. Soil should slope away from the house. Keep the street storm drain clear of leaves.'],
+   leak:['After a big storm: check ceilings, attic, window frames','Yellow stains on the ceiling or a musty closet mean a leak. Caught early it costs a few hundred; left alone it turns into mold and rot.'],
+   rainwalk:['Walk around the house while it is raining','See where water pools near the foundation and which downspouts overflow. Take photos so you can fix it in the dry season.'],
+   pipes:['Wrap outdoor pipes when frost is forecast','Hard freezes are rare in the Bay Area, but some nights get close to freezing. Wrap exposed pipes and hose bibs.'],
+   sprOff:['Turn down or off the sprinkler timer when rain starts','Sprinklers running in the rain waste water and soak the foundation.'],
+   sprOn:['Turn sprinklers back on, check for broken heads','Run each zone. Fix heads that spray the house or the street.'],
+   weeds:['Cut dry grass and clear dead leaves','Dry summer grass burns fast. Keep it about 4 inches tall. Many cities issue weed abatement orders around now.'],
+   dspace:['Clear 100 feet of defensible space','Required by California law in fire hazard areas: 5–30 ft clear dead plants and prune; 30–100 ft keep grass ≤ 4 inches and space out trees. Keep branches 10 ft from the chimney. Details at <a href="https://www.readyforwildfire.org/prepare-for-wildfire/defensible-space" target="_blank" rel="noopener">CAL FIRE</a>.'],
+   zone0:['Zone 0: clear the first 5 feet around the house','Remove wood mulch, dead leaves, firewood and anything that burns next to the walls and under decks. The Board of Forestry adopted Zone 0 rules on 8/19/2026; they await final approval and phase in for existing homes over 3–5 years. Doing it now can earn an insurance discount (Safer from Wildfires). See <a href="/t133/">T133</a>.'],
+   psps:['Prepare for fire-season power shutoffs (PSPS)','PG&amp;E may cut power in high winds. Charge battery packs, have flashlights, and update your phone number with PG&amp;E for alerts. Solar without a battery shuts off in an outage.'],
+   flush:['Flush the water heater','Sediment makes the tank rumble, wastes gas and shortens its life. Flush yearly following the manufacturer’s manual. Hire a plumber if you are not comfortable.'],
+   descale:['Descale the tankless water heater','Bay Area water is hard; scale makes the unit throw errors. Manufacturers usually suggest yearly descaling.'],
+   hpwhf:['Clean the heat pump water heater air filter','A dirty filter slows it down and wastes power. Rinse, dry and reinstall.'],
+   whplan:['Get quotes to replace the water heater ({AGE} yrs old)','Tanks usually fail by leaking at the bottom. Replacing on your schedule means better price and no cold showers. Replacement usually needs a permit; use a licensed contractor.'],
+   quake:['Earthquake month: check water heater straps and your kit','California requires every water heater to be strapped (H&amp;S Code §19211). Know where the gas and water shutoffs are. Store water, a flashlight and medicine. Review earthquake insurance at <a href="/t133/">T133</a>.'],
+   retro:['Pre-1980 house: is it bolted and braced?','Older wood-frame homes not bolted to the foundation can slide off in a quake. CEA won’t offer its 5–10% deductibles on these homes until they are retrofitted. Ask a licensed contractor.'],
+   sewer:['Clean the main sewer line at the cleanout','Older homes often have clay pipe that tree roots break into. Do it before the rain; a mid-winter backup can flood the house. Yearly is wise, with a camera check.'],
+   sewerN:['Find your main sewer cleanout','Usually in the front yard or side of the house. A plumber needs it when there is a clog. Newer homes can clean every 2–3 years (estimate).'],
+   termite:['Look for termites around the house','Signs: sawdust-like droppings, mud tubes on the foundation, winged swarmers in spring or fall. Keep wood off the soil. If in doubt, call an SPCB-registered company; many inspect for free.'],
+   chimney:['Hire a chimney sweep and inspection','Creosote buildup causes chimney fires. Also check the spark arrestor screen on top.'],
+   sta:['Spare the Air season: check before you burn','From Nov 1 through the end of February, burning wood is banned indoors and outdoors on alert days. Gas and electric fireplaces are fine. Check sparetheair.org.'],
+   poolOpen:['Open the pool: clean the filter, check the pump, balance chemicals','Also check that the pool gate self-closes and latches. With small kids, this is task number one.'],
+   poolMid:['Mid-summer pool filter clean, check the safety fence','The pump runs more in summer and the filter clogs faster. Rising filter pressure means it is time.'],
+   poolWin:['Winter pool: skim leaves, cut pump hours','Rotting leaves turn the water green. Fewer pump hours saves power.'],
+   solar:['Check solar: production in the app, rinse off pollen','Compare output to the same month last year. A big drop means call the installer. Clean per the manufacturer and never go on the roof alone.'],
+   solar2:['Re-check solar output after smoke and dust season','Wildfire smoke and dry-season dust cut output. Rinse the panels before the rain if needed.'],
+   dryer:['Clean the dryer vent','Lint in the vent is a common cause of house fires. Clothes taking longer to dry is the warning sign.'],
+   caulk:['Re-caulk windows and doors, paint bare wood','The dry season is the best time to paint and seal. Bare wood soaks up rain and rots.{LEAD}'],
+   rodent:['Seal gaps before rodents move in','Rats look for warm spots when the rain starts. Seal around pipes and fix torn vent screens.'],
+   shutoff:['Find and test the main water and gas shutoffs','Only shut off gas if you smell gas or hear a hiss; PG&amp;E has to turn it back on. Keep a wrench by the valve.'],
+   gfci:['Press test / reset on GFCI outlets','GFCI outlets are in the kitchen, bathrooms and outside. Test should cut power, reset should restore it. If not, the outlet is bad.'],
+   garage:['Test the garage door auto-reverse','Lay a paper towel roll under the door and close it. The door must reverse on contact. If not, it is a danger to kids.'],
+   ext:['Check fire extinguishers (needle in the green)','Keep one in the kitchen and one in the garage. Replace if the needle is out of the green.'],
+   hoa:['Read the HOA maintenance chart, note what is yours','Every HOA splits it differently: windows, pipes in walls, decks. Knowing ahead avoids fights when something breaks.'],
+   newhome:['New home: keep the builder’s maintenance manual','California builders must give you maintenance schedules. Skipping them can reduce the builder’s responsibility for damage (Civil Code §907). Keep receipts and photos.']},
+  ROOFTIP:{comp:'Shingles: look for curled, lifted or bald shingles.',tile:'Tile: look for cracked or slipped tiles. Don’t walk on it yourself; tiles break.',flat:'Flat roof: look for blisters, cracks and blocked drains.',shake:'Wood shake: burns easily and rots. Look for splits and moss. When you re-roof, ask for a Class A roof to earn an insurance discount.',metal:'Metal: look for loose screws, rust and seam sealant.'},
+  LEAD:' Homes built before 1978 may have lead paint: never dry-sand, hire an RRP-certified pro.',
+  nx_h:'Next steps',nx_1:'Tap "Add to Google Calendar" on each month’s main task. Your ticks are saved on this device.',
+  nx_2:'Tasks marked "Hire a pro": check the license at <a href="https://www.cslb.ca.gov" target="_blank" rel="noopener">CSLB</a>. Jobs of $1,000 or more (labor plus materials) or that need a permit require a licensed contractor. Keep the deposit at 10% or less.',
+  nx_3:'For termites, use a company registered with the <a href="https://pestboard.ca.gov/about/consumer.shtml" target="_blank" rel="noopener">Structural Pest Control Board</a> (916-561-8708).',
+  nx_4:'Near the hills? Check the <a href="'+MAP+'" target="_blank" rel="noopener">CAL FIRE fire hazard map</a>, then review your insurance: <a href="/t133/">tool T133 — Home insurance: what you need</a>.',
+  mr_h:'Common mistake:',mr:'"A new home doesn’t need maintenance." Wrong. Filters, smoke alarms, gutters and the water heater need the same care as in an old house. In California, a builder’s responsibility can be reduced if damage came from the owner skipping the builder’s maintenance schedule (Civil Code §907). Keep receipts and photos each time.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this 12-month plan to yourself',f_sub:'Ken will reply with the full plan and a few trusted local contractors. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'Seasonal home care in the Bay Area',ft_vid:'3-min video',ft_est:'Costs are rough Bay Area estimates, not quotes. Months are weather-based suggestions, not law. Follow your equipment manual when it differs from this tool.',ft_src:'Sources:',ft_upd:'Updated',ft_all:'All tools',
+  lang:'Tiếng Việt',HT:{house:'house',th:'townhouse',condo:'condo'},
+  sms:'Hi Ken, I made a home maintenance plan on tools.kenlamrealty.com: {ht}, built {yb}. {n} tasks this month. Could you share a few good contractors?',
+  subj:'12-month home maintenance plan — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nHome type: {ht}\nYear built: {yb}\nFire hazard zone: {fz}\nHome has: {has}\nHeating/cooling: {hvac}\nWater heater: {wh}, {wa} yrs\nRoof: {roof}\n\nWhole year: {y} tasks\n\n{list}\n\nSent from tool T132 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const strip=s=>String(s).replace(/<[^>]+>/g,'').replace(/&amp;/g,'&');
+const pad=n=>String(n).padStart(2,'0');
+function load(k,def){try{return JSON.parse(localStorage.getItem(k)||'null')||def;}catch(e){return def;}}
+function save(k,o){try{localStorage.setItem(k,JSON.stringify(o));}catch(e){}}
+const NOW=new Date(), CUR_M=NOW.getMonth()+1, CUR_Y=NOW.getFullYear();
+let S=load('kl_t132_prof',null)||{ht:'house',yb:1978,fz:'n',pool:false,fp:true,lawn:true,solar:false,hvac:'central',wh:'gas',wa:9,roof:'comp'};
+let selM=CUR_M, last={};
+
+function targetYear(mo){return mo<CUR_M?CUR_Y+1:CUR_Y;}
+function calDate(mo){ /* thứ Bảy đầu tiên của tháng; tháng hiện tại mà đã qua thì thứ Bảy kế tiếp */
+  const y=targetYear(mo); let d=new Date(Date.UTC(y,mo-1,1)); while(d.getUTCDay()!==6) d=new Date(d.getTime()+864e5);
+  if(mo===CUR_M){const t=new Date(Date.UTC(CUR_Y,CUR_M-1,NOW.getDate())); while(d<t) d=new Date(d.getTime()+7*864e5);}
+  return d;
+}
+const ymd=d=>d.getUTCFullYear()+pad(d.getUTCMonth()+1)+pad(d.getUTCDate());
+function gcal(title,d,details){const e=new Date(d.getTime()+864e5);return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+ymd(d)+'/'+ymd(e)+'&details='+encodeURIComponent(details);}
+function txt(t,s){const L=I18N[lang]; let [ti,wh]=L.T[t.id];
+  const old=s.yb>0&&s.yb<1978;
+  ti=ti.replace('{AGE}',s.wa); wh=wh.replace('{ROOF}',L.ROOFTIP[s.roof]).replace('{AGE}',s.wa).replace('{LEAD}',old?L.LEAD:''); return [ti,wh];}
+function season(mo){return RAIN.includes(mo)?'rain':'dry';}
+
+function readInputs(){
+  S.yb=parseInt($('yb').value,10)||0; S.wa=Math.max(0,parseInt($('wa').value,10)||0);
+  S.hvac=$('hvac').value; S.wh=$('wh').value; S.roof=$('roof').value; save('kl_t132_prof',S);
+}
+function calc(){
+  readInputs();
+  const L=I18N[lang], rows=plan(S,selM), y=targetYear(selM), done=load('kl_t132_done',{});
+  const yc=yearCount(S), key=rows[0];
+  $('nTask').textContent=rows.length;
+  $('rK').textContent=(selM===CUR_M?L.rKnow:L.rK).replace('{m}',L.ML[selM-1]);
+  $('cdLine').innerHTML=L.cd.replace('{y}',yc).replace('{k}',key?esc(txt(key,S)[0]):'—');
+  /* strip */
+  let sh=''; for(let mo=1;mo<=12;mo++){const n=plan(S,mo).length;
+    sh+='<button type="button" data-m="'+mo+'" class="'+season(mo)+(mo===CUR_M?' now':'')+'" aria-pressed="'+(mo===selM)+'"><b>'+L.MS[mo-1]+'</b><span>'+n+'</span></button>';}
+  $('mstrip').innerHTML=sh;
+  /* notes */
+  $('fzNote').classList.toggle('hide',S.fz!=='u');
+  const hn=$('hoaNote'); hn.classList.toggle('hide',S.ht==='house'); hn.innerHTML=S.ht==='condo'?L.hoa_condo:S.ht==='th'?L.hoa_th:'';
+  $('oldNote').classList.toggle('hide',!(S.yb>0&&S.yb<1980&&S.ht!=='condo'));
+  const whOld=S.wa>=(S.wh==='tankless'?WH_OLD.tankless:WH_OLD.tank);
+  $('whNote').classList.toggle('hide',!whOld); $('whNote').innerHTML=L.wh_note.replace('{a}',S.wa);
+  /* list */
+  let html='', nDone=0;
+  rows.forEach((t,i)=>{
+    const k=y+'-'+pad(selM)+':'+t.id, isDone=!!done[k]; if(isDone)nDone++;
+    const [ti,wh]=txt(t,S), ct=costText(t.c);
+    if(i===0) html+='<li class="grp">'+esc(L.g_key)+'<span class="gd">'+esc(L.season[season(selM)])+'</span></li>';
+    if(i===1) html+='<li class="grp">'+esc(L.g_more)+'</li>';
+    const cal=i===0?'<a class="gcal" href="'+esc(gcal(ti,calDate(selM),strip(wh)+'\n\n'+L.calD))+'" target="_blank" rel="noopener">'+esc(L.gcal)+'</a>':'';
+    html+='<li class="ms'+(i===0?' key':'')+(isDone?' done':'')+(i===rows.length-1?' last':'')+'"><label class="ck"><input type="checkbox" data-k="'+esc(k)+'"'+(isDone?' checked':'')+' aria-label="'+esc(ti)+'"><span></span></label>'
+      +'<div><button type="button" class="tt" aria-expanded="false">'+esc(ti)+'</button><div class="why" hidden>'+wh+'</div>'
+      +'<div class="sub2"><span class="chip '+(t.w==='p'?'pro':'diy')+'">'+esc(L.W[t.w])+'</span><span class="cost">'+(ct?esc(ct)+' '+esc(L.est):esc(L.ask))+'</span>'+cal+'</div></div></li>';
+  });
+  $('list').innerHTML=html;
+  $('progTxt').textContent=nDone+'/'+rows.length; $('progBar').style.width=(rows.length?nDone/rows.length*100:0)+'%';
+  /* sources */
+  $('srcLine').innerHTML='<span>'+esc(L.ft_src)+'</span> '+SRC.map(u=>{const h=u.replace(/^https?:\/\/(www\.)?/,'').split('/')[0];return '<a href="'+esc(u)+'" target="_blank" rel="noopener">'+esc(SRC_NAME[h]||(h.indexOf('justia')>=0?(u.indexOf('code-hsc')>=0?'H&S Code §19211':'Civil Code §907'):h))+'</a>';}).join(' · ');
+  /* email / sms */
+  const lines=[]; for(let mo=1;mo<=12;mo++){const r=plan(S,mo); lines.push('— '+L.ML[mo-1].toUpperCase()+' ('+r.length+')'); r.forEach(t=>{const kk=targetYear(mo)+'-'+pad(mo)+':'+t.id; lines.push((done[kk]?'[x] ':'[ ] ')+txt(t,S)[0]+' · '+L.W[t.w]+(t.c?' · '+costText(t.c):''));});}
+  const has=['pool','fp','lawn','solar'].filter(h=>S[h]).map(h=>strip(L['h_'+h])).join(', ')||'—';
+  last={ht:L.HT[S.ht],yb:S.yb,fz:strip(L[{y:'yes',n:'no',u:'unsure'}[S.fz]]),has,hvac:L.HVAC[S.hvac],wh:L.WH[S.wh],wa:S.wa,roof:L.ROOF[S.roof],y:yc,list:lines.join('\n'),nm:plan(S,CUR_M).length};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(L.sms.replace('{ht}',last.ht).replace('{yb}',S.yb).replace('{n}',last.nm));
+}
+function fillSelects(){
+  const L=I18N[lang];
+  const opt=(id,obj,v)=>{$(id).innerHTML=Object.keys(obj).map(k=>'<option value="'+k+'"'+(k===v?' selected':'')+'>'+esc(obj[k])+'</option>').join('');};
+  opt('hvac',L.HVAC,S.hvac); opt('wh',L.WH,S.wh); opt('roof',L.ROOF,S.roof);
+}
+function syncButtons(){
+  document.querySelectorAll('#htSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===S.ht)));
+  document.querySelectorAll('#fzSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===S.fz)));
+  document.querySelectorAll('#hasTog button').forEach(b=>b.setAttribute('aria-pressed',String(!!S[b.dataset.v])));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; fillSelects(); calc();
+}
+$('yb').value=S.yb; $('wa').value=S.wa; syncButtons();
+['yb','wa'].forEach(id=>$(id).addEventListener('input',calc));
+['hvac','wh','roof'].forEach(id=>{$(id).addEventListener('change',calc);$(id).addEventListener('input',calc);});
+$('htSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.ht=b.dataset.v;syncButtons();calc();});
+$('fzSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.fz=b.dataset.v;syncButtons();calc();});
+$('hasTog').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S[b.dataset.v]=!S[b.dataset.v];syncButtons();calc();});
+$('mstrip').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;selM=+b.dataset.m;calc();});
+$('list').addEventListener('click',e=>{const b=e.target.closest('.tt');if(!b)return;const w=b.nextElementSibling;const o=b.getAttribute('aria-expanded')==='true';b.setAttribute('aria-expanded',String(!o));w.hidden=o;});
+$('list').addEventListener('change',e=>{const k=e.target.getAttribute('data-k');if(!k)return;const o=load('kl_t132_done',{});if(e.target.checked)o[k]=1;else delete o[k];save('kl_t132_done',o);calc();});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const v=Object.assign({},last,{n,e,ph});
+  const fill=s=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
