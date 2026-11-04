@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How Much Can My Space Rent Go Up? · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Mobile home space rent: how much can the park raise it next year in your Santa Clara or Alameda County city? Formula by city, what happens when you sell, 5/10/20-year projection and who to call.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t162/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="How Much Can My Space Rent Go Up? · Ken Lam Tools">
+<meta property="og:description" content="Pick your city, enter your space rent. See the legal maximum for next year, the rule on sale, and a 20-year projection.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t162/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T162 additions */
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.hint a{color:var(--brass)}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a,.card a,.rule a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.sel{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.sel select{width:100%;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:12px 0;min-width:0}
+.sel:focus-within{border-color:var(--brass)}
+.total .alt{font-size:15px;color:var(--muted);margin-top:6px}
+.total .alt b{color:var(--fg);font-weight:500}
+.rule{font-size:15px;margin:0}
+.badge{display:inline-block;font-size:12px;border-radius:999px;padding:2px 9px;margin-left:6px;vertical-align:middle;border:1px solid var(--line)}
+.badge.ok{color:var(--ok);border-color:var(--ok)}
+.badge.warn{color:var(--warn);border-color:var(--warn)}
+.proj{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr);gap:0;font-size:14px;border-top:1px solid var(--line)}
+.proj div{padding:8px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.proj .h{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+.proj .r{text-align:right}
+.cards{display:grid;gap:10px}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
+.card b{font-weight:500;font-size:15px}
+.card span{font-size:14px;color:var(--muted)}
+details.all summary{cursor:pointer;font-family:var(--display);font-size:24px;list-style:none}
+details.all summary::-webkit-details-marker{display:none}
+details.all summary::after{content:' +';color:var(--brass)}
+details.all[open] summary::after{content:' −'}
+.trow{border-top:1px solid var(--line);padding:10px 0;display:grid;gap:3px;font-size:14px}
+.trow b{font-weight:500;font-size:15px}
+.trow span{color:var(--muted)}
+.trow a{color:var(--brass);overflow-wrap:anywhere}
+.tfilter{display:flex;gap:8px;flex-wrap:wrap}
+.tfilter button{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:13px;padding:5px 12px;border-radius:999px;cursor:pointer}
+.tfilter button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">How much can my space rent go up?</h1>
+    <p class="sub" data-i="sub">Pick your city and enter today's space rent. See the most the park can raise it next year, what happens when you sell, and where it goes in 20 years.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="city"><span data-i="l_city">City where the park is</span></label>
+      <div class="sel"><select id="city"></select></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="rent"><span data-i="l_rent">Space rent today</span></label>
+        <div class="ctl"><span class="pre">$</span><input id="rent" type="number" inputmode="numeric" min="0" step="25" value="1100"><span class="post" data-i="per_mo">/mo</span></div>
+      </div>
+      <div class="field">
+        <label for="cpi"><span data-i="l_cpi">Latest CPI change</span> <small data-i="l_cpi_s">(Bay Area, 12 mo)</small></label>
+        <div class="ctl"><input id="cpi" type="number" inputmode="decimal" min="-5" max="20" step="0.1" value="3.4"><span class="post">%</span></div>
+      </div>
+    </div>
+    <p class="hint" data-i="cpi_hint">Prefilled: SF-Oakland-Hayward CPI-U, August 2026 vs a year earlier, +3.4% (BLS, released Sep 11, 2026). Each city uses its own month; check the park's notice.</p>
+    <div class="field">
+      <span class="fl" data-i="l_lease">Your rental agreement</span>
+      <div class="seg" role="group" id="leaseSeg">
+        <button type="button" data-v="m2m" aria-pressed="true" data-i="ls_m2m">12 mo or less</button>
+        <button type="button" data-v="long" aria-pressed="false" data-i="ls_long">Longer than 12 mo</button>
+      </div>
+    </div>
+    <div class="field" id="sjF">
+      <span class="fl" data-i="l_sj">San Jose: space permitted before 9/7/1979?</span>
+      <div class="seg" role="group" id="sjSeg">
+        <button type="button" data-v="yes" aria-pressed="true" data-i="yes">Yes</button>
+        <button type="button" data-v="no" aria-pressed="false" data-i="no">No</button>
+        <button type="button" data-v="unk" aria-pressed="false" data-i="unk">Not sure</button>
+      </div>
+      <p class="hint" data-i="sj_hint">Almost every San Jose park was built before 1979. "Not sure" uses the ordinance; call the city to confirm.</p>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">Most the park can raise it next year</div>
+      <div class="v"><span id="total">0%</span></div>
+      <div class="alt"><b id="dollar">$0</b> <span data-i="per_mo3">/mo more</span> → <b id="newRent">$0</b><span data-i="per_mo4">/mo</span></div>
+    </div>
+    <p class="rule" id="ruleTxt"></p>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_sale">When you sell the home</b><small id="saleSub"></small></span><span class="a" id="saleOut">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_notice">Written notice before any increase</b><small data-i="n_notice_s">Civil Code §798.30</small></span><span class="a" data-i="d90">90 days</span></div>
+      <div class="line"><span class="n"><b data-i="n_call">Who to call</b><small id="callSub"></small></span><span class="a"><a id="callTel" href="tel:" style="color:var(--brass);text-decoration:none"></a></span></div>
+    </div>
+    <div class="note" id="note"></div>
+    <div class="note hide" id="leaseNote"></div>
+    <div class="note hide" id="verNote"></div>
+  </section>
+  <video src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px;margin-top:8px" aria-label="How to use this tool"></video>
+
+  <section class="panel">
+    <h2 data-i="p_title">Where your space rent goes</h2>
+    <div class="proj" id="proj"></div>
+    <p class="hint" id="projHint"></p>
+  </section>
+
+  <section class="panel" id="sjPanel">
+    <h2 data-i="sj_t">San Jose: changes under review in 2026</h2>
+    <div class="cards">
+      <div class="card"><b data-i="sj1">One-time increase when a home sells</b><span data-i="sj1s">Proposal: up to 5% on sales in year 1, 7% in year 2, 10% from year 3, only for parks that registered with the city. Not law yet.</span></div>
+      <div class="card"><b data-i="sj2">Timeline</b><span data-i="sj2s">First draft went to Council 1/27/2026. Staff is still taking resident input. Final report to Council planned for December 2026.</span></div>
+      <div class="card"><b data-i="sj3">Already changed (June 2025)</b><span data-i="sj3s">RV spaces in a mobilehome park get the same increase limits as mobile homes.</span></div>
+    </div>
+    <p class="hint" data-i="sj_src">Source: <a href="https://www.sanjoseca.gov/your-government/departments-offices/housing/mobilehome-residents-park-owners/mobilehome-rent-ordinance-proposed-updates-2026/mobilehome-rent-ordinance-proposed-updates-2026-faq" target="_blank" rel="noopener">City of San José, MRO proposed updates 2026 FAQ</a>.</p>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t162/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this to yourself</h2>
+    <p data-i="f_sub">Keep it next to your rental agreement. Ken can tell you what a buyer will see when you sell. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Find your last 3 increase letters. Check each: 90 days notice? Percent within the number above?</li>
+      <li data-i="ns2">Read the first page of your rental agreement. If it says it is exempt from local rent control, call the city before you sign anything new.</li>
+      <li data-i="ns3">Increase looks too high? Call the city number above first. Many cities only review it if residents file within 30 days.</li>
+      <li data-i="ns4">Planning to sell? Rent on sale changes your price. Run it in <a href="/t168/">T168</a>. Full monthly cost in <a href="/t145/">T145</a>. Something else feels wrong? <a href="/t171/">T171</a>. Park closing? <a href="/t177/">T177</a>.</li>
+    </ol>
+  </section>
+  <p class="myth" data-i="myth"><b>Many people get this wrong:</b> "California caps mobile home rent at 5%." It only does for a park that sits in two or more cities at once, which is rare. Everywhere else, the only cap is your city's rule. No city rule, no cap.</p>
+
+  <section class="panel">
+    <details class="all" id="allT">
+      <summary data-i="t_title">All cities, one table</summary>
+      <div class="tfilter" id="tFilter">
+        <button type="button" data-v="all" aria-pressed="true" data-i="tf_all">All</button>
+        <button type="button" data-v="scc" aria-pressed="false" data-i="tf_scc">Santa Clara Co.</button>
+        <button type="button" data-v="ala" aria-pressed="false" data-i="tf_ala">Alameda Co.</button>
+        <button type="button" data-v="vac" aria-pressed="false" data-i="tf_vac">No increase on sale</button>
+      </div>
+      <div id="tbl"></div>
+    </details>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#space-rent" target="_blank" rel="noopener" data-i="ft_lib">Space rent rules, city by city</a> · <a href="https://kenlamrealty.com/library#video-space-rent" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span><span data-i="ft_src">Sources:</span>
+      <a href="https://www.bls.gov/regions/west/news-release/2026/consumerpriceindex_sanfrancisco_20260911.htm" target="_blank" rel="noopener">BLS CPI SF-Oakland-Hayward (Aug 2026)</a> ·
+      <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=798.30.5" target="_blank" rel="noopener">Civil Code §798.30.5</a> ·
+      <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=798.30" target="_blank" rel="noopener">§798.30</a> ·
+      <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=798.17" target="_blank" rel="noopener">§798.17</a> ·
+      <a href="https://legiscan.com/CA/bill/AB1543/" target="_blank" rel="noopener">AB 1543 (pending)</a> ·
+      <a href="https://www.sanjoseca.gov/your-government/departments-offices/housing/mobilehome-residents-park-owners/rent-control" target="_blank" rel="noopener">San José MRO</a> ·
+      <span data-i="ft_tbl">city codes linked in the table</span> ·
+      <a href="https://siliconvalleyathome.org/?p=15922" target="_blank" rel="noopener">SV@Home summary</a>
+      <span data-i="ft_chk">(checked 04/11/2026)</span></span>
+    <span data-i="ft_est">Estimates only. Each city measures CPI over its own period and allows pass-throughs (capital improvements, fees, property tax) on top of the yearly increase. Lines marked "check with the city" were not confirmed on an official page. Not legal advice.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== RENT_RULES — edit here (checked 04/11/2026) =====
+   Formula per city: increase% = pctOfCPI × CPI, then floor (min) and cap (max). flat:true = flat cap, no CPI link.
+   pick:'max' = greater of floor / CPI part (default when floor set). minDollar = Fremont "$10/mo" option.
+   vacancy: 'yes' = no increase on in-place sale (vacancy control) · 'partial' = limited % on sale · 'no' = park can reset rent on sale.
+   verified:false → UI shows "check with the city" (KEN DUYỆT).
+   State: Civil Code §798.30.5 (AB 978, Stats. 2021 ch.125): lesser of 3% + CPI or 5% in 12 months, max 2 increments,
+     ONLY for a "qualified mobilehome park" = located within and governed by 2+ incorporated cities (subd. (h)(4)).
+     Exempt if a stricter local rule applies, deed-restricted affordable, resident-owned. Repealed 1/1/2030.
+     Verified via chaptered text https://legiscan.com/CA/text/AB978/2021 and current-text mirror
+     https://law.counselstack.com/statute/ca/CIV/798.30.5. (leginfo.legislature.ca.gov blocked from our checker — KEN DUYỆT open leginfo once.)
+     AB 1543 (2026, Quirk-Silva) would extend it to ALL parks — in Assembly H&CD committee since 2/2/2026, NOT law. https://legiscan.com/CA/bill/AB1543/
+   Notice: §798.30 — 90 days written notice.
+   Long lease: §798.17 — lease >12 months could be exempt from local rent control; AB 2782 (2020) removed the exemption for leases
+     signed on/after 2/13/2020. https://www.legiscan.com/CA/text/AB2782/2019 — status after 1/1/2025 KEN DUYỆT.
+   CPI default 3.4%: BLS SF-Oakland-Hayward CPI-U all items, Aug 2026 12-mo change, release 11/09/2026; next release 10/11/2026 (Oct data).
+     https://www.bls.gov/regions/west/news-release/2026/consumerpriceindex_sanfrancisco_20260911.htm
+   TYPICAL_CPI 3.0%: long-run Bay Area CPI for the "typical" projection — ước tính, KEN DUYỆT.
+   NOCAP_DEMO 7%: illustration only when there is no legal cap — ước tính. */
+const STATE_RULE={pctOfCPI:1, plus:3, cap:5, sunset:'1/1/2030', qualifiedOnly:true};
+const TYPICAL_CPI=3.0, NOCAP_DEMO=7, NOTICE_DAYS=90, CHECKED='04/11/2026';
+const RENT_RULES={
+ sj:{county:'scc',name:'San Jose',type:'ord',pctOfCPI:0.75,floor:3,cap:7,vacancy:'yes',verified:true,
+   law:'https://www.sanjoseca.gov/your-government/departments-offices/housing/mobilehome-residents-park-owners/rent-control',
+   phone:'408-975-4480',who:'Rent Stabilization Program',checked:CHECKED,
+   /* SJMC ch. 17.22. 75% of SF-Oakland CPI, min 3%, max 7%; no increase on sale/transfer (except abandonment, eviction, dealer pull-out);
+      spaces with permits before 9/7/1979. Unused increase can be combined with next year. 2026 proposal 5/7/10% on sale, report Dec 2026. */
+   en:{rule:'75% of CPI, never under 3% or over 7% a year. Covers spaces permitted before 9/7/1979.',vac:'No increase when the home sells and stays (vacancy control). 2026 proposal would allow 5–10%.'},
+   vi:{rule:'75% CPI, không dưới 3%, không quá 7% mỗi năm. Áp dụng cho space có permit trước 7/9/1979.',vac:'Bán nhà để tại chỗ thì park không được tăng (vacancy control). Đề xuất 2026 cho tăng 5–10%.'}},
+ milpitas:{county:'scc',name:'Milpitas',type:'ord',pctOfCPI:0.5,floor:null,cap:5,vacancy:'yes',verified:false,
+   law:'https://milpitas.gov/1309/Mobile-Home-Parks',phone:'408-586-3000',who:'City Hall / City Clerk',checked:CHECKED,
+   /* 1992 ordinance, 3 parks (Mobile Lodge, Friendly Village, Pioneer). Lesser of 50% CPI or 5% before hearing — from gocodebook draft of
+      MMC III-30 + SV@Home, NOT read on official code. Vacancy: SV@Home "no additional increase" — KEN DUYỆT. */
+   en:{rule:'Lesser of 50% of CPI or 5% without a city hearing. Covers 3 parks.',vac:'No increase on sale (per SV@Home).'},
+   vi:{rule:'Lấy số nhỏ hơn của 50% CPI hoặc 5%, trên mức đó phải qua hearing. Áp dụng 3 park.',vac:'Bán nhà không được tăng (theo SV@Home).'}},
+ morganhill:{county:'scc',name:'Morgan Hill',type:'ord',pctOfCPI:0.75,floor:null,cap:8,vacancy:'yes',verified:true,
+   law:'https://www.morganhill.ca.gov/DocumentCenter/View/54496',phone:'408-779-7259',who:'City Clerk',checked:CHECKED,
+   /* MHMC ch. 5.36 (Ord. 856, amended 4/22/2009): lesser of 75% CPI (prior 12 mo) or 8%; no increase on sale, $25 one-time admin fee.
+      Project Sentinel 408-720-9888. */
+   en:{rule:'Lesser of 75% of CPI or 8% a year without a hearing.',vac:'No increase when the home sells in place. Park may charge a one-time $25 fee.'},
+   vi:{rule:'Lấy số nhỏ hơn của 75% CPI hoặc 8% mỗi năm, trên mức đó phải qua hearing.',vac:'Bán nhà để tại chỗ không được tăng. Park được thu 1 lần $25.'}},
+ gilroy:{county:'scc',name:'Gilroy',type:'ord',pctOfCPI:0.8,floor:null,cap:5,vacancy:'no',verified:true,
+   law:'https://codepublishing.com/CA/Gilroy/html/Gilroy14A.html',phone:'408-846-0400',who:'City Hall (ask for the rent review officer)',checked:CHECKED,
+   /* GCC ch. 14A §14A.4(a): lesser of 5% or 80% of SF-Oakland CPI, once per 12 mo; §14A.3(d) chapter does not apply 12 months after
+      transfer → base rent resets. Lease >36 months exempt (§14A.3(c)). Phone = Gilroy City Hall main, ước tính, KEN DUYỆT. */
+   en:{rule:'Lesser of 80% of CPI or 5% a year. Leases over 36 months can be exempt.',vac:'After a sale the rule pauses 12 months, so the park can reset rent.'},
+   vi:{rule:'Lấy số nhỏ hơn của 80% CPI hoặc 5% mỗi năm. Lease trên 36 tháng có thể được miễn.',vac:'Sau khi bán, luật ngưng 12 tháng, park được đặt lại giá đất.'}},
+ losgatos:{county:'scc',name:'Los Gatos',type:'ord',pctOfCPI:1,floor:3,cap:5,vacancy:'partial',verified:false,
+   law:'https://gocodebook.com/library/us/ca/los-gatos/sections/14.85.045',phone:'408-720-9888',who:'Project Sentinel (Town program)',checked:CHECKED,
+   /* Town Code ch.14 art. VIII §14.85.020(e): 100% CPI, min 3% max 5% (read via gocodebook, not official). §14.85.025(d): in-place sale →
+      greater of $488 (2000) + CPI or seller's rent + $25. Fixed-term >12 mo exempt (§14.85.025(b)). KEN DUYỆT. */
+   en:{rule:'100% of CPI, at least 3%, at most 5% a year.',vac:'On sale: limited reset (greater of a CPI-indexed base or seller\'s rent + $25).'},
+   vi:{rule:'100% CPI, ít nhất 3%, nhiều nhất 5% mỗi năm.',vac:'Khi bán: được tăng có giới hạn (số lớn hơn giữa mức nền theo CPI hoặc tiền đất cũ + $25).'}},
+ mountainview:{county:'scc',name:'Mountain View',type:'ord',pctOfCPI:0.6,floor:0,cap:3,vacancy:'partial',verified:true,published:{pct:1.5,label:'2026 AGA'},
+   law:'https://www.mountainview.gov/our-city/departments/housing/rent-stabilization/mobile-home-parks',phone:'650-903-6125',who:'Rent Stabilization Division',checked:CHECKED,
+   /* MHRSO (eff. 10/28/2021, amended): from 2025 AGA = 60% of Bay Area CPI Feb→Feb, max 3%. 2026 AGA up to 1.5% (city notice form rev.
+      2026.06.01 via gocodebook). Vacancy: city FAQ says new tenancy limited to 100% CPI except abandonment/eviction/commercial replace — KEN DUYỆT. */
+   en:{rule:'60% of CPI (Feb to Feb), at most 3% a year. Published 2026 increase: up to 1.5%.',vac:'Partial: new tenancy limited to about CPI, with exceptions. Check with the city.'},
+   vi:{rule:'60% CPI (tháng 2 tới tháng 2), tối đa 3% mỗi năm. Mức 2026 city công bố: tối đa 1.5%.',vac:'Một phần: người mua mới chỉ bị tăng khoảng bằng CPI, có ngoại lệ. Hỏi city.'}},
+ sunnyvale:{county:'scc',name:'Sunnyvale (MOU)',type:'mou',pctOfCPI:0.75,floor:3,cap:null,vacancy:'partial',verified:true,saleCap:15,
+   law:'https://www.sunnyvale.ca.gov/home/showpublisheddocument/6338/639010456184600000',phone:'408-730-7500',who:'City of Sunnyvale (Housing)',checked:CHECKED,
+   /* Park MOUs recorded 10/2021, 20-year term (~2041): greater of 75% CPI or 3%, no max; transfer: 5% / 10% / 15% after 2nd anniversary
+      (now 15%). Covers residents who signed the MOU lease. Phone = city main, ước tính, KEN DUYỆT. */
+   en:{rule:'Park agreement (MOU), not a law: greater of 75% of CPI or 3%. No maximum. Only if you signed onto the MOU.',vac:'On sale: up to 15% one time (since Oct 2023).'},
+   vi:{rule:'Thỏa thuận với park (MOU), không phải luật: lấy số lớn hơn của 75% CPI hoặc 3%. Không có trần. Chỉ áp dụng nếu mình đã ký MOU.',vac:'Khi bán: tăng 1 lần tối đa 15% (từ 10/2023).'}},
+ campbell:{county:'scc',name:'Campbell (MOU)',type:'mou',pctOfCPI:0.75,floor:3,cap:null,vacancy:'partial',verified:false,saleCap:15,
+   law:'https://siliconvalleyathome.org/resources/mobilehomes/',phone:null,who:'Ask the park for the MOU',checked:CHECKED,
+   /* SV@Home only: MOU, greater of 75% CPI or 3%, no cap; turnover 10% or 15% depending on base rent. Not on a city page — KEN DUYỆT. */
+   en:{rule:'Park agreement (MOU): greater of 75% of CPI or 3%. No maximum.',vac:'On sale: 10% or 15% depending on the base rent.'},
+   vi:{rule:'Thỏa thuận với park (MOU): lấy số lớn hơn của 75% CPI hoặc 3%. Không có trần.',vac:'Khi bán: tăng 10% hoặc 15% tùy tiền đất nền.'}},
+ paloalto:{county:'scc',name:'Palo Alto',type:'none',vacancy:'unk',verified:true,
+   law:'https://siliconvalleyathome.org/resources/mobilehomes/',phone:null,who:'Park management (nonprofit owner)',checked:CHECKED,
+   /* No space rent ordinance; the one park (Buena Vista) is owned by a nonprofit committed to stable rents (SV@Home). */
+   en:{rule:'No city rent rule. The only park is nonprofit-owned with its own affordability terms.',vac:'Set by the nonprofit\'s rules.'},
+   vi:{rule:'City không có luật giá đất. Park duy nhất do tổ chức nonprofit sở hữu, có điều khoản giá riêng.',vac:'Theo quy định của nonprofit.'}},
+ santaclara:{county:'scc',name:'Santa Clara (city)',type:'none',vacancy:'no',verified:false,
+   law:null,phone:'408-615-2200',who:'City of Santa Clara',checked:CHECKED,
+   /* No mobilehome rent ordinance found (not in SV@Home list). Phone = city main, ước tính. KEN DUYỆT. */
+   en:{rule:'No city space rent rule found. Your lease is the only limit.',vac:'Park can usually reset rent on sale.'},
+   vi:{rule:'Không tìm thấy luật giá đất của city. Chỉ có hợp đồng thuê giới hạn.',vac:'Park thường được đặt lại giá khi bán.'}},
+ sccuninc:{county:'scc',name:'Santa Clara County (unincorporated)',type:'none',vacancy:'no',verified:false,
+   law:null,phone:null,who:'County of Santa Clara',checked:CHECKED,
+   /* No county mobilehome rent ordinance found. KEN DUYỆT. */
+   en:{rule:'No county space rent rule found. Your lease is the only limit.',vac:'Park can usually reset rent on sale.'},
+   vi:{rule:'Không tìm thấy luật giá đất của county. Chỉ có hợp đồng thuê giới hạn.',vac:'Park thường được đặt lại giá khi bán.'}},
+ hayward:{county:'ala',name:'Hayward',type:'ord',pctOfCPI:0.6,floor:3,cap:6,vacancy:'yes',verified:true,
+   law:'https://www.hayward-ca.gov/node/18171',phone:'510-583-4454',who:'Rent Review Officer',checked:CHECKED,
+   /* City FAQ: greater of 3% or 60% of SF Bay Area CPI, max 6% in 12 months; buyer of a covered space cannot be charged more;
+      lease >12 months not covered. Petition within 30 days. */
+   en:{rule:'Greater of 3% or 60% of CPI, never over 6% a year. Leases over 12 months are not covered.',vac:'No increase for the buyer (vacancy control).'},
+   vi:{rule:'Lấy số lớn hơn của 3% hoặc 60% CPI, không quá 6% mỗi năm. Lease trên 12 tháng không nằm trong luật.',vac:'Người mua không bị tăng (vacancy control).'}},
+ fremont:{county:'ala',name:'Fremont',type:'ord',pctOfCPI:0.6,floor:3,cap:6,minDollar:10,vacancy:'partial',verified:true,saleCap:15,
+   law:'https://www.codepublishing.com/CA/Fremont/html/Fremont09/Fremont0955.html',phone:'510-284-4000',who:'City of Fremont (Rent Review Officer)',checked:CHECKED,
+   /* FMC ch. 9.55 §9.55.050(a): greatest of 3%, $10/mo, or 60% CPI; max 6% in 12 mo. §9.55.060: partial decontrol, up to 15% on turnover;
+      full decontrol on abandonment/eviction/commercial replace. Long lease meeting §798.17 exempt. Phone = city main, ước tính, KEN DUYỆT. */
+   en:{rule:'Greatest of 3%, $10/mo or 60% of CPI, never over 6% a year.',vac:'On sale: up to 15% (partial).'},
+   vi:{rule:'Lấy số lớn nhất của 3%, $10/tháng hoặc 60% CPI, không quá 6% mỗi năm.',vac:'Khi bán: tăng tối đa 15% (một phần).'}},
+ unioncity:{county:'ala',name:'Union City',type:'ord',pctOfCPI:0.9,floor:null,cap:7,vacancy:'yes',verified:true,
+   law:'https://ecode360.com/43312533',phone:'510-471-3232',who:'City Clerk',checked:CHECKED,
+   /* UCMC ch. 16.40 §16.40.030: lesser of 7% or 90% of SF-Oakland CPI (Feb); once per 12 mo, no banking. §16.40.045 no reset on sale;
+      dealer pull-out exception §16.40.047. Phone = city main, ước tính, KEN DUYỆT. */
+   en:{rule:'Lesser of 90% of CPI or 7% a year. No banking.',vac:'No increase on sale (vacancy control), except a dealer pull-out.'},
+   vi:{rule:'Lấy số nhỏ hơn của 90% CPI hoặc 7% mỗi năm. Không dồn năm.',vac:'Bán không được tăng (vacancy control), trừ trường hợp dealer kéo nhà ra thay nhà mới.'}},
+ sanleandro:{county:'ala',name:'San Leandro',type:'ord',pctOfCPI:1,floor:null,cap:4,vacancy:'no',verified:true,
+   law:'https://www.sanleandro.org/DocumentCenter/View/12044/Mobilehome-Rent-Stabilization-FAQ-',phone:'510-577-6006',who:'Housing Division',checked:CHECKED,
+   /* SLMC Title 4 ch. 4-39 (eff. 7/3/2019): lesser of 4% or CPI, once per 12 mo. Voluntary in-place sale → owner may set new rent. */
+   en:{rule:'Lesser of CPI or 4% a year.',vac:'On a voluntary in-place sale the park can set a new rent.'},
+   vi:{rule:'Lấy số nhỏ hơn của CPI hoặc 4% mỗi năm.',vac:'Bán nhà để tại chỗ thì park được đặt giá mới.'}},
+ pleasanton:{county:'ala',name:'Pleasanton',type:'ord',pctOfCPI:1,floor:1,cap:5,vacancy:'yes',verified:true,
+   law:'https://ecode360.com/43022567',phone:'925-931-5000',who:'City of Pleasanton (Housing)',checked:CHECKED,
+   /* PMC ch. 6.60 §6.60.040(B): rent × COL (CPI 12 mo ending August), not less than 1% nor more than 5%, plus property-tax/
+      capital pass-throughs; §6.60.040(C) no adjustment on transfer of ownership. Phone = city main, ước tính, KEN DUYỆT. */
+   en:{rule:'CPI (12 months to August), at least 1%, at most 5% a year, plus allowed pass-throughs.',vac:'No space rent adjustment on transfer of ownership.'},
+   vi:{rule:'Theo CPI (12 tháng tới tháng 8), ít nhất 1%, nhiều nhất 5% mỗi năm, cộng phần pass-through được phép.',vac:'Bán/sang tên không được tăng giá đất.'}},
+ alamedacty:{county:'ala',name:'Alameda County unincorporated (Castro Valley, San Lorenzo…)',type:'ord',flat:true,cap:4,vacancy:'no',verified:true,
+   law:'https://acgov.org/cda/hcd/mobilehome/index.htm',phone:'510-670-6417',who:'Alameda County HCD',checked:CHECKED,
+   /* Ord. 90-71, updated 4/11/2017: max 4% a year; full vacancy decontrol on voluntary transfer (PublicCEO 3/2017, San Leandro comparison).
+      Phone from county HCD as quoted in local news — KEN DUYỆT. County discussed updates 2024 (CVMAC 1/16/2024) — status KEN DUYỆT. */
+   en:{rule:'Up to 4% a year (flat, not tied to CPI).',vac:'On sale the park can reset to market (vacancy decontrol).'},
+   vi:{rule:'Tối đa 4% mỗi năm (cố định, không theo CPI).',vac:'Khi bán park được đặt lại giá thị trường (vacancy decontrol).'}},
+ newark:{county:'ala',name:'Newark',type:'none',vacancy:'no',verified:false,law:null,phone:null,who:'City of Newark',checked:CHECKED,
+   /* No mobilehome rent ordinance found. KEN DUYỆT. */
+   en:{rule:'No city space rent rule found.',vac:'Park can usually reset rent on sale.'},
+   vi:{rule:'Không tìm thấy luật giá đất của city.',vac:'Park thường được đặt lại giá khi bán.'}},
+ livermore:{county:'ala',name:'Livermore',type:'none',vacancy:'no',verified:false,law:null,phone:null,who:'City of Livermore (Housing)',checked:CHECKED,
+   /* No mobilehome rent ordinance found (city has no local rent control). KEN DUYỆT. */
+   en:{rule:'No city space rent rule found.',vac:'Park can usually reset rent on sale.'},
+   vi:{rule:'Không tìm thấy luật giá đất của city.',vac:'Park thường được đặt lại giá khi bán.'}},
+ other:{county:'oth',name:'Other city / not sure',type:'state',vacancy:'unk',verified:true,law:'https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=798.30.5',phone:'1-800-952-8356',who:'HCD Mobilehome Residency Law Protection Program',checked:CHECKED,
+   en:{rule:'State cap: lower of 3% + CPI or 5% a year, at most 2 increases in 12 months. *Only if the park sits in 2+ cities; otherwise only a city rule or your lease limits it.',vac:'Depends on the city.'},
+   vi:{rule:'Trần tiểu bang: số nhỏ hơn của 3% + CPI hoặc 5% mỗi năm, tối đa 2 lần tăng trong 12 tháng. *Chỉ áp dụng nếu park nằm trên 2 city; không thì chỉ có luật city hoặc lease giới hạn.',vac:'Tùy city.'}}
+};
+const HCD_PHONE='1-800-952-8356'; /* HCD MRLPP, as listed on mountainview.gov mobile home page (checked 04/11/2026) */
+
+const I18N={
+ en:{title:'How much can my space rent go up?',sub:'Pick your city and enter today\'s space rent. See the most the park can raise it next year, what happens when you sell, and where it goes in 20 years.',
+  l_city:'City where the park is',l_rent:'Space rent today',per_mo:'/mo',l_cpi:'Latest CPI change',l_cpi_s:'(Bay Area, 12 mo)',
+  cpi_hint:'Prefilled: SF-Oakland-Hayward CPI-U, August 2026 vs a year earlier, +3.4% (BLS, released Sep 11, 2026). Each city uses its own month; check the park\'s notice.',
+  l_lease:'Your rental agreement',ls_m2m:'12 mo or less',ls_long:'Longer than 12 mo',
+  l_sj:'San Jose: space permitted before 9/7/1979?',yes:'Yes',no:'No',unk:'Not sure',
+  sj_hint:'Almost every San Jose park was built before 1979. "Not sure" uses the ordinance; call the city to confirm.',
+  r_total:'Most the park can raise it next year',per_mo3:'/mo more',per_mo4:'/mo',
+  n_sale:'When you sell the home',n_notice:'Written notice before any increase',n_notice_s:'Civil Code §798.30',d90:'90 days',n_call:'Who to call',
+  nocap:'No cap',lease_dec:'Lease decides',
+  sale_yes:'No increase',sale_partial:'Limited',sale_no:'Park can reset',sale_unk:'Check',
+  rule_lbl:'The rule:',
+  note_state:'California\'s cap (Civil Code §798.30.5: lower of 3% + CPI or 5% a year) only covers a park that sits in two or more cities. Most parks don\'t. Without a city rule, only your rental agreement limits the increase. A bill to cover all parks (AB 1543) is still in committee. The state cap ends 1/1/2030.',
+  note_ord:'This is the yearly limit without a city hearing. Parks can also pass through some costs (capital improvements, fees, tax) or ask the city for more.',
+  note_mou:'An MOU is a contract between the park and residents, not a city law. It covers you only if you signed onto it.',
+  note_none:'No city rule means no legal cap on the yearly increase, as long as the park gives 90 days notice. The state 5% cap does not apply unless the park is in two cities.',
+  note_sjno:'San Jose spaces permitted on or after 9/7/1979 are outside the ordinance. No city cap applies, and the state cap usually doesn\'t either.',
+  lease_note:'Lease over 12 months: some long leases signed before 2/13/2020 can be exempt from city rent control (Civil Code §798.17). Leases signed since then generally are not. Read the first page of your lease, then call the number above.',
+  lease_gil:'Gilroy: a lease over 36 months that says so on page 1 is exempt for its term.',
+  lease_hay:'Hayward: the city says leases over 12 months are not covered by its rent limits.',
+  ver_note:'Check with the city: this line was not confirmed on an official city page. Call before you rely on it.',
+  pub_note:'City published {p} for {l}. With your CPI the formula gives {f}.',
+  p_title:'Where your space rent goes',p_yr:'In',p_max:'At the max',p_typ:'Typical',yrs:'years',now:'Today',
+  proj_hint:'"At the max" = the cap every year ({c}). "Typical" = the formula with CPI at 3% ({t}). Estimates.',
+  proj_hint_nc:'No legal cap. "At the max" shows 7% a year only as an example. "Typical" assumes 3% a year. Estimates.',
+  sj_t:'San Jose: changes under review in 2026',sj1:'One-time increase when a home sells',sj1s:'Proposal: up to 5% on sales in year 1, 7% in year 2, 10% from year 3, only for parks that registered with the city. Not law yet.',
+  sj2:'Timeline',sj2s:'First draft went to Council 1/27/2026. Staff is still taking resident input. Final report to Council planned for December 2026.',
+  sj3:'Already changed (June 2025)',sj3s:'RV spaces in a mobilehome park get the same increase limits as mobile homes.',
+  sj_src:'Source: <a href="https://www.sanjoseca.gov/your-government/departments-offices/housing/mobilehome-residents-park-owners/mobilehome-rent-ordinance-proposed-updates-2026/mobilehome-rent-ordinance-proposed-updates-2026-faq" target="_blank" rel="noopener">City of San José, MRO proposed updates 2026 FAQ</a>.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this to yourself',f_sub:'Keep it next to your rental agreement. Ken can tell you what a buyer will see when you sell. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ns_t:'Next steps',
+  ns1:'Find your last 3 increase letters. Check each: 90 days notice? Percent within the number above?',
+  ns2:'Read the first page of your rental agreement. If it says it is exempt from local rent control, call the city before you sign anything new.',
+  ns3:'Increase looks too high? Call the city number above first. Many cities only review it if residents file within 30 days.',
+  ns4:'Planning to sell? Rent on sale changes your price. Run it in <a href="/t168/">T168</a>. Full monthly cost in <a href="/t145/">T145</a>. Something else feels wrong? <a href="/t171/">T171</a>. Park closing? <a href="/t177/">T177</a>.',
+  myth:'<b>Many people get this wrong:</b> "California caps mobile home rent at 5%." It only does for a park that sits in two or more cities at once, which is rare. Everywhere else, the only cap is your city\'s rule. No city rule, no cap.',
+  t_title:'All cities, one table',tf_all:'All',tf_scc:'Santa Clara Co.',tf_ala:'Alameda Co.',tf_vac:'No increase on sale',
+  t_rule:'Yearly',t_sale:'On sale',t_call:'Call',t_code:'Rule text',t_chk:'checked',t_unv:'check with the city',t_ok:'verified',t_now:'Now with CPI {c}%:',
+  ft_read:'Read more:',ft_lib:'Space rent rules, city by city',ft_vid:'3-min video',ft_src:'Sources:',ft_tbl:'city codes linked in the table',ft_chk:'(checked 04/11/2026)',
+  ft_est:'Estimates only. Each city measures CPI over its own period and allows pass-throughs (capital improvements, fees, property tax) on top of the yearly increase. Lines marked "check with the city" were not confirmed on an official page. Not legal advice.',
+  ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I used the space rent tool: {city}, rent {r}/mo, max next year {p} ({d}/mo). Question:',
+  subj:'Space rent limit — {city} — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nCity: {city}\nSpace rent: {r}/mo\nCPI used: {cpi}%\nLease: {lease}\n\nMax increase next year: {p} = {d}/mo → {nr}/mo\nRule: {rule}\nOn sale: {sale}\nIn 10 years (max / typical): {m10} / {t10}\nCall: {call}\n\nSent from tool T162 tools.kenlamrealty.com'},
+ vi:{title:'Space rent sẽ tăng bao nhiêu?',sub:'Chọn city, nhập tiền đất (space rent) hiện tại. Thấy ngay năm tới park được tăng tối đa bao nhiêu, bán nhà thì sao, và 20 năm nữa thành bao nhiêu.',
+  l_city:'Park nằm ở city nào',l_rent:'Tiền đất hiện tại',per_mo:'/tháng',l_cpi:'CPI mới nhất',l_cpi_s:'(Bay Area, 12 tháng)',
+  cpi_hint:'Điền sẵn: CPI-U SF-Oakland-Hayward, tháng 8/2026 so với 1 năm trước, +3.4% (BLS, công bố 11/09/2026). Mỗi city lấy tháng khác nhau, xem thư báo của park.',
+  l_lease:'Hợp đồng thuê đất của mình',ls_m2m:'12 tháng trở xuống',ls_long:'Trên 12 tháng',
+  l_sj:'San Jose: space có permit trước 7/9/1979?',yes:'Có',no:'Không',unk:'Không chắc',
+  sj_hint:'Gần như mọi park ở San Jose xây trước 1979. Chọn "Không chắc" thì tool tính theo luật city; gọi city hỏi cho chắc.',
+  r_total:'Năm tới park được tăng tối đa',per_mo3:'/tháng thêm',per_mo4:'/tháng',
+  n_sale:'Khi mình bán nhà',n_notice:'Phải báo bằng giấy trước khi tăng',n_notice_s:'Civil Code §798.30',d90:'90 ngày',n_call:'Gọi ai',
+  nocap:'Không có trần',lease_dec:'Theo lease',
+  sale_yes:'Không được tăng',sale_partial:'Có giới hạn',sale_no:'Park đặt lại giá',sale_unk:'Hỏi lại',
+  rule_lbl:'Luật:',
+  note_state:'Trần của tiểu bang (Civil Code §798.30.5: số nhỏ hơn của 3% + CPI hoặc 5%/năm) chỉ áp dụng cho park nằm trên 2 city trở lên. Đa số park không phải vậy. Không có luật city thì chỉ có hợp đồng thuê giới hạn mức tăng. Dự luật AB 1543 muốn áp cho mọi park nhưng vẫn nằm ở ủy ban. Trần tiểu bang hết hạn 1/1/2030.',
+  note_ord:'Đây là mức tăng mỗi năm không cần hearing. Park còn được pass-through một số chi phí (sửa lớn, phí, thuế) hoặc xin city cho tăng thêm.',
+  note_mou:'MOU là hợp đồng giữa park và cư dân, không phải luật city. Chỉ áp dụng nếu mình đã ký vào.',
+  note_none:'Không có luật city nghĩa là không có trần tăng mỗi năm, miễn park báo trước 90 ngày. Trần 5% của tiểu bang không áp dụng, trừ khi park nằm trên 2 city.',
+  note_sjno:'Space ở San Jose có permit từ 7/9/1979 trở về sau nằm ngoài luật city. Không có trần của city, và thường cũng không có trần tiểu bang.',
+  lease_note:'Lease trên 12 tháng: một số lease dài ký trước 13/2/2020 có thể được miễn luật giá đất của city (Civil Code §798.17). Lease ký từ ngày đó về sau thường không được miễn. Đọc trang đầu của lease rồi gọi số ở trên.',
+  lease_gil:'Gilroy: lease trên 36 tháng có ghi rõ ở trang 1 thì được miễn trong thời hạn lease.',
+  lease_hay:'Hayward: city nói lease trên 12 tháng không nằm trong luật giới hạn.',
+  ver_note:'Kiểm lại với city: dòng này chưa xác minh được trên trang chính thức của city. Gọi hỏi trước khi dựa vào.',
+  pub_note:'City công bố {p} cho {l}. Theo CPI anh chị nhập, công thức ra {f}.',
+  p_title:'Tiền đất sẽ lên tới đâu',p_yr:'Sau',p_max:'Tăng tối đa',p_typ:'Thường gặp',yrs:'năm',now:'Hiện tại',
+  proj_hint:'"Tăng tối đa" = năm nào cũng tăng bằng trần ({c}). "Thường gặp" = công thức với CPI 3% ({t}). Ước tính.',
+  proj_hint_nc:'Không có trần. Cột "Tăng tối đa" lấy 7%/năm chỉ để minh họa. "Thường gặp" tính 3%/năm. Ước tính.',
+  sj_t:'San Jose: đang xem sửa luật năm 2026',sj1:'Tăng 1 lần khi bán nhà',sj1s:'Đề xuất: tối đa 5% nếu bán trong năm 1, 7% năm 2, 10% từ năm 3, chỉ cho park đã đăng ký với city. Chưa thành luật.',
+  sj2:'Lịch trình',sj2s:'Bản nháp đầu trình Council 27/1/2026. City vẫn đang lấy ý kiến cư dân. Báo cáo cuối dự kiến trình Council tháng 12/2026.',
+  sj3:'Đã sửa (6/2025)',sj3s:'Space đậu RV trong park mobile home cũng bị giới hạn tăng giống mobile home.',
+  sj_src:'Nguồn: <a href="https://www.sanjoseca.gov/your-government/departments-offices/housing/mobilehome-residents-park-owners/mobilehome-rent-ordinance-proposed-updates-2026/mobilehome-rent-ordinance-proposed-updates-2026-faq" target="_blank" rel="noopener">City of San José, MRO proposed updates 2026 FAQ</a>.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi kết quả này về email',f_sub:'Để chung với hợp đồng thuê đất. Ken có thể nói người mua sẽ thấy gì khi mình bán. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ns_t:'Bước tiếp theo',
+  ns1:'Lục lại 3 thư tăng giá gần nhất. Xem từng cái: có báo trước 90 ngày không? % có nằm trong số ở trên không?',
+  ns2:'Đọc trang đầu hợp đồng thuê đất. Nếu ghi là được miễn luật giá đất của city, gọi city hỏi trước khi ký gì mới.',
+  ns3:'Thấy tăng quá cao? Gọi số city ở trên trước. Nhiều city chỉ xem xét nếu cư dân nộp đơn trong 30 ngày.',
+  ns4:'Tính bán? Giá đất lúc bán ảnh hưởng giá nhà. Tính ở <a href="/t168/">T168</a>. Tổng chi phí tháng ở <a href="/t145/">T145</a>. Park làm gì thấy sai sai? <a href="/t171/">T171</a>. Park đóng cửa? <a href="/t177/">T177</a>.',
+  myth:'<b>Nhiều người hiểu sai:</b> "California giới hạn tiền đất mobile home 5%." Chỉ đúng với park nằm trên 2 city cùng lúc, mà loại này rất hiếm. Còn lại, trần duy nhất là luật của city. City không có luật thì không có trần.',
+  t_title:'Bảng đầy đủ các city',tf_all:'Tất cả',tf_scc:'Santa Clara Co.',tf_ala:'Alameda Co.',tf_vac:'Bán không được tăng',
+  t_rule:'Mỗi năm',t_sale:'Khi bán',t_call:'Gọi',t_code:'Văn bản luật',t_chk:'tra ngày',t_unv:'kiểm lại với city',t_ok:'đã xác minh',t_now:'Với CPI {c}%:',
+  ft_read:'Đọc thêm:',ft_lib:'Luật space rent từng city',ft_vid:'Video 3 phút',ft_src:'Nguồn:',ft_tbl:'luật từng city có link trong bảng',ft_chk:'(tra ngày 04/11/2026)',
+  ft_est:'Chỉ là ước tính. Mỗi city tính CPI theo kỳ riêng và cho pass-through (sửa lớn, phí, thuế nhà) cộng thêm vào mức tăng hằng năm. Dòng ghi "kiểm lại với city" là chưa xác minh trên trang chính thức. Không phải tư vấn luật.',
+  ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa xài tool space rent: {city}, tiền đất {r}/tháng, năm tới tối đa {p} ({d}/tháng). Cho tôi hỏi:',
+  subj:'Giới hạn tăng space rent — {city} — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nCity: {city}\nTiền đất: {r}/tháng\nCPI: {cpi}%\nLease: {lease}\n\nNăm tới tăng tối đa: {p} = {d}/tháng → {nr}/tháng\nLuật: {rule}\nKhi bán: {sale}\nSau 10 năm (tối đa / thường gặp): {m10} / {t10}\nGọi: {call}\n\nGửi từ tool T162 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const pct=n=>(Math.round(n*100)/100).toString()+'%';
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+let lease='m2m', sjp='yes', tf='all', last={};
+
+/* yearly max % for a rule at a given CPI; returns null when there is no legal cap */
+function maxPct(r,cpi,rent){
+  if(r.type==='none') return null;
+  if(r.type==='state') return Math.max(0,Math.min(STATE_RULE.plus+cpi*STATE_RULE.pctOfCPI,STATE_RULE.cap)); /* only for parks in 2+ cities */
+  if(r.flat) return r.cap;
+  let v=r.pctOfCPI*cpi;
+  if(r.floor!=null) v=Math.max(v,r.floor);
+  if(r.minDollar&&rent>0) v=Math.max(v,r.minDollar/rent*100);
+  if(r.cap!=null) v=Math.min(v,r.cap);
+  return Math.max(0,v);
+}
+function model(i){
+  const r=RENT_RULES[i.city];
+  let p=maxPct(r,i.cpi,i.rent), capYr=r.cap!=null?r.cap:null, sjOut=false;
+  if(i.city==='sj'&&i.sjp==='no'){p=null;capYr=null;sjOut=true;}
+  const formulaP=p;
+  if(p!=null&&r.published) p=r.published.pct;
+  const typ=p==null?TYPICAL_CPI:maxPct(r,TYPICAL_CPI,i.rent);
+  const maxRate=p==null?NOCAP_DEMO:(r.flat?r.cap:(capYr!=null?capYr:Math.max(p,typ)));
+  const proj=[5,10,20].map(y=>({y,max:i.rent*Math.pow(1+maxRate/100,y),typ:i.rent*Math.pow(1+typ/100,y)}));
+  const dollar=p==null?null:i.rent*p/100;
+  return {r,p,formulaP,dollar,newRent:p==null?null:i.rent+dollar,typ,maxRate,proj,sjOut,noCap:p==null};
+}
+function calc(){
+  const d=I18N[lang];
+  const i={city:$('city').value,rent:Math.max(0,parseFloat($('rent').value)||0),cpi:isFinite(parseFloat($('cpi').value))?parseFloat($('cpi').value):0,sjp};
+  const m=model(i), r=m.r, t=r[lang];
+  $('sjF').classList.toggle('hide',i.city!=='sj'); $('sjPanel').classList.toggle('hide',i.city!=='sj');
+  if(m.noCap){ $('total').textContent=d.nocap; $('dollar').textContent='—'; $('newRent').textContent='—'; }
+  else { $('total').textContent=pct(m.p)+(r.type==='state'?'*':''); $('dollar').textContent=fmt(m.dollar); $('newRent').textContent=fmt(m.newRent); }
+  $('ruleTxt').innerHTML='<b>'+d.rule_lbl+'</b> '+(m.sjOut?d.note_sjno:t.rule);
+  const sk={yes:'sale_yes',partial:'sale_partial',no:'sale_no',unk:'sale_unk'}[m.sjOut?'no':r.vacancy];
+  $('saleOut').textContent=d[sk]; $('saleSub').textContent=m.sjOut?d.sale_no:t.vac;
+  const ph=r.phone||HCD_PHONE;
+  $('callTel').textContent=ph; $('callTel').href='tel:'+ph.replace(/[^0-9]/g,'');
+  $('callSub').textContent=r.phone?r.who:(r.who+' · HCD MRLPP');
+  let note=r.type==='state'?d.note_state:r.type==='mou'?d.note_mou:r.type==='none'?d.note_none:d.note_ord;
+  if(m.sjOut) note=d.note_none;
+  if(r.published&&!m.noCap) note=fill(d.pub_note,{p:pct(r.published.pct),l:r.published.label,f:pct(m.formulaP)})+' '+note;
+  $('note').textContent=note;
+  const ln=$('leaseNote');
+  if(lease==='long'){ let s=d.lease_note; if(i.city==='gilroy') s+=' '+d.lease_gil; if(i.city==='hayward') s+=' '+d.lease_hay; ln.textContent=s; ln.classList.remove('hide');
+    if(!m.noCap) $('total').textContent=pct(m.p)+'*'; }
+  else ln.classList.add('hide');
+  $('verNote').textContent=d.ver_note; $('verNote').classList.toggle('hide',!!r.verified);
+  let h='<div class="h">'+d.p_yr+'</div><div class="h r">'+d.p_max+'</div><div class="h r">'+d.p_typ+'</div>';
+  h+='<div>'+d.now+'</div><div class="r">'+fmt(i.rent)+'</div><div class="r">'+fmt(i.rent)+'</div>';
+  m.proj.forEach(x=>{h+='<div>'+x.y+' '+d.yrs+'</div><div class="r">'+fmt(x.max)+'</div><div class="r">'+fmt(x.typ)+'</div>';});
+  $('proj').innerHTML=h;
+  $('projHint').textContent=m.noCap?d.proj_hint_nc:fill(d.proj_hint,{c:pct(m.maxRate),t:pct(m.typ)});
+  renderTable(i.cpi,i.rent);
+  last={city:r.name,r:fmt(i.rent),cpi:i.cpi,lease:lease==='long'?d.ls_long:d.ls_m2m,p:m.noCap?d.nocap:pct(m.p),d:m.noCap?'—':fmt(m.dollar),nr:m.noCap?'—':fmt(m.newRent),
+    rule:m.sjOut?d.note_sjno:t.rule,sale:d[sk]+' — '+(m.sjOut?d.sale_no:t.vac),m10:fmt(m.proj[1].max),t10:fmt(m.proj[1].typ),call:(r.phone?r.who+' '+r.phone:'HCD '+HCD_PHONE)};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function renderTable(cpi,rent){
+  const d=I18N[lang]; let h='';
+  Object.keys(RENT_RULES).forEach(k=>{const r=RENT_RULES[k], t=r[lang];
+    if(tf==='scc'&&r.county!=='scc') return; if(tf==='ala'&&r.county!=='ala') return; if(tf==='vac'&&r.vacancy!=='yes') return;
+    const p=maxPct(r,cpi,rent||1000);
+    h+='<div class="trow"><b>'+esc(r.name)+' <span class="badge '+(r.verified?'ok':'warn')+'">'+(r.verified?d.t_ok:d.t_unv)+'</span></b>'+
+      '<span>'+d.t_rule+': '+esc(t.rule)+(p!=null?' '+fill(d.t_now,{c:cpi})+' <b>'+pct(r.published?r.published.pct:p)+'</b>':'')+'</span>'+
+      '<span>'+d.t_sale+': '+esc(t.vac)+'</span>'+
+      '<span>'+d.t_call+': '+esc(r.who)+(r.phone?' · <a href="tel:'+r.phone.replace(/[^0-9]/g,'')+'">'+r.phone+'</a>':'')+
+      (r.law?' · <a href="'+esc(r.law)+'" target="_blank" rel="noopener">'+d.t_code+'</a>':'')+' · '+d.t_chk+' '+r.checked+'</span></div>';
+  });
+  $('tbl').innerHTML=h;
+}
+function seg(id,cb){ $(id).addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return;
+  $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); cb(b.dataset.v); calc();}); }
+seg('leaseSeg',v=>lease=v); seg('sjSeg',v=>sjp=v); seg('tFilter',v=>tf=v);
+(function(){const s=$('city'); const groups={scc:'Santa Clara County',ala:'Alameda County',oth:'—'};
+  Object.keys(groups).forEach(g=>{const og=document.createElement('optgroup'); og.label=groups[g];
+    Object.keys(RENT_RULES).filter(k=>RENT_RULES[k].county===g).forEach(k=>{const o=document.createElement('option'); o.value=k; o.textContent=RENT_RULES[k].name; og.appendChild(o);});
+    s.appendChild(og);}); s.value='sj';})();
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+['rent','cpi'].forEach(id=>$(id).addEventListener('input',calc)); $('city').addEventListener('change',calc);
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const v=Object.assign({},last,{n,e,ph});
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,v))+'&body='+encodeURIComponent(fill(d.body,v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+window.__model=model; window.__rules=RENT_RULES;
+applyLang();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
