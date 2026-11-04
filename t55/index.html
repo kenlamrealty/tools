@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How Much Can I Raise the Rent? · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Pick the city, building type and year built. See which rent law applies, the max legal increase in % and $, the earliest date, and how much notice to give.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t55/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="How Much Can I Raise the Rent? · Ken Lam Tools">
+<meta property="og:description" content="AB 1482 and local rent control in Santa Clara and Alameda counties: max legal increase, earliest date and notice.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t55/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T55 additions */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl select:focus-visible{outline:none}
+.ctl .chev{color:var(--muted);font-size:13px;pointer-events:none}
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.field[hidden]{display:none}
+.law{display:grid;gap:4px}
+.law .tag{justify-self:start;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:4px 11px;background:var(--brass-soft);color:var(--fg);font-weight:500}
+.law .tag.ex{background:transparent;border:1px dashed var(--muted);color:var(--muted)}
+.law .why{font-size:14px;color:var(--muted);margin:0}
+.total .v.word{font-size:46px}
+.cal{display:flex;flex-wrap:wrap;gap:8px}
+.cal a{font-size:13px;color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:var(--bg)}
+.cal a:hover{border-color:var(--brass)}
+.steps{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.steps h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.legal{font-size:12px;color:var(--muted);line-height:1.5}
+footer .src a{overflow-wrap:anywhere}
+.line .a.w{white-space:normal;text-align:right;min-width:0;max-width:55%}
+.line .n{flex:1 1 auto}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">How much can I raise the rent?</h1>
+    <p class="sub" data-i="sub">Pick the city, building type and year built. See which law applies, the legal max, the earliest date and the notice you owe.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="city"><span data-i="l_city">City</span></label>
+      <div class="ctl"><select id="city">
+        <option value="sj">San Jose</option>
+        <option value="oak">Oakland</option>
+        <option value="brk">Berkeley</option>
+        <option value="mv">Mountain View</option>
+        <option value="hay">Hayward</option>
+        <option value="ala">Alameda</option>
+        <option value="fre">Fremont</option>
+        <option value="sc">Santa Clara</option>
+        <option value="sun">Sunnyvale</option>
+        <option value="osc" data-i="o_osc">Other Santa Clara County</option>
+        <option value="oac" data-i="o_oac">Other Alameda County</option>
+      </select><span class="chev">▾</span></div>
+    </div>
+    <div class="field">
+      <label for="ptype"><span data-i="l_type">Property type</span></label>
+      <div class="ctl"><select id="ptype">
+        <option value="sfh" data-i="o_sfh">Single-family home or condo</option>
+        <option value="dupo" data-i="o_dupo">Duplex, owner lives in the other unit</option>
+        <option value="dup" data-i="o_dup">Duplex, owner doesn't live there</option>
+        <option value="apt" selected data-i="o_apt">Apartment building, 3+ units</option>
+      </select><span class="chev">▾</span></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="year"><span data-i="l_year">Year built</span></label>
+        <div class="ctl"><input id="year" type="number" inputmode="numeric" min="1850" max="2030" step="1" value="1972"></div>
+      </div>
+      <div class="field">
+        <label for="rent"><span data-i="l_rent">Current rent</span></label>
+        <div class="ctl"><span class="pre">$</span><input id="rent" type="number" inputmode="numeric" min="0" step="25" value="2800"><span class="post" data-i="per_mo">/mo</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="last"><span data-i="l_last">Last increase date </span><small data-i="l_last_s">(or move-in date if never raised)</small></label>
+      <div class="ctl"><input id="last" type="date" value="2025-12-01"></div>
+    </div>
+    <div class="field" id="corpF">
+      <label><span data-i="l_corp">Owner is a corporation, REIT, or LLC with a corporate member?</span></label>
+      <div class="seg" role="group">
+        <button type="button" id="corpN" aria-pressed="true" data-i="no">No</button>
+        <button type="button" id="corpY" aria-pressed="false" data-i="yes">Yes</button>
+      </div>
+    </div>
+    <div class="field" id="ntcF">
+      <label><span data-i="l_ntc">Tenant got the written AB 1482 exemption notice?</span> <small data-i="l_ntc_s">(usually in the lease)</small></label>
+      <div class="seg" role="group">
+        <button type="button" id="ntcY" aria-pressed="true" data-i="yes">Yes</button>
+        <button type="button" id="ntcN" aria-pressed="false" data-i="no">No</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="law">
+      <span class="tag" id="lawTag"></span>
+      <p class="why" id="lawWhy"></p>
+    </div>
+    <div class="total">
+      <div class="k" id="bigK"></div>
+      <div class="v" id="bigV"><span id="big">$0</span> <small id="bigU"></small></div>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_pct">Max increase</b></span><span class="a" id="oPct">0%</span></div>
+      <div class="line"><span class="n"><b data-i="n_amt">Max increase in dollars</b></span><span class="a" id="oAmt">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_date">Earliest effective date</b></span><span class="a w" id="oDate">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_ntc">Written notice</b> <span id="oNtcS"></span></span><span class="a w" id="oNtc">30</span></div>
+      <div class="line"><span class="n"><b data-i="n_serve">Serve notice by</b></span><span class="a" id="oServe">—</span></div>
+    </div>
+    <div class="cal" id="cal"></div>
+    <div class="note" id="jcNote"></div>
+    <div class="note" id="xNote"></div>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t55/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this result to yourself</h2>
+    <p data-i="f_sub">Ken will reply and help you check the exact rules for your building. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, text Ken the number below.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Confirm the year the building got its certificate of occupancy (city permit records). One year can change which law applies.</li>
+      <li data-i="ns2">Give the notice in writing: 30 days for 10% or less, 90 days for more. If you mail it, add 5 days.</li>
+      <li id="ns3"></li>
+      <li data-i="ns4">Own a single-family home or condo as an individual? Put the AB 1482 exemption notice in the lease, word for word from <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=1947.12" target="_blank" rel="noopener">Civil Code §1947.12(d)(5)</a>.</li>
+    </ol>
+  </section>
+  <p class="myth" data-i="myth"><b>Many people get this wrong:</b> “single-family homes are always exempt.” Only if the owner isn't a corporation, REIT or LLC with a corporate member, and the tenant got the written exemption notice. No notice, no exemption.</p>
+
+  <footer>
+    <span class="legal" data-i="legal">General information, not legal advice. Rules change and every building has its own history (banked increases, petitions, registration). Confirm with the city rent program or a landlord-tenant attorney before you send a notice.</span>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#tang-tien-thue" target="_blank" rel="noopener" data-i="ft_lib">Raising rent the legal way</a> · <a href="https://kenlamrealty.com/library#video-tang-tien-thue" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span class="src"><span data-i="ft_src">Sources:</span> <a href="https://www.sf.gov/information/california-tenant-protection-act-2019-ab-1482" target="_blank" rel="noopener">SF.gov AB 1482 (3.8%)</a> · <a href="https://www.bls.gov/regions/west/news-release/2026/consumerpriceindex_sanfrancisco_20260512.htm" target="_blank" rel="noopener">BLS SF-area CPI Apr 2026</a> · <a href="https://www.dir.ca.gov/OPRL/CPI/PresentCCPIchange.PDF" target="_blank" rel="noopener">CA DIR California CPI</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=1947.12" target="_blank" rel="noopener">Civil Code §1947.12</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=827" target="_blank" rel="noopener">§827</a> · <a href="https://oag.ca.gov/tenants" target="_blank" rel="noopener">CA Attorney General</a> · <a href="https://sanjoseca.gov/your-government/departments-offices/housing/tenants/learn-about-rent-stabilization" target="_blank" rel="noopener">San Jose ARO</a> · <a href="https://www.oaklandca.gov/Community/Housing-Programs-Support/For-Landlords/Allowable-Rent-Increases/Learn-More-About-Allowable-Rent-Increases" target="_blank" rel="noopener">Oakland RAP</a> · <a href="https://rentboard.berkeleyca.gov/rights-responsibilities/rent-levels/annual-general-adjustment" target="_blank" rel="noopener">Berkeley Rent Board</a> · <a href="https://mountainview.gov/our-city/departments/housing/rent-stabilization/rent-and-allowed-rent-increases" target="_blank" rel="noopener">Mountain View CSFRA</a> · <a href="https://www.hayward-ca.gov/services/city-services/information-landlords" target="_blank" rel="noopener">Hayward RRSO</a> · <a href="https://www.alamedarentprogram.org" target="_blank" rel="noopener">Alameda Rent Program</a> · <a href="https://www.fremont.gov/government/departments/housing/rent-review-program/rent-review-process" target="_blank" rel="noopener">Fremont Rent Review</a></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== RULES — every rent rule lives here. Edit this one block when a figure changes. =====
+   Looked up 04/11/2026.
+   AB 1482 (Civil Code §1947.12): cap = 5% + regional CPI (April→April), max 10%, over any 12 months,
+     measured from the LOWEST rent in the prior 12 months; same tenant: at most 2 increments in 12 months.
+     Regional CPI = BLS index for the region; if none, the California CPI from CA DIR.
+     - Alameda County is in the BLS "San Francisco area" (Alameda, Contra Costa, Marin, SF, San Mateo).
+       April 2026 12-mo change = 3.8% → cap 8.8% for Aug 1 2026–Jul 31 2027.
+       https://www.bls.gov/regions/west/news-release/2026/consumerpriceindex_sanfrancisco_20260512.htm (04/11/2026)
+       https://www.sf.gov/information/california-tenant-protection-act-2019-ab-1482 (04/11/2026: "currently 8.8% (5% + 3.8%)")
+     - Santa Clara County is NOT in a BLS regional index → California CPI (DIR), April 2026 = 3.6% → 8.6%.
+       https://www.dir.ca.gov/OPRL/CPI/PresentCCPIchange.PDF (04/11/2026, table updated 10/15/2026)
+       KEN DUYỆT: some Santa Clara Co. groups publish a different figure; confirm before telling clients.
+     Exemptions used: certificate of occupancy within last 15 years (rolling); owner-occupied duplex
+       (owner lived there when tenant moved in); single-family/condo when owner is NOT a corp/REIT/LLC with a
+       corporate member AND tenant got the written exemption notice. https://oag.ca.gov/tenants (04/11/2026)
+     Sunset: AB 1482 runs through Jan 1, 2030.
+   Notice (Civil Code §827): ≤10% → 30 days, >10% → 90 days. Mailed: +5 days (CCP §1013). AG page confirms 30/90.
+   San Jose ARO: apartments 3+ units built & occupied before Sept 7 1979; one 5% increase per 12 months; duplexes,
+     SFH, ADUs exempt. https://sanjoseca.gov/your-government/departments-offices/housing/tenants/learn-about-rent-stabilization (04/11/2026)
+   Oakland RAP: 60% of CPI, max 3%. Aug 1 2025–Jul 31 2026 = 0.8%; Aug 1 2026–Jul 31 2027 = 2.3%. Once per 12 months,
+     30-day notice + RAP Notice; banking up to 5 yrs. Exempt: built after Jan 1 1983, SFH/condo (Costa-Hawkins),
+     the owner's own unit. https://www.oaklandca.gov/Community/Housing-Programs-Support/Rent-Adjustment-Program-RAP/For-Property-Owners/Properties-Exempt-from-the-Rent-Adjustment-Program (04/11/2026)
+     KEN DUYỆT: tenant unit in an owner-occupied duplex treated as covered (not listed as exempt).
+   Berkeley: AGA = 65% of CPI, capped at 5%, raises rent ceilings every Jan 1. 2026 AGA = 1.0%; 2027 AGA = 2.5%.
+     Fully covered: most multi-unit built before June 1980. SFH/condo: partial (no rent ceiling unless tenant moved in before 1996).
+     No coverage: "Golden Duplex" owner-occupied since 12/31/1979.
+     https://rentboard.berkeleyca.gov/rights-responsibilities/rent-levels/annual-general-adjustment (04/11/2026)
+     https://rentboard.berkeleyca.gov/rights-responsibilities/rent-control-101/your-unit-covered-rent-control (04/11/2026)
+   Mountain View CSFRA: AGA = 100% of Bay Area CPI (Feb→Feb), min 2% max 5%; 2026 AGA = 2.5% (Sept 1 2026–Aug 31 2027).
+     Fully covered: 3+ units built before 1995; 1995–2017: eviction protections only. Once per 12 months.
+     https://mountainview.gov/our-city/departments/housing/rent-stabilization/outreach-and-information/faqs (formula)
+     2.5% seen on official 2026 notice form (Rev. 2026.06.01) https://www.mountainview.gov/home/showpublisheddocument/13369/639165210020770000
+     — form not opened directly; matches SF-area Feb 2026 CPI 2.5% in DIR table. KEN DUYỆT.
+   Hayward RRSO: multi-unit built before July 1 1979; 5% once per 12 months (banked up to 10% total); SFH exempt;
+     copy of notice to Rent Review Office within 30 days. https://www.hayward-ca.gov/services/city-services/information-landlords (04/11/2026)
+     KEN DUYỆT: owner-occupied duplex treated as covered (page doesn't say).
+   Alameda (city): AGA Sept 1 2026–Aug 31 2027 = 2.7% (70% of CPI); multi-unit (2+) built before Feb 1995.
+     https://www.alamedarentprogram.org (04/11/2026)
+   Fremont: no cap beyond AB 1482; tenant can request non-binding Rent Review if increase > 5%.
+     https://www.fremont.gov/government/departments/housing/rent-review-program/rent-review-process (04/11/2026)
+*/
+const RULES={
+  cpiRegion:{sj:'ca',mv:'ca',sc:'ca',sun:'ca',osc:'ca',oak:'sf',brk:'sf',hay:'sf',ala:'sf',fre:'sf',oac:'sf'},
+  ab1482:{base:5,max:10,newYears:15,periods:[{from:'2026-08-01',to:'2027-07-31',sf:3.8,ca:3.6}]},
+  noticeDays:{upTo10:30,over10:90,mailExtra:5},
+  local:{
+    sj:{name:'San Jose ARO',types:['apt'],before:1979,fixed:5,link:'https://sanjoseca.gov/your-government/departments-offices/housing/tenants/learn-about-rent-stabilization'},
+    oak:{name:'Oakland RAP',types:['dupo','dup','apt'],before:1983,periods:[{from:'2025-08-01',to:'2026-07-31',pct:0.8},{from:'2026-08-01',to:'2027-07-31',pct:2.3}],link:'https://www.oaklandca.gov/Community/Housing-Programs-Support/For-Landlords/Allowable-Rent-Increases/Learn-More-About-Allowable-Rent-Increases'},
+    brk:{name:'Berkeley Rent Ordinance',types:['dupo','dup','apt'],before:1980,jan1:true,periods:[{from:'2026-01-01',to:'2026-12-31',pct:1.0},{from:'2027-01-01',to:'2027-12-31',pct:2.5}],link:'https://rentboard.berkeleyca.gov/rights-responsibilities/rent-levels/annual-general-adjustment'},
+    mv:{name:'Mountain View CSFRA',types:['apt'],before:1995,periods:[{from:'2026-09-01',to:'2027-08-31',pct:2.5}],link:'https://mountainview.gov/our-city/departments/housing/rent-stabilization/rent-and-allowed-rent-increases'},
+    hay:{name:'Hayward RRSO',types:['dupo','dup','apt'],before:1979,fixed:5,link:'https://www.hayward-ca.gov/services/city-services/information-landlords'},
+    ala:{name:'Alameda Rent Program',types:['dupo','dup','apt'],before:1995,periods:[{from:'2026-09-01',to:'2027-08-31',pct:2.7}],link:'https://www.alamedarentprogram.org'}
+  },
+  links:{fre:'https://www.fremont.gov/government/departments/housing/rent-review-program/rent-review-process',def:'https://oag.ca.gov/tenants'},
+  cityNames:{sj:'San Jose',oak:'Oakland',brk:'Berkeley',mv:'Mountain View',hay:'Hayward',ala:'Alameda',fre:'Fremont',sc:'Santa Clara',sun:'Sunnyvale',osc:'Santa Clara County',oac:'Alameda County'}
+};
+const UPDATED='04/11/2026';
+
+/* ---------- pure logic (tested in node) ---------- */
+function D(s){const [y,m,d]=s.split('-').map(Number);return new Date(Date.UTC(y,m-1,d));}
+function iso(d){return d.toISOString().slice(0,10);}
+function addDays(d,n){return new Date(d.getTime()+n*864e5);}
+function addYear(d){return new Date(Date.UTC(d.getUTCFullYear()+1,d.getUTCMonth(),d.getUTCDate()));}
+function pickPeriod(periods,date){const s=iso(date);for(const p of periods){if(s>=p.from&&s<=p.to)return {p,stale:false};}
+  const last=periods[periods.length-1]; if(s>last.to) return {p:last,stale:true}; return {p:periods[0],stale:true};}
+/* inp: {city,type,year,rent,last:'YYYY-MM-DD',corp:bool,notice:bool,today:'YYYY-MM-DD'} */
+function rentRule(inp){
+  const R=RULES, today=D(inp.today), last=inp.last?D(inp.last):today, curYear=today.getUTCFullYear();
+  const out={kind:'',law:'',reason:'',pct:null,stale:false,notes:[],city:inp.city};
+  const loc=R.local[inp.city];
+  const noticeMin=addDays(today,R.noticeDays.upTo10);
+  /* 1) local rent control */
+  if(loc && loc.types.includes(inp.type) && inp.year<loc.before){
+    out.kind='local'; out.law=loc.name; out.reason='local';
+    let eff = loc.jan1 ? new Date(Date.UTC(last.getUTCFullYear()+1,0,1)) : addYear(last);
+    if(eff<noticeMin) eff=noticeMin;
+    if(loc.fixed!=null){out.pct=loc.fixed;} else {const r=pickPeriod(loc.periods,eff); out.pct=r.p.pct; out.stale=r.stale; out.periodTo=r.p.to;}
+    out.eff=eff;
+    if(inp.year===loc.before-1) out.notes.push('edgeYear');
+  } else {
+    /* 2) AB 1482 */
+    const newBldg = inp.year > curYear - R.ab1482.newYears;
+    if(newBldg){out.kind='exempt';out.reason='new';}
+    else if(inp.type==='dupo'){out.kind='exempt';out.reason='dupo';}
+    else if(inp.type==='sfh' && !inp.corp && inp.notice){out.kind='exempt';out.reason='sfh';}
+    else {
+      out.kind='state'; out.law='AB 1482';
+      out.reason = inp.type==='sfh' ? (inp.corp?'sfhCorp':'sfhNoNotice') : (loc && loc.types.includes(inp.type) ? 'localTooNew' : 'state');
+      let eff=addYear(last); if(eff<noticeMin) eff=noticeMin; out.eff=eff;
+      const r=pickPeriod(R.ab1482.periods,eff), cpi=r.p[R.cpiRegion[inp.city]];
+      out.cpi=cpi; out.region=R.cpiRegion[inp.city];
+      out.pct=Math.min(R.ab1482.base+cpi,R.ab1482.max); out.stale=r.stale; out.periodTo=r.p.to;
+      if(inp.year===curYear-R.ab1482.newYears) out.notes.push('edge15');
+    }
+    if(out.kind==='exempt'){ out.eff=noticeMin; }
+  }
+  if(out.pct!=null){
+    out.pct=Math.round(out.pct*10)/10;
+    out.inc=inp.rent*out.pct/100; out.newRent=inp.rent+out.inc;
+    out.noticeDays = out.pct>10 ? R.noticeDays.over10 : R.noticeDays.upTo10;
+  } else out.noticeDays=null;
+  out.serve = addDays(out.eff, -(out.noticeDays||R.noticeDays.upTo10));
+  if(out.serve<today) out.serve=today;
+  return out;
+}
+if(typeof module!=='undefined'){module.exports={rentRule,RULES};}
+</script>
+<script>
+const I18N={
+ en:{title:'How much can I raise the rent?',sub:'Pick the city, building type and year built. See which law applies, the legal max, the earliest date and the notice you owe.',
+  l_city:'City',o_osc:'Other Santa Clara County',o_oac:'Other Alameda County',l_type:'Property type',o_sfh:'Single-family home or condo',o_dupo:'Duplex, owner lives in the other unit',o_dup:"Duplex, owner doesn't live there",o_apt:'Apartment building, 3+ units',
+  l_year:'Year built',l_rent:'Current rent',per_mo:'/mo',l_last:'Last increase date ',l_last_s:'(or move-in date if never raised)',
+  l_corp:'Owner is a corporation, REIT, or LLC with a corporate member?',l_ntc:'Tenant got the written AB 1482 exemption notice?',l_ntc_s:'(usually in the lease)',yes:'Yes',no:'No',
+  n_pct:'Max increase',n_amt:'Max increase in dollars',n_date:'Earliest effective date',n_ntc:'Written notice',n_serve:'Serve notice by',days:'days',
+  t_local:'Local rent control',t_state:'State cap · AB 1482',t_exempt:'No rent cap',
+  k_max:'New max rent',k_ex:'Rent cap',w_none:'No cap',
+  r_local:'{law} covers this unit: {type} built before {before}. Its limit is lower than AB 1482, so it wins.',
+  r_state:'No local rent control fits this unit, so the state cap applies: 5% + {cpi}% CPI ({reg}), max 10%.',
+  r_localTooNew:'{city} rent control only covers buildings older than {before}. This one is newer, so the state cap applies: 5% + {cpi}% CPI ({reg}).',
+  r_sfhCorp:'Single-family homes owned by a corporation, REIT or LLC with a corporate member are NOT exempt. State cap: 5% + {cpi}% CPI ({reg}).',
+  r_sfhNoNotice:'A single-family home is only exempt if the tenant got the written exemption notice. No notice, so the state cap applies: 5% + {cpi}% CPI ({reg}).',
+  r_new:'Built within the last 15 years. AB 1482 doesn’t cover it yet (rolling 15-year rule). Local rent control doesn’t either.',
+  r_dupo:'Owner-occupied duplex: exempt from AB 1482 if the owner lived in the other unit when this tenant moved in, and still does.',
+  r_sfh:'Single-family home or condo, owner is an individual, and the tenant got the exemption notice. Exempt from AB 1482.',
+  reg_sf:'SF-Oakland-Hayward, Apr 2026',reg_ca:'California CPI, Apr 2026',
+  ntc_s30:'(10% or less)',ntc_ex:'30 days if 10% or less, 90 days if more',
+  cal_serve:'Add “serve notice” to Google Calendar',cal_eff:'Add “new rent starts” to Google Calendar',
+  cal_t_serve:'Serve rent increase notice',cal_t_eff:'New rent starts',
+  any:'Any date, with notice',
+  jc:{sj:'Just cause: San Jose’s Tenant Protection Ordinance covers rent-stabilized units and buildings with 3+ units. AB 1482 just cause covers most other tenants after 12 months.',
+      oak:'Just cause: Oakland’s ordinance covers most rentals, including single-family homes. Only units with a certificate of occupancy in the last 10 years are left out.',
+      brk:'Just cause: Berkeley covers most rentals, even single-family homes and condos with no rent ceiling.',
+      mv:'Just cause: CSFRA covers apartments built before 2017. Other units follow AB 1482 just cause after 12 months.',
+      hay:'Just cause: Hayward’s ordinance protects most tenants. Every rental must get the city’s RRSO notice.',
+      ala:'Just cause: Alameda’s Rent Program covers most rentals in the city, single-family homes included.',
+      def:'Just cause: after a tenant has lived there 12 months, AB 1482 says you need a legal reason to end the tenancy (unless the unit is exempt and the tenant got the notice).'},
+  x_two:'AB 1482 measures from the lowest rent in the last 12 months. Same tenant: at most 2 increases in 12 months, and together they can’t pass the cap.',
+  x_stale:'The figure for dates after {to} isn’t out yet. This uses the current figure. Check again before you send the notice.',
+  x_bank:'Skipped increases in past years may be banked. That can raise the legal max. Ask the city rent program.',
+  x_oak:'Oakland: the unit must be registered with RAP, and every notice must include the RAP Notice.',
+  x_brk:'Berkeley raises the rent ceiling every January 1 (2.5% for 2027). If you skipped past years, your ceiling may be higher. Check the Rent Registry.',
+  x_hay:'Hayward: send a copy of the notice to the Rent Review Office within 30 days.',
+  x_fre:'Fremont: if the increase is over 5%, the tenant can ask for a Rent Review hearing (not binding).',
+  x_edgeYear:'Built right at the cutoff year. Check the exact certificate of occupancy date.',
+  x_edge15:'Right at the 15-year line. Check the exact certificate of occupancy date.',
+  x_ex:'No legal cap, but the lease still rules. Many fixed-term leases block increases until they end.',
+  x_dupo:'Owner-occupied duplex in {city}: check the city rules too. Some cities still regulate the tenant’s unit.',
+  ns3_city:'Not sure? Ask the city: <a href="{link}" target="_blank" rel="noopener">{name}</a>.',
+  ns3_def:'Not sure? Read the <a href="https://oag.ca.gov/tenants" target="_blank" rel="noopener">CA Attorney General tenant page</a> or call your city’s housing office.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this result to yourself',f_sub:'Ken will reply and help you check the exact rules for your building. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, text Ken the number below.",f_or:'Or text:',f_copy:'Copy',
+  ns_t:'Next steps',ns1:'Confirm the year the building got its certificate of occupancy (city permit records). One year can change which law applies.',
+  ns2:'Give the notice in writing: 30 days for 10% or less, 90 days for more. If you mail it, add 5 days.',
+  ns4:'Own a single-family home or condo as an individual? Put the AB 1482 exemption notice in the lease, word for word from <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=1947.12" target="_blank" rel="noopener">Civil Code §1947.12(d)(5)</a>.',
+  myth:'<b>Many people get this wrong:</b> “single-family homes are always exempt.” Only if the owner isn’t a corporation, REIT or LLC with a corporate member, and the tenant got the written exemption notice. No notice, no exemption.',
+  legal:'General information, not legal advice. Rules change and every building has its own history (banked increases, petitions, registration). Confirm with the city rent program or a landlord-tenant attorney before you send a notice.',
+  ft_read:'Read more:',ft_lib:'Raising rent the legal way',ft_vid:'3-min video',ft_src:'Sources:',ft_upd:'Updated',ft_all:'All tools',
+  lang:'Tiếng Việt',
+  type:{sfh:'single-family/condo',dupo:'duplex',dup:'duplex',apt:'3+ unit building'},
+  sms:'Hi Ken, I used the rent increase tool: {city}, {type}, built {y}, rent {r}. It says {law}, max {pct} → {nr}/mo from {d}. Can you double-check?',
+  subj:'Rent increase check — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nCity: {city}\nType: {type}\nYear built: {y}\nCurrent rent: {r}/mo\nLast increase: {last}\n\nLaw: {law}\nMax increase: {pct} ({inc}/mo)\nNew max rent: {nr}/mo\nEarliest date: {d}\nNotice: {nd} days, serve by {sv}\n\nSent from tool T55 tools.kenlamrealty.com'},
+ vi:{title:'Tăng tiền thuê được bao nhiêu?',sub:'Chọn city, loại nhà, năm xây. Biết liền luật nào áp dụng, tăng tối đa bao nhiêu, ngày nào được tăng, báo trước mấy ngày.',
+  l_city:'City',o_osc:'City khác ở Santa Clara County',o_oac:'City khác ở Alameda County',l_type:'Loại nhà',o_sfh:'Nhà single-family hoặc condo',o_dupo:'Duplex, chủ ở 1 căn',o_dup:'Duplex, chủ không ở',o_apt:'Chung cư 3 căn trở lên',
+  l_year:'Năm xây',l_rent:'Tiền thuê hiện tại',per_mo:'/tháng',l_last:'Lần tăng giá gần nhất ',l_last_s:'(chưa tăng lần nào thì ghi ngày dọn vô)',
+  l_corp:'Chủ nhà là công ty, REIT, hay LLC có thành viên là công ty?',l_ntc:'Người thuê đã nhận giấy báo miễn AB 1482 chưa?',l_ntc_s:'(thường ghi trong lease)',yes:'Có',no:'Không',
+  n_pct:'Tăng tối đa',n_amt:'Tăng tối đa (tiền)',n_date:'Ngày sớm nhất được tăng',n_ntc:'Báo trước bằng giấy',n_serve:'Giao giấy báo trước ngày',days:'ngày',
+  t_local:'Luật rent control của city',t_state:'Luật tiểu bang · AB 1482',t_exempt:'Không bị giới hạn',
+  k_max:'Tiền thuê mới tối đa',k_ex:'Giới hạn tăng',w_none:'Không giới hạn',
+  r_local:'Căn này thuộc {law}: {type} xây trước {before}. Luật city thấp hơn AB 1482 nên theo luật city.',
+  r_state:'City không có rent control cho căn này, nên theo luật tiểu bang: 5% + {cpi}% CPI ({reg}), tối đa 10%.',
+  r_localTooNew:'Rent control của {city} chỉ áp dụng nhà xây trước {before}. Căn này mới hơn, nên theo luật tiểu bang: 5% + {cpi}% CPI ({reg}).',
+  r_sfhCorp:'Nhà single-family mà chủ là công ty, REIT hay LLC có thành viên công ty thì KHÔNG được miễn. Theo luật tiểu bang: 5% + {cpi}% CPI ({reg}).',
+  r_sfhNoNotice:'Nhà single-family chỉ được miễn khi người thuê đã nhận giấy báo miễn. Chưa có giấy thì vẫn bị giới hạn: 5% + {cpi}% CPI ({reg}).',
+  r_new:'Nhà xây chưa tới 15 năm. AB 1482 chưa áp dụng (tính cuốn chiếu 15 năm). Rent control của city cũng không áp dụng.',
+  r_dupo:'Duplex chủ ở 1 căn: miễn AB 1482 nếu chủ đã ở đó từ lúc người thuê dọn vô, và giờ vẫn ở.',
+  r_sfh:'Nhà single-family hoặc condo, chủ là cá nhân, người thuê đã nhận giấy báo miễn. Được miễn AB 1482.',
+  reg_sf:'vùng SF-Oakland-Hayward, 4/2026',reg_ca:'CPI California, 4/2026',
+  ntc_s30:'(tăng 10% trở xuống)',ntc_ex:'30 ngày nếu tăng tới 10%, 90 ngày nếu hơn',
+  cal_serve:'Thêm “giao giấy báo” vào Google Calendar',cal_eff:'Thêm “bắt đầu giá mới” vào Google Calendar',
+  cal_t_serve:'Giao giấy báo tăng tiền thuê',cal_t_eff:'Bắt đầu tiền thuê mới',
+  any:'Ngày nào cũng được, miễn báo trước',
+  jc:{sj:'Just cause: luật Tenant Protection của San Jose bảo vệ căn rent control và nhà 3 căn trở lên. Căn khác theo just cause của AB 1482 sau 12 tháng.',
+      oak:'Just cause: Oakland bảo vệ gần hết nhà cho thuê, kể cả nhà single-family. Chỉ trừ căn mới có giấy phép ở trong 10 năm gần đây.',
+      brk:'Just cause: Berkeley bảo vệ gần hết nhà cho thuê, kể cả single-family và condo không có giới hạn giá.',
+      mv:'Just cause: CSFRA bảo vệ chung cư xây trước 2017. Căn khác theo just cause của AB 1482 sau 12 tháng.',
+      hay:'Just cause: luật Hayward bảo vệ gần hết người thuê. Căn nào cũng phải đưa giấy RRSO của city.',
+      ala:'Just cause: Rent Program của Alameda bảo vệ gần hết nhà cho thuê trong city, kể cả single-family.',
+      def:'Just cause: người thuê ở đủ 12 tháng thì muốn cho dọn ra phải có lý do hợp pháp theo AB 1482 (trừ khi căn được miễn và đã đưa giấy báo).'},
+  x_two:'AB 1482 tính theo giá thuê thấp nhất trong 12 tháng qua. Cùng 1 người thuê: tối đa 2 lần tăng trong 12 tháng, cộng lại không quá mức trần.',
+  x_stale:'Con số cho sau ngày {to} chưa công bố. Đang dùng con số hiện tại. Kiểm lại trước khi gửi giấy.',
+  x_bank:'Năm trước không tăng thì có thể được "để dành" (banking). Mức tối đa có thể cao hơn. Hỏi rent program của city.',
+  x_oak:'Oakland: căn phải đăng ký với RAP, và giấy báo tăng giá phải kèm RAP Notice.',
+  x_brk:'Berkeley nâng mức trần mỗi ngày 1/1 (năm 2027 là 2.5%). Năm trước bỏ không tăng thì mức trần có thể cao hơn. Coi Rent Registry.',
+  x_hay:'Hayward: gửi 1 bản giấy báo cho Rent Review Office trong 30 ngày.',
+  x_fre:'Fremont: tăng trên 5% thì người thuê được xin Rent Review (không bắt buộc theo).',
+  x_edgeYear:'Năm xây ngay mốc. Kiểm ngày certificate of occupancy chính xác.',
+  x_edge15:'Ngay mốc 15 năm. Kiểm ngày certificate of occupancy chính xác.',
+  x_ex:'Luật không giới hạn, nhưng lease vẫn có hiệu lực. Lease có thời hạn thường không cho tăng giữa chừng.',
+  x_dupo:'Duplex chủ ở tại {city}: coi thêm luật city. Có city vẫn quản căn của người thuê.',
+  ns3_city:'Chưa chắc? Hỏi city: <a href="{link}" target="_blank" rel="noopener">{name}</a>.',
+  ns3_def:'Chưa chắc? Đọc <a href="https://oag.ca.gov/tenants" target="_blank" rel="noopener">trang người thuê của Bộ Tư pháp CA</a> hoặc gọi phòng housing của city.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi kết quả này về email',f_sub:'Ken nhận được sẽ trả lời và giúp kiểm luật cho đúng căn của mình. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số dưới đây nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ns_t:'Bước tiếp theo',ns1:'Kiểm năm nhà có certificate of occupancy (hồ sơ permit của city). Lệch 1 năm là đổi luật.',
+  ns2:'Báo bằng giấy: tăng tới 10% báo trước 30 ngày, hơn 10% báo 90 ngày. Gửi qua bưu điện thì cộng thêm 5 ngày.',
+  ns4:'Chủ cá nhân có nhà single-family/condo? Ghi giấy báo miễn AB 1482 vào lease, đúng nguyên văn trong <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=1947.12" target="_blank" rel="noopener">Civil Code §1947.12(d)(5)</a>.',
+  myth:'<b>Nhiều người hiểu sai:</b> “nhà single-family thì luôn được miễn.” Chỉ miễn khi chủ không phải công ty, REIT hay LLC có thành viên công ty, VÀ người thuê đã nhận giấy báo miễn. Không có giấy là không được miễn.',
+  legal:'Thông tin chung, không phải tư vấn pháp lý. Luật hay đổi, mỗi căn có lịch sử riêng (banking, petition, đăng ký). Hỏi rent program của city hoặc luật sư trước khi gửi giấy báo.',
+  ft_read:'Đọc thêm:',ft_lib:'Tăng tiền thuê cho đúng luật',ft_vid:'Video 3 phút',ft_src:'Nguồn:',ft_upd:'Cập nhật',ft_all:'Tất cả tools',
+  lang:'English',
+  type:{sfh:'single-family/condo',dupo:'duplex',dup:'duplex',apt:'chung cư 3+ căn'},
+  sms:'Chào Ken, tôi vừa dùng tool tăng tiền thuê: {city}, {type}, xây {y}, thuê {r}. Tool nói {law}, tối đa {pct} → {nr}/tháng từ {d}. Ken kiểm giùm được không?',
+  subj:'Kiểm tra tăng tiền thuê — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nCity: {city}\nLoại nhà: {type}\nNăm xây: {y}\nTiền thuê: {r}/tháng\nLần tăng gần nhất: {last}\n\nLuật: {law}\nTăng tối đa: {pct} ({inc}/tháng)\nTiền thuê mới tối đa: {nr}/tháng\nNgày sớm nhất: {d}\nBáo trước: {nd} ngày, giao giấy trước {sv}\n\nGửi từ tool T55 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const ymd=d=>iso(d).replace(/-/g,'');
+const fdate=d=>{const y=d.getUTCFullYear(),m=d.getUTCMonth()+1,dd=d.getUTCDate();
+  return lang==='vi'?String(dd).padStart(2,'0')+'/'+String(m).padStart(2,'0')+'/'+y:d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'});};
+const fill=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+const calLink=(title,d,details)=>'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+ymd(d)+'/'+ymd(addDays(d,1))+'&details='+encodeURIComponent(details);
+let corp=false, notice=true, last={};
+function todayStr(){const t=new Date();return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');}
+
+function calc(){
+  const d=I18N[lang], city=$('city').value, type=$('ptype').value, year=Math.round(num('year')), rent=Math.max(0,num('rent'));
+  $('corpF').hidden = type!=='sfh'; $('ntcF').hidden = !(type==='sfh' && !corp);
+  const lastV=$('last').value||todayStr();
+  const r=rentRule({city,type,year,rent,last:lastV,corp,notice,today:todayStr()});
+  const loc=RULES.local[city];
+  const ctx={law:r.law,type:d.type[type],before:loc?loc.before:'',city:RULES.cityNames[city],cpi:r.cpi,reg:r.region==='ca'?d.reg_ca:d.reg_sf};
+  const tag=$('lawTag');
+  tag.textContent = r.kind==='local'?d.t_local+' · '+r.law : r.kind==='state'?d.t_state:d.t_exempt;
+  tag.classList.toggle('ex',r.kind==='exempt');
+  $('lawWhy').textContent=fill(d['r_'+r.reason],ctx);
+  const notes=[];
+  if(r.kind==='exempt'){
+    $('bigK').textContent=d.k_ex; $('big').textContent=d.w_none; $('bigU').textContent=''; $('bigV').classList.add('word');
+    $('oPct').textContent='—'; $('oAmt').textContent='—'; $('oDate').textContent=d.any;
+    $('oNtc').textContent=d.ntc_ex; $('oNtcS').textContent=''; $('oServe').textContent='—';
+    notes.push(d.x_ex); if(r.reason==='dupo' && loc) notes.push(fill(d.x_dupo,ctx));
+    $('cal').innerHTML='';
+  } else {
+    $('bigK').textContent=d.k_max; $('big').textContent=fmt(r.newRent); $('bigU').textContent=d.per_mo; $('bigV').classList.remove('word');
+    $('oPct').textContent=r.pct.toFixed(1)+'%'; $('oAmt').textContent='+'+fmt(r.inc)+d.per_mo; $('oDate').textContent=fdate(r.eff);
+    $('oNtc').textContent=r.noticeDays+' '+d.days; $('oNtcS').textContent=d.ntc_s30; $('oServe').textContent=fdate(r.serve);
+    const det=fill(d.sms,{city:ctx.city,type:ctx.type,y:year,r:fmt(rent),law:r.law,pct:r.pct.toFixed(1)+'%',nr:fmt(r.newRent),d:fdate(r.eff)})+' — tools.kenlamrealty.com/t55/';
+    $('cal').innerHTML='<a href="'+calLink(d.cal_t_serve,r.serve,det)+'" target="_blank" rel="noopener">'+d.cal_serve+'</a><a href="'+calLink(d.cal_t_eff,r.eff,det)+'" target="_blank" rel="noopener">'+d.cal_eff+'</a>';
+    if(r.kind==='state') notes.push(d.x_two);
+    if(r.stale) notes.push(fill(d.x_stale,{to:fdate(D(r.periodTo))}));
+    if(r.kind==='local'){ if(city==='oak') notes.push(d.x_oak); if(city==='brk') notes.push(d.x_brk); if(city==='hay') notes.push(d.x_hay); if(['oak','hay','mv','ala'].includes(city)) notes.push(d.x_bank); }
+  }
+  if(city==='fre') notes.push(d.x_fre);
+  if(r.notes.includes('edgeYear')) notes.push(d.x_edgeYear);
+  if(r.notes.includes('edge15')) notes.push(d.x_edge15);
+  $('jcNote').textContent=d.jc[city]||d.jc.def;
+  $('xNote').innerHTML=notes.join('<br>'); $('xNote').classList.toggle('hide',!notes.length);
+  const link=loc?loc.link:(RULES.links[city]||null);
+  $('ns3').innerHTML = link? fill(d.ns3_city,{link,name:loc?loc.name:'Fremont Rent Review'}) : d.ns3_def;
+  last={city:ctx.city,type:ctx.type,y:year,r:fmt(rent),last:fdate(D(lastV)),law:r.kind==='exempt'?d.t_exempt:(r.law),
+    pct:r.pct!=null?r.pct.toFixed(1)+'%':'—',inc:r.inc!=null?fmt(r.inc):'—',nr:r.newRent!=null?fmt(r.newRent):'—',
+    d:r.kind==='exempt'?d.any:fdate(r.eff),nd:r.noticeDays||'30/90',sv:r.kind==='exempt'?'—':fdate(r.serve)};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+function seg(a,b,v,set){$(a).setAttribute('aria-pressed',v?'true':'false');$(b).setAttribute('aria-pressed',v?'false':'true');set();}
+['city','ptype','year','rent','last'].forEach(id=>{$(id).addEventListener('input',calc);$(id).addEventListener('change',calc);});
+$('corpY').onclick=()=>{corp=true;seg('corpY','corpN',true,calc);};
+$('corpN').onclick=()=>{corp=false;seg('corpN','corpY',true,calc);};
+$('ntcY').onclick=()=>{notice=true;seg('ntcY','ntcN',true,calc);};
+$('ntcN').onclick=()=>{notice=false;seg('ntcN','ntcY',true,calc);};
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], o=Object.assign({},last,{n:$('fname').value.trim()||'—',e:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'});
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,o))+'&body='+encodeURIComponent(fill(d.body,o));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

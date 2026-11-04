@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tax &amp; HOA Prorations at Closing · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Enter the close date, property tax and HOA. See who owes whom at closing, day by day, the way California escrow splits it.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t64/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Tax &amp; HOA Prorations at Closing · Ken Lam Tools">
+<meta property="og:description" content="Property tax and HOA split by close date, California style. Who credits whom, in dollars.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t64/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T64 additions */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl select:focus-visible{outline:none}
+.ctl .chev{color:var(--muted);font-size:13px;pointer-events:none}
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.line .n{flex:1 1 auto}
+.line.grp{padding-top:14px}
+.line.grp .n{font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.line .a.pos{color:var(--ok)}
+.line .a.neg{color:var(--warn)}
+.who2{font-size:15px;margin:6px 0 0}
+.cal{display:flex;flex-wrap:wrap;gap:8px}
+.cal a{font-size:13px;color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:var(--bg)}
+.cal a:hover{border-color:var(--brass)}
+.steps{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.steps h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+footer .src a{overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Tax &amp; HOA at closing: who owes whom?</h1>
+    <p class="sub" data-i="sub">Enter the close date, the tax bill and HOA. See the split by day, the way California escrow does it.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="row2">
+      <div class="field">
+        <label for="close"><span data-i="l_close">Close date</span></label>
+        <div class="ctl"><input id="close" type="date" value="2026-12-15"></div>
+      </div>
+      <div class="field">
+        <label><span data-i="l_side">I am the</span></label>
+        <div class="seg" role="group">
+          <button type="button" id="sB" aria-pressed="true" data-i="buyer">Buyer</button>
+          <button type="button" id="sS" aria-pressed="false" data-i="seller">Seller</button>
+        </div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="tax"><span data-i="l_tax">Property tax </span><small data-i="l_tax_s">(seller's yearly bill)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="tax" type="number" inputmode="numeric" min="0" step="100" value="14800"><span class="post" data-i="per_yr">/yr</span></div>
+      </div>
+      <div class="field">
+        <label for="paid"><span data-i="l_paid">Installments paid</span></label>
+        <div class="ctl"><select id="paid">
+          <option value="auto" data-i="p_auto">Auto by date</option>
+          <option value="0" data-i="p_0">None yet</option>
+          <option value="1" data-i="p_1">1st only</option>
+          <option value="2" data-i="p_2">Both</option>
+        </select><span class="chev">▾</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="hoa"><span data-i="l_hoa">HOA dues </span><small data-i="l_hoa_s">(0 if none)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="hoa" type="number" inputmode="numeric" min="0" step="10" value="450"><span class="post" data-i="per_mo">/mo</span></div>
+      </div>
+      <div class="field" id="hoaThruF">
+        <label for="hoaThru"><span data-i="l_thru">HOA paid through</span></label>
+        <div class="ctl"><input id="hoaThru" type="date" value="2026-12-31"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_basis">Day count </span><small data-i="l_basis_s">(ask your escrow which one they use)</small></label>
+      <div class="seg" role="group">
+        <button type="button" id="b30" aria-pressed="true" data-i="b30">30-day month</button>
+        <button type="button" id="b365" aria-pressed="false" data-i="b365">365-day year</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" id="bigK"></div>
+      <div class="v"><span id="big">$0</span></div>
+      <p class="who2" id="who"></p>
+    </div>
+    <div class="lines">
+      <div class="line grp"><span class="n" data-i="g_tax">Property tax</span><span class="a"></span></div>
+      <div class="line"><span class="n"><b data-i="n_fy">Tax year</b></span><span class="a" id="oFy">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_sdays">Seller owns</b> <small id="oSdaysS"></small></span><span class="a" id="oSdays">0</span></div>
+      <div class="line"><span class="n"><b data-i="n_sshare">Seller's share of tax</b></span><span class="a" id="oSshare">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_spaid">Seller already paid</b> <small id="oPaidS"></small></span><span class="a" id="oSpaid">$0</span></div>
+      <div class="line"><span class="n"><b id="oTaxL"></b></span><span class="a" id="oTax">$0</span></div>
+      <div class="line grp" id="hoaG"><span class="n">HOA</span><span class="a"></span></div>
+      <div class="line" id="hoaL1"><span class="n"><b id="oHoaL"></b> <small id="oHoaS"></small></span><span class="a" id="oHoa">$0</span></div>
+    </div>
+    <div class="cal" id="cal"></div>
+    <div class="note" id="fyNote"></div>
+    <div class="note" id="xNote"></div>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t64/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this split to yourself</h2>
+    <p data-i="f_sub">Ken will reply and help you check it against the escrow statement. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, text Ken the number below.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Ask escrow for the estimated settlement statement. The tax and HOA lines should match this within a few dollars.</li>
+      <li data-i="ns2">Look up the real tax bill and what's paid: <a href="https://dtac.santaclaracounty.gov" target="_blank" rel="noopener">Santa Clara County</a> · <a href="https://www.acgov.org/propertytax/" target="_blank" rel="noopener">Alameda County</a>.</li>
+      <li data-i="ns3">Buyer: a supplemental tax bill comes a few months after closing. It's not in this split. See <a href="/t12/">T12</a>, and total cash to close in <a href="/t03/">T03</a>.</li>
+      <li data-i="ns4">Seller: put this credit or charge into your net sheet in <a href="/t21/">T21</a>. Ask the HOA for the demand so dues are paid through the right date.</li>
+    </ol>
+  </section>
+  <p class="myth" data-i="myth"><b>Many people get this wrong:</b> “the seller already paid the December tax, so the buyer owes nothing.” That payment covers July through December. The buyer pays the seller back for every day after closing.</p>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#proration" target="_blank" rel="noopener" data-i="ft_lib">How escrow splits tax and HOA</a> · <a href="https://kenlamrealty.com/library#video-proration" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span data-i="ft_est">Estimate. Escrow uses the actual tax bill, any special assessments and its own day count. The closing day counts as the buyer's day unless your escrow instructions say otherwise.</span>
+    <span class="src"><span data-i="ft_src">Sources:</span> <a href="https://journal.firsttuesday.us/escrow-prorations/71609/" target="_blank" rel="noopener">first tuesday — escrow prorations</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=RTC&amp;sectionNum=2617" target="_blank" rel="noopener">Rev. &amp; Tax. Code §2617</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=RTC&amp;sectionNum=2705" target="_blank" rel="noopener">§2705</a> · <a href="https://dtac.santaclaracounty.gov" target="_blank" rel="noopener">Santa Clara County Tax Collector</a> · <a href="https://www.acgov.org/propertytax/" target="_blank" rel="noopener">Alameda County Property Tax</a></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== RULES — edit here =====
+   Looked up 04/11/2026.
+   - CA property tax year: July 1 – June 30. 1st installment (Jul–Dec) due Nov 1, delinquent after Dec 10;
+     2nd installment (Jan–Jun) due Feb 1, delinquent after Apr 10.
+     https://journal.firsttuesday.us/escrow-prorations/71609/ (fetched 04/11/2026)
+     Rev. & Tax. Code §2617, §2618, §2704, §2705 (leginfo — not fetched, statutory dates). County tax sites linked for bills.
+   - Prorations: CA escrow custom = 30-day month / 360-day year; the closing day is the buyer's first day.
+     Same source (first tuesday). KEN DUYỆT: some escrow offices use a 365-day year for taxes — user can switch.
+   - HOA: dues paid monthly in advance; prorated with the same day count. Unpaid dues come out of seller proceeds.
+   - Auto installment status: during Nov 1–Dec 10 / Feb 1–Apr 10 the open installment is assumed paid
+     by escrow from seller funds at close (common practice — KEN DUYỆT).
+*/
+const RULES={fyStartMonth:7,inst1:{due:[11,1],late:[12,10]},inst2:{due:[2,1],late:[4,10]},basis30:{month:30,year:360},basis365:{year:365}};
+const UPDATED='04/11/2026';
+
+function D(s){const [y,m,d]=s.split('-').map(Number);return new Date(Date.UTC(y,m-1,d));}
+function iso(d){return d.toISOString().slice(0,10);}
+function addDays(d,n){return new Date(d.getTime()+n*864e5);}
+function U(y,m,d){return new Date(Date.UTC(y,m-1,d));}
+/* days from a (inclusive) to b (exclusive), 30/360 */
+function d30(a,b){const y1=a.getUTCFullYear(),m1=a.getUTCMonth(),d1=Math.min(a.getUTCDate(),30),y2=b.getUTCFullYear(),m2=b.getUTCMonth(),d2=Math.min(b.getUTCDate(),30);
+  return (y2-y1)*360+(m2-m1)*30+(d2-d1);}
+function dAct(a,b){return Math.round((b-a)/864e5);}
+/* inp: {close,tax,paid:'auto'|0|1|2,hoa,hoaThru,basis:30|365} */
+function prorate(inp){
+  const c=D(inp.close), y=c.getUTCFullYear(), m=c.getUTCMonth()+1;
+  const fy=m>=RULES.fyStartMonth?y:y-1, fyStart=U(fy,7,1), fyEnd=U(fy+1,7,1);
+  let paid=inp.paid, auto=false, escrowPays=null;
+  if(paid==='auto'){auto=true;
+    if(c<U(fy,11,1)) paid=0; else if(c<U(fy+1,2,1)) {paid=1; if(c<=U(fy,12,10)) escrowPays=1;} else {paid=2; if(c<=U(fy+1,4,10)) escrowPays=2;}}
+  paid=Number(paid);
+  const b30=inp.basis!==365;
+  const sDays=b30?d30(fyStart,c):dAct(fyStart,c);
+  const yearDays=b30?360:365;
+  const sShare=inp.tax*sDays/yearDays;
+  const sPaid=inp.tax/2*paid;
+  const taxNet=sPaid-sShare;           /* >0: buyer pays seller back; <0: seller credits buyer */
+  let hoaPre=0,hoaUnpaid=0,hoaDays=0;
+  if(inp.hoa>0&&inp.hoaThru){const e=addDays(D(inp.hoaThru),1);
+    const days=b30?d30(c,e):dAct(c,e), perDay=b30?inp.hoa/30:inp.hoa*12/365;
+    hoaDays=days; if(days>0) hoaPre=perDay*days; else if(days<0) hoaUnpaid=perDay*(-days);}
+  const sellerNet=taxNet+hoaPre-hoaUnpaid;  /* money to seller from prorations (+) */
+  const buyerNet=-taxNet-hoaPre;            /* credit to buyer (+) / charge (-) */
+  /* next tax deadline after close */
+  let next; if(paid===0) next=c<=U(fy,12,10)?U(fy,12,10):U(fy+1,4,10); else if(paid===1) next=U(fy+1,4,10); else next=U(fy+1,12,10);
+  return {fy,sDays,yearDays,sShare,sPaid,paid,auto,escrowPays,taxNet,hoaPre,hoaUnpaid,hoaDays,sellerNet,buyerNet,next};
+}
+if(typeof module!=='undefined'){module.exports={prorate,d30};}
+</script>
+<script>
+const I18N={
+ en:{title:'Tax &amp; HOA at closing: who owes whom?',sub:'Enter the close date, the tax bill and HOA. See the split by day, the way California escrow does it.',
+  l_close:'Close date',l_side:'I am the',buyer:'Buyer',seller:'Seller',l_tax:'Property tax ',l_tax_s:"(seller's yearly bill)",per_yr:'/yr',
+  l_paid:'Installments paid',p_auto:'Auto by date',p_0:'None yet',p_1:'1st only',p_2:'Both',l_hoa:'HOA dues ',l_hoa_s:'(0 if none)',per_mo:'/mo',l_thru:'HOA paid through',
+  l_basis:'Day count ',l_basis_s:'(ask your escrow which one they use)',b30:'30-day month',b365:'365-day year',
+  k_get:'You get a credit of',k_pay:'You pay at closing',k_zero:'Nothing to settle',
+  w_b2s:'Buyer pays seller back {a}.',w_s2b:'Seller credits buyer {a}.',w_even:'Buyer and seller come out even.',
+  w_hoaU:' Seller also pays {a} in unpaid HOA dues.',
+  g_tax:'Property tax',n_fy:'Tax year',n_sdays:'Seller owns',n_sshare:"Seller's share of tax",n_spaid:'Seller already paid',
+  days:'{n} days',from_jul:'Jul 1 → day before close, of {y}',inst:{0:'no installment',1:'1st installment',2:'both installments'},auto:'auto',
+  t_b2s:'Buyer pays seller back',t_s2b:'Seller credits buyer',t_even:'Even',
+  h_pre:'Buyer pays seller back',h_pre_s:'{n} prepaid days after close',h_un:'Seller pays HOA',h_un_s:'{n} unpaid days before close',h_even:'Paid exactly to closing',h_even_s:'',
+  fy:'California tax year runs July 1 to June 30. 1st installment covers Jul–Dec (late after Dec 10). 2nd covers Jan–Jun (late after Apr 10). Closing day is the buyer’s day.',
+  x_esc1:'Close falls while the 1st installment is open. Escrow usually pays it from the seller’s money, then splits it. That’s how it’s shown.',
+  x_esc2:'Close falls while the 2nd installment is open. Escrow usually pays it from the seller’s money, then splits it. That’s how it’s shown.',
+  x_supp:'Buyer: the split uses the seller’s tax bill. Your new, higher tax shows up later as a supplemental bill — <a href="/t12/">T12</a>.',
+  cal_next:'Add next tax deadline to Google Calendar',cal_t:'Property tax installment deadline',cal_d:'Pay by 5 PM. Check if your loan has an impound account first. From tools.kenlamrealty.com/t64/',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this split to yourself',f_sub:'Ken will reply and help you check it against the escrow statement. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, text Ken the number below.",f_or:'Or text:',f_copy:'Copy',
+  ns_t:'Next steps',ns1:'Ask escrow for the estimated settlement statement. The tax and HOA lines should match this within a few dollars.',
+  ns2:'Look up the real tax bill and what’s paid: <a href="https://dtac.santaclaracounty.gov" target="_blank" rel="noopener">Santa Clara County</a> · <a href="https://www.acgov.org/propertytax/" target="_blank" rel="noopener">Alameda County</a>.',
+  ns3:'Buyer: a supplemental tax bill comes a few months after closing. It’s not in this split. See <a href="/t12/">T12</a>, and total cash to close in <a href="/t03/">T03</a>.',
+  ns4:'Seller: put this credit or charge into your net sheet in <a href="/t21/">T21</a>. Ask the HOA for the demand so dues are paid through the right date.',
+  myth:'<b>Many people get this wrong:</b> “the seller already paid the December tax, so the buyer owes nothing.” That payment covers July through December. The buyer pays the seller back for every day after closing.',
+  ft_read:'Read more:',ft_lib:'How escrow splits tax and HOA',ft_vid:'3-min video',
+  ft_est:'Estimate. Escrow uses the actual tax bill, any special assessments and its own day count. The closing day counts as the buyer’s day unless your escrow instructions say otherwise.',
+  ft_src:'Sources:',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I ran the proration tool: close {c}, tax {t}/yr, HOA {h}/mo. It says: {w} Can you check it?',
+  subj:'Closing prorations — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nSide: {side}\nClose date: {c}\nProperty tax: {t}/yr ({pd})\nHOA: {h}/mo, paid through {ht}\nDay count: {bs}\n\nSeller owns {sd} days of the tax year\nSeller share: {ss} · Seller paid: {sp}\nTax: {tl} {tx}\nHOA: {hl} {hx}\n\nResult: {w}\n\nSent from tool T64 tools.kenlamrealty.com'},
+ vi:{title:'Thuế &amp; HOA ngày close: ai trả ai?',sub:'Nhập ngày close, tiền thuế và HOA. Biết liền ai trả ai bao nhiêu, chia theo ngày như escrow ở California.',
+  l_close:'Ngày close',l_side:'Tôi là',buyer:'Người mua',seller:'Người bán',l_tax:'Thuế nhà ',l_tax_s:'(bill 1 năm của người bán)',per_yr:'/năm',
+  l_paid:'Đã đóng mấy kỳ',p_auto:'Tự đoán theo ngày',p_0:'Chưa đóng',p_1:'Kỳ 1',p_2:'Cả 2 kỳ',l_hoa:'Tiền HOA ',l_hoa_s:'(không có thì để 0)',per_mo:'/tháng',l_thru:'HOA đã đóng tới ngày',
+  l_basis:'Cách đếm ngày ',l_basis_s:'(hỏi escrow dùng cách nào)',b30:'Tháng 30 ngày',b365:'Năm 365 ngày',
+  k_get:'Bạn được credit',k_pay:'Bạn phải trả khi close',k_zero:'Không ai nợ ai',
+  w_b2s:'Người mua trả lại người bán {a}.',w_s2b:'Người bán credit cho người mua {a}.',w_even:'Hai bên huề.',
+  w_hoaU:' Người bán còn phải đóng {a} tiền HOA còn nợ.',
+  g_tax:'Thuế nhà',n_fy:'Năm thuế',n_sdays:'Người bán giữ nhà',n_sshare:'Phần thuế của người bán',n_spaid:'Người bán đã đóng',
+  days:'{n} ngày',from_jul:'từ 1/7 tới hôm trước ngày close, trên {y}',inst:{0:'chưa đóng kỳ nào',1:'kỳ 1',2:'cả 2 kỳ'},auto:'tự đoán',
+  t_b2s:'Người mua trả lại người bán',t_s2b:'Người bán credit người mua',t_even:'Huề',
+  h_pre:'Người mua trả lại người bán',h_pre_s:'{n} ngày đã đóng trước, sau ngày close',h_un:'Người bán đóng HOA',h_un_s:'{n} ngày còn nợ trước ngày close',h_even:'Đóng vừa tới ngày close',h_even_s:'',
+  fy:'Năm thuế ở California tính từ 1/7 tới 30/6. Kỳ 1 cho tháng 7–12 (trễ sau 10/12). Kỳ 2 cho tháng 1–6 (trễ sau 10/4). Ngày close tính là ngày của người mua.',
+  x_esc1:'Ngày close rơi vào lúc kỳ 1 đang tới hạn. Escrow thường lấy tiền người bán đóng luôn rồi mới chia. Tool tính theo cách đó.',
+  x_esc2:'Ngày close rơi vào lúc kỳ 2 đang tới hạn. Escrow thường lấy tiền người bán đóng luôn rồi mới chia. Tool tính theo cách đó.',
+  x_supp:'Người mua: phần chia này dựa trên bill thuế của người bán. Thuế mới (cao hơn) của mình tới sau, gọi là supplemental bill — <a href="/t12/">T12</a>.',
+  cal_next:'Thêm hạn đóng thuế kế tiếp vào Google Calendar',cal_t:'Hạn đóng thuế nhà',cal_d:'Đóng trước 5 giờ chiều. Coi loan có impound account không. Từ tools.kenlamrealty.com/t64/',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi bảng chia này về email',f_sub:'Ken nhận được sẽ trả lời và giúp so với giấy tờ escrow. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số dưới đây nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ns_t:'Bước tiếp theo',ns1:'Xin escrow bản estimated settlement statement. Dòng thuế và HOA phải gần giống số ở đây, lệch vài đồng thôi.',
+  ns2:'Coi bill thuế thật và kỳ nào đã đóng: <a href="https://dtac.santaclaracounty.gov" target="_blank" rel="noopener">Santa Clara County</a> · <a href="https://www.acgov.org/propertytax/" target="_blank" rel="noopener">Alameda County</a>.',
+  ns3:'Người mua: vài tháng sau close sẽ có supplemental tax bill. Không nằm trong phần chia này. Coi <a href="/t12/">T12</a>, và tổng tiền cần mang tới close ở <a href="/t03/">T03</a>.',
+  ns4:'Người bán: đưa số credit hoặc số phải trả này vào bảng tiền cầm về ở <a href="/t21/">T21</a>. Xin HOA bản demand để đóng đúng tới ngày.',
+  myth:'<b>Nhiều người hiểu sai:</b> “người bán đóng thuế tháng 12 rồi, người mua khỏi trả gì.” Kỳ đó trả cho tháng 7 tới tháng 12. Người mua phải trả lại người bán từng ngày sau ngày close.',
+  ft_read:'Đọc thêm:',ft_lib:'Escrow chia thuế và HOA ra sao',ft_vid:'Video 3 phút',
+  ft_est:'Ước tính. Escrow dùng bill thuế thật, các khoản special assessment và cách đếm ngày của họ. Ngày close tính là của người mua, trừ khi giấy escrow ghi khác.',
+  ft_src:'Nguồn:',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa dùng tool chia thuế/HOA: close {c}, thuế {t}/năm, HOA {h}/tháng. Kết quả: {w} Ken kiểm giùm được không?',
+  subj:'Chia thuế & HOA ngày close — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nBên: {side}\nNgày close: {c}\nThuế nhà: {t}/năm ({pd})\nHOA: {h}/tháng, đóng tới {ht}\nCách đếm: {bs}\n\nNgười bán giữ {sd} ngày của năm thuế\nPhần người bán: {ss} · Đã đóng: {sp}\nThuế: {tl} {tx}\nHOA: {hl} {hx}\n\nKết quả: {w}\n\nGửi từ tool T64 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const fill=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+const ymd=d=>iso(d).replace(/-/g,'');
+const fdate=d=>{const y=d.getUTCFullYear(),m=d.getUTCMonth()+1,dd=d.getUTCDate();
+  return lang==='vi'?String(dd).padStart(2,'0')+'/'+String(m).padStart(2,'0')+'/'+y:d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'});};
+let side='buyer', basis=30, last={};
+
+function calc(){
+  const d=I18N[lang], closeV=$('close').value||'2026-12-15', tax=Math.max(0,num('tax')), hoa=Math.max(0,num('hoa'));
+  const r=prorate({close:closeV,tax,paid:$('paid').value,hoa,hoaThru:$('hoaThru').value,basis});
+  $('hoaThruF').style.opacity=hoa>0?'':'.45';
+  const net = side==='buyer'? r.buyerNet : r.sellerNet;
+  const absN=Math.abs(net);
+  $('bigK').textContent = absN<0.5? d.k_zero : (net>0? d.k_get : d.k_pay);
+  $('big').textContent = fmt(absN);
+  let w = Math.abs(r.taxNet+r.hoaPre)<0.5 ? d.w_even : (r.taxNet+r.hoaPre>0 ? fill(d.w_b2s,{a:fmt(r.taxNet+r.hoaPre)}) : fill(d.w_s2b,{a:fmt(-(r.taxNet+r.hoaPre))}));
+  if(r.hoaUnpaid>0.5) w+=fill(d.w_hoaU,{a:fmt(r.hoaUnpaid)});
+  $('who').textContent=w;
+  $('oFy').textContent='7/1/'+r.fy+' – 6/30/'+(r.fy+1);
+  $('oSdays').textContent=fill(d.days,{n:r.sDays}); $('oSdaysS').textContent=fill(d.from_jul,{y:r.yearDays});
+  $('oSshare').textContent=fmt(r.sShare); $('oSpaid').textContent=fmt(r.sPaid);
+  $('oPaidS').textContent=d.inst[r.paid]+(r.auto?' · '+d.auto:'');
+  const tl = Math.abs(r.taxNet)<0.5? d.t_even : (r.taxNet>0? d.t_b2s : d.t_s2b);
+  $('oTaxL').textContent=tl; $('oTax').textContent=fmt(Math.abs(r.taxNet));
+  const showH=hoa>0; $('hoaG').style.display=showH?'':'none'; $('hoaL1').style.display=showH?'':'none';
+  let hl,hs,hx;
+  if(r.hoaPre>0.5){hl=d.h_pre;hs=fill(d.h_pre_s,{n:r.hoaDays});hx=fmt(r.hoaPre);}
+  else if(r.hoaUnpaid>0.5){hl=d.h_un;hs=fill(d.h_un_s,{n:-r.hoaDays});hx=fmt(r.hoaUnpaid);}
+  else {hl=d.h_even;hs='';hx='$0';}
+  $('oHoaL').textContent=hl; $('oHoaS').textContent=hs; $('oHoa').textContent=hx;
+  const sgn=(x,forBuyer)=>{const v=forBuyer?x:-x;return v;};
+  const taxForMe = side==='buyer'? -r.taxNet : r.taxNet;
+  $('oTax').className='a '+(Math.abs(taxForMe)<0.5?'':(taxForMe>0?'pos':'neg'));
+  const hoaForMe = side==='buyer'? -r.hoaPre : (r.hoaPre-r.hoaUnpaid);
+  $('oHoa').className='a '+(Math.abs(hoaForMe)<0.5?'':(hoaForMe>0?'pos':'neg'));
+  $('fyNote').textContent=d.fy;
+  const notes=[]; if(r.escrowPays===1) notes.push(d.x_esc1); if(r.escrowPays===2) notes.push(d.x_esc2); if(side==='buyer') notes.push(d.x_supp);
+  $('xNote').innerHTML=notes.join('<br>'); $('xNote').classList.toggle('hide',!notes.length);
+  $('cal').innerHTML = side==='buyer' ? '<a href="https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(d.cal_t)+'&dates='+ymd(r.next)+'/'+ymd(addDays(r.next,1))+'&details='+encodeURIComponent(d.cal_d)+'" target="_blank" rel="noopener">'+d.cal_next+' · '+fdate(r.next)+'</a>' : '';
+  last={side:side==='buyer'?d.buyer:d.seller,c:fdate(D(closeV)),t:fmt(tax),pd:d.inst[r.paid],h:fmt(hoa),ht:$('hoaThru').value?fdate(D($('hoaThru').value)):'—',bs:basis===30?d.b30:d.b365,
+    sd:r.sDays,ss:fmt(r.sShare),sp:fmt(r.sPaid),tl,tx:fmt(Math.abs(r.taxNet)),hl,hx,w};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+['close','tax','paid','hoa','hoaThru'].forEach(id=>{$(id).addEventListener('input',calc);$(id).addEventListener('change',calc);});
+$('sB').onclick=()=>{side='buyer';$('sB').setAttribute('aria-pressed','true');$('sS').setAttribute('aria-pressed','false');calc();};
+$('sS').onclick=()=>{side='seller';$('sS').setAttribute('aria-pressed','true');$('sB').setAttribute('aria-pressed','false');calc();};
+$('b30').onclick=()=>{basis=30;$('b30').setAttribute('aria-pressed','true');$('b365').setAttribute('aria-pressed','false');calc();};
+$('b365').onclick=()=>{basis=365;$('b365').setAttribute('aria-pressed','true');$('b30').setAttribute('aria-pressed','false');calc();};
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], o=Object.assign({},last,{n:$('fname').value.trim()||'—',e:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'});
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,o))+'&body='+encodeURIComponent(fill(d.body,o));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
