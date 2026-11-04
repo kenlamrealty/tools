@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Which Jobs Need a Permit? · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<style>
+/* ---- Thêm cho T92 (không đổi class cũ) ---- */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl.sel::after{content:"";width:8px;height:8px;border:solid var(--muted);border-width:0 1.5px 1.5px 0;transform:rotate(45deg) translateY(-3px);flex:none}
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.checks label{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:8px 13px;font-size:14px;color:var(--muted);cursor:pointer;user-select:none}
+.checks input{accent-color:var(--brass);margin:0}
+.checks label:has(input:checked){background:var(--brass-soft);color:var(--fg);border-color:var(--brass)}
+.tg{display:grid;gap:8px}
+.tg label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;align-items:start;font-size:14px;color:var(--fg);cursor:pointer;line-height:1.4}
+.tg input{accent-color:var(--brass);width:18px;height:18px;margin:1px 0 0}
+.tg small{display:block;color:var(--muted);font-size:12px}
+.total .v .of{font-size:30px;color:var(--muted)}
+.total .cnt2{margin-top:8px;font-size:14px;color:var(--muted)}
+.total .cnt2 b{color:var(--fg);font-weight:500}
+.pjs{display:grid;border-top:1px solid var(--line)}
+.pj{padding:14px 0;border-bottom:1px solid var(--line);display:grid;gap:6px}
+.pj-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.pj-h b{font-weight:500;font-size:16px;min-width:0}
+.st{font-size:11px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;border-radius:999px;padding:3px 9px;border:1px solid var(--line);color:var(--muted)}
+.st.y{border-color:var(--brass);background:var(--brass-soft);color:var(--warn)}
+.st.d{border-style:dashed;color:var(--fg)}
+.pj .why{font-size:14px;color:var(--fg);margin:0;line-height:1.45}
+.pj dl{margin:2px 0 0;display:grid;grid-template-columns:minmax(0,7.5em) minmax(0,1fr);gap:4px 10px;font-size:13px}
+.pj dt{color:var(--muted)}
+.pj dd{margin:0;min-width:0}
+.pj dd a{color:var(--brass);text-decoration:none}
+.pj dd small{color:var(--muted)}
+.next-steps{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.next-steps h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.next-steps ol,.next-steps ul{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.next-steps a{color:var(--brass)}
+.myth{font-size:14px;line-height:1.5;border-left:2px solid var(--brass);padding:2px 0 2px 12px;margin:0}
+.myth b{font-weight:500}
+.srcs a{word-break:break-word}
+.ck{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.empty{font-size:14px;color:var(--muted);padding:12px 0}
+</style>
+<meta name="description" content="Pick your city and the jobs you plan. See which ones need a permit, the typical city fee, who can pull it, and which inspections to expect.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t92/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Which Jobs Need a Permit? · Ken Lam Tools">
+<meta property="og:description" content="Pick your city and the jobs you plan. See which need a permit, the fee, who can pull it and the inspections.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t92/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Which of my jobs need a permit?</h1>
+    <p class="sub" data-i="sub">Pick your city and what you plan to do. See which jobs need a permit, the city fee, who can pull it and what gets inspected.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="city"><span data-i="l_city">City</span></label>
+      <div class="ctl sel"><select id="city">
+        <option value="sj">San Jose</option>
+        <option value="sc">Santa Clara</option>
+        <option value="sv">Sunnyvale</option>
+        <option value="mp">Milpitas</option>
+        <option value="fr">Fremont</option>
+        <option value="ok">Oakland</option>
+        <option value="ot" data-i="c_ot">Other city</option>
+      </select></div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_jobs">Jobs you plan </span><small data-i="l_jobs_s">(tap all that apply)</small></label>
+      <div class="checks" id="jobs"></div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_det">Details</span></label>
+      <div class="tg">
+        <label><input type="checkbox" id="tWalls"><span><span data-i="t_walls">Moving or removing a wall</span><small data-i="t_walls_s">Any wall, even a small one</small></span></label>
+        <label><input type="checkbox" id="tMep"><span><span data-i="t_mep">Changing plumbing or electrical</span><small data-i="t_mep_s">Moving a sink or toilet, new outlets, lights, circuits</small></span></label>
+        <label><input type="checkbox" id="tFence"><span><span data-i="t_fence">Fence taller than 7 ft</span><small data-i="t_fence_s">Or a masonry / block wall</small></span></label>
+        <label><input type="checkbox" id="tRoof" checked><span><span data-i="t_roof">Roof work over 100 sqft</span><small data-i="t_roof_s">A full re-roof is always over</small></span></label>
+        <label><input type="checkbox" id="tWin"><span><span data-i="t_win">New window size or new frame</span><small data-i="t_win_s">Leave off if it's a same-size insert</small></span></label>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_k">Jobs that need a permit</div>
+      <div class="v"><span id="nY">0</span> <span class="of"><span data-i="r_of">of</span> <span id="nT">0</span></span></div>
+      <div class="cnt2"><span id="nD">0</span> <span data-i="r_dep">more depend on the details</span> · <span data-i="r_fee">Permit fees about</span> <b id="feeTot">$0</b></div>
+    </div>
+    <div class="pjs" id="pjs"></div>
+    <div class="note" id="pslNote" data-i="psl_note">Oakland and nearby East Bay cities also need an EBMUD sewer lateral certificate when you sell, or remodel over $100,000.</div>
+    <div class="note" id="otNote" data-i="ot_note">"Other city" uses the state code (CRC R105.2). Your city can be stricter. Call its building department before you start.</div>
+  </section>
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" aria-label="Video" onerror="this.remove()"></video>
+
+  <section class="next-steps">
+    <h2 data-i="sell_h">Why it matters when you sell</h2>
+    <ul>
+      <li data-i="sell1">The seller disclosure form (TDS) asks straight out: any additions, changes or repairs made without permits? You have to answer.</li>
+      <li data-i="sell2">Sell within 18 months of buying? You must also hand the buyer the permits for work you hired out (Civil Code 1102.6h).</li>
+      <li data-i="sell3">Appraisers usually don't count unpermitted square footage. Insurers can push back on a claim tied to unpermitted work.</li>
+    </ul>
+    <p class="myth"><b data-i="my_k">Many people get this wrong:</b> <span data-i="my_v">"A small bathroom remodel doesn't need a permit." New tile, vanity and paint in the same spot: usually no. Move the toilet, add a fan circuit, swap the tub valve inside the wall: that's plumbing and electrical work, and it needs a permit even in a 5x8 bathroom.</span></p>
+  </section>
+
+  <section class="next-steps">
+    <h2 data-i="ns_h">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Look up the permit history of the house on the city portal (link in each job above). Buyers' agents do this too.</li>
+      <li data-i="ns2">Hiring out? Check the license at <a href="https://www.cslb.ca.gov/onlineservices/checklicenseII/checklicense.aspx" target="_blank" rel="noopener">cslb.ca.gov</a> and let the contractor pull the permit in their name. Handymen can only do jobs under $1,000 that need no permit.</li>
+      <li data-i="ns3">Keep the signed-off permit card and final inspection. Put them in your house folder for the day you sell.</li>
+      <li data-i="ns4">Already have unpermitted work? Ask the city about a permit for existing work before you list, not during escrow. Price it with the <a href="/t90/">repair cost tool</a>.</li>
+    </ol>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t92/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this permit list to yourself</h2>
+    <p data-i="f_sub">Ken can tell you what buyers in your city ask about permits. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#permit-nha" target="_blank" rel="noopener" data-i="ft_lib">Unpermitted work and selling your home</a> · <a href="https://kenlamrealty.com/library#video-permit" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span data-i="ft_est">A guide, not a ruling. Each city decides. Fees marked "estimate" are not from that city's schedule. Always confirm with the building department before work starts.</span>
+    <span class="srcs"><span data-i="ft_src">Sources:</span>
+      <a href="https://sanjoseca.gov/home/showpublisheddocument/25897/637114833424370000" target="_blank" rel="noopener">San Jose Bulletin #201 (10/2024)</a> ·
+      <a href="https://www.sanjoseca.gov/business/development-services-permit-center/online-permits-at-sjpermits-org/building-online-permits" target="_blank" rel="noopener">SJPermits online permit types</a> ·
+      <a href="https://www.sanjoseca.gov/businesses/development-services-permit-center/start-your-project/water-heaters" target="_blank" rel="noopener">San Jose water heaters</a> ·
+      <a href="https://sanjoseca.gov/home/showpublisheddocument/26047/638598545783230000" target="_blank" rel="noopener">San Jose fee schedule FY24-25</a> ·
+      <a href="https://www.santaclaraca.gov/home/showpublisheddocument/87969/639192125713230000" target="_blank" rel="noopener">Santa Clara minor permit fees (7/2026)</a> ·
+      <a href="https://www.sunnyvale.ca.gov/home/showpublisheddocument/1726/639107281821070000" target="_blank" rel="noopener">Sunnyvale work not requiring a permit (1/2026)</a> ·
+      <a href="https://www.sunnyvale.ca.gov/home/showpublisheddocument/1738/638440396187570000" target="_blank" rel="noopener">Sunnyvale re-roof (12/2025)</a> ·
+      <a href="https://www.milpitas.gov/m/faq?cat=16" target="_blank" rel="noopener">Milpitas permit FAQ</a> ·
+      <a href="https://www.milpitas.gov/DocumentCenter/View/806/Fee-Schedule" target="_blank" rel="noopener">Milpitas fee schedule (11/2026)</a> ·
+      <a href="https://fremont.gov/home/showpublisheddocument/6785/637769005420130000" target="_blank" rel="noopener">Fremont work without a permit</a> ·
+      <a href="https://www.oaklandca.gov/Planning-Building/Permit-Process-Overview" target="_blank" rel="noopener">Oakland permit process</a> ·
+      <a href="https://www.ci.lathrop.ca.us/sites/default/files/fileattachments/building_division/page/24708/work_exempt_from_permit_crc_r105.2_2022.pdf" target="_blank" rel="noopener">CRC R105.2 text</a> ·
+      <a href="https://www.ebmud.com/unpublished/test-pages/private-sewer-lateral-psl-program/frequently-asked-questions" target="_blank" rel="noopener">EBMUD sewer lateral FAQ</a> ·
+      <a href="https://www.cslb.ca.gov/Resources/PressReleases/2024/AB2622.FINAL.pdf" target="_blank" rel="noopener">CSLB $1,000 rule</a> ·
+      <a href="https://berkeleyca.gov/sites/default/files/documents/111%20Owner%20Builder%20Verification.pdf" target="_blank" rel="noopener">Owner-builder rules</a> ·
+      <a href="https://california.public.law/codes/civil_code_section_1102.6" target="_blank" rel="noopener">TDS (Civ. Code 1102.6)</a> ·
+      <a href="https://california.public.law/codes/civil_code_section_1102.6h" target="_blank" rel="noopener">Civ. Code 1102.6h</a> ·
+      <a href="https://www.epa.gov/lead/renovation-repair-and-painting-program" target="_blank" rel="noopener">EPA lead-safe (RRP)</a>
+      · <span data-i="ft_chk">Checked 04/11/2026.</span></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số liệu — sửa ở đây khi đổi (tra 04/11/2026) =====
+   LUẬT CHUNG (state): CRC R105.2 work exempt — fence ≤7 ft, retaining wall ≤4 ft, accessory 1 tầng ≤120 sqft, deck ≤200 sqft & ≤30",
+     painting/papering/tiling/carpeting/cabinets/countertops. Plumbing: sửa rò/thông nghẹt, gỡ-gắn lại toilet KHÔNG đổi ống/van/thiết bị.
+     https://www.ci.lathrop.ca.us/sites/default/files/fileattachments/building_division/page/24708/work_exempt_from_permit_crc_r105.2_2022.pdf
+   SAN JOSE Bulletin #201 (10/10/2024): roof <25% mái, không đụng khung, 1 lần/12 tháng = miễn; fence 7 ft hông/sau, 3 ft phía trước;
+     window thay không đổi khung/flashing/tường = miễn; main disconnect cần permit; subfloor ≤10 sqft miễn.
+     https://sanjoseca.gov/home/showpublisheddocument/25897/637114833424370000
+   SJPermits online (owner hoặc contractor có license + SJ Tax Certificate): water heater, furnace, AC, heat pump, service ≤400A, EV charger,
+     repipe, sanitary sewer replacement, reroof, kitchen/bath minor remodel.
+     https://www.sanjoseca.gov/business/development-services-permit-center/online-permits-at-sjpermits-org/building-online-permits
+     https://www.sanjoseca.gov/businesses/development-services-permit-center/start-your-project/water-heaters ("requires a plumbing permit")
+   SAN JOSE PHÍ: FY2024-25 schedule (eff 12/08/2024) — tính theo giờ $315 inspection, $227 issuance:
+     furnace 50 phút min → ~$263; service 40 phút min → ~$210; repipe 60 phút min → ~$315; reroof $113 issuance + $236 (2 inspections);
+     exterior alteration (window) $227+$325+$367 = $919. Có thể đã tăng ở FY26-27 → KEN DUYỆT (ước tính).
+     https://sanjoseca.gov/home/showpublisheddocument/26047/638598545783230000
+   SANTA CLARA PHÍ (eff 01/07/2026): WH $244 (tankless/relocate $325), furnace $244, AC $162, reroof $712, service ≤200A $244, repipe $244,
+     sewer $244, bath like-for-like $244; + $98 issuance mỗi permit + 3.37% technology fee.
+     https://www.santaclaraca.gov/home/showpublisheddocument/87969/639192125713230000 · Portal https://aca-prod.accela.com/SANTACLARA/
+   SUNNYVALE (Rev 1/2026): fence ≤7 ft miễn; reroof ≤100 sqft / 12 tháng miễn; window retrofit cùng kiểu, giữ khung = miễn; cosmetic bếp/tắm miễn;
+     main disconnect cần permit. https://www.sunnyvale.ca.gov/home/showpublisheddocument/1726/639107281821070000
+     Reroof >100 sqft cần permit, 2 inspection (in-progress + final): https://www.sunnyvale.ca.gov/home/showpublisheddocument/1738/638440396187570000
+   MILPITAS PHÍ (eff 02/11/2026): WH $365, furnace $365, AC $304, reroof $695, window retrofit 1–9 $209 / 10+ $330, frame mới $330–1,059,
+     service ≤200A $122, repipe $243, sewer $182, bath $1,059, kitchen $1,059, kitchen+bath $1,545. Portal eTRAKiT.
+     https://www.milpitas.gov/DocumentCenter/View/806/Fee-Schedule · https://www.milpitas.gov/m/faq?cat=16
+   FREMONT P&P59 (05/2020): fence gỗ ≤7 ft, tường gạch/bê tông ≤4 ft miễn. Portal Accela COF.
+     https://fremont.gov/home/showpublisheddocument/6785/637769005420130000
+   OAKLAND: portal https://aca-prod.accela.com/OAKLAND/Default.aspx (https://www.oaklandca.gov/Planning-Building/Permit-Process-Overview).
+     Trang "Work Exempt" của Oakland bị chặn khi tra → dùng CRC chung, KEN DUYỆT.
+   EBMUD PSL: cần certificate khi bán/chuyển title, remodel >$100,000, đổi cỡ đồng hồ nước — Oakland, Alameda, Albany, Emeryville, Piedmont...
+     https://www.ebmud.com/unpublished/test-pages/private-sewer-lateral-psl-program/frequently-asked-questions
+   PHÍ "est" (Sunnyvale/Fremont/Oakland/khác + mục không có trong schedule) = cùng khung ước tính T90. KEN DUYỆT.
+   CSLB: handyman không license chỉ làm job <$1,000 (gồm vật tư) VÀ không cần permit — AB 2622, từ 01/01/2025.
+     https://www.cslb.ca.gov/Resources/PressReleases/2024/AB2622.FINAL.pdf
+   Owner-builder: không được bán công trình tự xây làm owner-builder, trừ nhà mình ở ≥1 năm trước khi xong; thuê người không license = thành employer.
+     https://berkeleyca.gov/sites/default/files/documents/111%20Owner%20Builder%20Verification.pdf
+   Civ. Code 1102.6h: bán nhà trong 18 tháng sau khi nhận title → đưa buyer danh sách thợ + bản permit. https://california.public.law/codes/civil_code_section_1102.6h
+*/
+/*PURE-START*/
+const JOBS=['ipaint','epaint','floor','kitchen','bath','roof','windows','wh','hvac','panel','ev','repipe','sewer','fence','land','shed'];
+const ALIAS={paint:'ipaint',interior_paint:'ipaint',exterior_paint:'epaint',flooring:'floor',water_heater:'wh',landscaping:'land',
+  roofing:'roof',reroof:'roof',window:'windows',electrical:'panel',plumbing:'repipe',bathroom:'bath',hvac:'hvac',ac:'hvac',furnace:'hvac'};
+const CITIES={
+  sj:{portal:'https://www.sjpermits.org',pn:'SJPermits.org',ph:'408-535-3555',roofSmall:'n',winIns:'n',src:'sj'},
+  sc:{portal:'https://aca-prod.accela.com/SANTACLARA/',pn:'Santa Clara Online Portal',ph:'408-615-2420',roofSmall:'d',winIns:'d',src:'sc',add:98,tech:0.0337},
+  sv:{portal:'https://www.sunnyvale.ca.gov/business-and-development/planning-and-building/permit-center/online-services-help',pn:'Sunnyvale Online Services',ph:'408-730-7444',roofSmall:'n',winIns:'n',src:'est'},
+  mp:{portal:'https://trakit.ci.milpitas.ca.gov/etrakit3/',pn:'Milpitas eTRAKiT',ph:'',roofSmall:'d',winIns:'y',src:'mp'},
+  fr:{portal:'https://aca-prod.accela.com/COF/',pn:'Fremont Citizen Access',ph:'510-494-4460',roofSmall:'d',winIns:'d',src:'est'},
+  ok:{portal:'https://aca-prod.accela.com/OAKLAND/Default.aspx',pn:'Oakland Online Permit Center',ph:'510-238-3891',roofSmall:'d',winIns:'d',src:'est',psl:1},
+  ot:{portal:'',pn:'',ph:'',roofSmall:'d',winIns:'d',src:'est'}
+};
+/* Phí [thấp, cao]. Thiếu mục → dùng EST (ước tính). */
+const EST={kitchen:[1000,4000],bath:[800,3000],roof:[400,1000],windows:[200,600],wh:[150,500],hvac:[250,600],panel:[300,800],ev:[200,500],
+  repipe:[400,900],sewer:[200,600],fence:[200,600],wall:[800,2500],shed:[200,500]};
+const FEES={
+  sj:{wh:[263,420],hvac:[263,420],roof:[349,506],windows:[919,919],panel:[210,368],ev:[210,368],repipe:[315,630]},
+  sc:{wh:[244,325],hvac:[162,244],roof:[712,712],panel:[244,244],repipe:[244,244],sewer:[244,244],bath:[244,244]},
+  mp:{wh:[365,365],hvac:[304,365],roof:[695,695],windows:[209,330],windowsFrame:[330,1059],panel:[122,122],repipe:[243,243],sewer:[182,182],kitchen:[1059,1059],bath:[1059,1059]}
+};
+const TRADE={kitchen:'B',bath:'B',wall:'B',roof:'C-39',windows:'C-17 / B',wh:'C-36',hvac:'C-20',panel:'C-10',ev:'C-10',repipe:'C-36',sewer:'C-42 / C-36',fence:'C-13 / B',land:'C-27',shed:'B',ipaint:'C-33',epaint:'C-33',floor:'C-15'};
+
+function normJobs(q){ /* ?job=a,b → danh sách key hợp lệ */
+  if(!q) return [];
+  return String(q).toLowerCase().split(/[,\s]+/).map(k=>ALIAS[k]||k).filter((k,i,a)=>JOBS.includes(k)&&a.indexOf(k)===i);
+}
+function feeOf(city,job,t){
+  const C=CITIES[city]||CITIES.ot; let f=null, src='est';
+  const tab=FEES[C.src];
+  if(tab){ const k=(job==='windows'&&t.win&&tab.windowsFrame)?'windowsFrame':job;
+    if(tab[k]&&!(job==='bath'&&C.src==='sc'&&(t.walls||t.mep))){ f=tab[k].slice(); src=C.src; } }
+  if(!f){ f=(EST[job]||[200,600]).slice(); src='est'; }
+  if(src==='sc'){ f=f.map(x=>Math.round((x+C.add)*(1+C.tech))); }
+  return {lo:f[0],hi:f[1],src};
+}
+/* status: 'y' cần permit · 'd' tùy chi tiết · 'n' thường không */
+function statusOf(city,job,t){
+  const C=CITIES[city]||CITIES.ot;
+  switch(job){
+    case 'ipaint': case 'epaint': case 'floor': case 'land': return {s:'n',r:job};
+    case 'shed': return {s:'d',r:'shed'};
+    case 'kitchen': case 'bath': return (t.walls||t.mep)?{s:'y',r:job+'_y'}:{s:'d',r:job+'_d'};
+    case 'roof': return t.roof?{s:'y',r:'roof_y'}:{s:C.roofSmall,r:'roof_'+(C.roofSmall==='n'?(city==='sj'?'sj':'sv'):'d')};
+    case 'windows': if(t.win) return {s:'y',r:'win_frame'}; return {s:C.winIns,r:'win_'+C.winIns};
+    case 'fence': return t.fence?{s:'y',r:'fence_y'}:{s:'n',r:city==='sj'?'fence_sj':'fence_n'};
+    case 'wall': return {s:'y',r:'wall'};
+    default: return {s:'y',r:job}; /* wh hvac panel ev repipe sewer */
+  }
+}
+function evaluate(city,jobs,t){
+  const list=jobs.slice(); if(t.walls&&!list.includes('wall')) list.push('wall');
+  const rows=list.map(j=>{const st=statusOf(city,j,t); const fee=st.s==='n'?{lo:0,hi:0,src:'none'}:feeOf(city,j,t); return {job:j,s:st.s,r:st.r,fee};});
+  /* Milpitas: kitchen + bath cùng lúc = $1,545 (thay vì 2 × $1,059) */
+  if(city==='mp'){ const k=rows.find(r=>r.job==='kitchen'&&r.s==='y'), b=rows.find(r=>r.job==='bath'&&r.s==='y');
+    if(k&&b&&k.fee.src==='mp'&&b.fee.src==='mp'){ k.fee={lo:1545,hi:1545,src:'mp'}; b.fee={lo:0,hi:0,src:'mp',combo:1}; } }
+  const y=rows.filter(r=>r.s==='y'), d=rows.filter(r=>r.s==='d');
+  const lo=y.reduce((a,r)=>a+r.fee.lo,0), hi=y.reduce((a,r)=>a+r.fee.hi,0)+d.reduce((a,r)=>a+r.fee.hi,0);
+  return {rows,nY:y.length,nD:d.length,nT:rows.length,feeLo:lo,feeHi:hi};
+}
+/*PURE-END*/
+
+const I18N={
+ en:{title:'Which of my jobs need a permit?',sub:'Pick your city and what you plan to do. See which jobs need a permit, the city fee, who can pull it and what gets inspected.',
+  l_city:'City',c_ot:'Other city',l_jobs:'Jobs you plan ',l_jobs_s:'(tap all that apply)',l_det:'Details',
+  t_walls:'Moving or removing a wall',t_walls_s:'Any wall, even a small one',t_mep:'Changing plumbing or electrical',t_mep_s:'Moving a sink or toilet, new outlets, lights, circuits',
+  t_fence:'Fence taller than 7 ft',t_fence_s:'Or a masonry / block wall',t_roof:'Roof work over 100 sqft',t_roof_s:'A full re-roof is always over',t_win:'New window size or new frame',t_win_s:"Leave off if it's a same-size insert",
+  r_k:'Jobs that need a permit',r_of:'of',r_dep:'more depend on the details',r_fee:'Permit fees about',
+  st_y:'Permit needed',st_d:'Depends',st_n:'Usually not',
+  dt_fee:'City fee',dt_who:'Who can pull it',dt_insp:'Inspections',dt_where:'Apply',
+  fee_none:'$0 — no permit',fee_combo:'Included in the kitchen + bath fee ($1,545)',fee_if:'if needed: ',src_est:'estimate',src_sj:'from SJ FY24-25 hourly schedule, estimate',src_sc:'Santa Clara 7/2026 + $98 issuance + 3.37% tech fee',src_mp:'Milpitas schedule 11/2026',
+  who_none:'No permit. Any licensed painter / installer, or you.',
+  who_std:'You as owner-builder (your own home), or a licensed {c} contractor. Hiring out? Let the contractor pull it.',
+  insp_none:'None',
+  where_call:'Call your city building department',
+  empty:'Tap at least one job above.',
+  j_ipaint:'Interior paint',j_epaint:'Exterior paint',j_floor:'Flooring',j_kitchen:'Kitchen remodel',j_bath:'Bathroom remodel',j_roof:'Roof',j_windows:'Windows',
+  j_wh:'Water heater',j_hvac:'Furnace / AC',j_panel:'Electrical panel',j_ev:'EV charger',j_repipe:'Repipe',j_sewer:'Sewer line',j_fence:'Fence',j_land:'Landscaping',j_shed:'Shed ≤120 sqft',j_wall:'Moving / removing a wall',
+  r_ipaint:'Painting is finish work. State code exempts it.',
+  r_epaint:'No permit. Home built before 1978? A paid painter must be EPA lead-safe certified.',
+  r_floor:'Carpet, tile, LVP, hardwood are finish work. Only subfloor or structural repair needs a permit.',
+  r_land:'Plants, sod, pavers at grade: no permit. A retaining wall over 4 ft, new gas or power lines, or new irrigation tied to the water line do.',
+  r_shed:'Under 120 sqft, one story, no power: no permit. Run a wire to it and you need an electrical permit. Setbacks still apply.',
+  r_kitchen_y:'Moving walls or changing plumbing / electrical makes it a remodel permit.',
+  r_kitchen_d:'Cabinets, counters, tile, paint: no permit. Swapping a range hookup, adding outlets or lights, moving the sink: permit.',
+  r_bath_y:'Moving a toilet or shower, new circuits, or moving walls needs a permit, even in a small bathroom.',
+  r_bath_d:'Tile, vanity, toilet in the same spot: no permit. Valve inside the wall, new fan circuit, moving fixtures: permit.',
+  r_roof_y:'Re-roofing needs a permit. Expect an in-progress check before shingles cover the deck, then a final.',
+  r_roof_sj:'San Jose exempts repairs under 25% of the roof, no framing, once in 12 months.',
+  r_roof_sv:'Sunnyvale exempts 100 sqft or less in any 12 months.',
+  r_roof_d:'Small patch may be exempt. Ask the city for its square-foot limit.',
+  r_win_frame:'New size, new frame or new opening changes the wall. Permit needed, plus energy and safety-glass rules.',
+  r_win_n:'Same-size insert that keeps the frame: exempt in this city.',
+  r_win_y:'Milpitas charges a permit even for same-size retrofit windows.',
+  r_win_d:'Same-size inserts are exempt in some cities, not others. Ask before you order.',
+  r_wh:'Every water heater swap needs a plumbing permit. Inspector checks earthquake straps, venting, T&P valve, gas line.',
+  r_hvac:'Furnace, AC and heat pump swaps need a mechanical permit (and electrical for new circuits).',
+  r_panel:'Panel or main breaker change needs an electrical permit. PG&E has to cut and reconnect power.',
+  r_ev:'New 240V circuit for a charger needs an electrical permit.',
+  r_repipe:'Replacing pipes inside walls is new work. Permit needed, with a pressure test before walls close.',
+  r_sewer:'Replacing the sewer line needs a permit. Street-side work may need a city right-of-way permit too.',
+  r_fence_y:'Over 7 ft, or a masonry wall over the local limit, needs a building permit.',
+  r_fence_n:'Up to 7 ft: no building permit. Zoning still limits height, often lower in front yards.',
+  r_fence_sj:'San Jose: no permit up to 7 ft on side and rear, 3 ft along the front.',
+  r_wall:'Any wall change can touch framing, wiring or plumbing. Building permit with plans.',
+  i_wh:'Final: straps, vent, T&P, gas',i_hvac:'Final (ducts, venting, gas, electrical)',i_panel:'Rough + final, PG&E release',i_ev:'Final',
+  i_repipe:'Rough (pressure test) + final',i_sewer:'Open trench + final',i_roof:'In-progress + final',i_windows:'Final',i_kitchen:'Rough plumbing / electrical / framing, then final',
+  i_bath:'Rough plumbing / electrical, then final',i_fence:'Footing + final',i_wall:'Framing + rough + final',i_shed:'Final (if wired)',
+  psl_note:'Oakland and nearby East Bay cities also need an EBMUD sewer lateral certificate when you sell, or remodel over $100,000.',
+  ot_note:'"Other city" uses the state code (CRC R105.2). Your city can be stricter. Call its building department before you start.',
+  sell_h:'Why it matters when you sell',
+  sell1:'The seller disclosure form (TDS) asks straight out: any additions, changes or repairs made without permits? You have to answer.',
+  sell2:'Sell within 18 months of buying? You must also hand the buyer the permits for work you hired out (Civil Code 1102.6h).',
+  sell3:"Appraisers usually don't count unpermitted square footage. Insurers can push back on a claim tied to unpermitted work.",
+  my_k:'Many people get this wrong:',my_v:'"A small bathroom remodel doesn\'t need a permit." New tile, vanity and paint in the same spot: usually no. Move the toilet, add a fan circuit, swap the tub valve inside the wall: that\'s plumbing and electrical work, and it needs a permit even in a 5x8 bathroom.',
+  ns_h:'Next steps',
+  ns1:'Look up the permit history of the house on the city portal (link in each job above). Buyers\' agents do this too.',
+  ns2:'Hiring out? Check the license at <a href="https://www.cslb.ca.gov/onlineservices/checklicenseII/checklicense.aspx" target="_blank" rel="noopener">cslb.ca.gov</a> and let the contractor pull the permit in their name. Handymen can only do jobs under $1,000 that need no permit.',
+  ns3:'Keep the signed-off permit card and final inspection. Put them in your house folder for the day you sell.',
+  ns4:'Already have unpermitted work? Ask the city about a permit for existing work before you list, not during escrow. Price it with the <a href="/t90/">repair cost tool</a>.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this permit list to yourself',f_sub:'Ken can tell you what buyers in your city ask about permits. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'Unpermitted work and selling your home',ft_vid:'3-min video',
+  ft_est:'A guide, not a ruling. Each city decides. Fees marked "estimate" are not from that city\'s schedule. Always confirm with the building department before work starts.',
+  ft_src:'Sources:',ft_chk:'Checked 04/11/2026.',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I checked permits on tools.kenlamrealty.com for {city}: {list}. {y} of {t} need a permit. I have a question.',
+  subj:'Permit check — {city} — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nCity: {city}\n{y} of {t} jobs need a permit, {d} depend on details.\nPermit fees about: {fee}\n\n{rows}\n\nSent from tool T92 tools.kenlamrealty.com'},
+ vi:{title:'Việc nào trong nhà cần xin permit?',sub:'Chọn city và việc định làm. Tool cho biết việc nào cần permit, phí city, ai được xin, và kiểm tra những gì.',
+  l_city:'City',c_ot:'City khác',l_jobs:'Việc định làm ',l_jobs_s:'(bấm chọn hết các việc)',l_det:'Chi tiết',
+  t_walls:'Dời hoặc đập tường',t_walls_s:'Tường nào cũng tính, nhỏ cũng vậy',t_mep:'Đổi đường ống nước hoặc điện',t_mep_s:'Dời bồn rửa, toilet, thêm ổ cắm, đèn, mạch điện',
+  t_fence:'Hàng rào cao hơn 7 ft',t_fence_s:'Hoặc tường gạch / block',t_roof:'Sửa mái hơn 100 sqft',t_roof_s:'Thay nguyên mái là chắc chắn hơn',t_win:'Đổi cỡ cửa sổ hoặc thay khung',t_win_s:'Thay cửa cùng cỡ, giữ khung thì bỏ trống',
+  r_k:'Số việc cần permit',r_of:'trên',r_dep:'việc nữa tùy chi tiết',r_fee:'Phí permit khoảng',
+  st_y:'Cần permit',st_d:'Tùy',st_n:'Thường không',
+  dt_fee:'Phí city',dt_who:'Ai được xin',dt_insp:'Kiểm tra',dt_where:'Xin ở đâu',
+  fee_none:'$0 — không cần permit',fee_combo:'Đã gồm trong phí bếp + tắm ($1,545)',fee_if:'nếu cần: ',src_est:'ước tính',src_sj:'theo bảng giờ FY24-25 của SJ, ước tính',src_sc:'Santa Clara 7/2026 + $98 phí cấp + 3.37% phí tech',src_mp:'bảng phí Milpitas 11/2026',
+  who_none:'Không cần permit. Thợ có license hoặc tự làm.',
+  who_std:'Chủ nhà tự xin (owner-builder, nhà mình ở), hoặc thợ có license {c}. Thuê thợ thì để thợ đứng tên xin.',
+  insp_none:'Không có',
+  where_call:'Gọi building department của city',
+  empty:'Chọn ít nhất 1 việc ở trên.',
+  j_ipaint:'Sơn trong nhà',j_epaint:'Sơn ngoài nhà',j_floor:'Lót sàn',j_kitchen:'Sửa bếp',j_bath:'Sửa phòng tắm',j_roof:'Mái nhà',j_windows:'Cửa sổ',
+  j_wh:'Máy nước nóng',j_hvac:'Máy sưởi / máy lạnh',j_panel:'Panel điện',j_ev:'Sạc xe điện',j_repipe:'Thay ống nước',j_sewer:'Ống cống',j_fence:'Hàng rào',j_land:'Làm sân vườn',j_shed:'Nhà kho ≤120 sqft',j_wall:'Dời / đập tường',
+  r_ipaint:'Sơn là việc hoàn thiện. Luật tiểu bang miễn permit.',
+  r_epaint:'Không cần permit. Nhà xây trước 1978 mà thuê thợ thì thợ phải có chứng chỉ EPA về sơn chì.',
+  r_floor:'Thảm, gạch, LVP, gỗ là hoàn thiện. Chỉ khi sửa sàn gỗ bên dưới hay kết cấu mới cần permit.',
+  r_land:'Trồng cây, cỏ, lát gạch sát đất: không cần. Tường chắn đất cao hơn 4 ft, kéo điện, gas, hay nối ống tưới vào đường nước thì cần.',
+  r_shed:'Dưới 120 sqft, 1 tầng, không có điện: không cần permit. Kéo điện vô là cần permit điện. Vẫn phải cách ranh đất đúng luật.',
+  r_kitchen_y:'Dời tường hoặc đổi ống nước / điện là thành remodel, phải có permit.',
+  r_kitchen_d:'Thay tủ, mặt đá, gạch, sơn: không cần. Đổi chỗ cắm bếp, thêm ổ cắm, đèn, dời bồn rửa: cần permit.',
+  r_bath_y:'Dời toilet, dời chỗ tắm, thêm mạch điện hay dời tường là cần permit, phòng nhỏ cũng vậy.',
+  r_bath_d:'Gạch, tủ lavabo, toilet giữ chỗ cũ: không cần. Thay van trong tường, thêm mạch quạt, dời thiết bị: cần.',
+  r_roof_y:'Thay mái phải có permit. Có 1 lần kiểm tra giữa chừng trước khi lợp kín, rồi kiểm tra cuối.',
+  r_roof_sj:'San Jose miễn khi sửa dưới 25% mái, không đụng khung, 1 lần trong 12 tháng.',
+  r_roof_sv:'Sunnyvale miễn khi sửa 100 sqft trở xuống trong 12 tháng.',
+  r_roof_d:'Vá nhỏ có thể được miễn. Hỏi city giới hạn bao nhiêu sqft.',
+  r_win_frame:'Đổi cỡ, thay khung hay khoét lỗ mới là đụng tường. Cần permit, còn phải theo luật tiết kiệm điện và kính an toàn.',
+  r_win_n:'Thay cùng cỡ, giữ khung: city này miễn.',
+  r_win_y:'Milpitas thu phí permit kể cả thay cửa sổ cùng cỡ.',
+  r_win_d:'Thay cùng cỡ có city miễn, có city không. Hỏi trước khi đặt hàng.',
+  r_wh:'Thay máy nước nóng nào cũng cần permit plumbing. Thanh tra coi dây đai chống động đất, ống khói, van T&P, ống gas.',
+  r_hvac:'Thay máy sưởi, máy lạnh, heat pump cần permit mechanical (và permit điện nếu thêm mạch).',
+  r_panel:'Thay panel hay cầu dao chính cần permit điện. PG&E phải cắt và nối điện lại.',
+  r_ev:'Kéo mạch 240V mới cho sạc xe cần permit điện.',
+  r_repipe:'Thay ống trong tường là việc mới. Cần permit, thử áp lực trước khi đóng tường.',
+  r_sewer:'Thay ống cống cần permit. Đào ra tới đường có thể cần thêm permit lề đường của city.',
+  r_fence_y:'Cao hơn 7 ft, hay tường gạch cao quá mức city cho, là cần permit xây dựng.',
+  r_fence_n:'Tới 7 ft: không cần permit xây dựng. Luật zoning vẫn giới hạn chiều cao, sân trước thường thấp hơn.',
+  r_fence_sj:'San Jose: không cần permit tới 7 ft ở hông và sau nhà, 3 ft ở phía trước.',
+  r_wall:'Đụng tường là dễ đụng khung, dây điện, ống nước. Cần permit xây dựng có bản vẽ.',
+  i_wh:'Kiểm tra cuối: dây đai, ống khói, T&P, gas',i_hvac:'Kiểm tra cuối (ống gió, khói, gas, điện)',i_panel:'Kiểm tra thô + cuối, PG&E nối điện',i_ev:'Kiểm tra cuối',
+  i_repipe:'Kiểm tra thô (thử áp) + cuối',i_sewer:'Kiểm lúc mở rãnh + cuối',i_roof:'Giữa chừng + cuối',i_windows:'Kiểm tra cuối',i_kitchen:'Kiểm thô ống nước / điện / khung, rồi cuối',
+  i_bath:'Kiểm thô ống nước / điện, rồi cuối',i_fence:'Móng + cuối',i_wall:'Khung + thô + cuối',i_shed:'Kiểm tra cuối (nếu có điện)',
+  psl_note:'Oakland và mấy city East Bay gần đó còn cần chứng nhận ống cống EBMUD khi bán nhà, hoặc sửa nhà hơn $100,000.',
+  ot_note:'"City khác" dùng luật tiểu bang (CRC R105.2). City của bạn có thể khó hơn. Gọi building department trước khi làm.',
+  sell_h:'Vì sao quan trọng khi bán nhà',
+  sell1:'Tờ khai của người bán (TDS) hỏi thẳng: có cơi nới, sửa đổi gì mà không có permit không? Bạn phải trả lời.',
+  sell2:'Bán trong 18 tháng sau khi mua? Phải đưa buyer bản permit cho những việc đã thuê thợ làm (Civil Code 1102.6h).',
+  sell3:'Appraiser thường không tính phần diện tích làm chui. Bảo hiểm có thể làm khó khi bồi thường hư hại dính tới phần làm chui.',
+  my_k:'Nhiều người hiểu sai:',my_v:'"Sửa phòng tắm nhỏ thì khỏi permit." Thay gạch, tủ, sơn mà giữ chỗ cũ: thường không cần. Dời toilet, thêm mạch quạt, thay van bồn tắm trong tường: đó là việc ống nước và điện, phòng 5x8 cũng phải có permit.',
+  ns_h:'Bước tiếp theo',
+  ns1:'Coi lịch sử permit của căn nhà trên trang city (link ở từng việc phía trên). Agent bên mua cũng coi chỗ này.',
+  ns2:'Thuê thợ? Kiểm license ở <a href="https://www.cslb.ca.gov/onlineservices/checklicenseII/checklicense.aspx" target="_blank" rel="noopener">cslb.ca.gov</a> và để thợ đứng tên xin permit. Handyman chỉ được làm việc dưới $1,000 mà không cần permit.',
+  ns3:'Giữ thẻ permit đã ký và biên bản kiểm tra cuối. Cất vô hồ sơ nhà, sau này bán là cần.',
+  ns4:'Nhà đã có phần làm chui? Hỏi city xin permit cho phần đã làm trước khi rao bán, đừng đợi tới escrow. Ước tính chi phí bằng <a href="/t90/">tool sửa nhà</a>.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi danh sách permit này về email',f_sub:'Ken có thể nói buyer ở city bạn hay hỏi gì về permit. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Làm chui và chuyện bán nhà',ft_vid:'Video 3 phút',
+  ft_est:'Đây là hướng dẫn, không phải quyết định của city. Phí ghi "ước tính" không lấy từ bảng phí của city đó. Luôn hỏi building department trước khi làm.',
+  ft_src:'Nguồn:',ft_chk:'Tra ngày 04/11/2026.',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa kiểm permit trên tools.kenlamrealty.com ở {city}: {list}. {y}/{t} việc cần permit. Cho tôi hỏi thêm.',
+  subj:'Kiểm permit — {city} — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nCity: {city}\n{y}/{t} việc cần permit, {d} việc tùy chi tiết.\nPhí permit khoảng: {fee}\n\n{rows}\n\nGửi từ tool T92 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const rng=(a,b)=>a===b?fmt(a):fmt(a)+'–'+fmt(b);
+let sel=['kitchen','bath','wh','fence'], last={};
+(function(){ try{ const p=new URLSearchParams(location.search); const j=normJobs(p.get('job')); if(j.length) sel=j;
+  const c=p.get('city'); if(c&&CITIES[c]) $('city').value=c; }catch(e){} })();
+
+function buildJobs(){
+  const d=I18N[lang], J=$('jobs'); J.innerHTML='';
+  JOBS.forEach(k=>{ J.insertAdjacentHTML('beforeend','<label><input type="checkbox" value="'+k+'"'+(sel.includes(k)?' checked':'')+'><span>'+d['j_'+k]+'</span></label>'); });
+}
+function tog(){ return {walls:$('tWalls').checked,mep:$('tMep').checked,fence:$('tFence').checked,roof:$('tRoof').checked,win:$('tWin').checked}; }
+function calc(){
+  const d=I18N[lang], city=$('city').value, C=CITIES[city], t=tog();
+  const jobs=JOBS.filter(k=>sel.includes(k));
+  const R=evaluate(city,jobs,t);
+  $('nY').textContent=R.nY; $('nT').textContent=R.nT; $('nD').textContent=R.nD;
+  $('feeTot').textContent=(R.feeHi>0)?rng(R.feeLo,R.feeHi):'$0';
+  const P=$('pjs'); P.innerHTML='';
+  if(!R.nT){ P.innerHTML='<div class="empty">'+d.empty+'</div>'; }
+  const cityName=$('city').options[$('city').selectedIndex].text;
+  R.rows.forEach(r=>{
+    const stc=r.s, stl=d['st_'+stc];
+    let fee;
+    if(stc==='n') fee=d.fee_none;
+    else if(r.fee.combo) fee=d.fee_combo;
+    else { const s=r.fee.src==='est'?d.src_est:d['src_'+r.fee.src]; fee=(stc==='d'?d.fee_if:'')+rng(r.fee.lo,r.fee.hi)+' <small>('+s+')</small>'; }
+    const who=stc==='n'?d.who_none:d.who_std.replace('{c}',TRADE[r.job]||'B');
+    const insp=stc==='n'?d.insp_none:(d['i_'+r.job]||d.insp_none);
+    const where=C.portal?'<a href="'+C.portal+'" target="_blank" rel="noopener">'+C.pn+'</a>'+(C.ph?' · '+C.ph:''):d.where_call;
+    P.insertAdjacentHTML('beforeend','<div class="pj"><div class="pj-h"><b>'+d['j_'+r.job]+'</b><span class="st '+stc+'">'+stl+'</span></div>'+
+      '<p class="why">'+(d['r_'+r.r]||'')+'</p><dl><dt>'+d.dt_fee+'</dt><dd>'+fee+'</dd>'+
+      (stc==='n'?'':'<dt>'+d.dt_who+'</dt><dd>'+who+'</dd><dt>'+d.dt_insp+'</dt><dd>'+insp+'</dd><dt>'+d.dt_where+'</dt><dd>'+where+'</dd>')+'</dl></div>');
+  });
+  $('pslNote').classList.toggle('hide',!C.psl); $('otNote').classList.toggle('hide',city!=='ot');
+  const list=R.rows.map(r=>d['j_'+r.job]).join(', ');
+  last={city:cityName,y:R.nY,t:R.nT,d:R.nD,fee:R.feeHi>0?rng(R.feeLo,R.feeHi):'$0',list:list||'—',
+    rows:R.rows.map(r=>'- '+d['j_'+r.job]+': '+d['st_'+r.s]+(r.s==='n'?'':' · '+rng(r.fee.lo,r.fee.hi))).join('\n')};
+  const s=d.sms.replace('{city}',last.city).replace('{list}',last.list).replace('{y}',last.y).replace('{t}',last.t);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s);
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; buildJobs(); calc();
+}
+$('jobs').addEventListener('change',e=>{ if(e.target.type!=='checkbox') return; const k=e.target.value;
+  if(e.target.checked){ if(!sel.includes(k)) sel.push(k);} else sel=sel.filter(x=>x!==k); calc(); });
+['city','tWalls','tMep','tFence','tRoof','tWin'].forEach(id=>{$(id).addEventListener('change',calc); $(id).addEventListener('input',calc);});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
