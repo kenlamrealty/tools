@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mobile Home Insurance · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Mobile home insurance in California: estimated yearly premium, the coverages you need, earthquake (CEA mobilehome policy), FAIR Plan, park rules and earthquake bracing.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t175/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Mobile Home Insurance · Ken Lam Tools">
+<meta property="og:description" content="Estimated premium, what to cover, earthquake and FAIR Plan options for a mobile home in the Bay Area.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t175/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T145 additions */
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.cmp div{border:1px solid var(--line);border-radius:10px;padding:12px}
+.cmp .k{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.cmp .v{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums;margin-top:2px}
+.cmp p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.cards{display:grid;gap:10px}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
+.card b{font-weight:500;font-size:15px}
+.card span{font-size:14px;color:var(--muted)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a,.card a,.cmp a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+/* T175 additions */
+.total .sub2{font-size:14px;color:var(--muted);margin-top:8px}
+.total .sub2 b{color:var(--fg);font-weight:500}
+.chk{display:grid;gap:8px}
+.chk label{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:start;border:1px solid var(--line);border-radius:10px;padding:11px 12px;cursor:pointer;font-size:14px}
+.chk label.on{border-color:var(--brass);background:var(--brass-soft)}
+.chk input{width:18px;height:18px;margin:2px 0 0;accent-color:var(--brass)}
+.chk b{font-weight:500;font-size:15px;display:block}
+.chk span small{display:block;color:var(--muted);font-size:13px}
+.chk .amt{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.prog{font-size:13px;color:var(--muted)}
+.warnline{color:var(--warn)}
+.seg.s3 button{padding:11px 4px;font-size:14px}
+.total .v.rng{font-size:44px}
+@media (max-width:380px){.total .v.rng{font-size:38px}}
+.hint a{color:var(--brass)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Mobile home insurance: what do you need?</h1>
+    <p class="sub" data-i="sub">Enter what it would cost to replace the home. See a rough yearly premium, the coverages to ask for, and where earthquake and the FAIR Plan fit.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="row2">
+      <div class="field">
+        <label for="value"><span data-i="l_value">Replacement cost</span> <small data-i="l_value_s">(home only)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="value" type="number" inputmode="numeric" min="0" step="5000" value="150000"></div>
+      </div>
+      <div class="field">
+        <label for="year"><span data-i="l_year">Year built</span></label>
+        <div class="ctl"><input id="year" type="number" inputmode="numeric" min="1950" max="2026" step="1" value="1985"></div>
+      </div>
+    </div>
+    <p class="hint" data-i="v_hint">Not the price you paid. In a park most of the price can be the space, not the box. Ask the agent for a replacement cost estimate; a new double-wide in the West averaged about $176,000 (Census, 5/2026).</p>
+    <div class="row2">
+      <div class="field">
+        <span class="fl" data-i="l_land">Land</span>
+        <div class="seg" role="group" id="landSeg">
+          <button type="button" data-v="park" aria-pressed="true" data-i="o_park">In a park</button>
+          <button type="button" data-v="own" aria-pressed="false" data-i="o_own">Own land</button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="fl" data-i="l_fire">High wildfire area?</span>
+        <div class="seg" role="group" id="fireSeg">
+          <button type="button" data-v="1" aria-pressed="false" data-i="yes">Yes</button>
+          <button type="button" data-v="0" aria-pressed="true" data-i="no">No</button>
+        </div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <span class="fl" data-i="l_eq">Add earthquake?</span>
+        <div class="seg" role="group" id="eqSeg">
+          <button type="button" data-v="1" aria-pressed="true" data-i="yes">Yes</button>
+          <button type="button" data-v="0" aria-pressed="false" data-i="no">No</button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="fl" data-i="l_brace">Certified bracing (ERBS)?</span>
+        <div class="seg" role="group" id="braceSeg">
+          <button type="button" data-v="1" aria-pressed="false" data-i="yes">Yes</button>
+          <button type="button" data-v="0" aria-pressed="true" data-i="no">No</button>
+        </div>
+      </div>
+    </div>
+    <p class="hint" data-i="fire_hint">Not sure about wildfire? Look up the address on the CAL FIRE hazard map: <a href="https://calfire-forestry.maps.arcgis.com/apps/webappviewer/index.html?id=988d431a42b242b29d89597ab693d008" target="_blank" rel="noopener">FHSZ map</a>. Hills above San Jose, Milpitas, Fremont, Hayward, Oakland and Castro Valley are the usual spots.</p>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">Estimated premium per year</div>
+      <div class="v rng"><span id="total">$0</span> <small data-i="per_yr">/yr</small></div>
+      <div class="sub2" id="totSub"></div>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_base">Mobile home policy</b><small data-i="n_base_s">Fire, wind, theft, water, liability (estimate)</small></span><span class="a" id="baseOut">$0</span></div>
+      <div class="line" id="eqLine"><span class="n"><b data-i="n_eq">Earthquake (CEA mobilehome)</b><small id="eqSub"></small></span><span class="a" id="eqOut">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_mo">Per month</b><small data-i="n_mo_s">Put this in T145</small></span><span class="a" id="moOut">$0</span></div>
+    </div>
+    <div class="note" id="ageNote"></div>
+    <div class="note" id="fireNote"></div>
+  </section>
+  <video src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px;margin-top:8px" aria-label="How to use this tool"></video>
+
+  <section class="panel">
+    <h2 data-i="c_title">Coverage checklist</h2>
+    <p class="hint" data-i="c_hint">Suggested amounts for your home. Tick what your quote already has.</p>
+    <div class="chk" id="chk"></div>
+    <div class="prog" id="prog"></div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="k_title">What's different for a mobile home</h2>
+    <div class="cards">
+      <div class="card"><b data-i="k1">Earthquake: the CEA has a mobilehome policy</b><span data-i="k1s">You buy it through the company that writes your mobile home policy. Dwelling up to your policy limit, personal property up to $25,000, loss of use up to $100,000, deductible 5% to 25%. Certified bracing or an approved foundation can get you 21% off.</span></div>
+      <div class="card"><b data-i="k2">FAIR Plan now covers mobile homes</b><span data-i="k2s">SB 525 (Chapter 476, 2025) added manufactured homes and mobilehomes to the FAIR Plan, the last-resort fire policy, starting January 1, 2026. FAIR Plan is fire and smoke only, so you'd pair it with a "difference in conditions" policy for theft, water and liability.</span></div>
+      <div class="card"><b data-i="k3">Park rules on insurance</b><span data-i="k3s">The park can't make you carry liability insurance just to use the clubhouse or pool. The one exception: if you serve alcohol at an event, it can ask for proof of coverage (Civil Code §798.51). Your lender, not the park, is who requires the home to be insured.</span></div>
+      <div class="card"><b data-i="k4">Bracing matters in a quake</b><span data-i="k4s">Homes on piers can slide off in a quake. An HCD-certified earthquake resistant bracing system (ERBS) usually costs under $5,000 and needs an HCD permit (form MP 50 ERBS) before it goes in.</span></div>
+      <div class="card"><b data-i="k5">Replacement cost vs. actual cash value</b><span data-i="k5s">Many mobile home policies pay actual cash value, meaning the depreciated value. After a fire that can be far below what a new home costs. Ask for replacement cost in writing.</span></div>
+    </div>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t175/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this checklist to yourself</h2>
+    <p data-i="f_sub">Ken will reply with insurance agents who write mobile homes in Santa Clara and Alameda County. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Get quotes before you remove contingencies. Mobile home policies take longer to place than house policies, and older homes may get turned down.</li>
+      <li data-i="ns2">Ask each agent three things: replacement cost or actual cash value? Is earthquake offered (CEA mobilehome)? What's the wildfire surcharge?</li>
+      <li data-i="ns3">No bracing yet? Get a bid from an installer with an HCD-certified system and the HCD permit. Check the CEA discount after it's done: <a href="https://www.earthquakeauthority.com/Prepare-Your-House-Earthquake-Risk/Structural-Risks/Mobilehomes-Manufactured-Homes" target="_blank" rel="noopener">CEA mobilehome guide</a>.</li>
+      <li data-i="ns4">Add the monthly number to <a href="/t145/">T145</a>. Buying a regular house instead? Use <a href="/t133/">T133</a>. Older home? Check <a href="/t166/">T166</a> first.</li>
+    </ol>
+  </section>
+  <p class="myth" data-i="myth"><b>Many people get this wrong:</b> "Insure it for what I paid." In a park you might pay $300,000 for a home that costs $150,000 to replace, because the rest is the space and the location. Insure the replacement cost. Over-insuring the box just burns premium.</p>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#mobile-home-insurance" target="_blank" rel="noopener" data-i="ft_lib">Insuring a mobile home</a> · <a href="https://kenlamrealty.com/library#video-mobile-home-insurance" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span><span data-i="ft_src">Sources:</span>
+      <a href="https://www.insurance.ca.gov/0400-news/0200-studies-reports/0250-homeowners-study/upload/A-Mobile-Homes_v1.pdf" target="_blank" rel="noopener">CA Dept. of Insurance: mobile home average premium</a> ·
+      <a href="https://www.foxbusiness.com/fox-money/mortgage/mobile-home-insurance-cost" target="_blank" rel="noopener">Fox Money / Kin: CA range</a> ·
+      <a href="https://earthquakeauthority.com/California-Earthquake-Insurance-Policies/Mobilehome/Coverages-and-Deductibles" target="_blank" rel="noopener">CEA mobilehome coverages &amp; deductibles</a> ·
+      <a href="https://www.earthquakeauthority.com/Prepare-Your-House-Earthquake-Risk/Structural-Risks/Mobilehomes-Manufactured-Homes" target="_blank" rel="noopener">CEA: bracing &amp; 21% discount</a> ·
+      <a href="https://www.hcd.ca.gov/sites/default/files/docs/manufactured-and-mobilehomes/hcd-mp-50-erbs-rev-0324.pdf" target="_blank" rel="noopener">HCD MP 50 ERBS permit</a> ·
+      <a href="https://www.crmp.org/do-i-need-a-retrofit/mobilehome-manufactured-house-retrofit" target="_blank" rel="noopener">CRMP: ERBS cost</a> ·
+      <a href="https://open.pluralpolicy.com/ca/bills/20252026/SB525" target="_blank" rel="noopener">SB 525 (Ch. 476, 2025)</a> ·
+      <a href="https://sr40.senate.ca.gov/content/leader-jones-mobile-home-insurance-bill-signed-law" target="_blank" rel="noopener">Sen. Jones: SB 525 in effect 1/1/2026</a> ·
+      <a href="https://codes.findlaw.com/ca/civil-code/civ-sect-798-51/" target="_blank" rel="noopener">Civil Code §798.51</a> ·
+      <a href="https://fred.stlouisfed.org/series/SPDNSAWE" target="_blank" rel="noopener">Census MHS via FRED</a>
+      <span data-i="ft_chk">(checked 04/11/2026)</span></span>
+    <span data-i="ft_est">Estimates only. Premium ranges are built from the state average and published ranges, adjusted for age and wildfire; your quote depends on the insurer, the address and your claims history. Not insurance or legal advice.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Assumptions — edit here (checked 04/11/2026). ALL PREMIUMS ARE ước tính, KEN DUYỆT. =====
+   STATE AVERAGE: CA Dept. of Insurance "Mobile Homes Data" — average written premium $298 (2001) → $629 (2017), rising every year
+        https://www.insurance.ca.gov/0400-news/0200-studies-reports/0250-homeowners-study/upload/A-Mobile-Homes_v1.pdf
+   CA RANGE: Kin via Fox Money (updated 16/10/2024): "typically $250–$1,300 per year"
+        https://www.foxbusiness.com/fox-money/mortgage/mobile-home-insurance-cost
+   Model (KEN DUYỆT): base = $5.00–$9.00 per $1,000 of replacement cost, minimum $450–$750 (2017 average × ~1.5 for 2018–2026
+        rate increases, ước tính). Age factor: built before 6/15/1976 ×1.40, 1976–1994 ×1.15, 1995+ ×1.00 (HUD wind/fire code
+        update 1994 — ước tính). Own land ×1.10 (more other-structures exposure, often no park hydrants — ước tính).
+        High wildfire zone ×1.6 (low) / ×2.4 (high) — ước tính; many insurers decline, FAIR Plan as fallback.
+   EARTHQUAKE (CEA mobilehome policy) — coverages from https://earthquakeauthority.com/California-Earthquake-Insurance-Policies/Mobilehome/Coverages-and-Deductibles
+        Personal property included up to $25,000; loss of use up to $100,000; building code upgrade $10,000; deductible 5–25% of dwelling.
+        21% discount with HCD-certified ERBS or HSC §18551 foundation — https://www.earthquakeauthority.com/Prepare-Your-House-Earthquake-Risk/Structural-Risks/Mobilehomes-Manufactured-Homes
+        Premium $2.00–$5.00 per $1,000 dwelling, Bay Area, 15% deductible — ước tính, KEN DUYỆT (CEA has no public mobilehome rate table; use the CEA premium calculator).
+   FAIR PLAN: SB 525 (Ch. 476, Stats. 2025) adds manufactured homes/mobilehomes to FAIR Plan basic property insurance "under the same terms
+        and conditions as … other residential dwellings"; in effect 1/1/2026 per author — https://open.pluralpolicy.com/ca/bills/20252026/SB525 ,
+        https://sr40.senate.ca.gov/content/leader-jones-mobile-home-insurance-bill-signed-law . cfpnet.com product page could not be opened
+        04/11/2026 — KEN DUYỆT that FAIR Plan is actually writing mobilehome policies now.
+   PARK: Civil Code §798.51(c) — homeowner may not be required to obtain liability insurance to use common area facilities, except proof
+        of coverage when alcohol is served — https://codes.findlaw.com/ca/civil-code/civ-sect-798-51/
+   ERBS: HCD permit form MP 50 ERBS (rev 03/24) — https://www.hcd.ca.gov/sites/default/files/docs/manufactured-and-mobilehomes/hcd-mp-50-erbs-rev-0324.pdf
+        Cost "typically less than $5,000" — CRMP https://www.crmp.org/do-i-need-a-retrofit/mobilehome-manufactured-house-retrofit
+   REPLACEMENT HINT: new double-section, West region, avg $175,700 (Census MHS, 5/2026) — https://fred.stlouisfed.org/series/SPDNSAWE
+   COVERAGE SUGGESTIONS (KEN DUYỆT): other structures 10% (park) / 15% (own land); personal property 40%; loss of use 20%;
+        liability $300,000; medical payments $5,000. */
+const RULES={
+  RATE:[5.0,9.0], MIN:[450,750],
+  AGE:{pre76:1.40,mid:1.15,new:1.00}, OWN:1.10, FIRE:[1.6,2.4],
+  EQ:[2.0,5.0], EQ_BRACE_DISC:0.21, EQ_PP:25000, EQ_ALE:100000, EQ_CODE:10000,
+  OS:{park:0.10,own:0.15}, PP:0.40, ALE:0.20, LIAB:300000, MED:5000, ERBS_MAX:5000
+};
+
+const I18N={
+ en:{title:'Mobile home insurance: what do you need?',sub:'Enter what it would cost to replace the home. See a rough yearly premium, the coverages to ask for, and where earthquake and the FAIR Plan fit.',
+  l_value:'Replacement cost',l_value_s:'(home only)',l_year:'Year built',
+  v_hint:'Not the price you paid. In a park most of the price can be the space, not the box. Ask the agent for a replacement cost estimate; a new double-wide in the West averaged about $176,000 (Census, 5/2026).',
+  l_land:'Land',o_park:'In a park',o_own:'Own land',l_fire:'High wildfire area?',yes:'Yes',no:'No',l_eq:'Add earthquake?',l_brace:'Certified bracing (ERBS)?',
+  fire_hint:'Not sure about wildfire? Look up the address on the CAL FIRE hazard map: <a href="https://calfire-forestry.maps.arcgis.com/apps/webappviewer/index.html?id=988d431a42b242b29d89597ab693d008" target="_blank" rel="noopener">FHSZ map</a>. Hills above San Jose, Milpitas, Fremont, Hayward, Oakland and Castro Valley are the usual spots.',
+  r_total:'Estimated premium per year',per_yr:'/yr',tot_sub:'About <b>{lo}–{hi}</b> a month · estimate, get 2–3 real quotes',
+  n_base:'Mobile home policy',n_base_s:'Fire, wind, theft, water, liability (estimate)',n_eq:'Earthquake (CEA mobilehome)',eq_sub:'15% deductible, Bay Area (estimate)',eq_sub_b:'With 21% bracing discount (estimate)',eq_off:'Not added',
+  n_mo:'Per month',n_mo_s:'Put this in T145',
+  age_pre:'Built before June 15, 1976: many insurers won\'t write it, and the ones that do charge more. Expect fewer quotes. The FAIR Plan may be your fallback for fire.',
+  age_mid:'Built 1976–1994: insurable, but some carriers price older HUD-code homes higher. A recent roof and updated wiring help.',
+  age_new:'Built 1995 or later: the easiest age to insure. Most mobile home carriers will quote it.',
+  fire_yes:'High wildfire area: many insurers decline or add a big surcharge here. If nobody will write fire, the California FAIR Plan now accepts mobile homes (SB 525, from 1/1/2026). Pair it with a "difference in conditions" policy.',
+  fire_no:'Outside high wildfire zones the regular market is usually open. Still compare at least 2–3 quotes.',
+  c_title:'Coverage checklist',c_hint:'Suggested amounts for your home. Tick what your quote already has.',
+  cv_dw:'Dwelling (the home)',cv_dw_s:'Replacement cost, not purchase price',
+  cv_os:'Other structures',cv_os_s:'Carport, shed, deck, skirting, steps',
+  cv_pp:'Personal property',cv_pp_s:'Furniture, clothes, electronics',
+  cv_ale:'Loss of use',cv_ale_s:'Hotel or rent while the home is repaired',
+  cv_li:'Personal liability',cv_li_s:'Someone gets hurt at your place',
+  cv_med:'Medical payments to others',cv_med_s:'Small injuries, no lawsuit needed',
+  cv_rc:'Replacement cost endorsement',cv_rc_s:'So a claim isn\'t paid at depreciated value',
+  cv_eq:'Earthquake (CEA mobilehome)',cv_eq_s:'Separate policy through your insurer',
+  cv_add:'Add',prog:'{n} of {t} in your quote',
+  k_title:"What's different for a mobile home",
+  k1:'Earthquake: the CEA has a mobilehome policy',k1s:'You buy it through the company that writes your mobile home policy. Dwelling up to your policy limit, personal property up to $25,000, loss of use up to $100,000, deductible 5% to 25%. Certified bracing or an approved foundation can get you 21% off.',
+  k2:'FAIR Plan now covers mobile homes',k2s:'SB 525 (Chapter 476, 2025) added manufactured homes and mobilehomes to the FAIR Plan, the last-resort fire policy, starting January 1, 2026. FAIR Plan is fire and smoke only, so you\'d pair it with a "difference in conditions" policy for theft, water and liability.',
+  k3:'Park rules on insurance',k3s:'The park can\'t make you carry liability insurance just to use the clubhouse or pool. The one exception: if you serve alcohol at an event, it can ask for proof of coverage (Civil Code §798.51). Your lender, not the park, is who requires the home to be insured.',
+  k4:'Bracing matters in a quake',k4s:'Homes on piers can slide off in a quake. An HCD-certified earthquake resistant bracing system (ERBS) usually costs under $5,000 and needs an HCD permit (form MP 50 ERBS) before it goes in.',
+  k5:'Replacement cost vs. actual cash value',k5s:'Many mobile home policies pay actual cash value, meaning the depreciated value. After a fire that can be far below what a new home costs. Ask for replacement cost in writing.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this checklist to yourself',f_sub:'Ken will reply with insurance agents who write mobile homes in Santa Clara and Alameda County. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ns_t:'Next steps',
+  ns1:'Get quotes before you remove contingencies. Mobile home policies take longer to place than house policies, and older homes may get turned down.',
+  ns2:'Ask each agent three things: replacement cost or actual cash value? Is earthquake offered (CEA mobilehome)? What\'s the wildfire surcharge?',
+  ns3:'No bracing yet? Get a bid from an installer with an HCD-certified system and the HCD permit. Check the CEA discount after it\'s done: <a href="https://www.earthquakeauthority.com/Prepare-Your-House-Earthquake-Risk/Structural-Risks/Mobilehomes-Manufactured-Homes" target="_blank" rel="noopener">CEA mobilehome guide</a>.',
+  ns4:'Add the monthly number to <a href="/t145/">T145</a>. Buying a regular house instead? Use <a href="/t133/">T133</a>. Older home? Check <a href="/t166/">T166</a> first.',
+  myth:'<b>Many people get this wrong:</b> "Insure it for what I paid." In a park you might pay $300,000 for a home that costs $150,000 to replace, because the rest is the space and the location. Insure the replacement cost. Over-insuring the box just burns premium.',
+  ft_read:'Read more:',ft_lib:'Insuring a mobile home',ft_vid:'3-min video',ft_src:'Sources:',ft_chk:'(checked 04/11/2026)',
+  ft_est:'Estimates only. Premium ranges are built from the state average and published ranges, adjusted for age and wildfire; your quote depends on the insurer, the address and your claims history. Not insurance or legal advice.',
+  ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I ran the mobile home insurance tool on tools.kenlamrealty.com: replacement {v}, built {y}, estimate {lo}–{hi}/yr. Who do you know that writes mobile homes?',
+  subj:'Mobile home insurance checklist — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nReplacement cost: {v}\nYear built: {y}\nLand: {land}\nHigh wildfire: {fire}\nEarthquake: {eq}\nBracing (ERBS): {br}\n\nEstimated premium: {lo}–{hi}/yr\n  Mobile home policy: {b}\n  Earthquake: {q}\n\nCoverages:\n{cov}\n\nSent from tool T175 tools.kenlamrealty.com'},
+ vi:{title:'Bảo hiểm mobile home cần gì?',sub:'Nhập số tiền làm lại căn nhà nếu cháy hết. Thấy phí bảo hiểm mỗi năm (ước tính), những phần phải mua, và động đất với FAIR Plan nằm ở đâu.',
+  l_value:'Tiền làm lại nhà',l_value_s:'(chỉ căn nhà)',l_year:'Năm làm',
+  v_hint:'Không phải giá mình mua. Trong park, phần lớn giá là tiền chỗ đất, không phải căn nhà. Hỏi agent bảo hiểm số replacement cost; nhà mới 2 khúc ở miền Tây trung bình khoảng $176,000 (Census, 5/2026).',
+  l_land:'Đất',o_park:'Trong park',o_own:'Đất riêng',l_fire:'Vùng cháy rừng cao?',yes:'Có',no:'Không',l_eq:'Mua động đất?',l_brace:'Có giằng chống động đất (ERBS)?',
+  fire_hint:'Không biết vùng cháy rừng? Tra địa chỉ trên bản đồ CAL FIRE: <a href="https://calfire-forestry.maps.arcgis.com/apps/webappviewer/index.html?id=988d431a42b242b29d89597ab693d008" target="_blank" rel="noopener">bản đồ FHSZ</a>. Mấy vùng đồi phía trên San Jose, Milpitas, Fremont, Hayward, Oakland, Castro Valley hay dính.',
+  r_total:'Phí bảo hiểm mỗi năm (ước tính)',per_yr:'/năm',tot_sub:'Khoảng <b>{lo}–{hi}</b> mỗi tháng · ước tính, hỏi giá thật 2–3 nơi',
+  n_base:'Bảo hiểm mobile home',n_base_s:'Cháy, gió, trộm, nước, trách nhiệm (ước tính)',n_eq:'Động đất (CEA mobilehome)',eq_sub:'Deductible 15%, vùng Bay Area (ước tính)',eq_sub_b:'Đã trừ 21% vì có giằng (ước tính)',eq_off:'Không mua',
+  n_mo:'Mỗi tháng',n_mo_s:'Bỏ số này vô T145',
+  age_pre:'Nhà làm trước 15/6/1976: nhiều hãng không bán, hãng nào bán thì giá cao. Ít chỗ báo giá. Phần cháy có thể phải nhờ FAIR Plan.',
+  age_mid:'Nhà làm 1976–1994: mua được, nhưng vài hãng tính giá cao hơn cho nhà HUD đời cũ. Mái mới, điện mới thì đỡ.',
+  age_new:'Nhà làm từ 1995: dễ mua bảo hiểm nhất. Đa số hãng bảo hiểm mobile home đều báo giá.',
+  fire_yes:'Vùng cháy rừng cao: nhiều hãng từ chối hoặc tính thêm rất nặng. Không ai bán phần cháy thì California FAIR Plan giờ đã nhận mobile home (SB 525, từ 1/1/2026). Mua thêm 1 policy "difference in conditions" cho phần còn lại.',
+  fire_no:'Ngoài vùng cháy rừng cao thì thị trường thường còn mở. Vẫn nên so ít nhất 2–3 giá.',
+  c_title:'Danh sách phần cần mua',c_hint:'Số đề nghị cho căn nhà của mình. Tick phần nào báo giá đã có.',
+  cv_dw:'Căn nhà (dwelling)',cv_dw_s:'Tiền làm lại, không phải giá mua',
+  cv_os:'Công trình phụ (other structures)',cv_os_s:'Carport, nhà kho, deck, skirting, bậc thang',
+  cv_pp:'Đồ đạc (personal property)',cv_pp_s:'Bàn ghế, quần áo, đồ điện tử',
+  cv_ale:'Tiền ở tạm (loss of use)',cv_ale_s:'Khách sạn hay thuê nhà trong lúc sửa',
+  cv_li:'Trách nhiệm (liability)',cv_li_s:'Người ta bị thương ở nhà mình',
+  cv_med:'Tiền thuốc cho người khác',cv_med_s:'Thương nhẹ, khỏi kiện',
+  cv_rc:'Điều khoản replacement cost',cv_rc_s:'Để khi bồi thường không bị trừ khấu hao',
+  cv_eq:'Động đất (CEA mobilehome)',cv_eq_s:'Policy riêng, mua qua hãng bảo hiểm của mình',
+  cv_add:'Thêm',prog:'Báo giá có {n} / {t} phần',
+  k_title:'Mobile home khác nhà thường chỗ nào',
+  k1:'Động đất: CEA có policy riêng cho mobilehome',k1s:'Mua qua hãng đang bán bảo hiểm mobile home cho mình. Căn nhà tới mức của policy chính, đồ đạc tới $25,000, tiền ở tạm tới $100,000, deductible 5% tới 25%. Có giằng được HCD chứng nhận hoặc móng đạt chuẩn thì có thể giảm 21%.',
+  k2:'FAIR Plan giờ nhận mobile home',k2s:'SB 525 (Chapter 476, 2025) cho mobile home vô FAIR Plan, chỗ bảo hiểm cháy cuối cùng, từ 1/1/2026. FAIR Plan chỉ lo cháy với khói, nên phải mua thêm policy "difference in conditions" cho trộm, nước, trách nhiệm.',
+  k3:'Park có được bắt mua bảo hiểm không',k3s:'Park không được bắt mình mua bảo hiểm trách nhiệm chỉ để xài clubhouse hay hồ bơi. Ngoại lệ duy nhất: tiệc có rượu thì park được đòi giấy bảo hiểm (Civil Code §798.51). Người bắt phải có bảo hiểm nhà là lender, không phải park.',
+  k4:'Giằng chống động đất rất quan trọng',k4s:'Nhà đặt trên chân kê có thể tuột xuống khi động đất. Hệ thống giằng ERBS được HCD chứng nhận thường dưới $5,000, phải xin permit HCD (form MP 50 ERBS) trước khi lắp.',
+  k5:'Replacement cost khác actual cash value',k5s:'Nhiều policy mobile home chỉ trả actual cash value, tức giá đã trừ khấu hao. Cháy rồi mới thấy số tiền thấp hơn nhiều so với mua căn mới. Xin ghi rõ replacement cost trên giấy.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi danh sách này về email',f_sub:'Ken sẽ gửi lại tên mấy agent có bán bảo hiểm mobile home ở Santa Clara và Alameda. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ns_t:'Bước tiếp theo',
+  ns1:'Hỏi giá bảo hiểm trước khi bỏ contingency. Bảo hiểm mobile home lâu hơn nhà thường, nhà đời cũ có khi bị từ chối.',
+  ns2:'Hỏi mỗi agent 3 câu: replacement cost hay actual cash value? Có bán động đất CEA mobilehome không? Vùng cháy rừng tính thêm bao nhiêu?',
+  ns3:'Chưa có giằng? Xin giá thợ lắp hệ thống được HCD chứng nhận, có permit HCD. Lắp xong hỏi giảm giá CEA: <a href="https://www.earthquakeauthority.com/Prepare-Your-House-Earthquake-Risk/Structural-Risks/Mobilehomes-Manufactured-Homes" target="_blank" rel="noopener">hướng dẫn CEA</a>.',
+  ns4:'Bỏ số mỗi tháng vô <a href="/t145/">T145</a>. Mua nhà thường thì xài <a href="/t133/">T133</a>. Nhà đời cũ thì coi <a href="/t166/">T166</a> trước.',
+  myth:'<b>Nhiều người hiểu sai:</b> "Mua bao nhiêu thì bảo hiểm bấy nhiêu." Trong park có khi mua $300,000 mà làm lại căn nhà chỉ $150,000, phần còn lại là tiền chỗ đất với vị trí. Bảo hiểm theo tiền làm lại. Mua dư chỉ tốn phí.',
+  ft_read:'Đọc thêm:',ft_lib:'Bảo hiểm mobile home',ft_vid:'Video 3 phút',ft_src:'Nguồn:',ft_chk:'(tra ngày 04/11/2026)',
+  ft_est:'Chỉ là ước tính. Phí tính từ mức trung bình tiểu bang và các khoảng giá đã công bố, chỉnh theo đời nhà và vùng cháy rừng; giá thật tùy hãng, địa chỉ và lịch sử claim. Không phải tư vấn bảo hiểm hay luật.',
+  ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa tính bảo hiểm mobile home trên tools.kenlamrealty.com: làm lại {v}, nhà năm {y}, ước tính {lo}–{hi}/năm. Ken biết agent nào bán mobile home không?',
+  subj:'Danh sách bảo hiểm mobile home — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nTiền làm lại: {v}\nNăm làm: {y}\nĐất: {land}\nVùng cháy rừng cao: {fire}\nĐộng đất: {eq}\nGiằng ERBS: {br}\n\nPhí ước tính: {lo}–{hi}/năm\n  Bảo hiểm mobile home: {b}\n  Động đất: {q}\n\nCác phần:\n{cov}\n\nGửi từ tool T175 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const r10=n=>Math.round(n/10)*10;
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?Math.max(0,v):0};
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+let st={land:'park',fire:false,eq:true,brace:false}, ticked={}, last={};
+
+function model(i){
+  const v=i.value, y=i.year||1985;
+  const age=y<1976?'pre76':y<1995?'mid':'new';
+  const f=RULES.AGE[age]*(i.land==='own'?RULES.OWN:1);
+  const fl=i.fire?RULES.FIRE[0]:1, fh=i.fire?RULES.FIRE[1]:1;
+  const baseLo=r10(Math.max(RULES.MIN[0],v/1000*RULES.RATE[0])*f*fl);
+  const baseHi=r10(Math.max(RULES.MIN[1],v/1000*RULES.RATE[1])*f*fh);
+  const disc=i.brace?1-RULES.EQ_BRACE_DISC:1;
+  const eqLo=i.eq?r10(v/1000*RULES.EQ[0]*disc):0, eqHi=i.eq?r10(v/1000*RULES.EQ[1]*disc):0;
+  const lo=baseLo+eqLo, hi=baseHi+eqHi;
+  const cov={dw:v,os:v*RULES.OS[i.land],pp:v*RULES.PP,ale:v*RULES.ALE,li:RULES.LIAB,med:RULES.MED,rc:null,eq:i.eq?v:null};
+  return {age,baseLo,baseHi,eqLo,eqHi,lo,hi,cov};
+}
+const COV=['dw','os','pp','ale','li','med','rc','eq'];
+function renderChk(m){
+  const d=I18N[lang];
+  $('chk').innerHTML=COV.map(k=>{
+    const a=m.cov[k]; const amt=k==='rc'?'':(k==='eq'&&a==null?d.cv_add:fmt(a));
+    return '<label class="'+(ticked[k]?'on':'')+'"><input type="checkbox" data-k="'+k+'"'+(ticked[k]?' checked':'')+'><span><b>'+d['cv_'+k]+'</b><small>'+d['cv_'+k+'_s']+'</small></span><span class="amt">'+amt+'</span></label>';
+  }).join('');
+  const n=COV.filter(k=>ticked[k]).length;
+  $('prog').textContent=fill(d.prog,{n,t:COV.length});
+}
+$('chk').addEventListener('change',e=>{const k=e.target.dataset.k; if(!k) return; ticked[k]=e.target.checked; calc();});
+function calc(){
+  const d=I18N[lang];
+  const i={value:num('value'),year:num('year'),land:st.land,fire:st.fire,eq:st.eq,brace:st.brace};
+  const m=model(i);
+  $('total').textContent=fmt(m.lo)+'–'+fmt(m.hi);
+  $('totSub').innerHTML=fill(d.tot_sub,{lo:fmt(m.lo/12),hi:fmt(m.hi/12)});
+  $('baseOut').textContent=fmt(m.baseLo)+'–'+fmt(m.baseHi);
+  $('eqOut').textContent=st.eq?fmt(m.eqLo)+'–'+fmt(m.eqHi):'—';
+  $('eqSub').textContent=st.eq?(st.brace?d.eq_sub_b:d.eq_sub):d.eq_off;
+  $('moOut').textContent=fmt(m.lo/12)+'–'+fmt(m.hi/12);
+  $('ageNote').textContent=d['age_'+(m.age==='pre76'?'pre':m.age)];
+  $('fireNote').textContent=st.fire?d.fire_yes:d.fire_no;
+  renderChk(m);
+  const cov=COV.map(k=>(ticked[k]?'[x] ':'[ ] ')+d['cv_'+k]+(k==='rc'?'':': '+(m.cov[k]==null?'—':fmt(m.cov[k])))).join('\n');
+  last={v:fmt(i.value),y:i.year,land:st.land==='park'?d.o_park:d.o_own,fire:st.fire?d.yes:d.no,eq:st.eq?d.yes:d.no,br:st.brace?d.yes:d.no,
+    lo:fmt(m.lo),hi:fmt(m.hi),b:fmt(m.baseLo)+'–'+fmt(m.baseHi),q:st.eq?fmt(m.eqLo)+'–'+fmt(m.eqHi):'—',cov};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+}
+function seg(id,cb){ $(id).addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return;
+  $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); cb(b.dataset.v); calc();}); }
+seg('landSeg',v=>st.land=v); seg('fireSeg',v=>st.fire=v==='1'); seg('eqSeg',v=>st.eq=v==='1'); seg('braceSeg',v=>st.brace=v==='1');
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+['value','year'].forEach(id=>$(id).addEventListener('input',calc));
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const v=Object.assign({},last,{n,e,ph});
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,v))+'&body='+encodeURIComponent(fill(d.body,v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+window.__model=model;
+applyLang();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
