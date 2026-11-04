@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Request Disclosures · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Ask for the disclosure package on a home: TDS/SPQ, inspections, termite, NHD, prelim title, HOA docs. Plain explainer of each one.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t151/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Request Disclosures · Ken Lam Tools">
+<meta property="og:description" content="Ask for the disclosure package on a home, and see what each disclosure means in one line.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t151/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T151 additions */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.panel .ctl input,.panel .ctl textarea{font-size:16px}
+.ctl textarea{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;padding:12px 8px;resize:vertical;min-height:72px}
+.checks{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+@media (max-width:380px){.checks{grid-template-columns:minmax(0,1fr)}}
+.ck{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.35;border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:var(--bg);cursor:pointer;min-width:0}
+.ck input{accent-color:var(--brass);margin:2px 0 0;flex:none;width:16px;height:16px}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted)}
+.hint a{color:var(--brass)}
+.err{color:var(--warn);font-size:13px}
+.seg3 button{font-size:14px;padding:11px 6px}
+.hide{display:none!important}
+.done{border-color:var(--brass)}
+.done .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.done pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(--body);font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px}
+.defs{display:grid;gap:0;border-top:1px solid var(--line);margin:0}
+.defs div{padding:10px 0;border-bottom:1px solid var(--line);display:grid;gap:2px}
+.defs dt{font-weight:500;font-size:15px}
+.defs dd{margin:0;font-size:14px;color:var(--muted)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Get the disclosures on a home</h1>
+    <p class="sub" data-i="sub">Tell Ken which home and what you need. Read the disclosures before you write an offer, not after.</p>
+  </header>
+
+  <section class="panel" id="formPanel" aria-label="Request form">
+    <div class="field">
+      <label for="home"><span data-i="l_home">Which home</span> <small data-i="l_home_s">(address, MLS# or home ID)</small></label>
+      <div class="ctl"><input id="home" type="text" maxlength="160" autocomplete="off"></div>
+      <span class="hint hide" id="fromT150"><span data-i="from150">From Special Homes.</span> <a href="/t150/" data-i="back150">See the list</a></span>
+    </div>
+
+    <div class="field">
+      <span class="fl" data-i="l_role">I am a</span>
+      <div class="seg seg3" role="group" id="role">
+        <button type="button" data-v="buyer" aria-pressed="true" data-i="r_buyer">Buyer</button>
+        <button type="button" data-v="agent" aria-pressed="false" data-i="r_agent">Buyer's agent</button>
+        <button type="button" data-v="other" aria-pressed="false" data-i="r_other">Other</button>
+      </div>
+    </div>
+
+    <div class="field"><label for="fname"><span data-i="l_name">Your name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="row2">
+      <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+      <div class="field"><label for="fphone"><span data-i="l_phone">Phone</span> <small data-i="l_opt">(optional)</small></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    </div>
+
+    <div class="row2 hide" id="agentRow">
+      <div class="field"><label for="aname"><span data-i="l_aname">Agent name</span></label><div class="ctl"><input id="aname" type="text" autocomplete="off"></div></div>
+      <div class="field"><label for="adre"><span data-i="l_adre">DRE #</span> <small data-i="l_adre_s">(8 digits)</small></label><div class="ctl"><input id="adre" type="text" inputmode="numeric" maxlength="10" autocomplete="off"></div></div>
+    </div>
+
+    <div class="field" id="preField">
+      <span class="fl" id="preLabel" data-i="l_pre">Pre-approved?</span>
+      <div class="seg seg3" role="group" id="pre">
+        <button type="button" data-v="yes" aria-pressed="false" data-i="p_yes">Yes</button>
+        <button type="button" data-v="no" aria-pressed="false" data-i="p_no">Not yet</button>
+        <button type="button" data-v="cash" aria-pressed="false" data-i="p_cash">Cash</button>
+      </div>
+      <div class="note hide" id="preNote" data-i="pre_note">No pre-approval yet is fine. Ken will still look at your request. Most sellers want to see one before they read an offer, so it's worth starting now with <a href="/t34/">T34</a>.</div>
+    </div>
+
+    <div class="field">
+      <span class="fl" data-i="l_need">What do you need?</span>
+      <div class="checks" id="needs"></div>
+    </div>
+
+    <div class="field"><label for="fnote"><span data-i="l_note">Anything else</span> <small data-i="l_opt2">(optional)</small></label><div class="ctl"><textarea id="fnote" maxlength="600"></textarea></div></div>
+
+    <div class="err" id="ferr" hidden></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="send">Request disclosures</button>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="panel done hide" id="donePanel" aria-live="polite">
+    <div class="k" data-i="d_k">Request ready</div>
+    <h2 data-i="d_t">Ken will review and send the package, usually same day.</h2>
+    <p class="note" style="margin:0" data-i="d_why">Disclosures contain the seller's private info, so they go to serious buyers and agents only.</p>
+    <p class="hint" style="margin:0" data-i="d_hint">Your email app should have opened. Hit Send. If it didn't open, copy this and text or email Ken:</p>
+    <pre id="summary"></pre>
+    <div class="actions">
+      <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Text Ken instead</a>
+      <button class="btn" type="button" id="editBtn" data-i="b_edit">Edit request</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="x_t">What each disclosure is</h2>
+    <dl class="defs" id="defs"></dl>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Read the TDS/SPQ and the inspection reports first. That's where the surprises are.</li>
+      <li data-i="ns2">Termite report? Check who pays Section 1 vs Section 2 with <a href="/t80/">T80</a>.</li>
+      <li data-i="ns3">Decide which extra inspections you want with <a href="/t70/">T70</a>.</li>
+      <li data-i="ns4">Writing an offer? Map every contingency date with <a href="/t60/">T60</a>.</li>
+    </ol>
+  </section>
+  <p class="myth" data-i="myth"><b>Many people get this wrong:</b> as-is sales still require disclosures in California. “As-is” means the seller won't fix things. It doesn't mean they can hide what they know.</p>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#disclosures" target="_blank" rel="noopener" data-i="ft_lib">Reading disclosures, step by step</a> · <a href="https://kenlamrealty.com/library#video-disclosures" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span><span data-i="ft_src">Sources:</span> <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=1102" target="_blank" rel="noopener">Civil Code §1102 (TDS)</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=1103" target="_blank" rel="noopener">§1103 (NHD)</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=4525" target="_blank" rel="noopener">§4525 (HOA docs)</a></span>
+    <span data-i="ft_est">General info, not legal advice. Some sales (for example certain probate or foreclosure sales) are exempt from the TDS form. Ask your agent or attorney.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Disclosure types — edit labels/explainers here =====
+   Sources (checked 04/11/2026):
+   TDS  Cal. Civil Code §1102 et seq. https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=1102
+        (exemptions incl. court-ordered/probate & foreclosure: §1102.2)
+   NHD  Cal. Civil Code §1103 et seq. https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=1103
+   HOA  Cal. Civil Code §4525 https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=4525
+   SPQ  C.A.R. Seller Property Questionnaire (industry form, not a statute). */
+const NEEDS=[
+ {k:'full',en:'Full disclosure package',vi:'Trọn bộ disclosures',
+  x_en:'Everything the seller side has, in one bundle: forms, reports and title papers.',
+  x_vi:'Tất cả giấy tờ bên bán có, gom chung 1 lần: form, report, giấy title.'},
+ {k:'tds',en:'TDS / SPQ',vi:'TDS / SPQ',
+  x_en:"The seller's own checklist: what works, what's broken, what got fixed, with or without permits.",
+  x_vi:'Chủ nhà tự khai: cái gì chạy, cái gì hư, đã sửa gì, có permit hay không.'},
+ {k:'insp',en:'Inspection reports',vi:'Report inspection',
+  x_en:'A pro walked the house and wrote down what they found: roof, plumbing, electrical, foundation.',
+  x_vi:'Thợ kiểm tra đi coi nhà rồi ghi lại: mái, ống nước, điện, móng.'},
+ {k:'termite',en:'Termite report',vi:'Report termite',
+  x_en:'Checks for termites and wood rot. Section 1 = damage now. Section 2 = could turn into damage.',
+  x_vi:'Kiểm tra mối và gỗ mục. Section 1 là hư rồi. Section 2 là để lâu sẽ hư.'},
+ {k:'nhd',en:'NHD',vi:'NHD',
+  x_en:'Natural Hazard Disclosure: is the home in a flood, fire, earthquake fault or landslide zone.',
+  x_vi:'Natural Hazard Disclosure: nhà có nằm trong vùng lụt, cháy rừng, đường nứt động đất hay sạt lở không.'},
+ {k:'prelim',en:'Prelim title',vi:'Prelim title',
+  x_en:"Who owns it, what loans or liens are on it, and any easements, before you buy.",
+  x_vi:'Ai đứng tên, nhà đang nợ gì, có lien hay easement gì không.'},
+ {k:'hoa',en:'HOA docs',vi:'Giấy HOA',
+  x_en:'Rules, budget, savings, monthly dues, and any extra fee coming. Only for condos, townhomes and HOA homes.',
+  x_vi:'Luật HOA, ngân sách, quỹ dự trữ, phí tháng, có sắp thu thêm tiền không. Chỉ có ở condo, townhouse, nhà có HOA.'}
+];
+
+const I18N={
+ en:{title:'Get the disclosures on a home',sub:'Tell Ken which home and what you need. Read the disclosures before you write an offer, not after.',
+  l_home:'Which home',l_home_s:'(address, MLS# or home ID)',from150:'From Special Homes.',back150:'See the list',
+  l_role:'I am a',r_buyer:'Buyer',r_agent:"Buyer's agent",r_other:'Other',l_name:'Your name',l_phone:'Phone',l_opt:'(optional)',l_opt2:'(optional)',
+  l_aname:'Agent name',l_adre:'DRE #',l_adre_s:'(8 digits)',l_pre:'Pre-approved?',l_pre_agent:'Is your buyer pre-approved?',p_yes:'Yes',p_no:'Not yet',p_cash:'Cash',
+  pre_note:"No pre-approval yet is fine. Ken will still look at your request. Most sellers want to see one before they read an offer, so it's worth starting now with <a href=\"/t34/\">T34</a>.",
+  l_need:'What do you need?',l_note:'Anything else',send:'Request disclosures',f_or:'Or text:',f_copy:'Copy',
+  e_home:'Which home? Add an address, MLS# or home ID.',e_name:'Please add your name.',e_email:'Please enter a valid email.',e_need:'Pick at least one item.',e_agent:'Agents: please add your name and DRE #.',
+  d_k:'Request ready',d_t:'Ken will review and send the package, usually same day.',d_why:"Disclosures contain the seller's private info, so they go to serious buyers and agents only.",
+  d_hint:"Your email app should have opened. Hit Send. If it didn't open, copy this and text or email Ken:",b_sms:'Text Ken instead',b_edit:'Edit request',
+  x_t:'What each disclosure is',
+  ns_t:'Next steps',ns1:"Read the TDS/SPQ and the inspection reports first. That's where the surprises are.",ns2:'Termite report? Check who pays Section 1 vs Section 2 with <a href="/t80/">T80</a>.',
+  ns3:'Decide which extra inspections you want with <a href="/t70/">T70</a>.',ns4:'Writing an offer? Map every contingency date with <a href="/t60/">T60</a>.',
+  myth:"<b>Many people get this wrong:</b> as-is sales still require disclosures in California. \u201cAs-is\u201d means the seller won't fix things. It doesn't mean they can hide what they know.",
+  ft_read:'Read more:',ft_lib:'Reading disclosures, step by step',ft_vid:'3-min video',ft_src:'Sources:',
+  ft_est:'General info, not legal advice. Some sales (for example certain probate or foreclosure sales) are exempt from the TDS form. Ask your agent or attorney.',
+  ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  roles:{buyer:'Buyer',agent:"Buyer's agent",other:'Other'},pres:{yes:'Yes',no:'Not yet',cash:'Cash',none:'—'},
+  body:'Home: {home}\nI am a: {role}\nName: {n}\nEmail: {e}\nPhone: {ph}\n{agent}Pre-approved: {pre}\n\nNeeds:\n{needs}\n\nNote: {note}\n\nSent from tool T151 tools.kenlamrealty.com',
+  agent:'Agent: {an}, DRE #{ad}\n',
+  sms:'Hi Ken, I sent a disclosure request for {home} on tools.kenlamrealty.com. Name: {n}.'},
+ vi:{title:'Xin disclosures của một căn nhà',sub:'Cho Ken biết căn nào và cần giấy gì. Đọc disclosures trước khi viết offer, đừng để sau.',
+  l_home:'Căn nào',l_home_s:'(địa chỉ, MLS# hoặc mã nhà)',from150:'Từ trang Nhà Đặc Biệt.',back150:'Xem danh sách',
+  l_role:'Tôi là',r_buyer:'Người mua',r_agent:'Agent bên mua',r_other:'Khác',l_name:'Tên',l_phone:'Phone',l_opt:'(không bắt buộc)',l_opt2:'(không bắt buộc)',
+  l_aname:'Tên agent',l_adre:'DRE #',l_adre_s:'(8 số)',l_pre:'Có pre-approval chưa?',l_pre_agent:'Khách của bạn có pre-approval chưa?',p_yes:'Có rồi',p_no:'Chưa',p_cash:'Trả cash',
+  pre_note:'Chưa có pre-approval cũng không sao. Ken vẫn xem yêu cầu của mình. Có điều đa số chủ nhà muốn thấy pre-approval rồi mới đọc offer, nên làm luôn đi (<a href="/t34/">T34</a>).',
+  l_need:'Cần giấy gì?',l_note:'Ghi chú thêm',send:'Gửi yêu cầu',f_or:'Hoặc text:',f_copy:'Copy',
+  e_home:'Căn nào vậy? Ghi địa chỉ, MLS# hoặc mã nhà.',e_name:'Ghi tên giùm nha.',e_email:'Nhập email cho đúng giùm nha.',e_need:'Chọn ít nhất 1 loại giấy.',e_agent:'Agent ghi giùm tên và số DRE.',
+  d_k:'Đã soạn xong',d_t:'Ken sẽ xem và gửi bộ giấy, thường trong ngày.',d_why:'Disclosures có thông tin riêng của chủ nhà, nên chỉ gửi cho người mua và agent nghiêm túc.',
+  d_hint:'Email đã mở sẵn, bấm Send là xong. Không mở được thì copy đoạn này text hoặc email cho Ken:',b_sms:'Text Ken luôn',b_edit:'Sửa lại',
+  x_t:'Mỗi loại disclosure là gì',
+  ns_t:'Bước tiếp theo',ns1:'Đọc TDS/SPQ với report inspection trước. Chuyện bất ngờ hay nằm ở đó.',ns2:'Có report termite? Coi ai trả Section 1, ai trả Section 2 ở <a href="/t80/">T80</a>.',
+  ns3:'Chọn làm thêm inspection gì ở <a href="/t70/">T70</a>.',ns4:'Sắp viết offer? Coi hết ngày contingency ở <a href="/t60/">T60</a>.',
+  myth:'<b>Nhiều người hiểu sai:</b> bán as-is ở California vẫn phải có disclosures. \u201cAs-is\u201d là chủ không sửa, chứ không phải được giấu chuyện mình biết.',
+  ft_read:'Đọc thêm:',ft_lib:'Đọc disclosures từng bước',ft_vid:'Video 3 phút',ft_src:'Nguồn:',
+  ft_est:'Thông tin chung, không phải tư vấn luật. Vài trường hợp (như một số nhà probate, foreclosure) được miễn form TDS. Hỏi agent hoặc luật sư.',
+  ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  roles:{buyer:'Người mua',agent:'Agent bên mua',other:'Khác'},pres:{yes:'Có rồi',no:'Chưa',cash:'Trả cash',none:'—'},
+  body:'Căn nhà: {home}\nTôi là: {role}\nTên: {n}\nEmail: {e}\nPhone: {ph}\n{agent}Pre-approval: {pre}\n\nCần:\n{needs}\n\nGhi chú: {note}\n\nGửi từ tool T151 tools.kenlamrealty.com',
+  agent:'Agent: {an}, DRE #{ad}\n',
+  sms:'Chào Ken, tôi vừa gửi yêu cầu disclosures cho căn {home} trên tools.kenlamrealty.com. Tên: {n}.'}
+};
+let lang='en', role='buyer', pre='';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]!=null?v[k]:m);
+
+/* ?home= prefill (set as input value only, never as HTML) */
+(function(){ try{ const h=new URLSearchParams(location.search).get('home'); if(h){ $('home').value=h.trim().slice(0,160); $('fromT150').classList.remove('hide'); } }catch(e){} })();
+
+function renderNeeds(){
+  const prev=[...document.querySelectorAll('#needs input')].length?[...document.querySelectorAll('#needs input:checked')].map(x=>x.value):['full'];
+  $('needs').innerHTML=NEEDS.map(n=>`<label class="ck"><input type="checkbox" value="${n.k}" ${prev.includes(n.k)?'checked':''}><span>${esc(n[lang])}</span></label>`).join('');
+  $('defs').innerHTML=NEEDS.map(n=>`<div><dt>${esc(n[lang])}</dt><dd>${esc(n['x_'+lang])}</dd></div>`).join('');
+}
+function sync(){
+  const d=I18N[lang];
+  document.querySelectorAll('#role button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===role?'true':'false'));
+  document.querySelectorAll('#pre button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===pre?'true':'false'));
+  $('agentRow').classList.toggle('hide',role!=='agent');
+  $('preField').classList.toggle('hide',role==='other');
+  $('preLabel').textContent=role==='agent'?d.l_pre_agent:d.l_pre;
+  $('preNote').classList.toggle('hide',!(role==='buyer'&&pre==='no'));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; renderNeeds(); sync();
+}
+function build(){
+  const d=I18N[lang], v=id=>$(id).value.trim();
+  const home=v('home'), n=v('fname'), e=v('femail'), ph=v('fphone')||'—', an=v('aname'), ad=v('adre').replace(/\D/g,''), note=v('fnote')||'—';
+  const picked=[...document.querySelectorAll('#needs input:checked')].map(x=>x.value);
+  let err='';
+  if(!home) err=d.e_home; else if(!n) err=d.e_name; else if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) err=d.e_email;
+  else if(role==='agent'&&(!an||!ad)) err=d.e_agent; else if(!picked.length) err=d.e_need;
+  if(err) return {err};
+  /* Needs listed in English + Vietnamese label so Ken/FUB always sees the standard names. */
+  const needs=NEEDS.filter(x=>picked.includes(x.k)).map(x=>'- '+x.en+(lang==='vi'&&x.vi!==x.en?' ('+x.vi+')':'')).join('\n');
+  const vals={home,role:d.roles[role],n,e,ph,agent:role==='agent'?fill(d.agent,{an,ad}):'',pre:role==='other'?d.pres.none:(d.pres[pre]||d.pres.none),needs,note};
+  return {home,n,subject:'Disclosure request — '+home+' — '+n, body:fill(d.body,vals)};
+}
+$('role').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b)return; role=b.dataset.v; sync();});
+$('pre').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b)return; pre=b.dataset.v; sync();});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('sendBtn').onclick=()=>{
+  const r=build();
+  $('ferr').hidden=!r.err; $('ferr').textContent=r.err||''; if(r.err) return;
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(r.subject)+'&body='+encodeURIComponent(r.body);
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('summary').textContent=r.subject+'\n\n'+r.body;
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(I18N[lang].sms,{home:r.home,n:r.n}));
+  $('formPanel').classList.add('hide'); $('donePanel').classList.remove('hide');
+  $('donePanel').scrollIntoView({block:'start'});
+};
+$('editBtn').onclick=()=>{ $('donePanel').classList.add('hide'); $('formPanel').classList.remove('hide'); };
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'\u2190 All tools':'\u2190 T\u1ea5t c\u1ea3 tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
