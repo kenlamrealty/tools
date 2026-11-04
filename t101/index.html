@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Moving Cost Calculator · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<style>
+/* ---- Thêm cho T101 (không đổi class cũ) ---- */
+.seg.s3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.seg.s3 button{padding:11px 4px;font-size:14px}
+.seg.s6{display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}
+.seg.s6 button{padding:11px 2px;font-size:14px}
+@media (max-width:420px){.seg.s6{grid-template-columns:repeat(3,minmax(0,1fr))}.seg.s6 button:nth-child(n+4){border-top:1px solid var(--line)}}
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.checks label{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:8px 13px;font-size:14px;color:var(--muted);cursor:pointer;user-select:none}
+.checks input{accent-color:var(--brass);margin:0}
+.checks label:has(input:checked){background:var(--brass-soft);color:var(--fg);border-color:var(--brass)}
+.total .v.rng{font-size:46px}
+.total .sm{margin-top:8px;font-size:14px;color:var(--muted)}
+.total .sm b{color:var(--fg);font-weight:500}
+.meths{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (max-width:480px){.meths{grid-template-columns:minmax(0,1fr)}}
+.mt{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:2px;align-content:start}
+.mt.on{border-color:var(--brass);background:var(--brass-soft)}
+.mt .h{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;gap:6px}
+.mt .h i{font-style:normal;color:var(--warn)}
+.mt .p{font-family:var(--display);font-size:26px;line-height:1.15;font-variant-numeric:tabular-nums}
+.mt .x{font-size:12px;color:var(--muted)}
+.line .a.rg{font-weight:500}
+.next-steps{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.next-steps h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.next-steps ol,.next-steps ul{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.next-steps a{color:var(--brass)}
+.myth{font-size:14px;line-height:1.5;border-left:2px solid var(--brass);padding:2px 0 2px 12px;margin:0}
+.myth b{font-weight:500}
+.srcs a{word-break:break-word}
+</style>
+<meta name="description" content="Bedrooms, distance, stairs, date. See full-service movers vs labor-only vs DIY side by side, with hours, truck and gas, tips and California mover rules.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t101/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Moving Cost Calculator · Ken Lam Tools">
+<meta property="og:description" content="Full-service movers vs labor-only vs DIY, side by side, with California mover rules.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t101/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">What will my move really cost?</h1>
+    <p class="sub" data-i="sub">Movers, labor only, or a truck and friends. Side by side, with hours, gas, tips and the California rules that protect you.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label><span data-i="l_bed">Home size</span></label>
+      <div class="seg s6" role="group" id="segBed">
+        <button type="button" data-v="0" aria-pressed="false" data-i="studio">Studio</button>
+        <button type="button" data-v="1" aria-pressed="false">1 bd</button>
+        <button type="button" data-v="2" aria-pressed="false">2 bd</button>
+        <button type="button" data-v="3" aria-pressed="true">3 bd</button>
+        <button type="button" data-v="4" aria-pressed="false">4 bd</button>
+        <button type="button" data-v="5" aria-pressed="false">5+ bd</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label><span data-i="l_dist">Distance</span></label>
+        <div class="seg" role="group" id="segDist">
+          <button type="button" data-v="local" aria-pressed="true" data-i="local">Local</button>
+          <button type="button" data-v="long" aria-pressed="false" data-i="long">Long</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="miles"><span data-i="l_miles">Miles </span><small data-i="l_miles_s">(one way)</small></label>
+        <div class="ctl"><input id="miles" type="number" inputmode="numeric" min="1" max="3000" step="5" value="15"><span class="post">mi</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_how">How you move</span></label>
+      <div class="seg s3" role="group" id="segHow">
+        <button type="button" data-v="full" aria-pressed="true" data-i="m_full">Full-service</button>
+        <button type="button" data-v="labor" aria-pressed="false" data-i="m_labor">Labor only</button>
+        <button type="button" data-v="diy" aria-pressed="false" data-i="m_diy">DIY</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label><span data-i="l_pack">Packing service</span></label>
+        <div class="seg" role="group" id="segPack">
+          <button type="button" data-v="1" aria-pressed="false" data-i="yes">Yes</button>
+          <button type="button" data-v="0" aria-pressed="true" data-i="no">No</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="stairs"><span data-i="l_stairs">Flights of stairs </span><small data-i="l_stairs_s">(both homes)</small></label>
+        <div class="ctl"><input id="stairs" type="number" inputmode="numeric" min="0" max="12" step="1" value="1"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="mdate"><span data-i="l_date">Move date</span></label>
+        <div class="ctl"><input id="mdate" type="date"></div>
+      </div>
+      <div class="field">
+        <label><span data-i="l_extra">Extras</span></label>
+        <div class="checks">
+          <label><input type="checkbox" id="xElev"><span data-i="x_elev">Elevator</span></label>
+          <label><input type="checkbox" id="xPiano"><span data-i="x_piano">Piano</span></label>
+          <label><input type="checkbox" id="xSafe"><span data-i="x_safe">Safe</span></label>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" id="bigK">Full-service movers</div>
+      <div class="v rng" id="big">$0</div>
+      <div class="sm"><span data-i="r_hrs">About</span> <b id="bigH">0</b> <span data-i="r_hrs2">hours</span> · <span id="crewTxt"></span></div>
+    </div>
+    <div class="meths" id="meths"></div>
+    <div class="lines" id="lines"></div>
+    <div class="note" id="peakNote"></div>
+    <div class="note" id="recNote"></div>
+    <div class="note hide" id="ooNote" data-i="oo_note">Moving out of California? Interstate movers are regulated by FMCSA, not BHGS. Check their USDOT number at <a href="https://www.fmcsa.dot.gov/protect-your-move" target="_blank" rel="noopener">fmcsa.dot.gov/protect-your-move</a>.</div>
+  </section>
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" aria-label="Video" onerror="this.remove()"></video>
+
+  <section class="next-steps">
+    <h2 data-i="ca_h">California mover rules</h2>
+    <ul>
+      <li data-i="ca1">The mover must hold a household goods permit from BHGS. Look it up at <a href="https://bhgs.dca.ca.gov/consumers/movers" target="_blank" rel="noopener">bhgs.dca.ca.gov</a>.</li>
+      <li data-i="ca2">A written estimate only after they see your stuff. Phone or internet estimates are illegal in California.</li>
+      <li data-i="ca3">Every household move gets a "Not to Exceed" price. That's the most you can be charged, unless you ask for more services and sign a change order before the work.</li>
+      <li data-i="ca4">Booked 3+ days ahead? You get the agreement and the "Important Notice About Your Move" at least 3 days before moving day.</li>
+      <li data-i="ca5">Under 100 miles, movers can bill by the hour. Over 100 miles, by weight and distance.</li>
+    </ul>
+    <p class="myth"><b data-i="my_k">Many people get this wrong:</b> <span data-i="my_v">"The cheapest phone quote is the cheapest move." A lowball quote without seeing your home is how hostage-load scams start: they load the truck, then the price jumps. In California the mover can only demand the Not to Exceed price plus change orders you signed. No in-home or video walk-through, no written Not to Exceed, no deal.</span></p>
+  </section>
+
+  <section class="next-steps">
+    <h2 data-i="ns_h">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Get 3 written Not to Exceed quotes after a walk-through. Compare crew size and hours, not just the total.</li>
+      <li data-i="ns2">Check each mover's BHGS permit and complaints before you pay a deposit.</li>
+      <li data-i="ns3">Decide on protection: free basic liability is only 60¢ per pound per item. Ask the price for full value protection.</li>
+      <li data-i="ns4">Plan the weeks before with the <a href="/t100/">moving checklist</a>, change your address with <a href="/t102/">T102</a>, and set up utilities with <a href="/t130/">T130</a>.</li>
+    </ol>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t101/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this moving estimate to yourself</h2>
+    <p data-i="f_sub">Ken can send movers past clients have used. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#chi-phi-don-nha" target="_blank" rel="noopener" data-i="ft_lib">How to read a mover's quote</a> · <a href="https://kenlamrealty.com/library#video-don-nha" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span data-i="ft_est">All costs are estimates for California, 2026. Real numbers come from a written Not to Exceed quote after the mover sees your home. Long-distance and DIY truck numbers are rough.</span>
+    <span class="srcs"><span data-i="ft_src">Sources:</span>
+      <a href="https://bhgs.dca.ca.gov/consumers/movers" target="_blank" rel="noopener">BHGS Household Movers</a> ·
+      <a href="https://www.bhgs.dca.ca.gov/forms_pubs/max_4_2020.pdf" target="_blank" rel="noopener">BHGS Max Rate Tariff 4 (basic 60¢/lb, valuation)</a> ·
+      <a href="https://www.bhgs.dca.ca.gov/forms_pubs/moving_tips_flyer_ca.pdf" target="_blank" rel="noopener">BHGS Moving Tips</a> ·
+      <a href="https://california.public.law/codes/business_and_professions_code_section_19246" target="_blank" rel="noopener">B&amp;P §19246</a> ·
+      <a href="https://movebuddha.com/move-costs/ca" target="_blank" rel="noopener">MoveBuddha CA 11/2026</a> ·
+      <a href="https://www.meatheadmovers.com/blog/how-much-do-movers-cost-in-california-2026-pricing-guide/" target="_blank" rel="noopener">Meathead Movers 2026</a> ·
+      <a href="https://lugg.com/blog/how-much-to-rent-a-uhaul" target="_blank" rel="noopener">Lugg truck rental 8/2026</a> ·
+      <a href="https://www.storagescholars.com/blog/one-way-truck-rental-costs" target="_blank" rel="noopener">One-way truck rental 2026</a> ·
+      <a href="https://www.movingplace.com/moving-advice/how-much-does-moving-a-piano-cost" target="_blank" rel="noopener">Piano moving 10/2026</a> ·
+      <a href="https://www.fmcsa.dot.gov/protect-your-move" target="_blank" rel="noopener">FMCSA Protect Your Move</a>
+      · <span data-i="ft_chk">Checked 04/11/2026.</span></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số liệu — sửa ở đây khi đổi (tra 04/11/2026) =====
+   Luật CA (BHGS): https://bhgs.dca.ca.gov/consumers/movers — báo giá chỉ sau khi coi đồ, điện thoại/online trái luật, Not to Exceed,
+     ≥3 ngày nhận agreement + Important Notice, khiếu nại bằng giấy trong 9 tháng.
+   Max Rate Tariff 4 (eff 01/01/2020): https://www.bhgs.dca.ca.gov/forms_pubs/max_4_2020.pdf
+     Item 136: basic $0.60/lb/món; Full Value tối đa $1.82/$100 giá khai; ACV $0.95/$100. Item 16: ≤100 dặm giờ hoặc khoảng cách; >100 dặm theo khoảng cách (cân).
+     Item 104: mover giao đồ khi trả NTE + change order hợp lệ.
+   "Video walk-through" có được tính là visual inspection không → luật chỉ ghi "visual inspection". KEN DUYỆT.
+   FULL-SERVICE local — GIỮ Y T100: CREW [người, giờ] MoveBuddha CA (cập nhật 02/11/2026) https://movebuddha.com/move-costs/ca ; studio 2 người 3h cùng nguồn.
+     RATE $/giờ cả đội + truck: Meathead Movers 2026 https://www.meatheadmovers.com/blog/how-much-do-movers-cost-in-california-2026-pricing-guide/ (5 người suy ra, KEN DUYỆT).
+     Giờ lái xe local = dặm / 30 mph (ước tính, KEN DUYỆT).
+   LABOR ONLY: $61–79 / người / giờ; studio–1PN 2 người 3h, 2–3PN 3 người 5h, 4+PN 4 người 7h — MoveBuddha CA.
+   TRUCK in-town (Lugg 19/08/2026 https://lugg.com/blog/how-much-to-rent-a-uhaul): 10ft $19.95, 15ft $29.95, 20ft $39.95, 26ft $49.95;
+     $0.79–1.29/dặm; ~10 MPG (8 khi chở nặng); đồ nghề $20–30; bảo hiểm xe $15–30. Cỡ xe theo số phòng = kinh nghiệm, KEN DUYỆT.
+   TRUCK one-way: 26ft 500 dặm U-Haul $1,902 / Penske $2,846 trước xăng (StorageScholars 2026 https://www.storagescholars.com/blog/one-way-truck-rental-costs)
+     → mô hình $250 + $3.30–5.19/dặm; xe nhỏ ×0.75. KEN DUYỆT.
+   XĂNG CA $4.66/gal (MoveBuddha 11/2026). KEN DUYỆT theo AAA ngày dọn.
+   LONG DISTANCE full-service: giờ bốc/dỡ như local + $/dặm theo số phòng (LD_MI). Khớp MoveBuddha: 2–3PN TB $4,556–6,030, khoảng $2,010–11,390+. KEN DUYỆT.
+   PACKING: $670–6,700 cho 1–5PN (MoveBuddha); bậc giữa nội suy, KEN DUYỆT.
+   STAIRS $50–75 / tầng (MoveBuddha). Elevator = 1 tầng (ước tính, KEN DUYỆT). DIY: +0.25h / tầng (ước tính).
+   PIANO upright local $300–600, long $650–2,500 (MovingPlace 09/10/2026). SAFE/bulky $201–536 (MoveBuddha).
+   PEAK: tháng 5–9, cuối tuần, 3 ngày cuối tháng: +20–30% (MoveBuddha).
+   TIP: local $20–50 / người; dọn lớn / xa 5–10% hóa đơn (MoveBuddha).
+   DIY bạn bè làm chậm hơn thợ ×1.5 giờ (ước tính, KEN DUYỆT).
+*/
+/*PURE-START*/
+const CREW={0:[2,3],1:[2,4],2:[3,5],3:[4,8],4:[4,9],5:[5,10]};
+const RATE={2:[175,325],3:[225,400],4:[275,475],5:[325,550]};
+const LABOR={0:[2,3],1:[2,3],2:[3,5],3:[3,5],4:[4,7],5:[4,7]}, LABOR_RATE=[61,79];
+const TRUCK={0:['10',19.95],1:['15',29.95],2:['15',29.95],3:['20',39.95],4:['26',49.95],5:['26',49.95]};
+const PER_MI=[0.79,1.29], MPG=[10,8], GAS=4.66, EQUIP=[20,30], PROTECT=[15,30];
+const OW_FIX=250, OW_MI=[3.30,5.19], OW_SMALL=0.75;
+const LD_MI={0:[3,4],1:[3,5],2:[5,7],3:[6,8],4:[7,10],5:[8,12]};
+const PACK={0:[400,700],1:[670,1100],2:[1000,2000],3:[1600,3300],4:[2500,5000],5:[3400,6700]};
+const STAIR=[50,75], PIANO_L=[300,600], PIANO_LD=[650,2500], SAFE=[201,536];
+const PEAK=[1.20,1.30], TIP_P=[20,50], TIP_LD=[0.05,0.10], DIY_SLOW=1.5, LOCAL_MPH=30;
+const BASIC=0.60, FULLVAL=1.82;
+
+function isPeak(ds){ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(ds||''); if(!m) return {peak:false};
+  const y=+m[1],mo=+m[2],d=+m[3], dt=new Date(Date.UTC(y,mo-1,d)), wd=dt.getUTCDay(), last=new Date(Date.UTC(y,mo,0)).getUTCDate();
+  const summer=mo>=5&&mo<=9, wkend=wd===0||wd===6, eom=d>last-3; return {peak:summer||wkend||eom,summer,wkend,eom}; }
+const add=(a,b)=>[a[0]+b[0],a[1]+b[1]], mul=(a,k)=>[a[0]*k[0],a[1]*k[1]], sc=(a,k)=>[a[0]*k,a[1]*k];
+
+function estimate(o){ /* o: {bed,miles,pack,stairs,elev,piano,safe,date} */
+  const b=Math.max(0,Math.min(5,o.bed|0)), mi=Math.max(1,+o.miles||1), long=mi>=100, pk=isPeak(o.date);
+  const pkm=pk.peak?PEAK:[1,1];
+  const fl=Math.max(0,o.stairs|0)+(o.elev?1:0), stair=sc(STAIR,fl);
+  const piano=o.piano?(long?PIANO_LD:PIANO_L):[0,0], safe=o.safe?SAFE:[0,0], pack=o.pack?PACK[b]:[0,0];
+  const gasF=[mi/MPG[0]*GAS, mi/MPG[1]*GAS];
+  const [tsz,tbase]=TRUCK[b];
+  /* FULL */
+  const [fc,fh]=CREW[b], driveH=long?0:mi/LOCAL_MPH, fHours=fh+driveH;
+  let full=mul(sc(RATE[fc],fHours),pkm);
+  if(long) full=add(full,sc(LD_MI[b],mi));
+  full=add(add(add(add(full,pack),stair),piano),safe);
+  const fTip=long?[full[0]*TIP_LD[0],full[1]*TIP_LD[1]]:sc(TIP_P,fc);
+  /* TRUCK (labor + DIY) */
+  let truck, tmiles;
+  if(long){ const k=tsz==='26'?1:OW_SMALL; truck=[OW_FIX+OW_MI[0]*mi*k, OW_FIX+OW_MI[1]*mi*k]; tmiles=mi; }
+  else { const trips=b>=5?2:1; tmiles=trips*2*mi+10; truck=[tbase+PER_MI[0]*tmiles, tbase+PER_MI[1]*tmiles]; }
+  const gas=[tmiles/(tsz==='10'?12:MPG[0])*GAS, tmiles/MPG[1]*GAS];
+  truck=add(add(add(truck,gas),EQUIP),PROTECT);
+  /* LABOR ONLY */
+  const [lc,lh]=LABOR[b];
+  let labor=mul(sc(LABOR_RATE,lc*lh),pkm);
+  labor=add(add(add(add(add(labor,truck),pack),stair),piano),safe);
+  const lHours=lh+(long?mi/55:mi/LOCAL_MPH);
+  const lTip=sc(TIP_P,lc);
+  /* DIY */
+  const diy=add(add(truck,piano),safe);
+  const dHours=lh*DIY_SLOW+fl*0.25+(long?mi/55:mi/LOCAL_MPH);
+  /* recommend */
+  const rec=(long||b>=3||o.piano)?'full':(b>=1?'labor':'diy');
+  const R=x=>[Math.round(x[0]),Math.round(x[1])];
+  return {long,peak:pk,rec,truckSize:tsz,tmiles:Math.round(tmiles),
+    full:{c:R(full),h:fHours,crew:fc,tip:R(fTip)},
+    labor:{c:R(labor),h:lHours,crew:lc,tip:R(lTip),truck:R(truck)},
+    diy:{c:R(diy),h:dHours,crew:lc,tip:[0,0],truck:R(truck)},
+    gas:R(gas),pack:R(pack),stair:R(stair),extras:R(add(piano,safe))};
+}
+/*PURE-END*/
+
+const I18N={
+ en:{title:'What will my move really cost?',sub:'Movers, labor only, or a truck and friends. Side by side, with hours, gas, tips and the California rules that protect you.',
+  l_bed:'Home size',studio:'Studio',l_dist:'Distance',local:'Local',long:'Long',l_miles:'Miles ',l_miles_s:'(one way)',l_how:'How you move',
+  m_full:'Full-service',m_labor:'Labor only',m_diy:'DIY',l_pack:'Packing service',yes:'Yes',no:'No',l_stairs:'Flights of stairs ',l_stairs_s:'(both homes)',
+  l_date:'Move date',l_extra:'Extras',x_elev:'Elevator',x_piano:'Piano',x_safe:'Safe',
+  k_full:'Full-service movers',k_labor:'Labor only + your truck',k_diy:'DIY: truck + friends',r_hrs:'About',r_hrs2:'hours',
+  crew:'{n}-person crew',crew_diy:'{n} people incl. you',rec:'Pick for you',
+  n_truck:'Truck rental + gas',n_truck_s:'({s} ft, {m} mi)',n_gas:'Gas only',n_pack:'Packing service',n_stairs:'Stairs / elevator',n_extra:'Piano / safe',n_tip:'Tip for the crew',n_tip_s:'(not in total)',
+  n_basic:'Free basic liability',n_basic_v:'60¢ / lb per item',n_full:'Full value protection',n_full_v:'≤ $1.82 per $100 of value',
+  ins_note:'Basic liability pays by weight: a 50-lb TV that breaks gets $30. Full value on $50,000 of stuff costs up to $910 under state max rates.',
+  peak_on:'Peak date ({why}). Movers charge about 20–30% more. A weekday in October–April is cheapest.',peak_off:'Off-peak date. Good: no summer, weekend or end-of-month markup.',
+  w_sum:'summer',w_wk:'weekend',w_eom:'end of month',
+  rec_full:'For this move we\'d go full-service: {why}.',rec_labor:'Labor only usually wins here: pros lift, you drive and save the truck markup.',rec_diy:'A studio across town is fine with a truck and two friends.',
+  why_long:'over 100 miles',why_big:'3+ bedrooms',why_piano:'a piano',
+  oo_note:'Moving out of California? Interstate movers are regulated by FMCSA, not BHGS. Check their USDOT number at <a href="https://www.fmcsa.dot.gov/protect-your-move" target="_blank" rel="noopener">fmcsa.dot.gov/protect-your-move</a>.',
+  ca_h:'California mover rules',
+  ca1:'The mover must hold a household goods permit from BHGS. Look it up at <a href="https://bhgs.dca.ca.gov/consumers/movers" target="_blank" rel="noopener">bhgs.dca.ca.gov</a>.',
+  ca2:'A written estimate only after they see your stuff. Phone or internet estimates are illegal in California.',
+  ca3:'Every household move gets a "Not to Exceed" price. That\'s the most you can be charged, unless you ask for more services and sign a change order before the work.',
+  ca4:'Booked 3+ days ahead? You get the agreement and the "Important Notice About Your Move" at least 3 days before moving day.',
+  ca5:'Under 100 miles, movers can bill by the hour. Over 100 miles, by weight and distance.',
+  my_k:'Many people get this wrong:',my_v:'"The cheapest phone quote is the cheapest move." A lowball quote without seeing your home is how hostage-load scams start: they load the truck, then the price jumps. In California the mover can only demand the Not to Exceed price plus change orders you signed. No in-home or video walk-through, no written Not to Exceed, no deal.',
+  ns_h:'Next steps',
+  ns1:'Get 3 written Not to Exceed quotes after a walk-through. Compare crew size and hours, not just the total.',
+  ns2:'Check each mover\'s BHGS permit and complaints before you pay a deposit.',
+  ns3:'Decide on protection: free basic liability is only 60¢ per pound per item. Ask the price for full value protection.',
+  ns4:'Plan the weeks before with the <a href="/t100/">moving checklist</a>, change your address with <a href="/t102/">T102</a>, and set up utilities with <a href="/t130/">T130</a>.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this moving estimate to yourself',f_sub:'Ken can send movers past clients have used. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:"How to read a mover's quote",ft_vid:'3-min video',
+  ft_est:'All costs are estimates for California, 2026. Real numbers come from a written Not to Exceed quote after the mover sees your home. Long-distance and DIY truck numbers are rough.',
+  ft_src:'Sources:',ft_chk:'Checked 04/11/2026.',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  bedname:['Studio','1 bd','2 bd','3 bd','4 bd','5+ bd'],
+  sms:'Hi Ken, I ran the moving cost tool on tools.kenlamrealty.com: {b}, {mi} mi, {how} about {c}. I have a question.',
+  subj:'Moving cost estimate — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nHome: {b}\nDistance: {mi} mi\nDate: {dt}\n\nFull-service: {cf}\nLabor only + truck: {cl}\nDIY: {cd}\nMy pick: {how} {c}, about {h} hours\nTip: {tip}\n\nSent from tool T101 tools.kenlamrealty.com'},
+ vi:{title:'Dọn nhà hết bao nhiêu tiền?',sub:'Thuê mover trọn gói, thuê người khiêng, hay tự thuê xe với bạn bè. So sánh liền, có giờ, xăng, tiền tip và luật California bảo vệ bạn.',
+  l_bed:'Nhà mấy phòng',studio:'Studio',l_dist:'Khoảng cách',local:'Gần',long:'Xa',l_miles:'Số dặm ',l_miles_s:'(một chiều)',l_how:'Cách dọn',
+  m_full:'Trọn gói',m_labor:'Thuê khiêng',m_diy:'Tự dọn',l_pack:'Thuê đóng thùng',yes:'Có',no:'Không',l_stairs:'Số tầng cầu thang ',l_stairs_s:'(cả 2 nhà)',
+  l_date:'Ngày dọn',l_extra:'Thêm',x_elev:'Thang máy',x_piano:'Đàn piano',x_safe:'Két sắt',
+  k_full:'Mover trọn gói',k_labor:'Thuê khiêng + tự thuê xe',k_diy:'Tự dọn: thuê xe + bạn bè',r_hrs:'Khoảng',r_hrs2:'giờ',
+  crew:'đội {n} người',crew_diy:'{n} người kể cả bạn',rec:'Nên chọn',
+  n_truck:'Thuê xe + xăng',n_truck_s:'(xe {s} ft, {m} dặm)',n_gas:'Riêng xăng',n_pack:'Đóng thùng',n_stairs:'Cầu thang / thang máy',n_extra:'Piano / két sắt',n_tip:'Tiền tip cho thợ',n_tip_s:'(chưa cộng vào)',
+  n_basic:'Bảo đảm cơ bản (miễn phí)',n_basic_v:'60¢ / lb mỗi món',n_full:'Bảo đảm đủ giá trị',n_full_v:'tối đa $1.82 mỗi $100',
+  ins_note:'Bảo đảm cơ bản trả theo cân nặng: TV 50 lb bể chỉ được $30. Mua bảo đảm đủ giá trị cho $50,000 đồ tốn tối đa $910 theo giá trần của tiểu bang.',
+  peak_on:'Ngày cao điểm ({why}). Mover lấy mắc hơn khoảng 20–30%. Ngày thường tháng 10–4 là rẻ nhất.',peak_off:'Ngày thấp điểm. Tốt: không bị tính thêm mùa hè, cuối tuần hay cuối tháng.',
+  w_sum:'mùa hè',w_wk:'cuối tuần',w_eom:'cuối tháng',
+  rec_full:'Dọn kiểu này nên thuê trọn gói: {why}.',rec_labor:'Thường thuê người khiêng là lời nhất: thợ khiêng, bạn lái xe, khỏi trả tiền xe của mover.',rec_diy:'Studio dọn trong thành phố thì thuê xe với 2 người bạn là đủ.',
+  why_long:'xa hơn 100 dặm',why_big:'nhà 3 phòng trở lên',why_piano:'có đàn piano',
+  oo_note:'Dọn ra khỏi California? Mover liên bang do FMCSA quản lý, không phải BHGS. Kiểm số USDOT ở <a href="https://www.fmcsa.dot.gov/protect-your-move" target="_blank" rel="noopener">fmcsa.dot.gov/protect-your-move</a>.',
+  ca_h:'Luật mover ở California',
+  ca1:'Mover phải có permit dọn nhà của BHGS. Tra ở <a href="https://bhgs.dca.ca.gov/consumers/movers" target="_blank" rel="noopener">bhgs.dca.ca.gov</a>.',
+  ca2:'Chỉ được báo giá bằng giấy sau khi coi đồ. Báo giá qua điện thoại hay internet là trái luật ở California.',
+  ca3:'Dọn nhà nào cũng phải có giá "Not to Exceed": mức trần bạn phải trả. Chỉ vượt khi bạn xin thêm dịch vụ và ký change order trước khi làm.',
+  ca4:'Đặt trước từ 3 ngày? Phải nhận hợp đồng và tờ "Important Notice About Your Move" ít nhất 3 ngày trước ngày dọn.',
+  ca5:'Dưới 100 dặm, mover được tính theo giờ. Trên 100 dặm, tính theo cân nặng và khoảng cách.',
+  my_k:'Nhiều người hiểu sai:',my_v:'"Báo giá qua điện thoại rẻ nhất là dọn rẻ nhất." Báo giá rẻ mà không coi nhà là kiểu lừa giữ đồ: chất đồ lên xe xong mới đòi thêm tiền. Ở California mover chỉ được đòi giá Not to Exceed cộng change order bạn đã ký. Không coi đồ tận nhà hay qua video, không có Not to Exceed bằng giấy, thì đừng ký.',
+  ns_h:'Bước tiếp theo',
+  ns1:'Lấy 3 báo giá Not to Exceed bằng giấy sau khi mover coi đồ. So số người và số giờ, đừng chỉ coi tổng.',
+  ns2:'Kiểm permit BHGS và khiếu nại của từng mover trước khi đặt cọc.',
+  ns3:'Chọn bảo đảm: loại miễn phí chỉ trả 60¢ mỗi pound mỗi món. Hỏi giá bảo đảm đủ giá trị.',
+  ns4:'Lên lịch các tuần trước bằng <a href="/t100/">checklist dọn nhà</a>, đổi địa chỉ với <a href="/t102/">T102</a>, mở điện nước với <a href="/t130/">T130</a>.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi bảng chi phí dọn nhà về email',f_sub:'Ken có thể gửi tên mover mà khách cũ đã xài. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Cách đọc báo giá của mover',ft_vid:'Video 3 phút',
+  ft_est:'Mọi con số là ước tính cho California, 2026. Số thật theo báo giá Not to Exceed bằng giấy sau khi mover coi nhà. Số dọn xa và thuê xe tự dọn chỉ là ước chừng.',
+  ft_src:'Nguồn:',ft_chk:'Tra ngày 04/11/2026.',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  bedname:['Studio','1 phòng','2 phòng','3 phòng','4 phòng','5+ phòng'],
+  sms:'Chào Ken, tôi vừa tính chi phí dọn nhà trên tools.kenlamrealty.com: {b}, {mi} dặm, {how} khoảng {c}. Cho tôi hỏi thêm.',
+  subj:'Chi phí dọn nhà — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nNhà: {b}\nKhoảng cách: {mi} dặm\nNgày: {dt}\n\nTrọn gói: {cf}\nThuê khiêng + xe: {cl}\nTự dọn: {cd}\nChọn: {how} {c}, khoảng {h} giờ\nTip: {tip}\n\nGửi từ tool T101 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const rg=a=>a[0]===a[1]?fmt(a[0]):fmt(a[0])+'–'+fmt(a[1]);
+const hr=h=>(Math.round(h*2)/2).toString();
+let opt={bed:3,how:'full',pack:false}, howTouched=false, last={};
+(function(){ const t=new Date(Date.now()+45*86400000); $('mdate').value=t.toISOString().slice(0,10); })();
+
+function render(){
+  const d=I18N[lang];
+  const o={bed:opt.bed,miles:+$('miles').value||1,pack:opt.pack,stairs:+$('stairs').value||0,elev:$('xElev').checked,piano:$('xPiano').checked,safe:$('xSafe').checked,date:$('mdate').value};
+  const E=estimate(o);
+  if(!howTouched&&opt.how!==E.rec){ opt.how=E.rec; setSeg('segHow',E.rec); }
+  setSeg('segDist',E.long?'long':'local');
+  const M=E[opt.how];
+  $('bigK').textContent=d['k_'+opt.how]; $('big').textContent=rg(M.c); $('bigH').textContent=hr(M.h);
+  $('crewTxt').textContent=(opt.how==='diy'?d.crew_diy:d.crew).replace('{n}',M.crew);
+  const H=$('meths'); H.innerHTML='';
+  ['full','labor','diy'].forEach(k=>{ const m=E[k];
+    H.insertAdjacentHTML('beforeend','<div class="mt'+(k===opt.how?' on':'')+'"><div class="h"><span>'+d['m_'+k]+'</span>'+(k===E.rec?'<i>'+d.rec+'</i>':'')+'</div><div class="p">'+rg(m.c)+'</div><div class="x">~'+hr(m.h)+' '+d.r_hrs2+'</div></div>'); });
+  const L=$('lines'); L.innerHTML='';
+  const line=(n,a,cls)=>L.insertAdjacentHTML('beforeend','<div class="line"><span class="n">'+n+'</span><span class="a rg">'+a+'</span></div>');
+  if(opt.how!=='full') line('<b>'+d.n_truck+'</b> '+d.n_truck_s.replace('{s}',E.truckSize).replace('{m}',E.tmiles),rg(M.truck));
+  if(opt.how!=='full') line('<b>'+d.n_gas+'</b>',rg(E.gas));
+  if(opt.pack&&opt.how!=='diy') line('<b>'+d.n_pack+'</b>',rg(E.pack));
+  if(E.stair[1]>0&&opt.how!=='diy') line('<b>'+d.n_stairs+'</b>',rg(E.stair));
+  if(E.extras[1]>0) line('<b>'+d.n_extra+'</b>',rg(E.extras));
+  if(opt.how!=='diy') line('<b>'+d.n_tip+'</b> '+d.n_tip_s,rg(M.tip));
+  line('<b>'+d.n_basic+'</b>',d.n_basic_v); line('<b>'+d.n_full+'</b>',d.n_full_v);
+  L.insertAdjacentHTML('beforeend','<div class="note" style="margin-top:10px">'+d.ins_note+'</div>');
+  const p=E.peak, why=[p.summer?d.w_sum:'',p.wkend?d.w_wk:'',p.eom?d.w_eom:''].filter(Boolean).join(', ');
+  $('peakNote').textContent=p.peak?d.peak_on.replace('{why}',why):d.peak_off;
+  const rw=[E.long?d.why_long:'',opt.bed>=3?d.why_big:'',o.piano?d.why_piano:''].filter(Boolean).join(', ');
+  $('recNote').textContent=E.rec==='full'?d.rec_full.replace('{why}',rw):d['rec_'+E.rec];
+  $('ooNote').classList.toggle('hide',!(E.long&&o.miles>=400));
+  last={b:d.bedname[opt.bed],mi:o.miles,dt:o.date,cf:rg(E.full.c),cl:rg(E.labor.c),cd:rg(E.diy.c),how:d['m_'+opt.how],c:rg(M.c),h:hr(M.h),tip:rg(M.tip)};
+  const s=d.sms.replace('{b}',last.b).replace('{mi}',last.mi).replace('{how}',last.how).replace('{c}',last.c);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s);
+}
+function setSeg(id,v){ $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.v===String(v)))); }
+function seg(id,cb){ const g=$(id); g.addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; setSeg(id,b.dataset.v); cb(b.dataset.v); render(); }); }
+seg('segBed',v=>opt.bed=+v);
+seg('segHow',v=>{opt.how=v; howTouched=true;});
+seg('segPack',v=>opt.pack=v==='1');
+seg('segDist',v=>{ const m=+$('miles').value||0; if(v==='long'&&m<100) $('miles').value=350; if(v==='local'&&m>=100) $('miles').value=15; });
+['miles','stairs','mdate','xElev','xPiano','xSafe'].forEach(id=>{$(id).addEventListener('input',render); $(id).addEventListener('change',render);});
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; render();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
