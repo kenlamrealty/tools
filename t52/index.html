@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How Much Rent Can I Afford? · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Enter your household income and debts. See a comfortable rent, what landlords will approve, which home sizes fit in Santa Clara or Alameda, and the cash you need to move in.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t52/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="How Much Rent Can I Afford? · Ken Lam Tools">
+<meta property="og:description" content="Comfortable rent, landlord approval, home sizes that fit, and move-in cash. Santa Clara and Alameda, 2026 numbers.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t52/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T52 additions */
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.line.hl .a{color:var(--brass)}
+.line.neg .a{color:var(--warn)}
+.line.tot .n b,.line.tot .a{font-weight:600}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.tbl th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;text-align:right;padding:6px 4px;border-bottom:1px solid var(--line)}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl td{padding:9px 4px;border-bottom:1px solid var(--line);text-align:right}
+.tbl tr.rec td{background:var(--brass-soft)}
+.tbl tr.rec td:first-child{box-shadow:inset 2px 0 0 var(--brass)}
+.fit{font-weight:600}
+.fit.y{color:var(--ok)}
+.fit.s{color:var(--brass)}
+.fit.n{color:var(--warn)}
+.tcap{font-size:13px;color:var(--muted);margin:0}
+.sec-t{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);font-weight:500;margin:4px 0 -6px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:12px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.panel p{margin:0;font-size:14px;color:var(--muted)}
+.panel ol,.panel ul{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.panel a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">How much rent can I afford?</h1>
+    <p class="sub" data-i="sub">Enter your household income and debts. See a safe rent, what landlords approve, and the cash to move in.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="inc"><span data-i="l_inc">Household income before tax</span> <small data-i="l_inc_s">(everyone on the lease)</small></label>
+      <div class="ctl"><span class="pre">$</span><input id="inc" type="number" inputmode="numeric" min="0" step="100" value="9000"><span class="post" data-i="per_mo">/mo</span></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="debt"><span data-i="l_debt">Monthly debt payments</span> <small data-i="l_debt_s">(car, cards, student loan)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="debt" type="number" inputmode="numeric" min="0" step="25" value="600"><span class="post" data-i="per_mo2">/mo</span></div>
+      </div>
+      <div class="field">
+        <label for="ppl"><span data-i="l_ppl">People in household</span></label>
+        <div class="ctl"><input id="ppl" type="number" inputmode="numeric" min="1" max="12" step="1" value="3"><span class="post" data-i="ppl_u">people</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_county">County</span>
+      <div class="seg" role="group" id="county">
+        <button type="button" data-v="sc" aria-pressed="true">Santa Clara</button>
+        <button type="button" data-v="al" aria-pressed="false">Alameda</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">Comfortable rent</div>
+      <div class="v"><span id="comf">$0</span> <small data-i="per_mo3">/mo</small></div>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_30">30% of income</b> <span data-i="n_30_s">(HUD affordability line)</span></span><span class="a" id="o30">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_st">Stretch</b> <span data-i="n_st_s">(35%, tight budget)</span></span><span class="a" id="oSt">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_ll3">Landlord approves up to</b> <span data-i="n_ll3_s">(income ≥ 3× rent)</span></span><span class="a" id="oL3">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_ll25">Looser landlords</b> <span data-i="n_ll25_s">(income ≥ 2.5× rent)</span></span><span class="a" id="oL25">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_left">Left after rent + debts</b> <span data-i="n_left_s">(before tax)</span></span><span class="a" id="oLeft">$0</span></div>
+    </div>
+    <div class="note hide" id="debtNote" data-i="debt_note">Your debt payments are high, so the comfortable rent is lowered below 30%. We keep rent + debts under about 40% of income.</div>
+
+    <p class="sec-t" id="tblT">What that buys in Santa Clara</p>
+    <table class="tbl" aria-describedby="tcap">
+      <thead><tr><th data-i="t_size">Size</th><th data-i="t_fmr">HUD rent</th><th data-i="t_need">Income needed</th><th data-i="t_fit">Fits?</th></tr></thead>
+      <tbody id="tb"></tbody>
+    </table>
+    <p class="tcap" id="tcap" data-i="tcap">HUD Fair Market Rent FY2026 includes utilities. It is a mid-low market rent (40th percentile), so many homes list higher. Income needed = 3× rent. ✓ comfortable · ~ stretch · ✗ over budget. Highlighted row: about 2 people per bedroom.</p>
+
+    <p class="sec-t" data-i="mv_t">Cash to move in</p>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_first">First month rent</b></span><span class="a" id="mFirst">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_dep">Security deposit</b> <span data-i="n_dep_s">(max 1 month, most landlords)</span></span><span class="a" id="mDep">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_app">Application fees</b> <span id="mAppS"></span></span><span class="a" id="mApp">$0</span></div>
+      <div class="line tot hl"><span class="n"><b data-i="n_tot">Move-in cash</b></span><span class="a" id="mTot">$0</span></div>
+      <div class="line neg"><span class="n"><b data-i="n_small">Small landlord may ask</b> <span data-i="n_small_s">(up to 2 months deposit)</span></span><span class="a" id="mSmall">+$0</span></div>
+    </div>
+    <div class="note hide" id="lowNote" data-i="low_note">Even a studio is over budget at this income. Look at below-market (BMR) and voucher programs: <a href="https://www.scchousingauthority.org" target="_blank" rel="noopener">Santa Clara County Housing Authority</a> · <a href="https://www.haca.net" target="_blank" rel="noopener">Alameda County Housing Authority</a>. Renting a room is another way in.</div>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t52/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this budget to yourself</h2>
+    <p data-i="f_sub">Ken will reply with rentals in your range, or what it takes to buy instead. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="rt_t">Your rights when you apply</h2>
+    <ul>
+      <li data-i="rt1">Application fee: max <b>$68.96</b> per adult in 2026. The cap goes up with inflation each year.</li>
+      <li data-i="rt2">You get a receipt that lists what the fee paid for. Ask, and you get a copy of your credit report.</li>
+      <li data-i="rt3">No unit available? They can't charge the fee. Unused part of the fee comes back to you.</li>
+      <li data-i="rt4">Deposit: since 7/1/2024, most landlords can take only 1 month. Up to 2 months only for a small landlord (a person, 2 properties or less, 4 units or less), and never from active-duty service members.</li>
+    </ul>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Pull your free credit report at <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">annualcreditreport.com</a> before you apply. Fix errors first.</li>
+      <li data-i="ns2">Have it ready: 2 recent pay stubs, last year's W-2 or tax return, ID, 2 months of bank statements. Good applicants move fast.</li>
+      <li data-i="ns3">Read the state's <a href="https://landlordtenant.dre.ca.gov/resources/guidebook/" target="_blank" rel="noopener">Landlord-Tenant Guide</a> and rent increase rules in <a href="/t55/">T55</a>.</li>
+      <li data-i="ns4">Paying this much rent anyway? Compare with buying in <a href="/t04/">T04 — rent vs buy</a>.</li>
+    </ol>
+  </section>
+
+  <p class="myth" data-i="myth"><b>Many people get this wrong:</b> “The landlord can ask for 2–3 months deposit.” Not anymore. Since July 1, 2024 (AB 12), most landlords can take only 1 month plus first month's rent. Small landlords can take up to 2. Nobody can take 3.</p>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#thue-nha-bao-nhieu" target="_blank" rel="noopener" data-i="ft_lib">Renting in the Bay Area</a> · <a href="https://kenlamrealty.com/library#video-thue-nha" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span><span data-i="ft_src">Sources:</span> <a href="https://section8hq.pages.dev/fair-market-rent/california/santa-clara-county/" target="_blank" rel="noopener">HUD FY2026 FMR, Santa Clara</a> · <a href="https://section8hq.pages.dev/fair-market-rent/california/alameda-county/" target="_blank" rel="noopener">HUD FY2026 FMR, Alameda</a> <span data-i="ft_fmr">(quoted by Section8HQ; official data:</span> <a href="https://www.huduser.gov/portal/datasets/fmr.html" target="_blank" rel="noopener">huduser.gov</a>) · <a href="https://archives.huduser.gov/portal/pdredge/pdr-edge-featd-article-081417.html" target="_blank" rel="noopener">HUD on 30% affordability</a> · <a href="https://legiscan.com/CA/text/AB12/2023" target="_blank" rel="noopener">AB 12 (Civil Code §1950.5)</a> · <a href="https://rentboard.berkeleyca.gov/laws-regulations/city-berkeley-ordinances-affecting-rental-properties/tenant-screening-and" target="_blank" rel="noopener">Civil Code §1950.6 fee cap 2026</a> · <a href="https://landlordtenant.dre.ca.gov/resources/guidebook/" target="_blank" rel="noopener">CA DRE Landlord-Tenant Guide</a> <span data-i="ft_chk">(checked 04/11/2026)</span></span>
+    <span data-i="ft_est">Estimate only, not legal advice. 30% / 35% and the 2.5–3× income screen are common rules of thumb, not law. Each landlord sets its own screening rules. Local rules (San Jose, Oakland, Berkeley) may add protections.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Numbers — edit here when rules change =====
+   FMR: HUD FY2026 Fair Market Rents (gross rent incl. utilities, 40th percentile), effective 10/01/2025.
+     huduser.gov blocked from our network on 04/11/2026 → taken from pages quoting HUD:
+     Santa Clara (San Jose-Sunnyvale-Santa Clara HUD Metro FMR Area): https://section8hq.pages.dev/fair-market-rent/california/santa-clara-county/
+     Alameda (Oakland-Fremont HUD Metro FMR Area): https://section8hq.pages.dev/fair-market-rent/california/alameda-county/
+     Same numbers at https://hud-rents.pages.dev/state/california/ (04/11/2026) — KEN DUYỆT: so lại với huduser.gov.
+   AFF 30%: HUD cost-burden line, https://archives.huduser.gov/portal/pdredge/pdr-edge-featd-article-081417.html
+   STRETCH 35%, DTI caps 40%/45% (rent + debts), LL 3× / 2.5× income: common practice, ước tính — KEN DUYỆT.
+   DEPOSIT: Civil Code §1950.5(c) as amended by AB 12, operative 7/1/2024: max 1 month (plus first month rent);
+     small landlord (natural person / LLC of natural persons, ≤2 residential rental properties, ≤4 units) up to 2 months,
+     not for service members. https://legiscan.com/CA/text/AB12/2023 (04/11/2026)
+   APP_FEE $68.96 per applicant, 2026 CPI-adjusted cap under Civil Code §1950.6(b):
+     https://rentboard.berkeleyca.gov/laws-regulations/city-berkeley-ordinances-affecting-rental-properties/tenant-screening-and (04/11/2026)
+     CAA confirms a 2026 increase: https://caanet.org/maximum-applicant-screening-fee-increase-for-2026/ — KEN DUYỆT.
+   APPLICANTS: assume up to 2 adults pay the fee (we don't ask ages) — ước tính.
+*/
+const C={
+  FMR:{sc:[2621,2982,3483,4602,5010], al:[2142,2385,2912,3724,4413]},
+  AFF:0.30, STRETCH:0.35, DTI_C:0.40, DTI_S:0.45, LL:3, LL_LOOSE:2.5,
+  DEP_MO:1, DEP_SMALL_MO:2, APP_FEE:68.96, MAX_APPLICANTS:2
+};
+const UPDATED='04/11/2026';
+
+/*MODEL*/
+function model(I){
+  const p0=x=>Math.max(0,+x||0);
+  const inc=p0(I.inc), debt=p0(I.debt), ppl=Math.max(1,Math.round(+I.ppl||1)), fmr=C.FMR[I.county==='al'?'al':'sc'];
+  const r30=inc*C.AFF, rSt=inc*C.STRETCH;
+  const comf=Math.max(0,Math.min(r30,inc*C.DTI_C-debt)), stretch=Math.max(0,Math.min(rSt,inc*C.DTI_S-debt));
+  const debtCut=comf<r30-0.5;
+  const ll3=inc/C.LL, ll25=inc/C.LL_LOOSE, left=inc-comf-debt;
+  const rec=Math.min(4,ppl<=1?0:Math.ceil(ppl/2));
+  const rows=fmr.map((v,b)=>({b,v,need:v*C.LL,fit:v<=comf?'y':v<=stretch?'s':'n'}));
+  const apps=Math.min(ppl,C.MAX_APPLICANTS), app=apps*C.APP_FEE;
+  const first=comf, dep=comf*C.DEP_MO, tot=first+dep+app, small=comf*(C.DEP_SMALL_MO-C.DEP_MO);
+  return {inc,debt,ppl,r30,rSt,comf,stretch,debtCut,ll3,ll25,left,rec,rows,apps,app,first,dep,tot,small,low:fmr[0]>stretch};
+}
+/*END*/
+
+const I18N={
+ en:{title:'How much rent can I afford?',sub:'Enter your household income and debts. See a safe rent, what landlords approve, and the cash to move in.',
+  l_inc:'Household income before tax',l_inc_s:'(everyone on the lease)',per_mo:'/mo',per_mo2:'/mo',per_mo3:'/mo',l_debt:'Monthly debt payments',l_debt_s:'(car, cards, student loan)',
+  l_ppl:'People in household',ppl_u:'people',l_county:'County',
+  r_total:'Comfortable rent',n_30:'30% of income',n_30_s:'(HUD affordability line)',n_st:'Stretch',n_st_s:'(35%, tight budget)',
+  n_ll3:'Landlord approves up to',n_ll3_s:'(income ≥ 3× rent)',n_ll25:'Looser landlords',n_ll25_s:'(income ≥ 2.5× rent)',n_left:'Left after rent + debts',n_left_s:'(before tax)',
+  debt_note:'Your debt payments are high, so the comfortable rent is lowered below 30%. We keep rent + debts under about 40% of income.',
+  tbl_t:'What that buys in {c}',t_size:'Size',t_fmr:'HUD rent',t_need:'Income needed',t_fit:'Fits?',studio:'Studio',bd:'{n} BR',
+  tcap:'HUD Fair Market Rent FY2026 includes utilities. It is a mid-low market rent (40th percentile), so many homes list higher. Income needed = 3× rent. ✓ comfortable · ~ stretch · ✗ over budget. Highlighted row: about 2 people per bedroom.',
+  mv_t:'Cash to move in',n_first:'First month rent',n_dep:'Security deposit',n_dep_s:'(max 1 month, most landlords)',n_app:'Application fees',app_s:'(≤ $68.96 × {n} adult{s})',
+  n_tot:'Move-in cash',n_small:'Small landlord may ask',n_small_s:'(up to 2 months deposit)',
+  low_note:'Even a studio is over budget at this income. Look at below-market (BMR) and voucher programs: <a href="https://www.scchousingauthority.org" target="_blank" rel="noopener">Santa Clara County Housing Authority</a> · <a href="https://www.haca.net" target="_blank" rel="noopener">Alameda County Housing Authority</a>. Renting a room is another way in.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this budget to yourself',f_sub:'Ken will reply with rentals in your range, or what it takes to buy instead. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  rt_t:'Your rights when you apply',
+  rt1:'Application fee: max <b>$68.96</b> per adult in 2026. The cap goes up with inflation each year.',
+  rt2:'You get a receipt that lists what the fee paid for. Ask, and you get a copy of your credit report.',
+  rt3:"No unit available? They can't charge the fee. Unused part of the fee comes back to you.",
+  rt4:'Deposit: since 7/1/2024, most landlords can take only 1 month. Up to 2 months only for a small landlord (a person, 2 properties or less, 4 units or less), and never from active-duty service members.',
+  ns_t:'Next steps',
+  ns1:'Pull your free credit report at <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">annualcreditreport.com</a> before you apply. Fix errors first.',
+  ns2:"Have it ready: 2 recent pay stubs, last year's W-2 or tax return, ID, 2 months of bank statements. Good applicants move fast.",
+  ns3:'Read the state\'s <a href="https://landlordtenant.dre.ca.gov/resources/guidebook/" target="_blank" rel="noopener">Landlord-Tenant Guide</a> and rent increase rules in <a href="/t55/">T55</a>.',
+  ns4:'Paying this much rent anyway? Compare with buying in <a href="/t04/">T04 — rent vs buy</a>.',
+  myth:"<b>Many people get this wrong:</b> “The landlord can ask for 2–3 months deposit.” Not anymore. Since July 1, 2024 (AB 12), most landlords can take only 1 month plus first month's rent. Small landlords can take up to 2. Nobody can take 3.",
+  ft_read:'Read more:',ft_lib:'Renting in the Bay Area',ft_vid:'3-min video',ft_src:'Sources:',ft_fmr:'(quoted by Section8HQ; official data:',ft_chk:'(checked 04/11/2026)',
+  ft_est:'Estimate only, not legal advice. 30% / 35% and the 2.5–3× income screen are common rules of thumb, not law. Each landlord sets its own screening rules. Local rules (San Jose, Oakland, Berkeley) may add protections.',
+  ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I ran the rent budget tool on tools.kenlamrealty.com/t52/: income {inc}/mo, debts {debt}/mo, {ppl} people, {c} → comfortable rent {comf}/mo. Can you help me look?',
+  subj:'My rent budget — {nm}',
+  body:'Name: {nm}\nEmail: {em}\nPhone: {ph}\n\nCounty: {c}\nHousehold income: {inc}/mo\nDebts: {debt}/mo\nPeople: {ppl}\n\nComfortable rent: {comf}/mo\nStretch: {st}/mo\nLandlord 3× approves up to: {ll3}/mo\nMove-in cash: {tot}\n\nSent from tool T52 tools.kenlamrealty.com — LEAD → FUB'},
+ vi:{title:'Thuê được nhà giá bao nhiêu?',sub:'Nhập thu nhập cả nhà và tiền nợ. Ra liền giá thuê an toàn, chủ nhà duyệt tới đâu, và cần bao nhiêu tiền để dọn vô.',
+  l_inc:'Thu nhập cả nhà (trước thuế)',l_inc_s:'(mọi người đứng tên lease)',per_mo:'/tháng',per_mo2:'/tháng',per_mo3:'/tháng',l_debt:'Tiền nợ trả mỗi tháng',l_debt_s:'(xe, thẻ, student loan)',
+  l_ppl:'Số người trong nhà',ppl_u:'người',l_county:'County',
+  r_total:'Giá thuê thoải mái',n_30:'30% thu nhập',n_30_s:'(mức HUD coi là vừa sức)',n_st:'Cố gắng',n_st_s:'(35%, hơi chật)',
+  n_ll3:'Chủ nhà duyệt tới',n_ll3_s:'(thu nhập ≥ 3 lần tiền thuê)',n_ll25:'Chủ nhà dễ hơn',n_ll25_s:'(thu nhập ≥ 2.5 lần)',n_left:'Còn lại sau thuê + nợ',n_left_s:'(trước thuế)',
+  debt_note:'Tiền nợ hàng tháng cao, nên giá thuê thoải mái bị hạ xuống dưới 30%. Tool giữ tiền thuê + nợ dưới khoảng 40% thu nhập.',
+  tbl_t:'Tiền đó thuê được gì ở {c}',t_size:'Loại',t_fmr:'Giá HUD',t_need:'Cần thu nhập',t_fit:'Vừa?',studio:'Studio',bd:'{n} phòng',
+  tcap:'Giá thuê HUD (Fair Market Rent FY2026) đã gồm điện nước. Đây là mức giá thấp-trung bình (40th percentile), nhiều căn đăng giá cao hơn. Cần thu nhập = 3 lần tiền thuê. ✓ thoải mái · ~ cố gắng · ✗ quá sức. Dòng tô màu: khoảng 2 người 1 phòng.',
+  mv_t:'Tiền cần để dọn vô',n_first:'Tiền thuê tháng đầu',n_dep:'Tiền cọc',n_dep_s:'(tối đa 1 tháng, đa số chủ nhà)',n_app:'Phí nộp đơn',app_s:'(≤ $68.96 × {n} người lớn)',
+  n_tot:'Tổng tiền dọn vô',n_small:'Chủ nhà nhỏ có thể xin thêm',n_small_s:'(cọc tối đa 2 tháng)',
+  low_note:'Với thu nhập này, studio cũng quá sức. Coi chương trình nhà giá thấp (BMR) và voucher: <a href="https://www.scchousingauthority.org" target="_blank" rel="noopener">Santa Clara County Housing Authority</a> · <a href="https://www.haca.net" target="_blank" rel="noopener">Alameda County Housing Authority</a>. Thuê phòng cũng là một cách.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi bảng này về email',f_sub:'Ken sẽ gửi lại nhà cho thuê trong tầm giá, hoặc cần gì để mua nhà. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  rt_t:'Quyền của mình khi nộp đơn thuê',
+  rt1:'Phí nộp đơn: tối đa <b>$68.96</b> mỗi người lớn năm 2026. Mức này tăng theo lạm phát mỗi năm.',
+  rt2:'Được biên nhận ghi rõ phí xài vào gì. Hỏi thì được copy credit report.',
+  rt3:'Không còn căn trống thì không được thu phí. Phần phí chưa xài phải trả lại.',
+  rt4:'Tiền cọc: từ 01/07/2024, đa số chủ nhà chỉ được lấy 1 tháng. Tối đa 2 tháng chỉ khi là chủ nhà nhỏ (cá nhân, tối đa 2 căn, tổng 4 unit), và không được với quân nhân đang tại ngũ.',
+  ns_t:'Bước tiếp theo',
+  ns1:'Lấy credit report miễn phí ở <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">annualcreditreport.com</a> trước khi nộp đơn. Có lỗi thì sửa trước.',
+  ns2:'Chuẩn bị sẵn: 2 pay stub gần nhất, W-2 hoặc tax return năm rồi, ID, 2 tháng bank statement. Hồ sơ đủ là được duyệt nhanh.',
+  ns3:'Đọc <a href="https://landlordtenant.dre.ca.gov/resources/guidebook/" target="_blank" rel="noopener">Landlord-Tenant Guide</a> của tiểu bang và luật tăng giá thuê ở <a href="/t55/">T55</a>.',
+  ns4:'Đằng nào cũng trả tiền thuê cỡ này? So với mua nhà ở <a href="/t04/">T04 — thuê hay mua</a>.',
+  myth:'<b>Nhiều người hiểu sai:</b> “Chủ nhà được đòi cọc 2–3 tháng.” Hết rồi. Từ 01/07/2024 (AB 12), đa số chủ nhà chỉ được lấy cọc 1 tháng, cộng tiền thuê tháng đầu. Chủ nhà nhỏ tối đa 2 tháng. Không ai được lấy 3.',
+  ft_read:'Đọc thêm:',ft_lib:'Thuê nhà ở Bay Area',ft_vid:'Video 3 phút',ft_src:'Nguồn:',ft_fmr:'(Section8HQ trích HUD; số gốc:',ft_chk:'(tra 04/11/2026)',
+  ft_est:'Chỉ là ước tính, không phải tư vấn luật. 30% / 35% và 2.5–3 lần thu nhập là cách tính thông dụng, không phải luật. Mỗi chủ nhà có cách duyệt riêng. Thành phố (San Jose, Oakland, Berkeley) có thể có thêm luật bảo vệ người thuê.',
+  ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa xài tool thuê nhà trên tools.kenlamrealty.com/t52/: thu nhập {inc}/tháng, nợ {debt}/tháng, {ppl} người, {c} → thuê thoải mái {comf}/tháng. Ken giúp tôi kiếm nhà được không?',
+  subj:'Ngân sách thuê nhà — {nm}',
+  body:'Tên: {nm}\nEmail: {em}\nPhone: {ph}\n\nCounty: {c}\nThu nhập cả nhà: {inc}/tháng\nNợ: {debt}/tháng\nSố người: {ppl}\n\nThuê thoải mái: {comf}/tháng\nCố gắng: {st}/tháng\nChủ nhà 3 lần duyệt tới: {ll3}/tháng\nTiền dọn vô: {tot}\n\nGửi từ tool T52 tools.kenlamrealty.com — LEAD → FUB'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−$':'$')+Math.round(Math.abs(n)).toLocaleString('en-US');
+const fmt2=n=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const segVal=id=>$(id).querySelector('[aria-pressed="true"]').dataset.v;
+const fill=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]!=null?o[k]:m);
+let last={};
+
+function calc(){
+  const d=I18N[lang], county=segVal('county'), cn=county==='al'?'Alameda':'Santa Clara';
+  const M=model({inc:num('inc'),debt:num('debt'),ppl:num('ppl'),county});
+  $('comf').textContent=fmt(M.comf); $('o30').textContent=fmt(M.r30); $('oSt').textContent=fmt(M.stretch);
+  $('oL3').textContent=fmt(M.ll3); $('oL25').textContent=fmt(M.ll25); $('oLeft').textContent=fmt(M.left);
+  $('debtNote').classList.toggle('hide',!M.debtCut);
+  $('tblT').textContent=fill(d.tbl_t,{c:cn});
+  const sym={y:'✓',s:'~',n:'✗'};
+  $('tb').innerHTML=M.rows.map(r=>'<tr'+(r.b===M.rec?' class="rec"':'')+'><td>'+(r.b===0?d.studio:fill(d.bd,{n:r.b}))+'</td><td>'+fmt(r.v)+'</td><td>'+fmt(r.need)+'</td><td><span class="fit '+r.fit+'">'+sym[r.fit]+'</span></td></tr>').join('');
+  $('mFirst').textContent=fmt(M.first); $('mDep').textContent=fmt(M.dep);
+  $('mAppS').textContent=fill(d.app_s,{n:M.apps,s:M.apps>1?'s':''}); $('mApp').textContent=fmt2(M.app);
+  $('mTot').textContent=fmt(M.tot); $('mSmall').textContent='+'+fmt(M.small);
+  $('lowNote').classList.toggle('hide',!M.low);
+  last={c:cn,inc:fmt(M.inc),debt:fmt(M.debt),ppl:M.ppl,comf:fmt(M.comf),st:fmt(M.stretch),ll3:fmt(M.ll3),tot:fmt(M.tot)};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+$('county').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+  $('county').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); calc(); }));
+['inc','debt','ppl'].forEach(id=>$(id).addEventListener('input',calc));
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], o=Object.assign({},last,{nm:$('fname').value.trim()||'—',em:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'});
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,o))+'&body='+encodeURIComponent(fill(d.body,o));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Điểm Credit Và Lãi</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T37 thêm (không đổi class cũ) ---- */
+.score{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.score b{font-family:var(--display);font-weight:400;font-size:40px;line-height:1;font-variant-numeric:tabular-nums;color:var(--fg)}
+.score span{font-size:13px;color:var(--muted)}
+.rng{width:100%;margin:4px 0 0;accent-color:var(--brass);height:28px;cursor:pointer}
+.ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.total .pay{margin-top:10px;font-size:15px;color:var(--muted)}
+.total .pay b{color:var(--fg);font-size:22px;font-weight:500;font-variant-numeric:tabular-nums}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45;background:var(--brass-soft)}
+.status b{font-weight:500}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.tbl th{font-size:12px;font-weight:500;color:var(--muted);text-align:right;padding:6px 0;border-bottom:1px solid var(--line)}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl td{padding:9px 0;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.tbl td small{color:var(--muted);font-size:11px;display:block;white-space:normal}
+.tbl tr.me td{color:var(--brass);font-weight:600}
+.tbl tr.me td small{color:var(--brass);font-weight:400}
+.tbl td.x{color:var(--warn)}
+.tbl tr.me td.x{color:var(--brass)}
+.tblk{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.tlw{display:grid;gap:12px}
+.tlw h2,.next h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-r{display:flex;align-items:center;gap:10px}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.gcal{font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.task .why a{color:var(--brass)}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+</style>
+<meta name="description" content="Slide your credit score. See the estimated rate, monthly payment and the real cost per month and over 30 years versus 760+.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t37/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Credit Score &amp; Your Rate · Ken Lam Tools">
+<meta property="og:description" content="Slide your credit score. See the estimated rate, monthly payment and the real cost per month and over 30 years versus 760+.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t37/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">How much is my credit score costing me?</h1>
+    <p class="sub" data-i="sub">Slide your score. See the estimated rate, the monthly payment, and what it costs you next to a 760+ borrower.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="score"><span data-i="l_score">Credit score</span></label>
+      <div class="score"><b id="scoreV">700</b><span id="bandV"></span></div>
+      <input class="rng" id="score" type="range" min="580" max="850" step="5" value="700" aria-label="Credit score">
+      <div class="ticks" aria-hidden="true"><span>580</span><span>620</span><span>660</span><span>700</span><span>740</span><span>800</span><span>850</span></div>
+    </div>
+    <div class="field">
+      <label for="loan"><span data-i="l_loan">Loan amount</span></label>
+      <div class="ctl"><span class="pre">$</span><input id="loan" type="number" inputmode="numeric" min="0" step="10000" value="960000"></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="down"><span data-i="l_down">Down payment</span></label>
+        <div class="ctl"><input id="down" type="number" inputmode="decimal" min="0" max="100" step="1" value="20"><span class="post">%</span></div>
+      </div>
+      <div class="field">
+        <label for="base"><span data-i="l_base">Rate for 760+ </span><small data-i="l_base_s">(edit to today's)</small></label>
+        <div class="ctl"><input id="base" type="number" inputmode="decimal" min="0" max="20" step="0.01" value="7.24"><span class="post">%</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">Extra you pay vs 760+</div>
+      <div class="v"><span id="extra">$0</span> <small data-i="per_mo">/mo</small></div>
+      <div class="pay"><span data-i="r_30">Over 30 years</span>: <b id="extra30">$0</b></div>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_rate">Your estimated rate</b> <span class="n_s" data-i="n_rate_s">(30-yr fixed)</span></span><span class="a" id="oRate">0%</span></div>
+      <div class="line"><span class="n"><b data-i="n_pi">Your principal + interest</b></span><span class="a" id="oPi">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_llpa">Fannie Mae fee for your score</b> <span id="oLlpaS"></span></span><span class="a" id="oLlpa">$0</span></div>
+    </div>
+    <div>
+      <div class="tblk" data-i="t_title">Every score band, same loan</div>
+      <table class="tbl" id="tbl"></table>
+    </div>
+    <div class="note" data-i="est_note">Estimate, not a quote. Rate adjustments use the same simple table as our rate tool (T30). Real pricing depends on the lender, points and the whole file.</div>
+    <div class="note hide" id="lowNote" data-i="low_note">Under 620, many lenders won't do a conventional loan. FHA is the usual path (as low as 3.5% down with 580+). The rate shown is a rough estimate.</div>
+    <div class="note hide" id="jumboNote" data-i="jumbo_note">Loans over $1,249,125 (Santa Clara / Alameda 2026) are jumbo. Fannie Mae fees don't apply, but lenders usually want 700+ and price credit even harder.</div>
+  </section>
+
+  <section class="tlw" aria-label="Checklist">
+    <div class="top"><h2 data-i="ck_title">Raise your score in 60–90 days</h2><span class="cnt"><span id="ckDone">0</span>/<span id="ckAll">0</span> <span data-i="ck_tasks">done</span></span></div>
+    <div class="bar" aria-hidden="true"><i class="b1" id="ckBar"></i></div>
+    <div id="tl"></div>
+    <button type="button" class="reset" id="ckReset" data-i="ck_reset">Clear checkmarks</button>
+  </section>
+
+  <p class="myth" data-i="myth"><b>Common mistake:</b> "Checking my score will drop it." Checking your own report or score does not hurt it. Only a lender's hard pull for new credit counts (CFPB).</p>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">Pull your free reports at <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">annualcreditreport.com</a> and fix any errors this week.</li>
+      <li data-i="nx2">Pay card balances down before each statement date, then wait one cycle.</li>
+      <li data-i="nx3">Close to a band line? Ask the lender for a rapid rescore before you lock.</li>
+      <li data-i="nx4">Compare today's rates by loan type in <a href="/t30/">T30</a>, and get your pre-approval paperwork ready with <a href="/t34/">T34</a>.</li>
+    </ol>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video guide"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t37/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this credit breakdown to yourself</h2>
+    <p data-i="f_sub">Ken will connect you with a lender who can run a free soft-pull check and a rapid rescore if it helps. No spam.</p>
+    <div class="field"><label for="fname" data-i="f_name">Name</label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone" data-i="f_phone">Phone (optional)</label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#credit-score" target="_blank" rel="noopener" data-i="ft_lib">Credit score and your mortgage</a> · <a href="https://kenlamrealty.com/library#video-credit" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a> · <a href="/t30/" data-i="ft_t30">Today's rates (T30)</a></span>
+    <span data-i="ft_est">Estimates only. Not a quote or a commitment to lend. Base rate is a national average; credit adjustments are simplified.</span>
+    <span class="src"><span data-i="ft_src">Sources</span> (04/11/2026):
+      <a href="https://www.freddiemac.com/pmms" target="_blank" rel="noopener">Freddie Mac PMMS 10/29/2026</a> ·
+      <a href="https://singlefamily.fanniemae.com/media/9391/display" target="_blank" rel="noopener">Fannie Mae LLPA Matrix 09/09/2026</a> ·
+      <a href="https://selling-guide.fanniemae.com/sel/b3-5.1-01/general-requirements-credit-scores" target="_blank" rel="noopener">Fannie Mae Selling Guide B3-5.1-01</a> ·
+      <a href="https://www.consumerfinance.gov/ask-cfpb/does-requesting-my-credit-report-hurt-my-credit-score-en-1229/" target="_blank" rel="noopener">CFPB: checking your report</a> ·
+      <a href="https://www.consumerfinance.gov/ask-cfpb/what-exactly-happens-when-a-mortgage-lender-checks-my-credit-en-2005/" target="_blank" rel="noopener">CFPB: 45-day window</a> ·
+      <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">AnnualCreditReport.com</a></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số liệu — sửa ở đây =====
+   BASE_DEFAULT 7.24%: Freddie Mac PMMS 30y tuần 29/10/2026 — https://www.freddiemac.com/pmms (giống T01/T30).
+   BANDS adj: COPY Y CREDIT_ADJ của T30 (/t30/index.html) để 2 tool ra cùng số: {760:0,740:0.125,700:0.25,660:0.5,620:0.875}.
+     ƯỚC TÍNH, KEN DUYỆT (không phải LLPA thật). T30 đổi thì sửa ở đây luôn.
+   DOWN_ADJ 0.125 khi down < 20%: giống DOWN_ADJ_CONV của T30 (cộng đều mọi band, không đổi phần chênh).
+   Band 580–619: T30 không có. +1.375 = 0.875 (band 620) + 0.5 — ƯỚC TÍNH THÊM, KEN DUYỆT. Thực tế thường đi FHA.
+   LLPA: Fannie Mae LLPA Matrix ngày 09/09/2026, Table 1 Purchase, term >15 năm, Classic FICO × LTV —
+     https://singlefamily.fanniemae.com/media/9391/display (tra 04/11/2026). Đây là phí % trên loan, không phải % lãi suất.
+   Min credit: Fannie Selling Guide B3-5.1-01 (04/22/2026): DU không có điểm tối thiểu; manual 620 (fixed) / 640 (ARM) —
+     https://selling-guide.fanniemae.com/sel/b3-5.1-01/general-requirements-credit-scores. Nên UI chỉ nói "nhiều lender".
+   FHA 580 / 3.5% down: HUD Handbook 4000.1 — KEN DUYỆT (chưa mở được trang HUD lần tra này).
+   LIMIT 1,249,125: conforming high-cost 2026 Santa Clara/Alameda (giống T01, T30).
+   Tự check điểm không hạ điểm: CFPB https://www.consumerfinance.gov/ask-cfpb/does-requesting-my-credit-report-hurt-my-credit-score-en-1229/ (tra 04/11/2026).
+   45 ngày rate shopping = 1 inquiry: CFPB https://www.consumerfinance.gov/ask-cfpb/what-exactly-happens-when-a-mortgage-lender-checks-my-credit-en-2005/ (tra 04/11/2026).
+   Utilization < 10%, trả trước statement date, rapid rescore: kinh nghiệm thực tế ngành, không phải số chính thức. */
+const BASE_DEFAULT=7.24, DOWN_ADJ=0.125, LIMIT=1249125;
+const BANDS=[
+  {k:760,lo:760,hi:850,lbl:'760+',adj:0},
+  {k:740,lo:740,hi:759,lbl:'740–759',adj:0.125},
+  {k:700,lo:700,hi:739,lbl:'700–739',adj:0.25},
+  {k:660,lo:660,hi:699,lbl:'660–699',adj:0.5},
+  {k:620,lo:620,hi:659,lbl:'620–659',adj:0.875},
+  {k:580,lo:580,hi:619,lbl:'580–619',adj:1.375,est:true}
+];
+const LLPA_LTV=[30,60,70,75,80,85,90,95,999];
+const LLPA=[ /* [min score, ...9 cột LTV] */
+  [780,0,0,0,0,0.375,0.375,0.25,0.25,0.125],
+  [760,0,0,0,0.25,0.625,0.625,0.5,0.5,0.25],
+  [740,0,0,0.125,0.375,0.875,1.0,0.75,0.625,0.5],
+  [720,0,0,0.25,0.75,1.25,1.25,1.0,0.875,0.75],
+  [700,0,0,0.375,0.875,1.375,1.5,1.25,1.125,0.875],
+  [680,0,0,0.625,1.125,1.75,1.875,1.5,1.375,1.125],
+  [660,0,0,0.75,1.375,1.875,2.125,1.75,1.625,1.25],
+  [640,0,0,1.125,1.5,2.25,2.5,2.0,1.875,1.5],
+  [0,0,0.125,1.5,2.125,2.75,2.875,2.625,2.25,1.75]
+];
+const UPDATED='04/11/2026';
+const TASKS=[
+  {ph:'w1',id:'pull'},{ph:'w1',id:'disp'},
+  {ph:'m1',id:'util'},{ph:'m1',id:'stmt'},{ph:'m1',id:'auto'},
+  {ph:'all',id:'old'},{ph:'all',id:'new'},
+  {ph:'lock',id:'rescore'},{ph:'lock',id:'shop'}
+];
+const PH_CAL={w1:7,m1:30,lock:60};
+
+const I18N={
+ vi:{title:'Điểm credit làm mình trả thêm bao nhiêu?',sub:'Kéo thanh điểm. Ra liền lãi ước tính, tiền trả mỗi tháng, và mình trả thêm bao nhiêu so với người 760+.',
+  l_score:'Điểm credit',l_loan:'Số tiền vay',l_down:'Tiền down',l_base:'Lãi cho người 760+ ',l_base_s:'(sửa theo rate hôm nay)',
+  band:'nhóm {b}',r_total:'Trả thêm so với 760+',per_mo:'/tháng',r_30:'Trong 30 năm',
+  n_rate:'Lãi ước tính của bạn',n_rate_s:'(30 năm fixed)',n_pi:'Gốc + lãi mỗi tháng',n_llpa:'Phí Fannie Mae theo điểm',llpa_s:'({p}% loan, LTV {l}%)',
+  llpa_j:'(jumbo, không áp dụng)',
+  st_top:'<b>Bạn đang ở nhóm tốt nhất.</b> Giữ vậy tới ngày close: đừng mở thẻ mới, đừng mua xe.',
+  st_up:'Lên thêm <b>{n} điểm</b> (tới {b}) là đỡ <b>{s}/tháng</b>, khoảng {s30} trong 30 năm.',
+  t_title:'Từng nhóm điểm, cùng 1 loan',th_b:'Điểm',th_r:'Lãi',th_p:'Gốc + lãi',th_x:'Thêm/tháng',t_est:'ước tính',
+  est_note:'Ước tính, không phải báo giá. Bảng cộng lãi theo điểm giống tool lãi suất (T30). Giá thật tùy lender, points và cả hồ sơ.',
+  low_note:'Dưới 620, nhiều lender không cho vay conventional. Thường đi FHA (3.5% down nếu 580+). Lãi ở đây chỉ là ước tính thô.',
+  jumbo_note:'Loan trên $1,249,125 (Santa Clara / Alameda 2026) là jumbo. Không tính phí Fannie Mae, nhưng lender thường đòi 700+ và phạt điểm thấp còn nặng hơn.',
+  ck_title:'Nâng điểm trong 60–90 ngày',ck_tasks:'việc',ck_reset:'Xoá dấu tick',gcal:'Nhắc trên Google Calendar',
+  ph_w1:'Tuần đầu: kiểm và sửa lỗi',ph_m1:'Tháng 1–2: hạ số dư thẻ',ph_all:'Suốt 60–90 ngày: đừng làm',ph_lock:'Trước khi lock rate',
+  cal_t:'Credit: {p} (T37)',cal_d:'Việc: {l} — tools.kenlamrealty.com/t37/',
+  t_pull:['Lấy report miễn phí cả 3 bureau ở annualcreditreport.com','Trang chính thức, miễn phí. Coi kỹ: nợ lạ, late sai, tên/địa chỉ sai. Tự kiểm không làm giảm điểm.'],
+  t_disp:['Thấy sai thì dispute với từng bureau (Equifax, Experian, TransUnion)','Bureau thường có khoảng 30 ngày để trả lời. Sửa được 1 cái late sai là có khi nhảy cả nhóm điểm.'],
+  t_util:['Đưa số dư mỗi thẻ và tổng xuống dưới 10% hạn mức','Utilization là chỗ lên điểm nhanh nhất. Thẻ $10,000 thì để dư dưới $1,000. Kinh nghiệm thực tế, không phải số chính thức.'],
+  t_stmt:['Trả trước ngày statement (closing date), không phải đợi due date','Số báo lên bureau là số dư trên statement. Trả đủ vào due date mà statement vẫn ghi $5,000 thì điểm vẫn tính $5,000.'],
+  t_auto:['Bật autopay ít nhất mức tối thiểu cho mọi khoản','Một lần trễ 30 ngày là mất điểm nặng và nằm trên report nhiều năm. Không đáng.'],
+  t_old:['Không đóng thẻ cũ, kể cả thẻ không xài','Đóng thẻ là mất hạn mức, utilization tăng, tuổi credit giảm. Để đó, mỗi năm quẹt 1 lần nhỏ.'],
+  t_new:['Không mở thẻ mới, không mua xe, không co-sign cho ai','Mỗi lần xin là 1 hard inquiry và thêm nợ vào DTI. Lender kiểm lại credit ngay trước ngày close.'],
+  t_rescore:['Sát mốc nhóm điểm? Nhờ lender làm rapid rescore','Trả nợ xong, lender gửi giấy cho bureau cập nhật nhanh, thường vài ngày. Chỉ lender làm được, mình không tự mua.'],
+  t_shop:['So rate 2–3 lender trong vòng 45 ngày','Theo CFPB, nhiều lần lender mortgage kéo credit trong 45 ngày chỉ ghi như 1 inquiry. Cứ so giá, đừng sợ.'],
+  myth:'<b>Nhiều người hiểu sai:</b> "Tự check điểm là bị trừ điểm." Không. Tự xem report hay điểm của mình không ảnh hưởng gì. Chỉ khi lender kéo hard pull để cho vay mới tính (CFPB).',
+  nx_title:'Bước tiếp theo',
+  nx1:'Lấy report miễn phí ở <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">annualcreditreport.com</a>, sửa lỗi ngay tuần này.',
+  nx2:'Trả số dư thẻ trước mỗi ngày statement, rồi đợi 1 chu kỳ.',
+  nx3:'Gần mốc nhóm điểm? Nhờ lender làm rapid rescore trước khi lock.',
+  nx4:'Coi rate từng loại loan hôm nay ở <a href="/t30/">T30</a>, chuẩn bị giấy pre-approval với <a href="/t34/">T34</a>.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi bảng credit này về email',f_sub:'Ken nhận được sẽ giới thiệu lender kiểm điểm bằng soft pull miễn phí, và làm rapid rescore nếu có lợi. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Điểm credit và loan nhà',ft_vid:'Video 3 phút',ft_t30:'Lãi suất hôm nay (T30)',
+  ft_est:'Chỉ là ước tính. Không phải báo giá hay cam kết cho vay. Lãi gốc là trung bình toàn quốc, cộng theo điểm bằng bảng đơn giản.',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi xem tool điểm credit trên tools.kenlamrealty.com: điểm {sc}, vay {l}, down {d}%. Lãi ước tính {r}%, trả thêm {x}/tháng so với 760+. Nhờ Ken giới thiệu lender.',
+  subj:'Điểm credit và lãi suất — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nĐiểm credit: {sc} (nhóm {b})\nSố tiền vay: {l}\nDown: {d}%\nLãi 760+: {br}%\n\nLãi ước tính: {r}%\nGốc + lãi: {p}/tháng\nTrả thêm so với 760+: {x}/tháng, {x30} trong 30 năm\nPhí Fannie Mae (LLPA): {ll}\n\n{rows}\n\nƯớc tính, không phải báo giá.\nGửi từ tool T37 tools.kenlamrealty.com'},
+ en:{title:'How much is my credit score costing me?',sub:'Slide your score. See the estimated rate, the monthly payment, and what it costs you next to a 760+ borrower.',
+  l_score:'Credit score',l_loan:'Loan amount',l_down:'Down payment',l_base:'Rate for 760+ ',l_base_s:"(edit to today's)",
+  band:'band {b}',r_total:'Extra you pay vs 760+',per_mo:'/mo',r_30:'Over 30 years',
+  n_rate:'Your estimated rate',n_rate_s:'(30-yr fixed)',n_pi:'Your principal + interest',n_llpa:'Fannie Mae fee for your score',llpa_s:'({p}% of loan, LTV {l}%)',
+  llpa_j:'(jumbo, not applied)',
+  st_top:'<b>You are in the best band.</b> Keep it there until closing: no new cards, no car loan.',
+  st_up:'Raise it <b>{n} points</b> (to {b}) and save <b>{s}/mo</b>, about {s30} over 30 years.',
+  t_title:'Every score band, same loan',th_b:'Score',th_r:'Rate',th_p:'P&I',th_x:'Extra/mo',t_est:'estimate',
+  est_note:'Estimate, not a quote. Rate adjustments use the same simple table as our rate tool (T30). Real pricing depends on the lender, points and the whole file.',
+  low_note:"Under 620, many lenders won't do a conventional loan. FHA is the usual path (3.5% down with 580+). The rate shown is a rough estimate.",
+  jumbo_note:"Loans over $1,249,125 (Santa Clara / Alameda 2026) are jumbo. Fannie Mae fees don't apply, but lenders usually want 700+ and price low scores even harder.",
+  ck_title:'Raise your score in 60–90 days',ck_tasks:'done',ck_reset:'Clear checkmarks',gcal:'Remind me in Google Calendar',
+  ph_w1:'Week 1: check and fix errors',ph_m1:'Months 1–2: pay balances down',ph_all:'All 60–90 days: avoid',ph_lock:'Before you lock',
+  cal_t:'Credit: {p} (T37)',cal_d:'To do: {l} — tools.kenlamrealty.com/t37/',
+  t_pull:['Pull free reports from all 3 bureaus at annualcreditreport.com','The official free site. Look for unknown accounts, wrong late payments, wrong names or addresses. Checking yourself does not lower your score.'],
+  t_disp:['Dispute any error with each bureau (Equifax, Experian, TransUnion)','Bureaus generally have about 30 days to respond. Removing one wrong late payment can move you up a whole band.'],
+  t_util:['Get each card and your total under 10% of the limit','Utilization is the fastest lever. On a $10,000 limit, keep the balance under $1,000. A field rule of thumb, not an official number.'],
+  t_stmt:['Pay before the statement (closing) date, not the due date','The bureaus see the balance on your statement. Pay in full on the due date and the statement still reports $5,000.'],
+  t_auto:['Turn on autopay for at least the minimum on everything','One 30-day late hits hard and stays on the report for years. Not worth it.'],
+  t_old:["Don't close old cards, even unused ones",'Closing one drops your total limit, raises utilization and shortens your history. Keep it; make a small charge once a year.'],
+  t_new:["No new cards, no car loan, no co-signing",'Each application is a hard inquiry and new debt in your DTI. Lenders re-check credit right before closing.'],
+  t_rescore:['Close to a band line? Ask your lender for a rapid rescore','After you pay down debt, the lender sends proof to the bureaus for a fast update, often within days. Only lenders can order it.'],
+  t_shop:['Compare 2–3 lenders within 45 days','Per the CFPB, multiple mortgage credit checks within 45 days show up as a single inquiry. Shop around.'],
+  myth:'<b>Common mistake:</b> "Checking my score will drop it." Checking your own report or score does not hurt it. Only a lender\'s hard pull for new credit counts (CFPB).',
+  nx_title:'Next steps',
+  nx1:'Pull your free reports at <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">annualcreditreport.com</a> and fix any errors this week.',
+  nx2:'Pay card balances down before each statement date, then wait one cycle.',
+  nx3:'Close to a band line? Ask the lender for a rapid rescore before you lock.',
+  nx4:'Compare today\'s rates by loan type in <a href="/t30/">T30</a>, and get your pre-approval paperwork ready with <a href="/t34/">T34</a>.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this credit breakdown to yourself',f_sub:'Ken will connect you with a lender who can run a free soft-pull check and a rapid rescore if it helps. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'Credit score and your mortgage',ft_vid:'3-min video',ft_t30:"Today's rates (T30)",
+  ft_est:'Estimates only. Not a quote or a commitment to lend. Base rate is a national average; credit adjustments are simplified.',
+  ft_src:'Sources',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I used the credit score tool on tools.kenlamrealty.com: score {sc}, {l} loan, {d}% down. Estimated rate {r}%, {x}/mo more than 760+. Can you refer a lender?',
+  subj:'Credit score and your rate — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nCredit score: {sc} (band {b})\nLoan amount: {l}\nDown: {d}%\n760+ rate: {br}%\n\nEstimated rate: {r}%\nP&I: {p}/mo\nExtra vs 760+: {x}/mo, {x30} over 30 years\nFannie Mae fee (LLPA): {ll}\n\n{rows}\n\nEstimate, not a quote.\nSent from tool T37 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const pct=x=>String(Math.round(x*1000)/1000);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function pmt(P,ratePct,years){ if(P<=0) return 0; const r=ratePct/100/12,n=years*12; return r===0?P/n:P*r/(1-Math.pow(1+r,-n)); }
+const bandOf=s=>BANDS.find(b=>s>=b.lo)||BANDS[BANDS.length-1];
+function llpaPct(score,downPct){ const ltv=100-downPct; let c=LLPA_LTV.findIndex(x=>ltv<=x); if(c<0) c=LLPA_LTV.length-1; const row=LLPA.find(r=>score>=r[0]); return row[c+1]; }
+/* Tính — hàm thuần, test bằng node */
+function credit(i){
+  const dAdj=i.down<20?DOWN_ADJ:0, loan=Math.max(0,i.loan);
+  const rows=BANDS.map(b=>{ const rate=i.base+b.adj+dAdj, pi=pmt(loan,rate,30); return {b,rate,pi}; });
+  const top=rows[0]; rows.forEach(r=>{ r.x=r.pi-top.pi; });
+  const me=rows.find(r=>r.b===bandOf(i.score)), idx=rows.indexOf(me), up=idx>0?rows[idx-1]:null;
+  const jumbo=loan>LIMIT, ll=jumbo?0:llpaPct(i.score,i.down);
+  return {rows,me,up,extra:me.x,extra30:me.x*360,jumbo,llpa:ll,llpaAmt:loan*ll/100,ltv:Math.max(0,100-i.down)};
+}
+let last={}, done={}, open={};
+try{ done=JSON.parse(localStorage.getItem('kl_t37_ck')||'{}')||{}; }catch(e){ done={}; }
+const saveDone=()=>{ try{ localStorage.setItem('kl_t37_ck',JSON.stringify(done)); }catch(e){} };
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
+const addDays=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+function gcal(text,d,details){ return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(text)+'&dates='+ymd(d)+'/'+ymd(addDays(d,1))+'&details='+encodeURIComponent(details); }
+
+function calc(){
+  const d=I18N[lang], score=Math.round(num('score')), down=Math.min(100,Math.max(0,num('down'))), loan=Math.max(0,num('loan')), base=num('base');
+  const r=credit({score,down,loan,base});
+  $('scoreV').textContent=score; $('bandV').textContent=d.band.replace('{b}',r.me.b.lbl);
+  $('extra').textContent=fmt(r.extra); $('extra30').textContent=fmt(r.extra30);
+  $('oRate').textContent=pct(r.me.rate)+'%'+(r.me.b.est?' *':''); $('oPi').textContent=fmt(r.me.pi);
+  $('oLlpa').textContent=r.jumbo?'—':fmt(r.llpaAmt); $('oLlpaS').textContent=r.jumbo?d.llpa_j:d.llpa_s.replace('{p}',pct(r.llpa)).replace('{l}',pct(r.ltv));
+  if(!r.up) $('status').innerHTML=d.st_top;
+  else { const s=r.me.pi-r.up.pi; $('status').innerHTML=d.st_up.replace('{n}',r.up.b.lo-score).replace('{b}',r.up.b.lbl).replace('{s}',fmt(s)).replace('{s30}',fmt(s*360)); }
+  let h='<thead><tr><th>'+esc(d.th_b)+'</th><th>'+esc(d.th_r)+'</th><th>'+esc(d.th_p)+'</th><th>'+esc(d.th_x)+'</th></tr></thead><tbody>', txt=[];
+  r.rows.forEach(x=>{ const me=x===r.me;
+    h+='<tr'+(me?' class="me"':'')+'><td>'+x.b.lbl+(x.b.est?'<small>'+esc(d.t_est)+'</small>':'')+'</td><td>'+pct(x.rate)+'%</td><td>'+fmt(x.pi)+'</td><td class="x">'+(x.x>0.5?'+'+fmt(x.x):'—')+'</td></tr>';
+    txt.push(x.b.lbl+': '+pct(x.rate)+'% → '+fmt(x.pi)+d.per_mo+(x.x>0.5?' (+'+fmt(x.x)+')':'')); });
+  $('tbl').innerHTML=h+'</tbody>';
+  $('lowNote').classList.toggle('hide',score>=620); $('jumboNote').classList.toggle('hide',!r.jumbo);
+  last={sc:score,b:r.me.b.lbl,l:fmt(loan),d:down,br:base,r:pct(r.me.rate),p:fmt(r.me.pi),x:fmt(r.extra),x30:fmt(r.extra30),
+    ll:r.jumbo?'—':pct(r.llpa)+'% = '+fmt(r.llpaAmt),rows:txt.join('\n')};
+  const s=d.sms.replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s);
+}
+function renderTasks(){
+  const d=I18N[lang], t0=new Date(); let html='', x=0;
+  ['w1','m1','all','lock'].forEach(p=>{
+    const ts=TASKS.filter(t=>t.ph===p), nd=ts.filter(t=>done[t.id]).length; x+=nd;
+    const cal=PH_CAL[p]!=null?'<a class="gcal" target="_blank" rel="noopener" href="'+esc(gcal(d.cal_t.replace('{p}',d['ph_'+p]),addDays(t0,PH_CAL[p]),d.cal_d.replace('{l}',ts.map(t=>d['t_'+t.id][0]).join('; '))))+'">'+esc(d.gcal)+'</a>':'';
+    html+='<div class="phase"><div class="ph-h"><h3>'+esc(d['ph_'+p])+'</h3><span class="ph-r">'+cal+'<span class="ph-n">'+nd+'/'+ts.length+'</span></span></div>';
+    ts.forEach(t=>{ const [txt,why]=d['t_'+t.id], ok=!!done[t.id], op=!!open[t.id];
+      html+='<div class="task'+(ok?' done':'')+'"><input type="checkbox" data-k="'+t.id+'" aria-label="'+esc(txt)+'"'+(ok?' checked':'')+'>'
+        +'<button type="button" class="tt" data-w="'+t.id+'" aria-expanded="'+op+'">'+esc(txt)+'</button>'
+        +'<div class="why"'+(op?'':' hidden')+'>'+esc(why)+'</div></div>'; });
+    html+='</div>';
+  });
+  $('tl').innerHTML=html; $('ckDone').textContent=x; $('ckAll').textContent=TASKS.length; $('ckBar').style.width=(x/TASKS.length*100)+'%';
+}
+$('tl').addEventListener('change',e=>{ const k=e.target.getAttribute&&e.target.getAttribute('data-k'); if(!k) return; if(e.target.checked) done[k]=1; else delete done[k]; saveDone(); renderTasks(); });
+$('tl').addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('button[data-w]'); if(!b) return; const k=b.getAttribute('data-w'); open[k]=!open[k]; b.nextElementSibling.hidden=!open[k]; b.setAttribute('aria-expanded',open[k]?'true':'false'); });
+$('ckReset').onclick=()=>{ done={}; saveDone(); renderTasks(); };
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc(); renderTasks();
+}
+['score','loan','down','base'].forEach(id=>$(id).addEventListener('input',calc));
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
