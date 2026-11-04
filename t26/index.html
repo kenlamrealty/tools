@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Traditional vs As-Is vs Cash · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- Thêm cho T90 (không đổi class cũ) ---- */
+.seg.s3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.seg.s3 button{padding:11px 4px;font-size:14px}
+.next-steps{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.next-steps h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.next-steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.next-steps a{color:var(--brass)}
+.myth{font-size:14px;line-height:1.5;border-left:2px solid var(--brass);padding:2px 0 2px 12px;margin:0}
+.myth b{font-weight:500}
+.srcs a{word-break:break-word}
+.grp-h{font-family:var(--display);font-weight:400;font-size:22px;margin:6px 0 0}
+.items{display:grid;border-top:1px solid var(--line)}
+.it{display:grid;grid-template-columns:28px minmax(0,1fr);gap:4px 8px;padding:12px 0;border-bottom:1px solid var(--line)}
+.it>input[type=checkbox]{appearance:none;-webkit-appearance:none;width:20px;height:20px;margin:2px 0 0;border:1.5px solid var(--line);border-radius:6px;background:var(--panel);cursor:pointer;display:grid;place-content:center}
+.it>input[type=checkbox]:checked{background:var(--brass);border-color:var(--brass)}
+.it>input[type=checkbox]:checked::after{content:"";width:5px;height:10px;border:solid #FFFDF8;border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.it .nm{font-size:15px;line-height:1.4;cursor:pointer;min-width:0}
+.it .nm small{display:block;color:var(--muted);font-size:12px;margin-top:1px}
+.it .opts{display:none;grid-column:2;gap:8px;margin-top:6px}
+.it.on .opts{display:grid}
+.ctl.sm input{font-size:16px;padding:9px 6px}
+.seg.sm button{font-size:13px;padding:9px 4px}
+.total .v.rng{font-size:46px}
+.line .a.rg{font-weight:500}
+.line.sub .n,.line.sub .a{color:var(--muted)}
+.line.tot{border-bottom:0}
+.line.tot .n b,.line.tot .a{font-size:16px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--fg);text-decoration:none;background:var(--panel)}
+.chip i{font-style:normal;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.chip.y{border-color:var(--brass);background:var(--brass-soft)}
+.chip.y i{color:var(--warn)}
+.chip:hover{border-color:var(--brass)}
+.ck{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.empty{font-size:14px;color:var(--muted)}
+/* ---- Thêm cho T26 (không đổi class cũ) ---- */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl select:focus-visible{outline:none}
+.ctl .chev{color:var(--muted);font-size:13px;pointer-events:none}
+.seg.s3 button{line-height:1.25}
+.opts3{display:grid;gap:12px}
+.opt{border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:10px;background:var(--panel)}
+.opt.best{border-color:var(--brass);background:linear-gradient(var(--brass-soft),var(--panel) 70%)}
+.opt.nofit{opacity:.72}
+.opt h3{font-family:var(--display);font-weight:400;font-size:24px;margin:0;display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.opt h3 i{font-family:var(--body);font-style:normal;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass)}
+.opt .nv{font-family:var(--display);font-size:36px;line-height:1;font-variant-numeric:tabular-nums}
+.opt .nv.neg{color:var(--warn)}
+.opt .rn{font-size:13px;color:var(--muted)}
+.opt .tm{font-size:13px;color:var(--fg)}
+.opt .tm.no{color:var(--warn)}
+.opt .lines .line{font-size:14px;padding:8px 0}
+.vs{font-size:15px;color:var(--fg);margin-top:8px}
+.vs b{font-weight:500;color:var(--ok)}
+</style>
+<meta name="description" content="Fix and list, sell as-is on the MLS, or take a cash offer? See your net and your timeline side by side, with Santa Clara &amp; Alameda transfer tax.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t26/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Traditional vs As-Is vs Cash · Ken Lam Tools">
+<meta property="og:description" content="Fix and list, sell as-is on the MLS, or take a cash offer? See your net and your timeline side by side.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t26/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Fix and list, sell as-is, or take a cash offer?</h1>
+    <p class="sub" data-i="sub">Three ways to sell the same house. See what you walk away with, and how long each one takes.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="value"><span data-i="l_value">Market value after fixing </span><small data-i="l_value_s">(what it sells for fixed up)</small></label>
+      <div class="ctl"><span class="pre">$</span><input id="value" type="number" inputmode="numeric" min="0" step="10000" value="1400000"></div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_cond">Condition today</span></label>
+      <div class="seg s3" role="group" id="condSeg">
+        <button type="button" data-v="ready" aria-pressed="false" data-i="c_ready">Move-in ready</button>
+        <button type="button" data-v="light" aria-pressed="true" data-i="c_light">Needs light work</button>
+        <button type="button" data-v="major" aria-pressed="false" data-i="c_major">Needs major work</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="repair"><span data-i="l_repair">Repair estimate</span></label>
+        <div class="ctl"><span class="pre">$</span><input id="repair" type="number" inputmode="numeric" min="0" step="1000" value="40000"></div>
+      </div>
+      <div class="field">
+        <label for="payoff"><span data-i="l_payoff">Loan payoff</span></label>
+        <div class="ctl"><span class="pre">$</span><input id="payoff" type="number" inputmode="numeric" min="0" step="1000" value="500000"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="city"><span data-i="l_city">City</span></label>
+        <div class="ctl"><select id="city"></select><span class="chev">▾</span></div>
+      </div>
+      <div class="field">
+        <label for="wait"><span data-i="l_wait">Months you can wait</span></label>
+        <div class="ctl"><input id="wait" type="number" inputmode="decimal" min="0" max="24" step="0.5" value="3"><span class="post" data-i="u_mo">months</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" id="bestK">Best fit</div>
+      <div class="v" id="totalV"><span id="total">$0</span></div>
+      <div class="vs" id="vs"></div>
+    </div>
+    <div class="opts3" id="opts"></div>
+    <div class="note" id="noteTrade"></div>
+    <div class="note" id="noteFit"></div>
+    <div class="note" data-i="note_ib">iBuyers do not buy in every area or every house. In the Bay Area you are more likely to get offers from local investors. Always get the offer in writing and compare the net, not the headline price.</div>
+    <div class="note" data-i="note_est">Estimates. Holding cost assumes property tax ~1.25%, insurance ~0.30% a year, $300/month utilities and interest on the payoff at ~4.5%. Commission is set at 5% total as an example; it is negotiable.</div>
+  </section>
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" aria-label="Video" onerror="this.remove()"></video>
+
+  <section class="next-steps">
+    <h2 data-i="ns_h">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Get two prices from a local agent: as-is and fixed up. That gap tells you if fixing is worth it. Plug them into <a href="/t21/">the seller net sheet</a>.</li>
+      <li data-i="ns2">If you go cash: ask for a written offer, proof of funds, who pays closing costs, and whether they can assign the contract to someone else.</li>
+      <li data-i="ns3">If you fix: pick only the repairs that pay back with <a href="/t24/">the fix-before-selling tool</a>, follow <a href="/t23/">the pre-sale checklist</a>, and check contractors at <a href="https://www.cslb.ca.gov/onlineservices/checklicenseII/checklicense.aspx" target="_blank" rel="noopener">cslb.ca.gov</a>.</li>
+      <li data-i="ns4">Any way you sell, fill out the disclosures (TDS, SPQ, NHD). See <a href="/t28/">the seller disclosure guide</a>.</li>
+    </ol>
+    <p class="myth"><b data-i="my_k">Many people get this wrong:</b> <span data-i="my_v">"Selling as-is means I don't have to disclose." False in California. The law says the Transfer Disclosure Statement cannot be waived in an as-is sale (<a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=1102.1" target="_blank" rel="noopener">Civil Code §1102.1</a>). As-is only means you won't fix things; you still tell buyers what you know.</span></p>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t26/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this comparison to yourself</h2>
+    <p data-i="f_sub">Ken can give you real as-is and fixed-up prices for your street, and look over any cash offer you got. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#ban-as-is-hay-ban-cash" target="_blank" rel="noopener" data-i="ft_lib">As-is vs cash, explained</a> · <a href="https://kenlamrealty.com/library#video-ban-as-is" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span data-i="ft_est">All numbers are estimates, not offers. Real as-is prices and cash offers depend on the house, the street and the buyer. Transfer tax follows 2026 county/city tables (same as T21).</span>
+    <span class="srcs"><span data-i="ft_src">Sources:</span>
+      <a href="https://help.opendoor.com/selling/understanding-your-offer/service-charge" target="_blank" rel="noopener">Opendoor: service charge</a> ·
+      <a href="https://www.opendoor.com/w/guides/how-selling-to-opendoor-compares-to-a-traditional-home-sale" target="_blank" rel="noopener">Opendoor vs traditional (21–60 day close)</a> ·
+      <a href="https://www.listwithclever.com/opendoor-fees" target="_blank" rel="noopener">Clever: Opendoor fees (upd. 13/08/2026)</a> ·
+      <a href="https://listwithclever.com/real-estate-blog/we-buy-houses-review/" target="_blank" rel="noopener">Clever: cash investors 70–75% of ARV (upd. 01/08/2026)</a> ·
+      <a href="https://www.homelight.com/blog/selling-a-house-as-is-in-california/" target="_blank" rel="noopener">HomeLight: selling as-is in California (29/10/2026)</a> ·
+      <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=1102.1" target="_blank" rel="noopener">Civil Code §1102.1</a> ·
+      <a href="https://apps.acgov.org/auditor/clerk/transfertax.htm" target="_blank" rel="noopener">Alameda County transfer tax</a> ·
+      <a href="https://page.fnf.com/rs/393-REY-847/images/Who%20Pays%20What%20-%20California%20Transfer%20Tax%20and%20Fees%20%28rev%2001062026%29.pdf" target="_blank" rel="noopener">FNF Who Pays What (01/2026)</a> ·
+      <a href="https://wfgtitle.com/wp-content/uploads/2024/04/WFG-California-Rate-Book-2.1.2023-Up-to-5-Mil.pdf" target="_blank" rel="noopener">WFG title rates</a>. <span data-i="ft_chk">Checked 04/11/2026.</span></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/*CALC-START*/
+/* ===== Copy NGUYÊN từ T21 (/t21/index.html) — sửa transfer tax / escrow / title ở T21 thì copy lại đây ===== */
+/* ===== Số liệu Bắc Cali — sửa ở đây khi đổi (tra 03/11/2026) =====
+   County documentary transfer tax: $0.55 mỗi $500 hoặc phần lẻ ($1.10/$1,000), CẢ Santa Clara và Alameda, seller trả.
+     Alameda official: https://apps.acgov.org/auditor/clerk/transfertax.htm ; Santa Clara: FNF rev 01/06/2026 (dưới).
+   Ai trả (thông lệ): FNF "Who Pays What — California Transfer Tax and Fees" rev 01/06/2026
+     https://page.fnf.com/rs/393-REY-847/images/Who%20Pays%20What%20-%20California%20Transfer%20Tax%20and%20Fees%20%28rev%2001062026%29.pdf
+     + Old Republic Title closing costs flyer 07/2025
+     https://www.oldrepublictitle.com/Media/2mckowmc/or1591-northern-southern-califorina-closing-costs-flyer-di-ca.pdf
+     Santa Clara: seller trả escrow fee + owner's policy + county tax; city tax chia 50/50.
+     Alameda:     buyer trả escrow fee + owner's policy; seller trả county tax; city tax chia 50/50.
+   Owner's policy: WFG National Title California Rate Book (eff. 2/1/2023), Homeowner's policy rate
+     https://wfgtitle.com/wp-content/uploads/2024/04/WFG-California-Rate-Book-2.1.2023-Up-to-5-Mil.pdf (tra 03/11/2026)
+   Escrow fee: ước tính $250 + $2.00/$1,000 — KEN DUYỆT (hỏi Michelle WFG). https://listwithclever.com/?p=10855
+   NHD ~$100, SELLER_MISC (reconveyance, notary, courier, wire, demand) — ước tính KEN DUYỆT.
+   Commission mặc định 2.5% + 2.5%: chỉ là số mẫu; sau NAR settlement (hiệu lực 17/08/2024) commission bên mua thương lượng.
+*/
+const CFG={
+  COUNTY_PER500:0.55,
+  ESCROW_BASE:250, ESCROW_PER1000:2.00,             /* ước tính — KEN DUYỆT */
+  ESCROW_SELLER_SHARE:{SC:1,AL:0},                  /* thông lệ FNF/ORT 2026 */
+  ESCROW_SELLER_MISC_AL:300,                        /* Alameda: seller vẫn có vài phí escrow nhỏ — ước tính KEN DUYỆT */
+  OWNER_POLICY_SELLER:{SC:true,AL:false},           /* thông lệ FNF/ORT 2026 */
+  NHD:100, SELLER_MISC:250,                         /* ước tính — KEN DUYỆT */
+  HO_RATES:[[250000,1045],[300000,1155],[400000,1375],[500000,1595],[600000,1716],[700000,1892],[750000,1980],[800000,2046],[900000,2178],[1000000,2310],[1100000,2585],[1200000,2695],[1250000,2750],[1500000,3025],[1750000,3300],[2000000,3575],[2500000,4015],[3000000,4455],[3500000,4952],[4000000,5337],[4700000,5876]]
+};
+/* ===== City transfer tax — 1 chỗ duy nhất, dùng chung T03 & T21 (tra 03/11/2026) =====
+   per1000: [[giá tới mức này, $/1,000], ...] — áp cho TOÀN BỘ giá (không lũy tiến từng khúc). Không có tax = [].
+   split: phần buyer theo thông lệ (0.5 = chia đôi) → seller chịu (1 − split). extra: thuế thêm, mặc định seller trả 100% (San Jose Measure E).
+   Alameda County list (official): https://apps.acgov.org/auditor/clerk/transfertax.htm
+     Alameda $12; Berkeley $15 ≤$1.7M / $25 >$1.7M; Hayward $8.50; Oakland $10 ≤$300K / $15 ≤$2M / $17.50 ≤$5M / $25 >$5M; San Leandro $11.
+     Berkeley: https://berkeleyca.gov/city-services/report-pay/property-transfer-tax (Measure W thêm bậc 3%/3.5% từ 01/01/2027).
+     Oakland: https://www.oaklandca.gov/resources/real-estate-transfer-tax (tiers từ 01/2019).
+   Santa Clara County: chỉ San Jose, Mountain View, Palo Alto có city tax $3.30/$1,000 (FNF rev 01/06/2026).
+     Mountain View: $1.65/$500 ≤$6M; $15/$1,000 >$6M (Measure G, eff 20/12/2024)
+       https://www.mountainview.gov/our-city/departments/finance-and-administrative-services/city-tax-information/real-property-transfer-conveyance-tax
+     San Jose Measure E (thêm, toàn bộ giá): >$2.3M 0.75%; >$5M 1.0%; >$10M 1.5% — ngưỡng tăng lên $2.3M từ 01/07/2025
+       FNF rev 01/06/2026 + Old Republic Santa Clara Homeowners Manual p.42 https://media.oldrepublictitle.com/homeowners-manual/santa-clara/files/basic-html/page42.html
+       Ai trả Measure E: không có thông lệ in sẵn; mặc định seller — KEN DUYỆT.
+   Fremont, Union City, Newark, Pleasanton, Livermore, Dublin, unincorporated Alameda, và các city Santa Clara còn lại: không có city tax.
+   LƯU Ý: bầu cử 03/11/2026 có measure về transfer tax (Oakland sửa miễn trừ foreclosure; Piedmont tăng; prop tiểu bang giới hạn transfer tax) — kiểm kết quả rồi sửa ở đây.
+*/
+const CITIES=[
+  {id:'sj', n:'San Jose',      c:'SC', per1000:[[Infinity,3.30]], split:0.5, extra:[[2300000,0.0075],[5000000,0.01],[10000000,0.015]]},
+  {id:'sc', n:'Santa Clara',   c:'SC', per1000:[]},
+  {id:'sv', n:'Sunnyvale',     c:'SC', per1000:[]},
+  {id:'mv', n:'Mountain View', c:'SC', per1000:[[6000000,3.30],[Infinity,15]], split:0.5},
+  {id:'pa', n:'Palo Alto',     c:'SC', per1000:[[Infinity,3.30]], split:0.5},
+  {id:'mp', n:'Milpitas',      c:'SC', per1000:[]},
+  {id:'cu', n:'Cupertino',     c:'SC', per1000:[]},
+  {id:'cb', n:'Campbell',      c:'SC', per1000:[]},
+  {id:'lg', n:'Los Gatos',     c:'SC', per1000:[]},
+  {id:'sa', n:'Saratoga',      c:'SC', per1000:[]},
+  {id:'mh', n:'Morgan Hill',   c:'SC', per1000:[]},
+  {id:'gi', n:'Gilroy',        c:'SC', per1000:[]},
+  {id:'osc',n:'Other Santa Clara County', c:'SC', per1000:[]},
+  {id:'oak',n:'Oakland',       c:'AL', per1000:[[300000,10],[2000000,15],[5000000,17.5],[Infinity,25]], split:0.5},
+  {id:'brk',n:'Berkeley',      c:'AL', per1000:[[1700000,15],[Infinity,25]], split:0.5},
+  {id:'fre',n:'Fremont',       c:'AL', per1000:[]},
+  {id:'hay',n:'Hayward',       c:'AL', per1000:[[Infinity,8.50]], split:0.5},
+  {id:'sl', n:'San Leandro',   c:'AL', per1000:[[Infinity,11]], split:0.5},
+  {id:'ala',n:'Alameda',       c:'AL', per1000:[[Infinity,12]], split:0.5},
+  {id:'uc', n:'Union City',    c:'AL', per1000:[]},
+  {id:'nw', n:'Newark',        c:'AL', per1000:[]},
+  {id:'pl', n:'Pleasanton',    c:'AL', per1000:[]},
+  {id:'lv', n:'Livermore',     c:'AL', per1000:[]},
+  {id:'du', n:'Dublin',        c:'AL', per1000:[]},
+  {id:'cv', n:'Castro Valley / unincorporated Alameda', c:'AL', per1000:[]}
+];
+function cityTax(city,price){
+  let rate=0;
+  for(const [max,r] of city.per1000){ if(price<=max){ rate=r; break; } }
+  const base=price*rate/1000;
+  let xr=0; if(city.extra) for(const [min,r] of city.extra){ if(price>min) xr=r; }
+  return {base, rate, extra:price*xr, xr, split:city.split||0};
+}
+function interp(tbl,x){
+  if(x<=0) return 0;
+  if(x<=tbl[0][0]) return tbl[0][1];
+  for(let i=1;i<tbl.length;i++){ const [x1,y1]=tbl[i]; if(x<=x1){ const [x0,y0]=tbl[i-1]; return y0+(y1-y0)*(x-x0)/(x1-x0); } }
+  const [xa,ya]=tbl[tbl.length-2],[xb,yb]=tbl[tbl.length-1]; return yb+(yb-ya)*(x-xb)/(xb-xa);
+}
+/* Pure calc: inp = {price, payoff, cl, cb, cityId, credit, repair} */
+function computeSell(inp){
+  const price=Math.max(0,inp.price||0), payoff=Math.max(0,inp.payoff||0);
+  const city=CITIES.find(c=>c.id===inp.cityId)||CITIES[0], co=city.c;
+  const commL=price*Math.max(0,inp.cl||0)/100, commB=price*Math.max(0,inp.cb||0)/100, comm=commL+commB;
+  const county=price>0?CFG.COUNTY_PER500*Math.ceil(price/500):0;
+  const ct=cityTax(city,price);
+  const citySeller=ct.base*(1-ct.split);
+  const measE=ct.extra;                               /* seller 100% (mặc định) */
+  const tt=county+citySeller+measE;
+  const escFull=price>0?CFG.ESCROW_BASE+CFG.ESCROW_PER1000*price/1000:0;
+  const esc=escFull*CFG.ESCROW_SELLER_SHARE[co] + (co==='AL'&&price>0?CFG.ESCROW_SELLER_MISC_AL:0);
+  const opol=CFG.OWNER_POLICY_SELLER[co]?interp(CFG.HO_RATES,price):0;
+  const nhd=price>0?CFG.NHD:0, misc=price>0?CFG.SELLER_MISC:0;
+  const te=esc+opol+nhd+misc;
+  const credit=Math.max(0,inp.credit||0), repair=Math.max(0,inp.repair||0);
+  const cost=comm+tt+te+credit+repair;
+  const net=price-cost-payoff;
+  return {price,payoff,city,co,commL,commB,comm,county,ct,citySeller,measE,tt,escFull,esc,opol,nhd,misc,te,credit,repair,cost,net,costPct:price>0?cost/price*100:0};
+}
+
+/* ===== T26: 3 cách bán — tra 04/11/2026. TẤT CẢ LÀ ƯỚC TÍNH. =====
+   COMM 5% tổng (theo brief Ken; commission thương lượng được). STAGE $3,500 (NAR 2025 median $1,500; Angi San Jose $1,750–3,250) — KEN DUYỆT.
+   REP_CUSH: sửa nhà hay lố 0–10% (T90 dùng 10–15%) — KEN DUYỆT.
+   Thời gian (tháng): PREP sửa trước khi đăng ready 0.5 / light 1 / major 2.5 — KEN DUYỆT.
+     Traditional list→close 45–75 ngày = 1.5–2.5 tháng (brief Ken). As-is MLS 30–60 ngày = 1–2 tháng — KEN DUYỆT.
+     Cash 2–3 tuần = 0.5–0.75 tháng. Opendoor: seller chọn ngày close 21–60 ngày
+       https://www.opendoor.com/w/guides/how-selling-to-opendoor-compares-to-a-traditional-home-sale ;
+     investor: thường 1–2 tuần https://listwithclever.com/real-estate-blog/we-buy-houses-review/
+   AS-IS giảm giá theo tình trạng: ready 1–3%, light 5–10%, major 15–25% — KEN DUYỆT.
+     HomeLight (29/10/2026): agent nói as-is thường bán thấp hơn 20–30% https://www.homelight.com/blog/selling-a-house-as-is-in-california/
+     Sàn: buyer trừ ít nhất tiền sửa: 1.0× (tốt) tới 1.3× (xấu) repair estimate — KEN DUYỆT.
+   CASH:
+     ready → iBuyer: offer thấp hơn market 5–10% (Clever: median 9% dưới market, 410 giao dịch 05/2023–06/2025),
+       service charge 5–6% (Clever: "typically 5% or more"; Opendoor không công bố % cố định
+       https://help.opendoor.com/selling/understanding-your-offer/service-charge), trừ sửa 1–2% (Clever: 1–5%),
+       seller vẫn trả closing (transfer tax, escrow, title như T21). https://www.listwithclever.com/opendoor-fees (upd 13/08/2026)
+     light/major → investor: 70–80% ARV trừ sửa (Clever 2026 khảo sát 21 investor: 70–75% ARV, dao động 50–85%;
+       khảo sát 2024: 56% cap 70% ARV, 21% dùng 80% ARV − repairs). Trường hợp xấu investor đội sửa 1.2×. Buyer trả closing; seller ~$500 (reconveyance, notary) — KEN DUYỆT.
+   HOLD mỗi tháng: giá × (1.25% thuế + 0.30% bảo hiểm)/12 + $300 điện nước + payoff × 4.5%/12 lãi — KEN DUYỆT (Prop 13: thuế thật có thể thấp hơn).
+*/
+const C26={COMM:5, STAGE:3500, REP_CUSH:[1.0,1.1],
+  PREP:{ready:0.5,light:1,major:2.5}, TRAD_MO:[1.5,2.5], ASIS_MO:[1,2], CASH_MO:[0.5,0.75],
+  ASIS_DISC:{ready:[0.01,0.03],light:[0.05,0.10],major:[0.15,0.25]}, ASIS_REP:[1.0,1.3],
+  IB_BELOW:[0.05,0.10], IB_FEE:[0.05,0.06], IB_REP:[0.01,0.02],
+  INV_ARV:[0.80,0.70], INV_REP:[1.0,1.2], INV_MISC:500,
+  TAX:0.0125, INS:0.003, UTIL:300, INT:0.045};
+function closing(price,cityId){ const s=computeSell({price,payoff:0,cl:0,cb:0,cityId,credit:0,repair:0}); return s.tt+s.te; }
+/* inp={value,cond,repair,payoff,cityId,wait}. Mỗi option: lo (xấu), hi (tốt), mid. */
+function compute3(inp){
+  const V=Math.max(0,inp.value||0), R=Math.max(0,inp.repair||0), P=Math.max(0,inp.payoff||0), W=Math.max(0,inp.wait||0), cond=inp.cond||'light', cid=inp.cityId;
+  const hold=V*(C26.TAX+C26.INS)/12+C26.UTIL+P*C26.INT/12;
+  const mid=a=>(a[0]+a[1])/2;
+  /* Traditional */
+  const tMo=[C26.PREP[cond]+C26.TRAD_MO[0], C26.PREP[cond]+C26.TRAD_MO[1]];
+  const tRep=[R*C26.REP_CUSH[0], R*C26.REP_CUSH[1]];
+  const tComm=V*C26.COMM/100, tClose=closing(V,cid), tStage=V>0?C26.STAGE:0;
+  const tHold=[hold*tMo[0], hold*tMo[1]];
+  const tHi=V-tRep[0]-tStage-tComm-tClose-tHold[0]-P, tLo=V-tRep[1]-tStage-tComm-tClose-tHold[1]-P;
+  const T={id:'trad',price:V,rep:mid(tRep),stage:tStage,comm:tComm,close:tClose,hold:mid(tHold),mo:tMo,lo:tLo,hi:tHi};
+  /* As-is MLS */
+  const d=C26.ASIS_DISC[cond];
+  const disc=[Math.max(V*d[0],R*C26.ASIS_REP[0]), Math.max(V*d[1],R*C26.ASIS_REP[1])];
+  const aP=[Math.max(0,V-disc[0]), Math.max(0,V-disc[1])];
+  const aNet=(pr,mo)=>pr-pr*C26.COMM/100-closing(pr,cid)-hold*mo-P;
+  const aHi=aNet(aP[0],C26.ASIS_MO[0]), aLo=aNet(aP[1],C26.ASIS_MO[1]);
+  const aPm=mid(aP);
+  const A={id:'asis',price:aPm,disc:V-aPm,discPct:V>0?(V-aPm)/V*100:0,comm:aPm*C26.COMM/100,close:closing(aPm,cid),hold:hold*mid(C26.ASIS_MO),mo:C26.ASIS_MO,lo:aLo,hi:aHi};
+  /* Cash */
+  let K;
+  const cHold=[hold*C26.CASH_MO[0], hold*C26.CASH_MO[1]];
+  if(cond==='ready'){
+    const off=[V*(1-C26.IB_BELOW[0]), V*(1-C26.IB_BELOW[1])];
+    const fee=[off[0]*C26.IB_FEE[0], off[1]*C26.IB_FEE[1]];
+    const rep=[V*C26.IB_REP[0], V*C26.IB_REP[1]];
+    const cl=[closing(off[0],cid), closing(off[1],cid)];
+    const hi=off[0]-fee[0]-rep[0]-cl[0]-cHold[0]-P, lo=off[1]-fee[1]-rep[1]-cl[1]-cHold[1]-P;
+    K={id:'cash',model:'ib',price:mid(off),fee:mid(fee),rep:mid(rep),close:mid(cl),hold:mid(cHold),mo:C26.CASH_MO,lo,hi};
+  } else {
+    const off=[Math.max(0,V*C26.INV_ARV[0]-R*C26.INV_REP[0]), Math.max(0,V*C26.INV_ARV[1]-R*C26.INV_REP[1])];
+    const cl=V>0?C26.INV_MISC:0;
+    const hi=off[0]-cl-cHold[0]-P, lo=off[1]-cl-cHold[1]-P;
+    K={id:'cash',model:'inv',price:mid(off),fee:0,rep:0,close:cl,hold:mid(cHold),mo:C26.CASH_MO,lo,hi};
+  }
+  const opts=[T,A,K];
+  for(const o of opts){ o.mid=(o.lo+o.hi)/2; o.moMid=(o.mo[0]+o.mo[1])/2; o.fit=o.moMid<=W; }
+  const feas=opts.filter(o=>o.fit);
+  const best=(feas.length?feas:[K]).reduce((a,b)=>b.mid>a.mid?b:a);
+  const others=opts.filter(o=>o!==best).sort((a,b)=>b.mid-a.mid);
+  const next=others[0];
+  const top=opts.reduce((a,b)=>b.mid>a.mid?b:a);
+  const perMo=(T.moMid-K.moMid)>0?(T.mid-K.mid)/(T.moMid-K.moMid):0;
+  return {V,R,P,W,cond,hold,opts,T,A,K,best,next,diff:best.mid-next.mid,top,perMo};
+}
+/*CALC-END*/
+
+const I18N={
+ vi:{title:'Sửa rồi bán, bán as-is, hay bán cho người mua cash?',sub:'Ba cách bán cùng một căn nhà. Xem mỗi cách cầm về bao nhiêu, mất bao lâu.',
+  l_value:'Giá thị trường sau khi sửa ',l_value_s:'(sửa xong bán được bao nhiêu)',l_cond:'Tình trạng nhà bây giờ',c_ready:'Ở được liền',c_light:'Cần sửa nhẹ',c_major:'Cần sửa nhiều',
+  l_repair:'Tiền sửa ước tính',l_payoff:'Nợ còn lại (payoff)',l_city:'Thành phố',l_wait:'Chờ được mấy tháng',u_mo:'tháng',
+  best_k:'Hợp nhất: {o}',vs_more:'Hơn <b>{d}</b> so với {o}',vs_less:'{o} cầm về nhiều hơn {d}, nhưng cần khoảng {m} tháng',
+  o_trad:'Sửa rồi bán',o_asis:'Bán as-is trên MLS',o_cash:'Bán cash / iBuyer',t_best:'Hợp nhất',
+  rn:'Khoảng {lo} – {hi}',tm:'Khoảng {a}–{b} tháng tới ngày close',tm_cash:'Khoảng 2–3 tuần tới ngày close',tm_no:' · lâu hơn thời gian bạn chờ được',
+  l_price:'Giá bán',l_off:'Giá offer',l_rep:'Tiền sửa (+ lố 0–10%)',l_stage:'Staging',l_comm:'Commission 5%',l_close:'Transfer tax, escrow, title',l_hold:'Giữ nhà {m} tháng',l_pay:'Trả nợ',
+  l_disc:'Giảm giá vì as-is (~{p}%)',l_fee:'Service charge iBuyer (5–6%)',l_ibrep:'Trừ tiền sửa (1–2%)',l_inv:'Investor: 70–80% giá sau sửa trừ tiền sửa',l_invcl:'Phí nhỏ (buyer trả closing)',
+  trade:'Đổi thời gian lấy tiền: mỗi tháng chờ thêm để sửa rồi bán, bạn cầm về thêm khoảng {x} so với bán cash.',trade_neg:'Ở đây sửa rồi bán không lời hơn bán cash — chờ thêm không đáng.',
+  fit_none:'Không cách nào kịp {w} tháng. Bán cash là nhanh nhất (2–3 tuần).',fit_ok:'',
+  note_ib:'iBuyer không mua ở mọi khu, mọi loại nhà. Ở Bay Area thường gặp investor địa phương hơn. Lúc nào cũng đòi offer bằng giấy và so tiền cầm về, đừng so giá offer.',
+  note_est:'Đều là ước tính. Chi phí giữ nhà tính thuế ~1.25%, bảo hiểm ~0.30%/năm, điện nước $300/tháng và lãi trên payoff ~4.5%. Commission để 5% tổng làm ví dụ, thương lượng được.',
+  ns_h:'Bước tiếp theo',
+  ns1:'Nhờ agent trong vùng cho 2 giá: as-is và sau khi sửa. Khoảng chênh đó cho biết có nên sửa không. Bỏ số vào <a href="/t21/">tool bán xong cầm về</a>.',
+  ns2:'Nếu bán cash: đòi offer bằng giấy, proof of funds, ai trả closing cost, và họ có được "assign" hợp đồng cho người khác không.',
+  ns3:'Nếu sửa: chỉ làm việc có lời với <a href="/t24/">tool sửa gì trước khi bán</a>, theo <a href="/t23/">checklist chuẩn bị bán nhà</a>, kiểm license thợ ở <a href="https://www.cslb.ca.gov/onlineservices/checklicenseII/checklicense.aspx" target="_blank" rel="noopener">cslb.ca.gov</a>.',
+  ns4:'Bán cách nào cũng phải làm disclosure (TDS, SPQ, NHD). Xem <a href="/t28/">hướng dẫn disclosure cho người bán</a>.',
+  my_k:'Nhiều người hiểu sai:',my_v:'"Bán as-is thì khỏi phải khai." Sai ở California. Luật ghi rõ Transfer Disclosure Statement không được miễn trong bán as-is (<a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=1102.1" target="_blank" rel="noopener">Civil Code §1102.1</a>). As-is chỉ có nghĩa là mình không sửa; biết gì vẫn phải nói.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi bảng so sánh này về email',f_sub:'Ken có thể cho giá as-is và giá sau sửa thật của con đường bạn, và coi giùm offer cash bạn đang có. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Bán as-is hay bán cash',ft_vid:'Video 3 phút',ft_est:'Đều là ước tính, không phải offer. Giá as-is và offer cash thật tùy căn nhà, con đường và người mua. Transfer tax theo bảng county/city 2026 (giống T21).',ft_src:'Nguồn:',ft_chk:'Tra ngày 04/11/2026.',ft_upd:'Cập nhật',ft_all:'Tất cả tools',
+  lang:'English',
+  sms:'Chào Ken, tôi vừa so 3 cách bán trên tools.kenlamrealty.com: nhà {v} ({c}), ở {city}. Sửa rồi bán ~{t}, as-is ~{a}, cash ~{k}. Cho tôi hỏi thêm.',
+  subj:'So sánh 3 cách bán nhà — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nGiá sau sửa: {v}\nTình trạng: {c}\nTiền sửa: {r}\nNợ còn lại: {p}\nThành phố: {city}\nChờ được: {w} tháng\n\nSửa rồi bán: {t} ({tr}) · {tm}\nBán as-is MLS: {a} ({ar}) · {am}\nBán cash/iBuyer: {k} ({kr}) · 2–3 tuần\n\nHỢP NHẤT: {b}\n\nGửi từ tool T26 tools.kenlamrealty.com'},
+ en:{title:'Fix and list, sell as-is, or take a cash offer?',sub:'Three ways to sell the same house. See what you walk away with, and how long each one takes.',
+  l_value:'Market value after fixing ',l_value_s:'(what it sells for fixed up)',l_cond:'Condition today',c_ready:'Move-in ready',c_light:'Needs light work',c_major:'Needs major work',
+  l_repair:'Repair estimate',l_payoff:'Loan payoff',l_city:'City',l_wait:'Months you can wait',u_mo:'months',
+  best_k:'Best fit: {o}',vs_more:'<b>{d}</b> more than {o}',vs_less:'{o} nets {d} more, but takes about {m} months',
+  o_trad:'Fix and list',o_asis:'As-is on the MLS',o_cash:'Cash buyer / iBuyer',t_best:'Best fit',
+  rn:'Range {lo} – {hi}',tm:'About {a}–{b} months to close',tm_cash:'About 2–3 weeks to close',tm_no:' · longer than you can wait',
+  l_price:'Sale price',l_off:'Offer',l_rep:'Repairs (+0–10% overrun)',l_stage:'Staging',l_comm:'Commission 5%',l_close:'Transfer tax, escrow, title',l_hold:'Holding {m} months',l_pay:'Loan payoff',
+  l_disc:'As-is discount (~{p}%)',l_fee:'iBuyer service charge (5–6%)',l_ibrep:'Repair deduction (1–2%)',l_inv:'Investor: 70–80% of fixed value minus repairs',l_invcl:'Small fees (buyer pays closing)',
+  trade:'Time vs money: each extra month you wait to fix and list earns about {x} more than selling for cash.',trade_neg:'Here fixing and listing does not beat cash — waiting is not worth it.',
+  fit_none:'No option closes within {w} months. Cash is fastest (2–3 weeks).',fit_ok:'',
+  note_ib:'iBuyers do not buy in every area or every house. In the Bay Area you are more likely to get offers from local investors. Always get the offer in writing and compare the net, not the headline price.',
+  note_est:'Estimates. Holding cost assumes property tax ~1.25%, insurance ~0.30% a year, $300/month utilities and interest on the payoff at ~4.5%. Commission is set at 5% total as an example; it is negotiable.',
+  ns_h:'Next steps',
+  ns1:'Get two prices from a local agent: as-is and fixed up. That gap tells you if fixing is worth it. Plug them into <a href="/t21/">the seller net sheet</a>.',
+  ns2:'If you go cash: ask for a written offer, proof of funds, who pays closing costs, and whether they can assign the contract to someone else.',
+  ns3:'If you fix: pick only the repairs that pay back with <a href="/t24/">the fix-before-selling tool</a>, follow <a href="/t23/">the pre-sale checklist</a>, and check contractors at <a href="https://www.cslb.ca.gov/onlineservices/checklicenseII/checklicense.aspx" target="_blank" rel="noopener">cslb.ca.gov</a>.',
+  ns4:'Any way you sell, fill out the disclosures (TDS, SPQ, NHD). See <a href="/t28/">the seller disclosure guide</a>.',
+  my_k:'Many people get this wrong:',my_v:'"Selling as-is means I don\'t have to disclose." False in California. The law says the Transfer Disclosure Statement cannot be waived in an as-is sale (<a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=1102.1" target="_blank" rel="noopener">Civil Code §1102.1</a>). As-is only means you won\'t fix things; you still tell buyers what you know.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this comparison to yourself',f_sub:'Ken can give you real as-is and fixed-up prices for your street, and look over any cash offer you got. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'As-is vs cash, explained',ft_vid:'3-min video',ft_est:'All numbers are estimates, not offers. Real as-is prices and cash offers depend on the house, the street and the buyer. Transfer tax follows 2026 county/city tables (same as T21).',ft_src:'Sources:',ft_chk:'Checked 04/11/2026.',ft_upd:'Updated',ft_all:'All tools',
+  lang:'Tiếng Việt',
+  sms:'Hi Ken, I compared 3 ways to sell on tools.kenlamrealty.com: home {v} ({c}) in {city}. Fix and list ~{t}, as-is ~{a}, cash ~{k}. I have a question.',
+  subj:'Traditional vs as-is vs cash — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nValue after fixing: {v}\nCondition: {c}\nRepairs: {r}\nLoan payoff: {p}\nCity: {city}\nCan wait: {w} months\n\nFix and list: {t} ({tr}) · {tm}\nAs-is on MLS: {a} ({ar}) · {am}\nCash / iBuyer: {k} ({kr}) · 2–3 weeks\n\nBEST FIT: {b}\n\nSent from tool T26 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const neg=n=>'−'+fmt(n);
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const mo=x=>(Math.round(x*10)/10).toString();
+let cond='light', last={};
+
+$('city').innerHTML='<optgroup label="Santa Clara County">'+CITIES.filter(c=>c.c==='SC').map(c=>'<option value="'+c.id+'">'+c.n+'</option>').join('')+'</optgroup>'
+  +'<optgroup label="Alameda County">'+CITIES.filter(c=>c.c==='AL').map(c=>'<option value="'+c.id+'">'+c.n+'</option>').join('')+'</optgroup>';
+$('city').value='sj';
+
+function ln(n,a,cls){ return '<div class="line'+(cls?' '+cls:'')+'"><span class="n">'+n+'</span><span class="a">'+a+'</span></div>'; }
+function card(o,R,d){
+  let h='', time;
+  if(o.id==='trad'){
+    h+=ln(d.l_price,fmt(o.price))+ln(d.l_rep,neg(o.rep))+ln(d.l_stage,neg(o.stage))+ln(d.l_comm,neg(o.comm))+ln(d.l_close,neg(o.close))+ln(d.l_hold.replace('{m}',mo(o.moMid)),neg(o.hold))+ln(d.l_pay,neg(R.P));
+    time=d.tm.replace('{a}',mo(o.mo[0])).replace('{b}',mo(o.mo[1]));
+  } else if(o.id==='asis'){
+    h+=ln(d.l_disc.replace('{p}',o.discPct.toFixed(0)),neg(o.disc))+ln(d.l_price,fmt(o.price))+ln(d.l_comm,neg(o.comm))+ln(d.l_close,neg(o.close))+ln(d.l_hold.replace('{m}',mo(o.moMid)),neg(o.hold))+ln(d.l_pay,neg(R.P));
+    time=d.tm.replace('{a}',mo(o.mo[0])).replace('{b}',mo(o.mo[1]));
+  } else {
+    if(o.model==='ib') h+=ln(d.l_off,fmt(o.price))+ln(d.l_fee,neg(o.fee))+ln(d.l_ibrep,neg(o.rep))+ln(d.l_close,neg(o.close));
+    else h+=ln('<span>'+d.l_inv+'</span>',fmt(o.price))+ln(d.l_invcl,neg(o.close));
+    h+=ln(d.l_hold.replace('{m}',mo(o.moMid)),neg(o.hold))+ln(d.l_pay,neg(R.P));
+    time=d.tm_cash;
+  }
+  const best=o===R.best;
+  return '<div class="opt'+(best?' best':'')+(o.fit?'':' nofit')+'"><h3>'+d['o_'+o.id]+(best?' <i>'+d.t_best+'</i>':'')+'</h3>'
+    +'<div class="nv'+(o.mid<0?' neg':'')+'">'+fmt(o.mid)+'</div>'
+    +'<div class="rn">'+d.rn.replace('{lo}',fmt(o.lo)).replace('{hi}',fmt(o.hi))+'</div>'
+    +'<div class="tm'+(o.fit?'':' no')+'">'+time+(o.fit?'':d.tm_no)+'</div>'
+    +'<div class="lines">'+h+'</div></div>';
+}
+function calc(){
+  const d=I18N[lang];
+  const R=compute3({value:num('value'),cond,repair:num('repair'),payoff:num('payoff'),cityId:$('city').value,wait:num('wait')});
+  $('bestK').textContent=d.best_k.replace('{o}',d['o_'+R.best.id]);
+  $('total').textContent=fmt(R.best.mid); $('totalV').classList.toggle('neg',R.best.mid<0);
+  $('vs').innerHTML=R.diff>=0?d.vs_more.replace('{d}',fmt(R.diff)).replace('{o}',d['o_'+R.next.id]):d.vs_less.replace('{o}',d['o_'+R.top.id]).replace('{d}',fmt(R.top.mid-R.best.mid)).replace('{m}',mo(R.top.moMid));
+  $('opts').innerHTML=[R.T,R.A,R.K].map(o=>card(o,R,d)).join('');
+  $('noteTrade').textContent=R.perMo>0?d.trade.replace('{x}',fmt(R.perMo)):d.trade_neg;
+  const none=!R.opts.some(o=>o.fit);
+  $('noteFit').textContent=none?d.fit_none.replace('{w}',R.W):''; $('noteFit').classList.toggle('hide',!none);
+  const cityN=(CITIES.find(c=>c.id===$('city').value)||CITIES[0]).n;
+  last={v:fmt(R.V),c:d['c_'+cond],r:fmt(R.R),p:fmt(R.P),city:cityN,w:R.W,
+    t:fmt(R.T.mid),tr:fmt(R.T.lo)+' – '+fmt(R.T.hi),tm:mo(R.T.mo[0])+'–'+mo(R.T.mo[1])+(lang==='vi'?' tháng':' months'),
+    a:fmt(R.A.mid),ar:fmt(R.A.lo)+' – '+fmt(R.A.hi),am:mo(R.A.mo[0])+'–'+mo(R.A.mo[1])+(lang==='vi'?' tháng':' months'),
+    k:fmt(R.K.mid),kr:fmt(R.K.lo)+' – '+fmt(R.K.hi),b:d['o_'+R.best.id]+' '+fmt(R.best.mid)};
+  const s=d.sms.replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s);
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+['value','repair','payoff','wait'].forEach(id=>$(id).addEventListener('input',calc));
+$('city').addEventListener('change',calc);
+document.querySelectorAll('#condSeg button').forEach(b=>b.addEventListener('click',()=>{cond=b.dataset.v; document.querySelectorAll('#condSeg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); calc();}));
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
