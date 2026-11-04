@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prop 19 Tax Base Transfer · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Age 55+, severely disabled or a wildfire/disaster victim? See what your new home's assessed value and property tax would be if you move your old tax base under Prop 19.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t25/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Prop 19: Move Your Tax Base · Ken Lam Tools">
+<meta property="og:description" content="55+, disabled or disaster victim? Estimate your new assessed value and yearly tax savings under Prop 19. Works anywhere in California.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t25/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T25 additions */
+.seg3 button{font-size:14px;padding:11px 6px;line-height:1.25}
+.hide{display:none!important}
+.status{font-size:14px;border-radius:10px;padding:10px 12px;line-height:1.45;border:1px solid var(--line)}
+.status.ok{border-color:var(--ok);color:var(--ok)}
+.status.bad{border-color:var(--warn);color:var(--warn)}
+.line.hl .a{color:var(--brass)}
+.line.sv .a{color:var(--ok)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:12px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.panel p{margin:0;font-size:14px;color:var(--muted)}
+.panel ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.panel a{color:var(--brass)}
+.prog{display:grid;gap:6px;font-size:13px;color:var(--muted)}
+.prog b{color:var(--fg);font-weight:500}
+.cl{list-style:none;margin:0;padding:0}
+.grp{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);font-weight:500;padding:16px 0 8px}
+.grp:first-child{padding-top:2px}
+.it{display:grid;grid-template-columns:24px minmax(0,1fr);gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.it input{accent-color:var(--brass);width:20px;height:20px;margin:2px 0 0;cursor:pointer}
+.it .tt{display:block;width:100%;text-align:left;border:0;background:none;padding:0;font:inherit;font-size:15px;line-height:1.4;color:var(--fg);cursor:pointer}
+.it .tt::after{content:' +';color:var(--brass)}
+.it .tt[aria-expanded="true"]::after{content:' \2212'}
+.it.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.why{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.55}
+.why a{color:var(--brass)}
+.cal{display:grid;gap:8px;font-size:14px}
+.cal a{color:var(--brass);text-decoration:none}
+.cal a:hover{text-decoration:underline}
+.cal .d{color:var(--muted);font-variant-numeric:tabular-nums}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.ctl input[type=date]{font-size:17px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Can I take my low property tax to my next home?</h1>
+    <p class="sub" data-i="sub">Prop 19 lets homeowners 55+, severely disabled owners and disaster victims move their old tax base. Anywhere in California.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <span class="fl" style="font-size:13px;font-weight:500;color:var(--muted)" data-i="l_who">Who qualifies</span>
+      <div class="seg seg3" role="group" id="who">
+        <button type="button" data-v="age" aria-pressed="true" data-i="w_age">55 or older</button>
+        <button type="button" data-v="dis" aria-pressed="false" data-i="w_dis">Severely disabled</button>
+        <button type="button" data-v="vic" aria-pressed="false" data-i="w_vic">Wildfire / disaster</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="base"><span data-i="l_base">Current home's assessed value</span> <small data-i="l_base_s">(factored base value on your tax bill)</small></label>
+      <div class="ctl"><span class="pre">$</span><input id="base" type="number" inputmode="numeric" min="0" step="5000" value="420000"></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="oldv"><span data-i="l_old">Sale price, current home</span> <small id="oldS" data-i="l_old_s">(market value)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="oldv" type="number" inputmode="numeric" min="0" step="5000" value="1400000"></div>
+      </div>
+      <div class="field">
+        <label for="newv"><span data-i="l_new">Price, new home</span></label>
+        <div class="ctl"><span class="pre">$</span><input id="newv" type="number" inputmode="numeric" min="0" step="5000" value="1600000"></div>
+      </div>
+    </div>
+    <div class="field">
+      <span style="font-size:13px;font-weight:500;color:var(--muted)" data-i="l_order">I buy the new home</span>
+      <div class="seg" role="group" id="order">
+        <button type="button" data-v="after" aria-pressed="true" data-i="o_after">After selling</button>
+        <button type="button" data-v="before" aria-pressed="false" data-i="o_before">Before selling</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="months"><span data-i="l_months">Months apart</span> <small data-i="l_months_s">(max 24)</small></label>
+        <div class="ctl"><input id="months" type="number" inputmode="numeric" min="0" max="36" step="1" value="8"><span class="post" data-i="mo">months</span></div>
+      </div>
+      <div class="field" id="usedField">
+        <label for="used"><span data-i="l_used">Times used before</span> <small data-i="l_used_s">(max 3)</small></label>
+        <div class="ctl"><input id="used" type="number" inputmode="numeric" min="0" max="5" step="1" value="0"><span class="post" data-i="times">times</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">Estimated property tax savings</div>
+      <div class="v"><span id="save">$0</span> <small data-i="per_yr">/yr</small></div>
+    </div>
+    <div class="status ok" id="status"></div>
+    <div class="bar" aria-hidden="true"><i class="b1" id="s1"></i><i class="b2" id="s2"></i></div>
+    <div class="legend">
+      <span><i style="background:var(--brass)"></i><span data-i="lg_with">Tax you still pay</span></span>
+      <span><i style="background:#A9B7A0"></i><span data-i="lg_save">Saved by Prop 19</span></span>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_rule">Rule that applies</b> <span id="ruleS"></span></span><span class="a" id="rule">105%</span></div>
+      <div class="line"><span class="n"><b data-i="n_lim">“Equal value” limit</b> <span data-i="n_lim_s">(old value × rule)</span></span><span class="a" id="lim">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_over">New price above the limit</b> <span data-i="n_over_s">(gets added)</span></span><span class="a" id="over">$0</span></div>
+      <div class="line hl"><span class="n"><b data-i="n_nb">New assessed value with Prop 19</b></span><span class="a" id="nb">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_nob">Without Prop 19</b> <span data-i="n_nob_s">(full price)</span></span><span class="a" id="nob">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_tw">Tax with Prop 19</b> <span data-i="n_rate">~1.25%/yr</span></span><span class="a" id="tw">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_tn">Tax without Prop 19</b> <span data-i="n_rate2">~1.25%/yr</span></span><span class="a" id="tn">$0</span></div>
+      <div class="line sv"><span class="n"><b data-i="n_10">Savings over 10 years</b> <span data-i="n_10_s">(estimate)</span></span><span class="a" id="s10">$0</span></div>
+    </div>
+    <div class="note" id="beforeNote" data-i="before_note">Buying first? The base can't move until the old home is sold. Until then you get tax bills on the full price. After you sell and file, the assessor corrects it. Ask them how any refund works.</div>
+    <div class="note" id="vicNote" data-i="vic_note">Disaster victims: use the old home's value right before the fire or disaster, not the damaged sale price. Disaster transfers don't count toward the 3-time limit.</div>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t25/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this estimate to yourself</h2>
+    <p data-i="f_sub">Ken will reply and help you check the numbers with your tax bill. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="panel" aria-label="Checklist">
+    <h2 data-i="c_t">Do you qualify? Check each one</h2>
+    <div class="prog"><span><b id="pc">0/0</b> <span data-i="c_done">checked</span></span><div class="bar"><i class="b1" id="pbar" style="width:0"></i></div></div>
+    <ul class="cl" id="cl"></ul>
+  </section>
+
+  <section class="panel" aria-label="Deadlines">
+    <h2 data-i="d_t">Your deadlines</h2>
+    <div class="field">
+      <label for="sdate"><span data-i="l_sdate">Old home sale date</span> <small data-i="l_sdate_s">(or expected)</small></label>
+      <div class="ctl"><input id="sdate" type="date"></div>
+    </div>
+    <div class="cal" id="cal"><p data-i="d_empty">Pick a date to see your 2-year and 3-year deadlines.</p></div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Find your factored base value on your tax bill or the assessor's site (Santa Clara: <a href="https://www.sccassessor.org" target="_blank" rel="noopener">sccassessor.org</a>).</li>
+      <li data-i="ns2">Plan the timing. Sell and buy within 2 years. Buying after you sell gives you more room (105% or 110%).</li>
+      <li data-i="ns3">After closing, get the claim form from the assessor of the county where the new home is. File the homeowners' exemption too (<a href="/t131/">T131</a>).</li>
+      <li data-i="ns4">Selling first? See what you walk away with in <a href="/t21/">T21</a>, and the tax on your gain in <a href="/t22/">T22</a>.</li>
+    </ol>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="pc_t">Giving the home to your kids instead?</h2>
+    <p data-i="pc_p">That's a different Prop 19 rule. Since Feb 16, 2021, the parent-child exclusion covers only the family home, and only if the child moves in as their primary home. Value above the old assessed value plus about $1.04 million gets reassessed. This tool doesn't calculate it. Read the <a href="https://www.boe.ca.gov/prop19/" target="_blank" rel="noopener">BOE Prop 19 page</a> and talk to a CPA or estate attorney.</p>
+  </section>
+
+  <p class="myth" data-i="myth"><b>Many people get this wrong:</b> “Prop 19 only works in the same county.” Not anymore. Since April 1, 2021, you can move your base from any California county to any other.</p>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#prop-19" target="_blank" rel="noopener" data-i="ft_lib">Prop 19 for 55+ sellers</a> · <a href="https://kenlamrealty.com/library#video-prop-19" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span><span data-i="ft_src">Sources:</span> <a href="https://www.boe.ca.gov/proptaxes/pdf/lta24044.pdf" target="_blank" rel="noopener">BOE LTA 2024/044 (Prop 19 FAQ)</a> · <a href="https://www.boe.ca.gov/proptaxes/pdf/lta21019.pdf" target="_blank" rel="noopener">BOE LTA 2021/019</a> · <a href="https://www.boe.ca.gov/proptaxes/bpf.htm" target="_blank" rel="noopener">BOE claim forms</a> · <a href="https://boe.ca.gov/news/2025/nr-25-02.htm" target="_blank" rel="noopener">BOE $1,044,586 release</a> · <a href="https://www.boe.ca.gov/prop19/" target="_blank" rel="noopener">BOE Prop 19</a> (checked 04/11/2026)</span>
+    <span data-i="ft_est">Estimate only, not tax advice. The assessor decides the final value. Tax uses ~1.25% for Santa Clara / Alameda; your bill has its own bonds and fees. The assessor also adds a small inflation factor to the old value, so the real limit can be a bit higher.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Prop 19 rules + Bắc Cali numbers — sửa ở đây khi luật đổi =====
+   Nguồn (tra 04/11/2026):
+   - BOE LTA 2024/044 (11/12/2024) Prop 19 BYV Transfer FAQ: https://www.boe.ca.gov/proptaxes/pdf/lta24044.pdf
+       "Equal or lesser value": 100% nếu mua TRƯỚC khi bán; 105% nếu mua trong năm thứ 1 SAU khi bán; 110% năm thứ 2 sau khi bán.
+       Nếu giá nhà mới > ngưỡng: phần vượt ngưỡng cộng vào base cũ. Ví dụ 38: bán $700,000, mua $750,000 tháng sau →
+       ngưỡng $735,000 (105%), cộng $15,000. FCV nhà cũ có cộng inflation factor từ ngày bán tới ngày mua (tool bỏ qua → hơi bảo thủ).
+       Tối đa 3 lần/người cho 55+/khuyết tật; thiên tai không tính vào 3 lần. Khoảng 2 năm nằm trong Hiến pháp, không gia hạn (Q24).
+       Nộp claim trong 3 năm kể từ ngày mua nhà mới; trễ thì chỉ được từ năm nộp trở đi (Q30). Cả 2 nhà ở California.
+       Thiên tai: FCV nhà cũ = giá trị ngay trước thiên tai.
+   - BOE LTA 2021/019 (11/05/2021): https://www.boe.ca.gov/proptaxes/pdf/lta21019.pdf
+       Áp dụng 58 county từ 01/04/2021. Phải BÁN nhà cũ mới chuyển được base. Thiên tai: hư >50% giá trị improvements, Governor-declared.
+       Forms: BOE-19-B (55+), BOE-19-D + BOE-19-DC (khuyết tật), BOE-19-V (thiên tai). Nộp ở Assessor county nhà mới.
+   - Forms list: https://www.boe.ca.gov/proptaxes/bpf.htm
+   - Parent-child: BOE NR 25-02 (07/03/2025) $1,044,586 cho chuyển nhượng 16/02/2025–15/02/2027: https://boe.ca.gov/news/2025/nr-25-02.htm
+   - TAX_RATE 1.25%: chuẩn project cho Santa Clara & Alameda (ước tính, gồm bonds trung bình). KEN DUYỆT.
+   - GROW 2%: Prop 13 tăng tối đa 2%/năm, dùng cho số "10 năm" (ước tính).
+*/
+const TAX_RATE=0.0125, GROW=0.02, MAX_MONTHS=24, MAX_USES=3, FILE_YEARS=3;
+const PCT={before:1.00,y1:1.05,y2:1.10};
+const FORMS={age:'BOE-19-B',dis:'BOE-19-D + BOE-19-DC',vic:'BOE-19-V'};
+const UPDATED='04/11/2026';
+
+function prop19(o){
+  const base=Math.max(0,o.base), oldv=Math.max(0,o.oldv), newv=Math.max(0,o.newv), m=Math.max(0,o.months), used=Math.max(0,o.used);
+  const key=o.order==='before'?'before':(m<=12?'y1':'y2');
+  const pct=PCT[key], lim=oldv*pct, over=Math.max(0,newv-lim);
+  const tooLate=m>MAX_MONTHS, tooMany=o.who!=='vic'&&used>=MAX_USES;
+  const ok=!tooLate&&!tooMany&&oldv>0&&newv>0;
+  const nb=ok?Math.min(newv,base+over):newv;
+  const tw=nb*TAX_RATE, tn=newv*TAX_RATE, save=Math.max(0,tn-tw);
+  const s10=save*((Math.pow(1+GROW,10)-1)/GROW);
+  return {key,pct,lim,over,nb,tw,tn,save,s10,ok,tooLate,tooMany};
+}
+
+const CL={
+ en:[
+  {g:'You',items:[
+   {k:'who',w:{age:"You're 55 or older on the day the old home sells",dis:"You're severely and permanently disabled on the day the old home sells",vic:'Your home was badly damaged (over 50% of the building value) by a wildfire or disaster the Governor declared'},
+    y:{age:'Age is checked on the sale date of the old home, not the purchase date.',dis:'A doctor signs form BOE-19-DC to confirm the disability.',vic:'The damage has to be from a Governor-declared disaster. The assessor checks the value right before it happened.'}},
+   {k:'uses',w:{age:"You've used this fewer than 3 times",dis:"You've used this fewer than 3 times",vic:"Disaster transfers don't count toward the 3-time limit"},y:{age:'Each person gets up to 3 transfers for age or disability.',dis:'Each person gets up to 3 transfers for age or disability.',vic:'You can still use your 3 age or disability transfers later.'}}]},
+  {g:'Old home',items:[
+   {k:'own',t:'You owned it and lived there as your main home',y:'It had to be your primary residence, the kind that qualifies for the homeowners’ exemption.'},
+   {k:'sold',t:"It's sold at market value, not gifted to your kids",y:"The base can't move until the old home is sold. Giving it to family doesn't count."}]},
+  {g:'New home',items:[
+   {k:'win',t:'You buy or finish building it within 2 years of the sale, before or after',y:"The 2-year limit is in the state constitution. There's no extension for hardship."},
+   {k:'main',t:"It'll be your main home and you file the homeowners' exemption",y:'File that one too. See <a href="/t131/">T131</a>.'},
+   {k:'ca',t:"It's anywhere in California",y:'All 58 counties since April 1, 2021. Both homes must be in California.'}]},
+  {g:'Filing',items:[
+   {k:'form',t:'Get form {f} from the assessor of the county where the new home is',y:'Not the old county. The new home’s county processes it. Forms list: <a href="https://www.boe.ca.gov/proptaxes/bpf.htm" target="_blank" rel="noopener">boe.ca.gov</a>.'},
+   {k:'file',t:'File within 3 years of buying the new home',y:'File late and the savings only start from the year you file. No refund for the years before.'},
+   {k:'docs',t:'Keep the closing papers for both homes',y:'The assessor may ask for proof of the sale price, purchase price and dates.'}]}
+ ],
+ vi:[
+  {g:'Mình',items:[
+   {k:'who',w:{age:'Mình đủ 55 tuổi vào ngày bán nhà cũ',dis:'Mình bị khuyết tật nặng và lâu dài vào ngày bán nhà cũ',vic:'Nhà bị cháy rừng hoặc thiên tai (Thống đốc công bố) làm hư hơn 50% giá trị căn nhà'},
+    y:{age:'Tuổi tính theo ngày bán nhà cũ, không phải ngày mua nhà mới.',dis:'Bác sĩ ký form BOE-19-DC xác nhận khuyết tật.',vic:'Phải là thiên tai có Thống đốc công bố. Assessor lấy giá trị nhà ngay trước lúc bị.'}},
+   {k:'uses',w:{age:'Mình dùng chưa tới 3 lần',dis:'Mình dùng chưa tới 3 lần',vic:'Chuyển vì thiên tai không tính vào 3 lần'},y:{age:'Mỗi người được tối đa 3 lần cho diện 55+ hoặc khuyết tật.',dis:'Mỗi người được tối đa 3 lần cho diện 55+ hoặc khuyết tật.',vic:'Sau này mình vẫn còn 3 lần diện 55+ hoặc khuyết tật.'}}]},
+  {g:'Nhà cũ',items:[
+   {k:'own',t:'Mình đứng tên và ở đó làm nhà chính',y:'Phải là nhà mình ở, loại được homeowners’ exemption.'},
+   {k:'sold',t:'Bán theo giá thị trường, không phải cho con',y:'Phải bán nhà cũ rồi mới chuyển base được. Sang tên cho con thì không tính.'}]},
+  {g:'Nhà mới',items:[
+   {k:'win',t:'Mua hoặc xây xong trong vòng 2 năm, trước hay sau ngày bán đều được',y:'Giới hạn 2 năm nằm trong Hiến pháp tiểu bang. Không có gia hạn.'},
+   {k:'main',t:'Nhà mới là nhà chính và mình nộp homeowners’ exemption',y:'Nộp luôn cái này. Coi <a href="/t131/">T131</a>.'},
+   {k:'ca',t:'Ở đâu trong California cũng được',y:'Cả 58 county từ 01/04/2021. Hai căn đều phải ở California.'}]},
+  {g:'Nộp giấy',items:[
+   {k:'form',t:'Lấy form {f} ở Assessor của county có nhà mới',y:'Không phải county cũ. County nhà mới xử lý. Danh sách form: <a href="https://www.boe.ca.gov/proptaxes/bpf.htm" target="_blank" rel="noopener">boe.ca.gov</a>.'},
+   {k:'file',t:'Nộp trong vòng 3 năm kể từ ngày mua nhà mới',y:'Nộp trễ thì chỉ được giảm từ năm nộp trở đi, mấy năm trước không được trả lại.'},
+   {k:'docs',t:'Giữ giấy closing của cả 2 căn',y:'Assessor có thể hỏi giấy chứng minh giá bán, giá mua và ngày tháng.'}]}
+ ]
+};
+
+const I18N={
+ en:{title:'Can I take my low property tax to my next home?',sub:'Prop 19 lets homeowners 55+, severely disabled owners and disaster victims move their old tax base. Anywhere in California.',
+  l_who:'Who qualifies',w_age:'55 or older',w_dis:'Severely disabled',w_vic:'Wildfire / disaster',
+  l_base:"Current home's assessed value",l_base_s:'(factored base value on your tax bill)',l_old:'Sale price, current home',l_old_s:'(market value)',l_old_v:'(value right before the disaster)',l_new:'Price, new home',
+  l_order:'I buy the new home',o_after:'After selling',o_before:'Before selling',l_months:'Months apart',l_months_s:'(max 24)',mo:'months',l_used:'Times used before',l_used_s:'(max 3)',times:'times',
+  r_total:'Estimated property tax savings',per_yr:'/yr',lg_with:'Tax you still pay',lg_save:'Saved by Prop 19',
+  n_rule:'Rule that applies',n_lim:'“Equal value” limit',n_lim_s:'(old value × rule)',n_over:'New price above the limit',n_over_s:'(gets added)',n_nb:'New assessed value with Prop 19',n_nob:'Without Prop 19',n_nob_s:'(full price)',
+  n_tw:'Tax with Prop 19',n_tn:'Tax without Prop 19',n_rate:'~1.25%/yr',n_rate2:'~1.25%/yr',n_10:'Savings over 10 years',n_10_s:'(estimate)',
+  rk:{before:'bought before selling',y1:'bought within 1 year after selling',y2:'bought in year 2 after selling'},
+  st_ok:'Looks eligible. New assessed value = old base {b} + {o} above the limit = {n}.',st_ok0:'Looks eligible. The new home is within the limit, so you keep your old base of {b}.',
+  st_late:'Over 24 months apart. Prop 19 needs the purchase within 2 years of the sale, so the new home would be taxed on the full price.',
+  st_many:"You've used it 3 times already. The limit for 55+ and disabled is 3 per person.",st_zero:'Enter the sale price and the new price.',
+  before_note:"Buying first? The base can't move until the old home is sold. Until then you get tax bills on the full price. After you sell and file, the assessor corrects it. Ask them how any refund works.",
+  vic_note:"Disaster victims: use the old home's value right before the fire or disaster, not the damaged sale price. Disaster transfers don't count toward the 3-time limit.",
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this estimate to yourself',f_sub:'Ken will reply and help you check the numbers with your tax bill. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  c_t:'Do you qualify? Check each one',c_done:'checked',
+  d_t:'Your deadlines',l_sdate:'Old home sale date',l_sdate_s:'(or expected)',d_empty:'Pick a date to see your 2-year and 3-year deadlines.',
+  d_buy:'Last day to buy or finish the new home',d_file:'File the claim by',d_bfrom:'(you bought {m} months before the sale)',gcal:'Add to Google Calendar',
+  cal_buy:'Prop 19: last day to buy replacement home',cal_file:'Prop 19: file {f} with the county assessor',cal_det:'Reminder from tools.kenlamrealty.com/t25/. Check with the county assessor. Questions: Ken Lam 408-666-2825.',
+  ns_t:'Next steps',ns1:'Find your factored base value on your tax bill or the assessor’s site (Santa Clara: <a href="https://www.sccassessor.org" target="_blank" rel="noopener">sccassessor.org</a>).',
+  ns2:'Plan the timing. Sell and buy within 2 years. Buying after you sell gives you more room (105% or 110%).',
+  ns3:'After closing, get the claim form from the assessor of the county where the new home is. File the homeowners’ exemption too (<a href="/t131/">T131</a>).',
+  ns4:'Selling first? See what you walk away with in <a href="/t21/">T21</a>, and the tax on your gain in <a href="/t22/">T22</a>.',
+  pc_t:'Giving the home to your kids instead?',
+  pc_p:'That’s a different Prop 19 rule. Since Feb 16, 2021, the parent-child exclusion covers only the family home, and only if the child moves in as their primary home. Value above the old assessed value plus about $1.04 million gets reassessed. This tool doesn’t calculate it. Read the <a href="https://www.boe.ca.gov/prop19/" target="_blank" rel="noopener">BOE Prop 19 page</a> and talk to a CPA or estate attorney.',
+  myth:'<b>Many people get this wrong:</b> “Prop 19 only works in the same county.” Not anymore. Since April 1, 2021, you can move your base from any California county to any other.',
+  ft_read:'Read more:',ft_lib:'Prop 19 for 55+ sellers',ft_vid:'3-min video',ft_src:'Sources:',
+  ft_est:'Estimate only, not tax advice. The assessor decides the final value. Tax uses ~1.25% for Santa Clara / Alameda; your bill has its own bonds and fees. The assessor also adds a small inflation factor to the old value, so the real limit can be a bit higher.',
+  ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  wl:{age:'55+',dis:'Severely disabled',vic:'Wildfire/disaster'},ol:{after:'after selling',before:'before selling'},
+  sms:'Hi Ken, I ran the Prop 19 tool on tools.kenlamrealty.com: base {b}, selling {ov}, buying {nv} → new base about {n}, saving about {s}/yr. Can you help me check it?',
+  subj:'Prop 19 tax base estimate — {nm}',
+  body:'Name: {nm}\nEmail: {e}\nPhone: {ph}\n\nQualifies as: {w}\nCurrent factored base value: {b}\nOld home sale price / value: {ov}\nNew home price: {nv}\nBuy {od}, {m} months apart\nTimes used before: {u}\n\nRule: {pct} ({rk})\nLimit: {lim}\nAbove limit (added): {o}\nNew assessed value with Prop 19: {n}\nTax with Prop 19: {tw}/yr\nTax without: {tn}/yr\nSAVINGS: {s}/yr (about {s10} over 10 yrs)\nStatus: {st}\nForm: {f}\n\nSent from tool T25 tools.kenlamrealty.com'},
+ vi:{title:'Đổi nhà mà giữ được thuế nhà thấp không?',sub:'Prop 19 cho người 55 tuổi trở lên, người khuyết tật nặng và nạn nhân thiên tai mang thuế nhà cũ qua nhà mới. Ở đâu trong California cũng được.',
+  l_who:'Mình thuộc diện nào',w_age:'55 tuổi trở lên',w_dis:'Khuyết tật nặng',w_vic:'Cháy rừng / thiên tai',
+  l_base:'Giá trị tính thuế nhà cũ',l_base_s:'(factored base value trên tax bill)',l_old:'Giá bán nhà cũ',l_old_s:'(giá thị trường)',l_old_v:'(giá trị ngay trước thiên tai)',l_new:'Giá mua nhà mới',
+  l_order:'Mình mua nhà mới',o_after:'Sau khi bán',o_before:'Trước khi bán',l_months:'Cách nhau',l_months_s:'(tối đa 24)',mo:'tháng',l_used:'Đã dùng mấy lần',l_used_s:'(tối đa 3)',times:'lần',
+  r_total:'Tiền thuế nhà tiết kiệm (ước tính)',per_yr:'/năm',lg_with:'Thuế vẫn phải đóng',lg_save:'Prop 19 giảm',
+  n_rule:'Mức áp dụng',n_lim:'Mức “giá bằng”',n_lim_s:'(giá nhà cũ × mức)',n_over:'Nhà mới vượt mức',n_over_s:'(cộng vào base)',n_nb:'Giá trị tính thuế mới (có Prop 19)',n_nob:'Không có Prop 19',n_nob_s:'(tính đủ giá mua)',
+  n_tw:'Thuế có Prop 19',n_tn:'Thuế không có Prop 19',n_rate:'~1.25%/năm',n_rate2:'~1.25%/năm',n_10:'Tiết kiệm 10 năm',n_10_s:'(ước tính)',
+  rk:{before:'mua trước khi bán',y1:'mua trong năm đầu sau khi bán',y2:'mua trong năm thứ 2 sau khi bán'},
+  st_ok:'Có vẻ đủ điều kiện. Giá trị tính thuế mới = base cũ {b} + phần vượt {o} = {n}.',st_ok0:'Có vẻ đủ điều kiện. Nhà mới nằm trong mức, nên giữ nguyên base cũ {b}.',
+  st_late:'Cách nhau quá 24 tháng. Prop 19 bắt mua trong vòng 2 năm kể từ ngày bán, nên nhà mới sẽ tính thuế theo giá mua.',
+  st_many:'Đã dùng đủ 3 lần. Diện 55+ và khuyết tật mỗi người tối đa 3 lần.',st_zero:'Nhập giá bán nhà cũ và giá mua nhà mới.',
+  before_note:'Mua trước? Phải bán nhà cũ xong mới chuyển base được. Trong lúc chờ, bill thuế tính theo giá mua. Bán xong và nộp form thì Assessor sửa lại. Hỏi họ vụ hoàn tiền ra sao.',
+  vic_note:'Nạn nhân thiên tai: dùng giá trị nhà ngay trước khi cháy hay thiên tai, không phải giá bán lúc nhà đã hư. Chuyển vì thiên tai không tính vào 3 lần.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi bảng tính này về email',f_sub:'Ken sẽ trả lời và giúp mình so lại với tax bill. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  c_t:'Mình có đủ điều kiện không? Tick từng cái',c_done:'đã tick',
+  d_t:'Hạn chót của mình',l_sdate:'Ngày bán nhà cũ',l_sdate_s:'(hoặc dự tính)',d_empty:'Chọn ngày để coi hạn 2 năm và 3 năm.',
+  d_buy:'Ngày cuối để mua hoặc xây xong nhà mới',d_file:'Nộp form trước ngày',d_bfrom:'(mình mua trước ngày bán {m} tháng)',gcal:'Thêm vào Google Calendar',
+  cal_buy:'Prop 19: ngày cuối mua nhà mới',cal_file:'Prop 19: nộp {f} cho Assessor',cal_det:'Nhắc từ tools.kenlamrealty.com/t25/. Hỏi lại Assessor county. Cần giúp: Ken Lam 408-666-2825.',
+  ns_t:'Bước tiếp theo',ns1:'Coi factored base value trên tax bill hoặc trang Assessor (Santa Clara: <a href="https://www.sccassessor.org" target="_blank" rel="noopener">sccassessor.org</a>).',
+  ns2:'Tính ngày cho kỹ. Bán và mua trong vòng 2 năm. Bán trước rồi mới mua thì được dư chỗ (105% hoặc 110%).',
+  ns3:'Close xong, lấy form ở Assessor của county có nhà mới. Nộp luôn homeowners’ exemption (<a href="/t131/">T131</a>).',
+  ns4:'Bán trước? Coi bán xong cầm về bao nhiêu ở <a href="/t21/">T21</a>, thuế lời ở <a href="/t22/">T22</a>.',
+  pc_t:'Định cho con căn nhà?',
+  pc_p:'Đó là luật khác của Prop 19. Từ 16/02/2021, cha mẹ cho con chỉ còn áp dụng cho nhà đang ở, và con phải dọn vào ở làm nhà chính. Phần giá trị cao hơn base cũ cộng khoảng $1.04 triệu sẽ bị tính thuế lại. Tool này không tính phần đó. Đọc <a href="https://www.boe.ca.gov/prop19/" target="_blank" rel="noopener">trang Prop 19 của BOE</a> và hỏi CPA hoặc luật sư.',
+  myth:'<b>Nhiều người hiểu sai:</b> “Prop 19 chỉ xài được trong cùng county.” Hết rồi. Từ 01/04/2021, chuyển base từ county nào qua county nào trong California cũng được.',
+  ft_read:'Đọc thêm:',ft_lib:'Prop 19 cho người 55+ bán nhà',ft_vid:'Video 3 phút',ft_src:'Nguồn:',
+  ft_est:'Chỉ là ước tính, không phải tư vấn thuế. Assessor quyết định số cuối. Thuế tính ~1.25% cho Santa Clara / Alameda; bill thật có bonds và phí riêng. Assessor còn cộng chút inflation vào giá nhà cũ, nên mức thật có thể cao hơn chút.',
+  ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  wl:{age:'55+',dis:'Khuyết tật nặng',vic:'Cháy rừng/thiên tai'},ol:{after:'sau khi bán',before:'trước khi bán'},
+  sms:'Chào Ken, tôi vừa xài tool Prop 19 trên tools.kenlamrealty.com: base {b}, bán {ov}, mua {nv} → base mới khoảng {n}, đỡ khoảng {s}/năm. Ken coi giùm được không?',
+  subj:'Ước tính Prop 19 — {nm}',
+  body:'Tên: {nm}\nEmail: {e}\nPhone: {ph}\n\nDiện: {w}\nFactored base value nhà cũ: {b}\nGiá bán / giá trị nhà cũ: {ov}\nGiá mua nhà mới: {nv}\nMua {od}, cách {m} tháng\nĐã dùng: {u} lần\n\nMức: {pct} ({rk})\nMức giá bằng: {lim}\nPhần vượt (cộng vào): {o}\nGiá trị tính thuế mới: {n}\nThuế có Prop 19: {tw}/năm\nThuế không có: {tn}/năm\nTIẾT KIỆM: {s}/năm (khoảng {s10} trong 10 năm)\nTình trạng: {st}\nForm: {f}\n\nGửi từ tool T25 tools.kenlamrealty.com'}
+};
+
+let lang='en', who='age', order='after', last={}, checks={}, open={};
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+try{ checks=JSON.parse(localStorage.getItem('kl_t25_checks')||'{}')||{}; }catch(e){ checks={}; }
+
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]!=null?v[k]:m);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function setSeg(id,v){document.querySelectorAll('#'+id+' button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v?'true':'false'));}
+
+function calc(){
+  const d=I18N[lang], m=Math.round(num('months')), u=Math.round(num('used'));
+  const o={who,base:num('base'),oldv:num('oldv'),newv:num('newv'),order,months:m,used:u};
+  const r=prop19(o);
+  $('save').textContent=fmt(r.save);
+  $('rule').textContent=Math.round(r.pct*100)+'%'; $('ruleS').textContent='('+d.rk[r.key]+')';
+  $('lim').textContent=fmt(r.lim); $('over').textContent=fmt(r.over); $('nb').textContent=fmt(r.nb); $('nob').textContent=fmt(o.newv);
+  $('tw').textContent=fmt(r.tw); $('tn').textContent=fmt(r.tn); $('s10').textContent=fmt(r.s10);
+  let st;
+  if(o.oldv<=0||o.newv<=0) st=d.st_zero; else if(r.tooLate) st=d.st_late; else if(r.tooMany) st=d.st_many;
+  else st=fill(r.over>0?d.st_ok:d.st_ok0,{b:fmt(o.base),o:fmt(r.over),n:fmt(r.nb)});
+  $('status').textContent=st; $('status').className='status '+(r.ok?'ok':'bad');
+  const T=r.tn||1; $('s1').style.width=(r.tw/T*100)+'%'; $('s2').style.width=(r.save/T*100)+'%';
+  $('beforeNote').classList.toggle('hide',order!=='before');
+  $('vicNote').classList.toggle('hide',who!=='vic');
+  $('usedField').classList.toggle('hide',who==='vic');
+  $('oldS').textContent=who==='vic'?d.l_old_v:d.l_old_s;
+  last={w:d.wl[who],b:fmt(o.base),ov:fmt(o.oldv),nv:fmt(o.newv),od:d.ol[order],m,u:who==='vic'?'—':u,pct:Math.round(r.pct*100)+'%',rk:d.rk[r.key],lim:fmt(r.lim),o:fmt(r.over),n:fmt(r.nb),tw:fmt(r.tw),tn:fmt(r.tn),s:fmt(r.save),s10:fmt(r.s10),st,f:FORMS[who]};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+  renderCal();
+}
+
+function renderCL(){
+  const groups=CL[lang]; let html='', tot=0, done=0;
+  groups.forEach(g=>{
+    html+='<li class="grp">'+esc(g.g)+'</li>';
+    g.items.forEach(it=>{
+      const id=it.k, t=(it.w?it.w[who]:it.t).replace('{f}',FORMS[who]), y=it.y&&typeof it.y==='object'?it.y[who]:it.y;
+      const c=!!checks[id+(it.w?'_'+who:'')]; tot++; if(c) done++;
+      const key=id+(it.w?'_'+who:'');
+      html+='<li class="it'+(c?' done':'')+'"><input type="checkbox" data-k="'+key+'" aria-label="'+esc(t)+'"'+(c?' checked':'')+'><div><button type="button" class="tt" data-o="'+key+'" aria-expanded="'+(open[key]?'true':'false')+'">'+esc(t)+'</button><div class="why"'+(open[key]?'':' hidden')+'>'+y+'</div></div></li>';
+    });
+  });
+  $('cl').innerHTML=html; $('pc').textContent=done+'/'+tot; $('pbar').style.width=(tot?done/tot*100:0)+'%';
+}
+$('cl').addEventListener('change',e=>{const k=e.target.dataset.k; if(!k)return; checks[k]=e.target.checked; try{localStorage.setItem('kl_t25_checks',JSON.stringify(checks))}catch(err){} renderCL();});
+$('cl').addEventListener('click',e=>{const b=e.target.closest('.tt'); if(!b)return; const k=b.dataset.o; open[k]=!open[k]; renderCL();});
+
+const ymd=d=>d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+const addM=(d,m)=>{const x=new Date(d.getFullYear(),d.getMonth()+m,d.getDate()); return x;};
+const addD=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+const fdate=d=>lang==='vi'?String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear():d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+const gcal=(t,d,det)=>'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(t)+'&dates='+ymd(d)+'/'+ymd(addD(d,1))+'&details='+encodeURIComponent(det);
+function renderCal(){
+  const d=I18N[lang], v=$('sdate').value;
+  if(!v){ $('cal').innerHTML='<p>'+esc(d.d_empty)+'</p>'; return; }
+  const p=v.split('-').map(Number), s=new Date(p[0],p[1]-1,p[2]); if(isNaN(s)) return;
+  const m=Math.max(0,Math.round(num('months')));
+  const buyBy=addD(addM(s,24),-1);
+  const bought=order==='before'?addM(s,-m):addM(s,m);
+  const fileBy=addD(addM(bought,12*FILE_YEARS),-1);
+  const row=(label,dt,ct,extra)=>'<div><span>'+esc(label)+'</span> '+(extra?'<span class="d">'+esc(extra)+'</span> ':'')+'<br><b class="d" style="color:var(--fg);font-weight:500">'+esc(fdate(dt))+'</b> · <a href="'+esc(gcal(ct,dt,d.cal_det))+'" target="_blank" rel="noopener">'+esc(d.gcal)+'</a></div>';
+  let h='';
+  if(order==='after') h+=row(d.d_buy,buyBy,d.cal_buy,'');
+  h+=row(d.d_file,fileBy,d.cal_file.replace('{f}',FORMS[who]),order==='before'?d.d_bfrom.replace('{m}',m):'');
+  $('cal').innerHTML=h;
+}
+$('sdate').addEventListener('input',renderCal);
+
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; renderCL(); calc();
+}
+['base','oldv','newv','months','used'].forEach(id=>$(id).addEventListener('input',calc));
+$('who').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b)return; who=b.dataset.v; setSeg('who',who); renderCL(); calc();});
+$('order').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b)return; order=b.dataset.v; setSeg('order',order); calc();});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], v={...last,nm:$('fname').value.trim()||'—',e:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'};
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,v))+'&body='+encodeURIComponent(fill(d.body,v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
