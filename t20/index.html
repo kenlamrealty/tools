@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>What's My Home Worth? · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Quick home value range for Santa Clara and Alameda County ZIPs, from Redfin median price per square foot, adjusted for size, condition and upgrades. Then get a free comparative market analysis (CMA) from Ken.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t20/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="What's My Home Worth? · Ken Lam Tools">
+<meta property="og:description" content="A rough value range for your home by ZIP, size and condition. Santa Clara and Alameda County. Free CMA from Ken for the real number.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t20/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T20 additions */
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl select:focus-visible{outline:none}
+.ctl .chev{color:var(--muted);font-size:13px;pointer-events:none}
+.ctl input[type=text]{font-size:17px}
+.seg.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:420px){.seg.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.seg.g4 button{padding:11px 6px;font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-size:14px;padding:8px 14px;border-radius:999px;cursor:pointer}
+.chips button[aria-pressed="true"]{background:var(--brass-soft);border-color:var(--brass);color:var(--fg);font-weight:500}
+.sec-t{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);font-weight:500;margin:6px 0 -4px}
+.total .v.range{font-size:44px;line-height:1.05;text-wrap:balance}
+@media (max-width:380px){.total .v.range{font-size:38px}}
+.conf{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.conf .tag{font-size:12px;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:4px 11px;background:var(--brass-soft);color:var(--fg);font-weight:500}
+.conf .tag.lo{background:transparent;border:1px dashed var(--warn);color:var(--warn)}
+.conf span.d{font-size:13px;color:var(--muted)}
+.scale{position:relative;height:8px;border-radius:999px;background:linear-gradient(90deg,var(--brass-soft),var(--brass),var(--brass-soft))}
+.scale i{position:absolute;top:-4px;width:2px;height:16px;background:var(--fg);left:50%}
+.scale-l{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:-8px}
+.line.hl .a{color:var(--brass)}
+.line.neg .a{color:var(--warn)}
+.line.tot .n b,.line.tot .a{font-weight:600}
+.cta{background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:20px;display:grid;gap:12px}
+.cta h2{font-family:var(--display);font-weight:400;font-size:28px;line-height:1.15;margin:0}
+.cta p{margin:0;font-size:14px;color:var(--muted)}
+.cta ul{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px}
+.form .ctl select{font-size:16px}
+.steps{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.steps h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+footer .src a{overflow-wrap:anywhere}
+.line .n{flex:1 1 auto}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">What's my home worth?</h1>
+    <p class="sub" data-i="sub">A quick, rough range from recent sales in your ZIP. For the real number, Ken sends a free comparative market analysis (CMA).</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="addr"><span data-i="l_addr">Address</span> <small data-i="l_addr_s">(only for Ken's CMA, not used in the math)</small></label>
+      <div class="ctl"><input id="addr" type="text" autocomplete="street-address" placeholder="123 Main St"></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="city"><span data-i="l_city">City</span></label>
+        <div class="ctl"><select id="city"></select><span class="chev">▾</span></div>
+      </div>
+      <div class="field">
+        <label for="zip"><span data-i="l_zip">ZIP</span></label>
+        <div class="ctl"><input id="zip" type="text" inputmode="numeric" maxlength="5" autocomplete="postal-code" value="95122"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="sqft"><span data-i="l_sqft">Living area</span></label>
+        <div class="ctl"><input id="sqft" type="number" inputmode="numeric" min="200" step="10" value="1450"><span class="post">sqft</span></div>
+      </div>
+      <div class="field">
+        <label for="lot"><span data-i="l_lot">Lot size</span> <small data-i="l_lot_s">(0 for condo)</small></label>
+        <div class="ctl"><input id="lot" type="number" inputmode="numeric" min="0" step="100" value="6000"><span class="post">sqft</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="beds"><span data-i="l_beds">Bedrooms</span></label>
+        <div class="ctl"><input id="beds" type="number" inputmode="numeric" min="0" max="10" step="1" value="3"></div>
+      </div>
+      <div class="field">
+        <label for="baths"><span data-i="l_baths">Bathrooms</span></label>
+        <div class="ctl"><input id="baths" type="number" inputmode="decimal" min="0" max="10" step="0.5" value="2"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="year"><span data-i="l_year">Year built</span></label>
+      <div class="ctl"><input id="year" type="number" inputmode="numeric" min="1850" max="2030" step="1" value="1962"></div>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_cond">Condition</span>
+      <div class="seg g4" role="group" id="cond">
+        <button type="button" data-v="needs" aria-pressed="false" data-i="c_needs">Needs work</button>
+        <button type="button" data-v="avg" aria-pressed="true" data-i="c_avg">Average</button>
+        <button type="button" data-v="upd" aria-pressed="false" data-i="c_upd">Updated</button>
+        <button type="button" data-v="rem" aria-pressed="false" data-i="c_rem">Remodeled</button>
+      </div>
+    </div>
+    <div class="field">
+      <span class="fl"><span data-i="l_upg">Recent upgrades</span> <small data-i="l_upg_s">(last ~10 years, tap all that apply)</small></span>
+      <div class="chips" role="group" id="upg">
+        <button type="button" data-v="kitchen" aria-pressed="false" data-i="u_kitchen">Kitchen</button>
+        <button type="button" data-v="baths" aria-pressed="false" data-i="u_baths">Bathrooms</button>
+        <button type="button" data-v="roof" aria-pressed="false" data-i="u_roof">Roof</button>
+        <button type="button" data-v="solar" aria-pressed="false" data-i="u_solar">Solar (owned)</button>
+        <button type="button" data-v="adu" aria-pressed="false" data-i="u_adu">ADU (permitted)</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">Rough value range</div>
+      <div class="v range" id="range">$0 – $0</div>
+    </div>
+    <div class="conf">
+      <span class="tag lo" id="confTag">Rough</span>
+      <span class="d" id="confWhy"></span>
+    </div>
+    <div class="scale" aria-hidden="true"><i></i></div>
+    <div class="scale-l"><span id="sLo">$0</span><span id="sMid">$0</span><span id="sHi">$0</span></div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_lo">Low</b></span><span class="a" id="oLo">$0</span></div>
+      <div class="line tot hl"><span class="n"><b data-i="n_mid">Middle</b></span><span class="a" id="oMid">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_hi">High</b></span><span class="a" id="oHi">$0</span></div>
+    </div>
+    <p class="sec-t" data-i="how_t">How we got there</p>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_ppsf">Median $/sqft</b> <span id="ppsfS"></span></span><span class="a" id="oPpsf">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_base">× your sqft</b></span><span class="a" id="oBase">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_size">Size and lot</b> <span data-i="n_size_s">(bigger homes sell for less per sqft)</span></span><span class="a" id="oSize">0%</span></div>
+      <div class="line"><span class="n"><b data-i="n_cond">Condition</b> <span data-i="n_rot">(rule of thumb)</span></span><span class="a" id="oCond">0%</span></div>
+      <div class="line"><span class="n"><b data-i="n_upg">Upgrades + age</b> <span data-i="n_rot2">(rule of thumb)</span></span><span class="a" id="oUpg">0%</span></div>
+    </div>
+    <div class="note hide" id="fbNote"></div>
+    <div class="note hide" id="oldNote"></div>
+    <div class="note" data-i="cma_note">This is an estimate, not an appraisal. Ken will send a free comparative market analysis (CMA) with the actual recent sales near your address.</div>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Get my free CMA from Ken</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t20/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="CMA request form">
+    <h2 data-i="f_title">Get my free CMA from Ken</h2>
+    <p data-i="f_sub">Ken pulls the recent sales and active listings around your address and sends you a price range you can actually use. Free, no obligation to list.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <div class="row2">
+      <div class="field"><label for="ftime"><span data-i="f_time">Best time to reach you</span></label><div class="ctl"><select id="ftime">
+        <option value="am" data-i="t_am">Morning</option><option value="pm" data-i="t_pm">Afternoon</option><option value="ev" data-i="t_ev">Evening</option><option value="any" data-i="t_any">Any time</option>
+      </select><span class="chev">▾</span></div></div>
+      <div class="field"><label for="fwhen"><span data-i="f_when">Selling timeframe</span></label><div class="ctl"><select id="fwhen">
+        <option value="3" data-i="w_3">Within 3 months</option><option value="6" data-i="w_6">3–6 months</option><option value="12" data-i="w_12">6–12 months</option><option value="cur" data-i="w_cur">Just curious</option>
+      </select><span class="chev">▾</span></div></div>
+    </div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send my request</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Get the real number: a CMA compares 3–6 homes that sold near you in the last few months, adjusted for size, lot and condition. Ken does it free.</li>
+      <li data-i="ns2">Look up your property record (sqft, lot, year built) so the CMA starts from the right facts: <a href="https://www.sccassessor.org" target="_blank" rel="noopener">Santa Clara County Assessor</a> · <a href="https://www.acgov.org/assessor/" target="_blank" rel="noopener">Alameda County Assessor</a>.</li>
+      <li data-i="ns3">See what you walk away with after commission, escrow and payoff in <a href="/t21/">T21 — net proceeds</a>, and the tax on your gain in <a href="/t22/">T22</a>.</li>
+      <li data-i="ns4">Before you spend on repairs, check which fixes pay back in <a href="/t24/">T24</a>, and compare a normal sale vs as-is vs cash in <a href="/t26/">T26</a>.</li>
+    </ol>
+  </section>
+
+  <p class="myth" id="myth" data-i="myth"></p>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#nha-toi-dang-gia-bao-nhieu" target="_blank" rel="noopener" data-i="ft_lib">How a home gets priced</a> · <a href="https://kenlamrealty.com/library#video-cma" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span class="src"><span data-i="ft_src">Sources:</span> <a id="srcZip" href="https://www.redfin.com/zipcode/95122/housing-market" target="_blank" rel="noopener">Redfin housing market, ZIP 95122</a> <span data-i="ft_rf">(median sale price per sqft by ZIP, all home types; month shown above; other ZIPs: redfin.com/zipcode/&lt;ZIP&gt;/housing-market)</span> · <a href="https://www.zillow.com/zestimate/" target="_blank" rel="noopener" data-i="ft_z">Zillow: Zestimate accuracy</a> · <a href="https://www.sccassessor.org" target="_blank" rel="noopener">SCC Assessor</a> · <a href="https://www.acgov.org/assessor/" target="_blank" rel="noopener">Alameda Assessor</a> <span data-i="ft_chk">(checked 04/11/2026)</span></span>
+    <span data-i="ft_est">Estimate only, not an appraisal and not a promise of a sale price. Condition, size, upgrade and age adjustments are rules of thumb. Ken will send a free comparative market analysis (CMA).</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Numbers — edit here =====
+   ZIP_MEDIANS: Redfin "median sale price per square foot" for the ZIP (all home types), read 04/11/2026 from
+     https://www.redfin.com/zipcode/<ZIP>/housing-market (unless src says otherwise). mo = month Redfin showed.
+     Redfin shows "$1.06K" style for >$1,000 → stored rounded to $10 (e.g. 1060). n = homes sold that month.
+     Redfin pages update irregularly, so months differ by ZIP. Refresh quarterly. KEN DUYỆT.
+     Left out on purpose (fall back to county): 95135 (Jul 2026 page showed -40.9% YoY, small odd sample, same as T141),
+     95134 (2 sales), 94539 + Pleasanton (page data from Mar 2024), 94601 ($/sqft not shown), Cupertino (no data shown).
+     94560 uses the Newark city page (zip page was Mar 2024). 94568 = Dublin city page. 94550/94551 = Livermore city page.
+     95120 = Redfin "Almaden Valley" neighborhood page (covers most of 95120).
+     94606: page median price matched 94601 exactly — KEN DUYỆT.
+   COUNTY fallback = median of the ZIP $/sqft values below for that county (computed, not a Redfin figure).
+   Adjustments (COND, UPG, size curve, lot, age, spread) = rules of thumb, ước tính — KEN DUYỆT.
+   Zestimate: Zillow says nationwide median error 7.21% for off-market homes (page "Last refreshed 2026-11-02"),
+     https://www.zillow.com/zestimate/ (04/11/2026). */
+const RF='https://www.redfin.com/zipcode/';
+const ZIP_MEDIANS={
+ /* Santa Clara County */
+ '95110':{c:'sc',p:634,mo:'2025-07',n:32},'95111':{c:'sc',p:649,mo:'2026-08',n:69},'95112':{c:'sc',p:599,mo:'2026-08',n:62},
+ '95116':{c:'sc',p:675,mo:'2025-07',n:48},'95117':{c:'sc',p:716,mo:'2026-07',n:40},'95118':{c:'sc',p:1060,mo:'2026-06',n:79},
+ '95120':{c:'sc',p:957,mo:'2026-09',n:77,src:'https://www.redfin.com/neighborhood/115210/CA/San-Jose/Almaden-Valley/housing-market'},
+ '95121':{c:'sc',p:729,mo:'2026-07',n:38},'95122':{c:'sc',p:801,mo:'2026-08',n:null},'95123':{c:'sc',p:826,mo:'2025-11',n:125},
+ '95124':{c:'sc',p:1110,mo:'2026-09',n:112},'95125':{c:'sc',p:983,mo:'2026-09',n:127},'95126':{c:'sc',p:744,mo:'2026-08',n:77},
+ '95127':{c:'sc',p:822,mo:'2026-08',n:70},'95128':{c:'sc',p:937,mo:'2026-07',n:77},'95129':{c:'sc',p:1240,mo:'2025-07',n:70},
+ '95130':{c:'sc',p:1420,mo:'2026-08',n:27},'95131':{c:'sc',p:773,mo:'2026-08',n:42},'95132':{c:'sc',p:952,mo:'2026-06',n:41},
+ '95133':{c:'sc',p:647,mo:'2026-08',n:51},'95136':{c:'sc',p:813,mo:'2025-10',n:80},'95138':{c:'sc',p:779,mo:'2026-09',n:38},
+ '95148':{c:'sc',p:932,mo:'2025-10',n:58},'95050':{c:'sc',p:1280,mo:'2026-06',n:64},'95051':{c:'sc',p:1160,mo:'2026-09',n:105},
+ '95035':{c:'sc',p:886,mo:'2026-09',n:99},'94086':{c:'sc',p:826,mo:'2026-08',n:66},'94087':{c:'sc',p:1430,mo:'2026-08',n:102},
+ '95008':{c:'sc',p:973,mo:'2026-07',n:81},'95037':{c:'sc',p:667,mo:'2026-06',n:132},
+ /* Alameda County */
+ '94538':{c:'al',p:971,mo:'2026-08',n:101},'94555':{c:'al',p:895,mo:'2026-08',n:49},
+ '94560':{c:'al',p:718,mo:'2025-06',n:35,src:'https://www.redfin.com/city/13111/CA/Newark/housing-market'},
+ '94587':{c:'al',p:695,mo:'2026-08',n:94},'94541':{c:'al',p:564,mo:'2026-08',n:85},'94544':{c:'al',p:565,mo:'2026-08',n:96},
+ '94545':{c:'al',p:591,mo:'2026-06',n:44},'94546':{c:'al',p:635,mo:'2026-08',n:82},'94577':{c:'al',p:558,mo:'2026-08',n:73},
+ '94578':{c:'al',p:525,mo:'2025-11',n:67},'94606':{c:'al',p:466,mo:'2026-08',n:59},
+ '94568':{c:'al',p:642,mo:'2026-09',n:156,src:'https://www.redfin.com/city/5159/CA/Dublin/housing-market'},
+ '94550':{c:'al',p:663,mo:'2026-09',n:222,src:'https://www.redfin.com/city/10683/CA/Livermore/housing-market'},
+ '94551':{c:'al',p:663,mo:'2026-09',n:222,src:'https://www.redfin.com/city/10683/CA/Livermore/housing-market'}
+};
+const CITIES=[
+ ['sj','San Jose','sc','95122'],['sc','Santa Clara','sc','95051'],['sun','Sunnyvale','sc','94086'],['mil','Milpitas','sc','95035'],
+ ['cup','Cupertino','sc',''],['cam','Campbell','sc','95008'],['mh','Morgan Hill','sc','95037'],['mv','Mountain View','sc',''],
+ ['osc','Other Santa Clara County','sc',''],
+ ['fre','Fremont','al','94538'],['uc','Union City','al','94587'],['nw','Newark','al','94560'],['hay','Hayward','al','94544'],
+ ['sl','San Leandro','al','94577'],['cv','Castro Valley','al','94546'],['oak','Oakland','al','94606'],['dub','Dublin','al','94568'],
+ ['ple','Pleasanton','al',''],['liv','Livermore','al','94550'],['oac','Other Alameda County','al','']
+];
+const COND={needs:-0.12,avg:0,upd:0.06,rem:0.12};            /* rule of thumb vs a typical home in the ZIP */
+const UPG={kitchen:0.03,baths:0.02,roof:0.01,solar:0.015,adu:0.07}; /* kitchen/baths ignored when "Remodeled" (already counted) */
+const UPG_CAP=0.10;
+const SIZE_REF=1600, SIZE_EXP=-0.20, SIZE_MIN=0.85, SIZE_MAX=1.12;   /* $/sqft falls as homes get bigger */
+const LOT_REF=6000, LOT_SLOPE=0.04, LOT_CAP=0.06;                       /* only when lot > 0 */
+const SPREAD=0.10, SPREAD_OLD=0.13, SPREAD_FB=0.16;                     /* ± around the middle */
+const OLD_MONTHS=12, TODAY='2026-11';
+const ZEST_ERR=7.21;
+const UPDATED='04/11/2026';
+
+/*MODEL*/
+function median(a){const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2;}
+function countyPpsf(c){return median(Object.values(ZIP_MEDIANS).filter(z=>z.c===c).map(z=>z.p));}
+function monthsBetween(a,b){const [y1,m1]=a.split('-').map(Number),[y2,m2]=b.split('-').map(Number);return (y2-y1)*12+(m2-m1);}
+function zipCounty(z){ if(/^95[01]\d\d$/.test(z)||/^940(2[0-4]|3\d|4[0-3]|8[5-9])$/.test(z)||/^943(0[1-6])$/.test(z)) return 'sc';
+  if(/^945(0[12]|3[6-9]|4[0-6]|5[0-2]|55|57|60|66|68|7[7-9]|8[0-8])$/.test(z)||/^946\d\d$/.test(z)||/^947(0[2-9]|1\d|20)$/.test(z)) return 'al'; return null;}
+function model(I){
+  const sqft=Math.max(0,+I.sqft||0), lot=Math.max(0,+I.lot||0), year=+I.year||0, beds=Math.max(0,+I.beds||0), baths=Math.max(0,+I.baths||0);
+  const z=(I.zip||'').trim(), hit=ZIP_MEDIANS[z];
+  const county=hit?hit.c:(zipCounty(z)||I.cityCounty||'sc');
+  const fb=!hit, ppsf=hit?hit.p:countyPpsf(county);
+  const age=hit?monthsBetween(hit.mo,TODAY):null, old=!!hit&&age>OLD_MONTHS;
+  const base=sqft*ppsf;
+  const sizeF=sqft>0?Math.min(SIZE_MAX,Math.max(SIZE_MIN,Math.pow(sqft/SIZE_REF,SIZE_EXP))):1;
+  const lotA=lot>0?Math.max(-LOT_CAP,Math.min(LOT_CAP,(lot/LOT_REF-1)*LOT_SLOPE)):0;
+  const sizeA=sizeF*(1+lotA)-1;
+  const condA=COND[I.cond]??0;
+  let upgA=0; for(const u of (I.upg||[])){ if(I.cond==='rem'&&(u==='kitchen'||u==='baths')) continue; upgA+=UPG[u]||0; }
+  upgA=Math.min(UPG_CAP,upgA);
+  let ageA=0; if(year>=2010) ageA=0.04; else if(year>=1990) ageA=0.02;
+  let layA=0; if(beds>=3&&baths>0&&baths<1.5) layA=-0.03;            /* 3+ bed, 1 bath: harder to sell */
+  const extraA=upgA+ageA+layA;
+  const mid=base*(1+sizeA)*(1+condA)*(1+extraA);
+  const sp=fb?SPREAD_FB:old?SPREAD_OLD:SPREAD;
+  const r5=x=>Math.round(x/5000)*5000;
+  return {z,hit:!!hit,fb,county,ppsf,mo:hit?hit.mo:null,n:hit?hit.n:null,src:hit?(hit.src||RF+z+'/housing-market'):null,age,old,
+    base,sizeA,condA,extraA,mid:r5(mid),lo:r5(mid*(1-sp)),hi:r5(mid*(1+sp)),sp,zestMiss:mid*ZEST_ERR/100};
+}
+/*END*/
+
+const I18N={
+ en:{title:"What's my home worth?",sub:'A quick, rough range from recent sales in your ZIP. For the real number, Ken sends a free comparative market analysis (CMA).',
+  l_addr:'Address',l_addr_s:"(only for Ken's CMA, not used in the math)",l_city:'City',l_zip:'ZIP',l_sqft:'Living area',l_lot:'Lot size',l_lot_s:'(0 for condo)',
+  l_beds:'Bedrooms',l_baths:'Bathrooms',l_year:'Year built',l_cond:'Condition',c_needs:'Needs work',c_avg:'Average',c_upd:'Updated',c_rem:'Remodeled',
+  l_upg:'Recent upgrades',l_upg_s:'(last ~10 years, tap all that apply)',u_kitchen:'Kitchen',u_baths:'Bathrooms',u_roof:'Roof',u_solar:'Solar (owned)',u_adu:'ADU (permitted)',
+  r_total:'Rough value range',conf_r:'Rough',conf_vr:'Very rough',conf_why:'ZIP {z} · Redfin {m}{n}',conf_fb:'No ZIP data · {c} median',
+  n_lo:'Low',n_mid:'Middle',n_hi:'High',how_t:'How we got there',n_ppsf:'Median $/sqft',n_base:'× your sqft',n_size:'Size and lot',n_size_s:'(bigger homes sell for less per sqft)',
+  n_cond:'Condition',n_rot:'(rule of thumb)',n_upg:'Upgrades + age',n_rot2:'(rule of thumb)',
+  ppsf_zip:'(ZIP {z}, {m})',ppsf_fb:'({c} county, median of ZIPs in this tool)',sold:', {n} sales',
+  fb_note:"We don't have Redfin data for ZIP {z}, so this uses the {c} County middle ($/sqft median of the ZIPs in this tool). That can be far off for your street. The range is wider.",
+  fb_bad:'Type a 5-digit ZIP. Until then this uses the {c} County middle.',
+  old_note:'Redfin data for ZIP {z} is from {m}, more than a year old. Prices may have moved since, so the range is wider.',
+  cma_note:'This is an estimate, not an appraisal. Ken will send a free comparative market analysis (CMA) with the actual recent sales near your address.',
+  b_email:'Get my free CMA from Ken',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Get my free CMA from Ken',f_sub:'Ken pulls the recent sales and active listings around your address and sends you a price range you can actually use. Free, no obligation to list.',
+  f_name:'Name',f_phone:'Phone',f_time:'Best time to reach you',t_am:'Morning',t_pm:'Afternoon',t_ev:'Evening',t_any:'Any time',
+  f_when:'Selling timeframe',w_3:'Within 3 months',w_6:'3–6 months',w_12:'6–12 months',w_cur:'Just curious',f_send:'Send my request',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ns_t:'Next steps',
+  ns1:'Get the real number: a CMA compares 3–6 homes that sold near you in the last few months, adjusted for size, lot and condition. Ken does it free.',
+  ns2:'Look up your property record (sqft, lot, year built) so the CMA starts from the right facts: <a href="https://www.sccassessor.org" target="_blank" rel="noopener">Santa Clara County Assessor</a> · <a href="https://www.acgov.org/assessor/" target="_blank" rel="noopener">Alameda County Assessor</a>.',
+  ns3:'See what you walk away with after commission, escrow and payoff in <a href="/t21/">T21 — net proceeds</a>, and the tax on your gain in <a href="/t22/">T22</a>.',
+  ns4:'Before you spend on repairs, check which fixes pay back in <a href="/t24/">T24</a>, and compare a normal sale vs as-is vs cash in <a href="/t26/">T26</a>.',
+  myth:'<b>Many people get this wrong:</b> “The Zestimate is my price.” Zillow itself says its median error for off-market homes is {e}% nationwide. Half of homes miss by more. On a {v} home, that\'s about {m} either way, and unique homes (big lot, ADU, remodel, odd layout) miss the most.',
+  ft_read:'Read more:',ft_lib:'How a home gets priced',ft_vid:'3-min video',ft_src:'Sources:',ft_rf:'(median sale price per sqft by ZIP, all home types; month shown above; other ZIPs: redfin.com/zipcode/&lt;ZIP&gt;/housing-market)',
+  ft_z:'Zillow: Zestimate accuracy',ft_chk:'(checked 04/11/2026)',src_zip:'Redfin housing market, ZIP {z}',src_fb:'Redfin housing market by ZIP',
+  ft_est:'Estimate only, not an appraisal and not a promise of a sale price. Condition, size, upgrade and age adjustments are rules of thumb. Ken will send a free comparative market analysis (CMA).',
+  ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',county_sc:'Santa Clara',county_al:'Alameda',osc:'Other Santa Clara County',oac:'Other Alameda County',
+  sms:'Hi Ken, I used the home value tool on tools.kenlamrealty.com. {a}, ZIP {z}, {s} sqft → rough {lo}–{hi}. Can you send me a free CMA?',
+  subj:'Home value request — {a}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\nBest time: {bt}\nSelling timeframe: {wh}\n\nAddress: {a}\nCity: {ci}\nZIP: {z}\nBeds/Baths: {b}/{ba}\nLiving area: {s} sqft\nLot: {l} sqft\nYear built: {y}\nCondition: {co}\nUpgrades: {u}\n\nTool estimate (rough, not an appraisal): {lo} – {hi} (middle {mid})\n$/sqft used: {pp} ({ps})\n\nPlease send my free CMA.\nSent from tool T20 tools.kenlamrealty.com',
+  none:'none'},
+ vi:{title:'Nhà tôi đáng giá bao nhiêu?',sub:'Ước tính nhanh, cỡ chừng, dựa trên nhà bán gần đây trong zip của mình. Muốn số thật, Ken gửi bảng so sánh giá (CMA) miễn phí.',
+  l_addr:'Địa chỉ',l_addr_s:'(chỉ để Ken làm CMA, không dùng để tính)',l_city:'Thành phố',l_zip:'Zip',l_sqft:'Diện tích nhà',l_lot:'Diện tích đất',l_lot_s:'(condo thì để 0)',
+  l_beds:'Phòng ngủ',l_baths:'Phòng tắm',l_year:'Năm xây',l_cond:'Tình trạng nhà',c_needs:'Cần sửa',c_avg:'Bình thường',c_upd:'Đã sửa sơ',c_rem:'Remodel mới',
+  l_upg:'Mới nâng cấp',l_upg_s:'(khoảng 10 năm nay, bấm hết cái nào có)',u_kitchen:'Bếp',u_baths:'Phòng tắm',u_roof:'Mái nhà',u_solar:'Solar (mua đứt)',u_adu:'ADU (có permit)',
+  r_total:'Giá trị cỡ chừng',conf_r:'Cỡ chừng',conf_vr:'Rất cỡ chừng',conf_why:'Zip {z} · Redfin {m}{n}',conf_fb:'Không có số zip · lấy trung bình {c}',
+  n_lo:'Thấp',n_mid:'Giữa',n_hi:'Cao',how_t:'Tính ra sao',n_ppsf:'Giá median mỗi sqft',n_base:'× sqft nhà mình',n_size:'Diện tích và đất',n_size_s:'(nhà càng lớn, giá mỗi sqft càng thấp)',
+  n_cond:'Tình trạng',n_rot:'(ước chừng theo kinh nghiệm)',n_upg:'Nâng cấp + tuổi nhà',n_rot2:'(ước chừng theo kinh nghiệm)',
+  ppsf_zip:'(zip {z}, {m})',ppsf_fb:'(county {c}, median các zip trong tool)',sold:', {n} căn bán',
+  fb_note:'Chưa có số Redfin cho zip {z}, nên tool lấy mức giữa của {c} County (median $/sqft các zip trong tool). Có thể lệch xa so với con đường nhà mình. Khoảng giá để rộng hơn.',
+  fb_bad:'Gõ zip 5 số. Chưa có thì tool tạm lấy mức giữa của {c} County.',
+  old_note:'Số Redfin của zip {z} là tháng {m}, cũ hơn 1 năm. Giá có thể đã đổi, nên khoảng giá để rộng hơn.',
+  cma_note:'Đây là ước tính, không phải appraisal. Ken sẽ gửi bảng so sánh giá (CMA) miễn phí, có các căn bán thật gần nhà mình.',
+  b_email:'Nhận CMA miễn phí từ Ken',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Nhận CMA miễn phí từ Ken',f_sub:'Ken kéo các căn mới bán và đang rao quanh địa chỉ của mình, rồi gửi khoảng giá xài được thật. Miễn phí, không bắt buộc phải bán.',
+  f_name:'Tên',f_phone:'Phone',f_time:'Giờ tiện gọi',t_am:'Buổi sáng',t_pm:'Buổi chiều',t_ev:'Buổi tối',t_any:'Lúc nào cũng được',
+  f_when:'Khi nào tính bán',w_3:'Trong 3 tháng',w_6:'3–6 tháng',w_12:'6–12 tháng',w_cur:'Chỉ muốn biết giá',f_send:'Gửi yêu cầu',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ns_t:'Bước tiếp theo',
+  ns1:'Lấy số thật: CMA so 3–6 căn bán gần nhà mình mấy tháng nay, chỉnh theo diện tích, đất và tình trạng. Ken làm miễn phí.',
+  ns2:'Coi hồ sơ nhà (sqft, đất, năm xây) để CMA bắt đầu từ số đúng: <a href="https://www.sccassessor.org" target="_blank" rel="noopener">Santa Clara County Assessor</a> · <a href="https://www.acgov.org/assessor/" target="_blank" rel="noopener">Alameda County Assessor</a>.',
+  ns3:'Coi bán xong cầm về bao nhiêu sau commission, escrow, trả nợ ở <a href="/t21/">T21</a>, và thuế tiền lời ở <a href="/t22/">T22</a>.',
+  ns4:'Trước khi bỏ tiền sửa, coi sửa cái nào có lời ở <a href="/t24/">T24</a>, và so bán bình thường, bán as-is, bán cash ở <a href="/t26/">T26</a>.',
+  myth:'<b>Nhiều người hiểu sai:</b> “Zestimate là giá nhà mình.” Chính Zillow nói sai số median cho nhà không rao bán là {e}% toàn quốc. Tức là phân nửa số nhà lệch nhiều hơn vậy. Nhà {v} thì lệch cỡ {m}, lên hoặc xuống. Nhà đặc biệt (đất rộng, có ADU, mới remodel, layout lạ) lệch nhiều nhất.',
+  ft_read:'Đọc thêm:',ft_lib:'Giá nhà được định ra sao',ft_vid:'Video 3 phút',ft_src:'Nguồn:',ft_rf:'(giá bán median mỗi sqft theo zip, mọi loại nhà; tháng ghi ở trên; zip khác: redfin.com/zipcode/&lt;ZIP&gt;/housing-market)',
+  ft_z:'Zillow: độ chính xác Zestimate',ft_chk:'(tra ngày 04/11/2026)',src_zip:'Redfin, zip {z}',src_fb:'Redfin theo zip',
+  ft_est:'Chỉ là ước tính, không phải appraisal, không hứa giá bán. Phần chỉnh theo tình trạng, diện tích, nâng cấp, tuổi nhà là ước chừng theo kinh nghiệm. Ken sẽ gửi CMA miễn phí.',
+  ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',county_sc:'Santa Clara',county_al:'Alameda',osc:'Nơi khác ở Santa Clara County',oac:'Nơi khác ở Alameda County',
+  sms:'Chào Ken, tôi vừa xài tool giá nhà trên tools.kenlamrealty.com. {a}, zip {z}, {s} sqft → cỡ {lo}–{hi}. Ken gửi giùm CMA miễn phí nha.',
+  subj:'Home value request — {a}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\nGiờ tiện gọi: {bt}\nKhi nào bán: {wh}\n\nĐịa chỉ: {a}\nThành phố: {ci}\nZip: {z}\nPhòng ngủ/tắm: {b}/{ba}\nDiện tích nhà: {s} sqft\nĐất: {l} sqft\nNăm xây: {y}\nTình trạng: {co}\nNâng cấp: {u}\n\nTool ước tính (cỡ chừng, không phải appraisal): {lo} – {hi} (giữa {mid})\n$/sqft dùng: {pp} ({ps})\n\nXin gửi CMA miễn phí.\nGửi từ tool T20 tools.kenlamrealty.com',
+  none:'không có'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const short=n=>{n=Math.round(n); if(n>=1e6) return '$'+(n/1e6).toFixed(n>=1e7?1:2).replace(/\.?0+$/,'')+'M'; return '$'+Math.round(n/1000)+'K';};
+const pct=x=>(x>0?'+':x<0?'−':'')+Math.abs(Math.round(x*1000)/10)+'%';
+const MON={en:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']};
+const monTxt=m=>{if(!m) return ''; const [y,mm]=m.split('-'); return lang==='vi'?(+mm)+'/'+y:MON.en[+mm-1]+' '+y;};
+let cond='avg', upg=new Set(), last={};
+
+function fillCities(){
+  const sel=$('city'), cur=sel.value||'sj', d=I18N[lang]; sel.innerHTML='';
+  for(const [v,name,c] of CITIES){ const o=document.createElement('option'); o.value=v; o.textContent=v==='osc'?d.osc:v==='oac'?d.oac:name; sel.appendChild(o); }
+  sel.value=cur;
+}
+const cityRow=()=>CITIES.find(r=>r[0]===$('city').value)||CITIES[0];
+
+function calc(){
+  const d=I18N[lang], cr=cityRow();
+  const I={zip:$('zip').value,sqft:$('sqft').value,lot:$('lot').value,year:$('year').value,beds:$('beds').value,baths:$('baths').value,cond,upg:[...upg],cityCounty:cr[2]};
+  const R=model(I), cn=d['county_'+R.county];
+  $('range').textContent=short(R.lo)+' – '+short(R.hi);
+  $('sLo').textContent=short(R.lo); $('sMid').textContent=short(R.mid); $('sHi').textContent=short(R.hi);
+  $('oLo').textContent=fmt(R.lo); $('oMid').textContent=fmt(R.mid); $('oHi').textContent=fmt(R.hi);
+  $('oPpsf').textContent=fmt(R.ppsf); $('oBase').textContent=fmt(R.base);
+  $('ppsfS').textContent=R.fb?d.ppsf_fb.replace('{c}',cn):d.ppsf_zip.replace('{z}',R.z).replace('{m}',monTxt(R.mo));
+  $('oSize').textContent=pct(R.sizeA); $('oCond').textContent=pct(R.condA); $('oUpg').textContent=pct(R.extraA);
+  const tag=$('confTag'); tag.textContent=R.fb||R.old?d.conf_vr:d.conf_r;
+  $('confWhy').textContent=R.fb?d.conf_fb.replace('{c}',cn):d.conf_why.replace('{z}',R.z).replace('{m}',monTxt(R.mo)).replace('{n}',R.n?d.sold.replace('{n}',R.n):'');
+  const valid=/^\d{5}$/.test(R.z);
+  $('fbNote').classList.toggle('hide',!R.fb);
+  if(R.fb) $('fbNote').textContent=(valid?d.fb_note:d.fb_bad).replace('{z}',R.z).replace('{c}',cn);
+  $('oldNote').classList.toggle('hide',!R.old);
+  if(R.old) $('oldNote').textContent=d.old_note.replace('{z}',R.z).replace('{m}',monTxt(R.mo));
+  const sz=$('srcZip'); if(R.hit){ sz.href=R.src; sz.textContent=d.src_zip.replace('{z}',R.z); } else { sz.href=R.county==='al'?'https://www.redfin.com/county/303/CA/Alameda-County/housing-market':'https://www.redfin.com/county/345/CA/Santa-Clara-County/housing-market'; sz.textContent=d.src_fb; }
+  $('myth').innerHTML=d.myth.replace('{e}',ZEST_ERR).replace('{v}',short(R.mid)).replace('{m}',fmt(Math.round(R.zestMiss/1000)*1000));
+  const addr=$('addr').value.trim()||'—';
+  last={a:addr,ci:cr[0]==='osc'?d.osc:cr[0]==='oac'?d.oac:cr[1],z:R.z||'—',b:I.beds,ba:I.baths,s:(+I.sqft||0).toLocaleString('en-US'),l:(+I.lot||0).toLocaleString('en-US'),y:I.year,
+    co:d['c_'+cond],u:[...upg].map(u=>d['u_'+u]).join(', ')||d.none,lo:fmt(R.lo),hi:fmt(R.hi),mid:fmt(R.mid),pp:fmt(R.ppsf),
+    ps:R.fb?d.ppsf_fb.replace('{c}',cn).replace(/[()]/g,''):'Redfin '+R.z+', '+monTxt(R.mo)};
+  const s=d.sms.replace('{a}',addr).replace('{z}',last.z).replace('{s}',last.s).replace('{lo}',short(R.lo)).replace('{hi}',short(R.hi));
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s);
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; fillCities(); calc();
+}
+['addr','zip','sqft','lot','year','beds','baths'].forEach(id=>$(id).addEventListener('input',calc));
+$('city').addEventListener('change',()=>{ const r=cityRow(); if(r[3]) $('zip').value=r[3]; calc(); });
+document.querySelectorAll('#cond button').forEach(b=>b.onclick=()=>{cond=b.dataset.v; document.querySelectorAll('#cond button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); calc();});
+document.querySelectorAll('#upg button').forEach(b=>b.onclick=()=>{const v=b.dataset.v; if(upg.has(v)) upg.delete(v); else upg.add(v); b.setAttribute('aria-pressed',upg.has(v)?'true':'false'); calc();});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const bt=$('ftime').options[$('ftime').selectedIndex].text, wh=$('fwhen').options[$('fwhen').selectedIndex].text;
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace('{bt}',bt).replace('{wh}',wh).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email to ken@kenlamrealty.com; FUB Lead Email Parsing picks it up (or swap for a FUB webhook later). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

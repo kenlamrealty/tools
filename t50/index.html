@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How Much Rent Can My Home Get? · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Rough rent range for your home in Santa Clara or Alameda County, from HUD FY2026 Fair Market Rent by bedrooms plus a market band for type, size and condition. Rent control, deposit cap and lease links for landlords.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t50/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="How Much Rent Can My Home Get? · Ken Lam Tools">
+<meta property="og:description" content="A rough rent range by bedrooms, type and condition, anchored on HUD FY2026 numbers. Santa Clara and Alameda County.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t50/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T50 additions */
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl select:focus-visible{outline:none}
+.ctl .chev{color:var(--muted);font-size:13px;pointer-events:none}
+.ctl input[type=text]{font-size:17px}
+.seg.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:420px){.seg.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.seg.g4 button{padding:11px 6px;font-size:14px}
+.seg.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.seg.g3 button{padding:11px 6px;font-size:14px}
+.sec-t{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);font-weight:500;margin:6px 0 -4px}
+.total .v.range{font-size:44px;line-height:1.05;text-wrap:balance}
+@media (max-width:380px){.total .v.range{font-size:38px}}
+.conf{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.conf .tag{font-size:12px;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:4px 11px;background:transparent;border:1px dashed var(--warn);color:var(--warn);font-weight:500}
+.conf span.d{font-size:13px;color:var(--muted)}
+.line.hl .a{color:var(--brass)}
+.line.tot .n b,.line.tot .a{font-weight:600}
+.line .n{flex:1 1 auto}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:12px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.panel p{margin:0;font-size:14px;color:var(--muted)}
+.panel ul{margin:0;padding-left:0;list-style:none;display:grid;gap:0;border-top:1px solid var(--line)}
+.panel li{display:grid;gap:2px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.panel li a{color:var(--fg);font-weight:500;text-decoration:none}
+.panel li a:hover{color:var(--brass)}
+.panel li span{font-size:13px;color:var(--muted)}
+.panel li .flag{color:var(--warn)}
+.steps{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.steps h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.form .ctl select{font-size:16px}
+footer .src a{overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">How much rent can my home get?</h1>
+    <p class="sub" data-i="sub">A rough monthly rent range for your place, built on HUD's 2026 numbers for your county and size. Plus the rules you need before you list.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="addr"><span data-i="l_addr">Address</span> <small data-i="l_addr_s">(only for Ken, not used in the math)</small></label>
+      <div class="ctl"><input id="addr" type="text" autocomplete="street-address" placeholder="123 Main St"></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="city"><span data-i="l_city">City</span></label>
+        <div class="ctl"><select id="city"></select><span class="chev">▾</span></div>
+      </div>
+      <div class="field">
+        <label for="zip"><span data-i="l_zip">ZIP</span></label>
+        <div class="ctl"><input id="zip" type="text" inputmode="numeric" maxlength="5" autocomplete="postal-code" value="95122"></div>
+      </div>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_type">Type</span>
+      <div class="seg g4" role="group" id="ptype">
+        <button type="button" data-v="house" aria-pressed="true" data-i="p_house">House</button>
+        <button type="button" data-v="th" aria-pressed="false" data-i="p_th">Townhouse</button>
+        <button type="button" data-v="condo" aria-pressed="false" data-i="p_condo">Condo</button>
+        <button type="button" data-v="adu" aria-pressed="false" data-i="p_adu">ADU</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="beds"><span data-i="l_beds">Bedrooms</span> <small data-i="l_beds_s">(0 = studio)</small></label>
+        <div class="ctl"><input id="beds" type="number" inputmode="numeric" min="0" max="8" step="1" value="3"></div>
+      </div>
+      <div class="field">
+        <label for="baths"><span data-i="l_baths">Bathrooms</span></label>
+        <div class="ctl"><input id="baths" type="number" inputmode="decimal" min="0" max="8" step="0.5" value="2"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="sqft"><span data-i="l_sqft">Living area</span></label>
+      <div class="ctl"><input id="sqft" type="number" inputmode="numeric" min="150" step="10" value="1400"><span class="post">sqft</span></div>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_cond">Condition</span>
+      <div class="seg g4" role="group" id="cond">
+        <button type="button" data-v="needs" aria-pressed="false" data-i="c_needs">Needs work</button>
+        <button type="button" data-v="avg" aria-pressed="true" data-i="c_avg">Average</button>
+        <button type="button" data-v="upd" aria-pressed="false" data-i="c_upd">Updated</button>
+        <button type="button" data-v="rem" aria-pressed="false" data-i="c_rem">Remodeled</button>
+      </div>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_park">Parking</span>
+      <div class="seg g3" role="group" id="park">
+        <button type="button" data-v="none" aria-pressed="false" data-i="k_none">Street only</button>
+        <button type="button" data-v="one" aria-pressed="false" data-i="k_one">1 spot</button>
+        <button type="button" data-v="gar" aria-pressed="true" data-i="k_gar">Garage / 2+</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <span class="fl" data-i="l_laun">Laundry in unit</span>
+        <div class="seg" role="group" id="laun">
+          <button type="button" data-v="1" aria-pressed="true" data-i="yes">Yes</button>
+          <button type="button" data-v="0" aria-pressed="false" data-i="no">No</button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="fl" data-i="l_pets">Pets allowed</span>
+        <div class="seg" role="group" id="pets">
+          <button type="button" data-v="1" aria-pressed="false" data-i="yes2">Yes</button>
+          <button type="button" data-v="0" aria-pressed="true" data-i="no2">No</button>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_furn">Furnished</span>
+      <div class="seg" role="group" id="furn">
+        <button type="button" data-v="0" aria-pressed="true" data-i="no3">No</button>
+        <button type="button" data-v="1" aria-pressed="false" data-i="yes3">Yes</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">Rough rent range</div>
+      <div class="v range"><span id="range">$0 – $0</span> <small data-i="per_mo">/mo</small></div>
+    </div>
+    <div class="conf">
+      <span class="tag" data-i="conf">Rough</span>
+      <span class="d" id="confWhy"></span>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_lo">Low</b> <span data-i="n_lo_s">(rents fast)</span></span><span class="a" id="oLo">$0</span></div>
+      <div class="line tot hl"><span class="n"><b data-i="n_mid">Middle</b> <span data-i="n_mid_s">(good place to start listing)</span></span><span class="a" id="oMid">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_hi">High</b> <span data-i="n_hi_s">(best units, may sit longer)</span></span><span class="a" id="oHi">$0</span></div>
+    </div>
+    <p class="sec-t" data-i="how_t">How we got there</p>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_fmr">HUD Fair Market Rent</b> <span id="fmrS"></span></span><span class="a" id="oFmr">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_type">Type</b> <span data-i="n_rot">(rule of thumb)</span></span><span class="a" id="oType">0%</span></div>
+      <div class="line"><span class="n"><b data-i="n_size">Size for bedrooms</b> <span id="sizeS"></span></span><span class="a" id="oSize">0%</span></div>
+      <div class="line"><span class="n"><b data-i="n_cond">Condition</b> <span data-i="n_rot2">(rule of thumb)</span></span><span class="a" id="oCond">0%</span></div>
+      <div class="line"><span class="n"><b data-i="n_ext">Parking, laundry, pets, furniture</b> <span data-i="n_rot3">(rule of thumb)</span></span><span class="a" id="oExt">0%</span></div>
+    </div>
+    <div class="note" data-i="fmr_note">HUD's Fair Market Rent is not a market rent. It is the 40th percentile of recent rents across the whole metro, utilities included, used for vouchers. Treat it as a floor reference. In pricier pockets (Cupertino, Palo Alto, Fremont Mission, Pleasanton) real rents often run well above.</div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_dep">Max security deposit</b> <span data-i="n_dep_s">(1 month for most landlords)</span></span><span class="a" id="oDep">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_inc">Tenant income at 3× rent</b></span><span class="a" id="oInc">$0</span></div>
+    </div>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Get a rent analysis from Ken</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t50/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Rent analysis request form">
+    <h2 data-i="f_title">Get a rent analysis from Ken</h2>
+    <p data-i="f_sub">Ken checks rentals like yours that leased nearby and sends a price you can list at. Free. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <div class="field"><label for="fwhen"><span data-i="f_when">When will it be ready to rent?</span></label><div class="ctl"><select id="fwhen">
+      <option value="now" data-i="w_now">Now</option><option value="1" data-i="w_1">In 1–2 months</option><option value="3" data-i="w_3">In 3+ months</option><option value="cur" data-i="w_cur">Just curious</option>
+    </select><span class="chev">▾</span></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send my request</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="ll_t">Before you list it</h2>
+    <ul>
+      <li><a href="/t55/" data-i="ll1">Rent control check (T55)</a><span id="rcNote"></span></li>
+      <li><a href="/t52/" data-i="ll2">Deposit cap and screening fees (T52)</a><span data-i="ll2_s">Most landlords: max 1 month deposit since July 1, 2024. Small landlords: up to 2.</span></li>
+      <li><a href="/t54/" data-i="ll3">Lease checklist (T54)</a><span data-i="ll3_s">Required disclosures, move-in photos, who pays which utility.</span></li>
+      <li><a href="/t146/" data-i="ll4">Cash flow at this rent (T146)</a><span data-i="ll4_s">Mortgage, tax, insurance, repairs and vacancy against the rent.</span></li>
+    </ul>
+  </section>
+
+  <section class="steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Look at 5–10 similar rentals within about a mile that listed in the last 30 days. Note which ones rented fast. That is your real market.</li>
+      <li data-i="ns2">Screen every applicant the same way, in writing. In California you can't turn down Section 8 or other rent help as a source of income. Rules: <a href="https://calcivilrights.ca.gov/housing/" target="_blank" rel="noopener">CA Civil Rights Dept.</a> · <a href="https://landlordtenant.dre.ca.gov/resources/guidebook/" target="_blank" rel="noopener">CA Landlord-Tenant Guide</a>.</li>
+      <li data-i="ns3">Check if your unit is covered by AB 1482 or city rent rules before you sign. It decides future raises and evictions: <a href="/t55/">T55</a> · <a href="https://oag.ca.gov/tenants" target="_blank" rel="noopener">CA Attorney General</a>.</li>
+      <li data-i="ns4">Not sure whether to rent or sell? Run both in <a href="/t51/">T51</a>.</li>
+    </ol>
+  </section>
+
+  <p class="myth" data-i="myth"><b>Many people get this wrong:</b> “I can charge whatever the last tenant paid plus 10%.”</p>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#cho-thue-nha" target="_blank" rel="noopener" data-i="ft_lib">Renting out your home</a> · <a href="https://kenlamrealty.com/library#video-cho-thue" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span class="src"><span data-i="ft_src">Sources:</span> <a href="https://section8hq.pages.dev/fair-market-rent/california/santa-clara-county/" target="_blank" rel="noopener">HUD FY2026 FMR, Santa Clara</a> · <a href="https://section8hq.pages.dev/fair-market-rent/california/alameda-county/" target="_blank" rel="noopener">HUD FY2026 FMR, Alameda</a> <span data-i="ft_fmr">(quoted by Section8HQ; official data:</span> <a href="https://www.huduser.gov/portal/datasets/fmr.html" target="_blank" rel="noopener">huduser.gov</a>) · <a href="https://www.sf.gov/information/california-tenant-protection-act-2019-ab-1482" target="_blank" rel="noopener">AB 1482 cap (SF area 8.8%)</a> · <a href="https://www.dir.ca.gov/OPRL/CPI/PresentCCPIchange.PDF" target="_blank" rel="noopener">CA CPI (DIR)</a> · <a href="https://legiscan.com/CA/text/AB12/2023" target="_blank" rel="noopener">AB 12 deposit cap</a> · <a href="https://sanjoseca.gov/your-government/departments-offices/housing/tenants/learn-about-rent-stabilization" target="_blank" rel="noopener">San Jose ARO</a> · <a href="https://www.oaklandca.gov/Community/Housing-Programs-Support/Rent-Adjustment-Program-RAP/For-Property-Owners/Properties-Exempt-from-the-Rent-Adjustment-Program" target="_blank" rel="noopener">Oakland RAP</a> · <a href="https://oag.ca.gov/tenants" target="_blank" rel="noopener">CA AG tenants</a> <span data-i="ft_chk">(checked 04/11/2026)</span></span>
+    <span data-i="ft_est">Estimate only, not a promise of what your home will rent for. HUD numbers are a floor reference; type, size, condition and extras are rules of thumb. Not legal advice. Ken can send a rent analysis from nearby leases.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Numbers — edit here =====
+   FMR: HUD FY2026 Fair Market Rents (gross rent incl. utilities, 40th percentile), effective 10/01/2025.
+     Same figures as T52 (keep both in sync). [studio, 1BR, 2BR, 3BR, 4BR]
+     Santa Clara (San Jose-Sunnyvale-Santa Clara HUD Metro FMR Area): https://section8hq.pages.dev/fair-market-rent/california/santa-clara-county/
+     Alameda (Oakland-Fremont HUD Metro FMR Area): https://section8hq.pages.dev/fair-market-rent/california/alameda-county/
+     huduser.gov blocked from our network 04/11/2026 — KEN DUYỆT: so lại với https://www.huduser.gov/portal/datasets/fmr.html
+     5+ bedrooms: HUD rule, each extra bedroom adds 15% of the 4BR FMR (HUD FMR methodology).
+   TYPE / COND / EXTRAS / SIZE / BAND = rules of thumb, ước tính — KEN DUYỆT.
+   AB 1482 caps (Aug 1 2026–Jul 31 2027): Alameda (BLS SF area CPI 3.8%) = 8.8%; Santa Clara (CA CPI 3.6%) = 8.6%. Same as T55.
+     https://www.sf.gov/information/california-tenant-protection-act-2019-ab-1482 · https://www.dir.ca.gov/OPRL/CPI/PresentCCPIchange.PDF (04/11/2026)
+   San Jose ARO 5% (apartments 3+ units before 9/7/1979). Oakland RAP 2.3% (Aug 1 2026–Jul 31 2027). From T55 (04/11/2026).
+   Deposit: Civil Code §1950.5 as amended by AB 12 (7/1/2024): 1 month; small landlord up to 2. https://legiscan.com/CA/text/AB12/2023 */
+const FMR={sc:[2621,2982,3483,4602,5010], al:[2142,2385,2912,3724,4413]};
+const FMR_EXTRA_BR=0.15;
+const TYPE={house:0, th:-0.03, condo:-0.07, adu:-0.15};
+const COND={needs:-0.08, avg:0, upd:0.04, rem:0.08};
+const PARK={none:-0.05, one:-0.02, gar:0};
+const LAUNDRY_NO=-0.04, PETS_YES=0.02, FURN_YES=0.08;
+const TYP_SQFT=[500,700,950,1300,1700,2100];   /* typical size by bedrooms, 5+ uses last */
+const SIZE_SLOPE=0.30, SIZE_MIN=-0.12, SIZE_MAX=0.15;
+const BAND={lo:0.92, mid:1.00, hi:1.12};
+const CAP={sc:8.6, al:8.8, sj_aro:5, oak:2.3};
+const LOCAL={sj:'sj',oak:'oak',brk:'brk',mv:'mv',hay:'hay',ala:'ala'};
+const CITIES=[
+ ['sj','San Jose','sc','95122'],['sc','Santa Clara','sc','95051'],['sun','Sunnyvale','sc','94086'],['mil','Milpitas','sc','95035'],
+ ['cup','Cupertino','sc','95014'],['cam','Campbell','sc','95008'],['mv','Mountain View','sc','94040'],['mh','Morgan Hill','sc','95037'],
+ ['osc','Other Santa Clara County','sc',''],
+ ['fre','Fremont','al','94538'],['uc','Union City','al','94587'],['nw','Newark','al','94560'],['hay','Hayward','al','94544'],
+ ['sl','San Leandro','al','94577'],['oak','Oakland','al','94606'],['brk','Berkeley','al','94703'],['ala','Alameda','al','94501'],
+ ['dub','Dublin','al','94568'],['ple','Pleasanton','al','94566'],['liv','Livermore','al','94550'],['oac','Other Alameda County','al','']
+];
+const UPDATED='04/11/2026';
+
+/*MODEL*/
+function model(I){
+  const c=I.county==='al'?'al':'sc', beds=Math.max(0,Math.min(8,Math.round(+I.beds||0))), baths=Math.max(0,+I.baths||0), sqft=Math.max(0,+I.sqft||0);
+  const f=FMR[c], fmr=beds<=4?f[beds]:f[4]*(1+FMR_EXTRA_BR*(beds-4));
+  const typA=TYPE[I.type]??0;
+  const typ=TYP_SQFT[Math.min(beds,TYP_SQFT.length-1)];
+  let sizeA=sqft>0?Math.max(SIZE_MIN,Math.min(SIZE_MAX,(sqft/typ-1)*SIZE_SLOPE)):0;
+  if(beds>=2&&baths>=beds) sizeA+=0.02; else if(beds>=3&&baths>0&&baths<1.5) sizeA-=0.03;
+  const condA=COND[I.cond]??0;
+  const extA=(PARK[I.park]??0)+(I.laundry?0:LAUNDRY_NO)+(I.pets?PETS_YES:0)+(I.furn?FURN_YES:0);
+  const adj=fmr*(1+typA)*(1+sizeA)*(1+condA)*(1+extA);
+  const r25=x=>Math.round(x/25)*25;
+  const mid=r25(adj*BAND.mid), lo=r25(adj*BAND.lo), hi=r25(adj*BAND.hi);
+  return {c,beds,fmr:Math.round(fmr),typ,typA,sizeA,condA,extA,lo,mid,hi,dep:mid,inc:mid*3,cap:CAP[c]};
+}
+/*END*/
+
+const I18N={
+ en:{title:'How much rent can my home get?',sub:"A rough monthly rent range for your place, built on HUD's 2026 numbers for your county and size. Plus the rules you need before you list.",
+  l_addr:'Address',l_addr_s:'(only for Ken, not used in the math)',l_city:'City',l_zip:'ZIP',l_type:'Type',p_house:'House',p_th:'Townhouse',p_condo:'Condo',p_adu:'ADU',
+  l_beds:'Bedrooms',l_beds_s:'(0 = studio)',l_baths:'Bathrooms',l_sqft:'Living area',l_cond:'Condition',c_needs:'Needs work',c_avg:'Average',c_upd:'Updated',c_rem:'Remodeled',
+  l_park:'Parking',k_none:'Street only',k_one:'1 spot',k_gar:'Garage / 2+',l_laun:'Laundry in unit',l_pets:'Pets allowed',l_furn:'Furnished',
+  yes:'Yes',no:'No',yes2:'Yes',no2:'No',yes3:'Yes',no3:'No',
+  r_total:'Rough rent range',per_mo:'/mo',conf:'Rough',conf_why:'{c} County · {b} · HUD FY2026 base',
+  n_lo:'Low',n_lo_s:'(rents fast)',n_mid:'Middle',n_mid_s:'(good place to start listing)',n_hi:'High',n_hi_s:'(best units, may sit longer)',
+  how_t:'How we got there',n_fmr:'HUD Fair Market Rent',fmr_s:'({b}, {c}, incl. utilities)',n_type:'Type',n_rot:'(rule of thumb)',n_size:'Size for bedrooms',size_s:'(typical {t} sqft)',
+  n_cond:'Condition',n_rot2:'(rule of thumb)',n_ext:'Parking, laundry, pets, furniture',n_rot3:'(rule of thumb)',
+  studio:'studio',bd:'{n} BR',
+  fmr_note:"HUD's Fair Market Rent is not a market rent. It is the 40th percentile of recent rents across the whole metro, utilities included, used for vouchers. Treat it as a floor reference. In pricier pockets (Cupertino, Palo Alto, Fremont Mission, Pleasanton) real rents often run well above.",
+  n_dep:'Max security deposit',n_dep_s:'(1 month for most landlords)',n_inc:'Tenant income at 3× rent',
+  b_email:'Get a rent analysis from Ken',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Get a rent analysis from Ken',f_sub:'Ken checks rentals like yours that leased nearby and sends a price you can list at. Free. No spam.',f_name:'Name',f_phone:'Phone',
+  f_when:'When will it be ready to rent?',w_now:'Now',w_1:'In 1–2 months',w_3:'In 3+ months',w_cur:'Just curious',f_send:'Send my request',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ll_t:'Before you list it',ll1:'Rent control check (T55)',ll2:'Deposit cap and screening fees (T52)',ll2_s:'Most landlords: max 1 month deposit since July 1, 2024. Small landlords: up to 2.',
+  ll3:'Lease checklist (T54)',ll3_s:'Required disclosures, move-in photos, who pays which utility.',ll4:'Cash flow at this rent (T146)',ll4_s:'Mortgage, tax, insurance, repairs and vacancy against the rent.',
+  rc_local:'<span class="flag">{city} has its own rent rules on top of state law.</span> Check before you set the lease.',
+  rc_state:'State law AB 1482 may cap future raises at {cap}% a year (Aug 2026–Jul 2027) unless your home is exempt.',
+  ns_t:'Next steps',
+  ns1:'Look at 5–10 similar rentals within about a mile that listed in the last 30 days. Note which ones rented fast. That is your real market.',
+  ns2:'Screen every applicant the same way, in writing. In California you can\'t turn down Section 8 or other rent help as a source of income. Rules: <a href="https://calcivilrights.ca.gov/housing/" target="_blank" rel="noopener">CA Civil Rights Dept.</a> · <a href="https://landlordtenant.dre.ca.gov/resources/guidebook/" target="_blank" rel="noopener">CA Landlord-Tenant Guide</a>.',
+  ns3:'Check if your unit is covered by AB 1482 or city rent rules before you sign. It decides future raises and evictions: <a href="/t55/">T55</a> · <a href="https://oag.ca.gov/tenants" target="_blank" rel="noopener">CA Attorney General</a>.',
+  ns4:'Not sure whether to rent or sell? Run both in <a href="/t51/">T51</a>.',
+  myth:'<b>Many people get this wrong:</b> “I can charge whatever the last tenant paid plus 10%.” Two different cases. For the tenant already living there, AB 1482 caps raises at 5% + CPI, max 10%: right now 8.6% in Santa Clara County and 8.8% in Alameda County (to July 31, 2027), lower in San Jose rent-controlled apartments (5%) and Oakland (2.3%). For a new tenant, the old rent means nothing. You price to today\'s market, which can be more or less than +10%.',
+  ft_read:'Read more:',ft_lib:'Renting out your home',ft_vid:'3-min video',ft_src:'Sources:',ft_fmr:'(quoted by Section8HQ; official data:',ft_chk:'(checked 04/11/2026)',
+  ft_est:'Estimate only, not a promise of what your home will rent for. HUD numbers are a floor reference; type, size, condition and extras are rules of thumb. Not legal advice. Ken can send a rent analysis from nearby leases.',
+  ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',county_sc:'Santa Clara',county_al:'Alameda',osc:'Other Santa Clara County',oac:'Other Alameda County',
+  t_house:'House',t_th:'Townhouse',t_condo:'Condo',t_adu:'ADU',
+  sms:'Hi Ken, I used the rent tool on tools.kenlamrealty.com. {a}, {ci}, {b} {t}, {s} sqft → rough {lo}–{hi}/mo. Can you send a rent analysis?',
+  subj:'Rent estimate request — {a}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\nReady to rent: {wh}\n\nAddress: {a}\nCity: {ci}\nZIP: {z}\nType: {t}\nBeds/Baths: {b}/{ba}\nLiving area: {s} sqft\nCondition: {co}\nParking: {pk}\nLaundry in unit: {la}\nPets allowed: {pe}\nFurnished: {fu}\n\nTool estimate (rough): {lo} – {hi}/mo (middle {mid})\nHUD FY2026 FMR reference: {fmr}\n\nPlease send a rent analysis.\nSent from tool T50 tools.kenlamrealty.com'},
+ vi:{title:'Nhà cho thuê được bao nhiêu?',sub:'Khoảng tiền thuê cỡ chừng mỗi tháng, tính từ số HUD 2026 theo county và số phòng. Kèm mấy luật phải biết trước khi đăng cho thuê.',
+  l_addr:'Địa chỉ',l_addr_s:'(chỉ để Ken coi, không dùng để tính)',l_city:'Thành phố',l_zip:'Zip',l_type:'Loại nhà',p_house:'Nhà riêng',p_th:'Townhouse',p_condo:'Condo',p_adu:'ADU',
+  l_beds:'Phòng ngủ',l_beds_s:'(0 = studio)',l_baths:'Phòng tắm',l_sqft:'Diện tích',l_cond:'Tình trạng',c_needs:'Cần sửa',c_avg:'Bình thường',c_upd:'Đã sửa sơ',c_rem:'Remodel mới',
+  l_park:'Chỗ đậu xe',k_none:'Chỉ ngoài đường',k_one:'1 chỗ',k_gar:'Garage / 2+',l_laun:'Máy giặt trong nhà',l_pets:'Cho nuôi thú',l_furn:'Có đồ đạc',
+  yes:'Có',no:'Không',yes2:'Có',no2:'Không',yes3:'Có',no3:'Không',
+  r_total:'Tiền thuê cỡ chừng',per_mo:'/tháng',conf:'Cỡ chừng',conf_why:'{c} County · {b} · nền HUD 2026',
+  n_lo:'Thấp',n_lo_s:'(cho thuê nhanh)',n_mid:'Giữa',n_mid_s:'(nên đăng giá này trước)',n_hi:'Cao',n_hi_s:'(nhà đẹp nhất, có thể lâu hơn)',
+  how_t:'Tính ra sao',n_fmr:'HUD Fair Market Rent',fmr_s:'({b}, {c}, gồm điện nước)',n_type:'Loại nhà',n_rot:'(ước chừng theo kinh nghiệm)',n_size:'Diện tích so với số phòng',size_s:'(thường {t} sqft)',
+  n_cond:'Tình trạng',n_rot2:'(ước chừng theo kinh nghiệm)',n_ext:'Đậu xe, máy giặt, thú nuôi, đồ đạc',n_rot3:'(ước chừng theo kinh nghiệm)',
+  studio:'studio',bd:'{n} phòng ngủ',
+  fmr_note:'Fair Market Rent của HUD không phải giá thuê ngoài thị trường. Đó là mức 40% của tiền thuê cả vùng, đã gồm điện nước, dùng cho Section 8. Coi nó như mức sàn. Ở mấy khu đắt (Cupertino, Palo Alto, Fremont Mission, Pleasanton) giá thuê thật thường cao hơn nhiều.',
+  n_dep:'Tiền cọc tối đa',n_dep_s:'(đa số chủ nhà: 1 tháng)',n_inc:'Người thuê cần thu nhập 3× tiền thuê',
+  b_email:'Nhờ Ken định giá thuê',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Nhờ Ken định giá thuê',f_sub:'Ken coi mấy căn giống nhà mình mới cho thuê gần đó rồi gửi giá nên đăng. Miễn phí. Không spam.',f_name:'Tên',f_phone:'Phone',
+  f_when:'Khi nào nhà sẵn sàng cho thuê?',w_now:'Bây giờ',w_1:'1–2 tháng nữa',w_3:'3 tháng trở lên',w_cur:'Chỉ muốn biết giá',f_send:'Gửi yêu cầu',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ll_t:'Trước khi đăng cho thuê',ll1:'Coi nhà có bị rent control không (T55)',ll2:'Tiền cọc tối đa và phí nộp đơn (T52)',ll2_s:'Đa số chủ nhà: cọc tối đa 1 tháng từ 1/7/2024. Chủ nhỏ: tới 2 tháng.',
+  ll3:'Checklist hợp đồng thuê (T54)',ll3_s:'Giấy tờ bắt buộc, chụp hình lúc dọn vô, ai trả điện nước gì.',ll4:'Cho thuê giá này lời lỗ ra sao (T146)',ll4_s:'Tiền nhà, thuế, bảo hiểm, sửa chữa, tháng trống so với tiền thuê.',
+  rc_local:'<span class="flag">{city} có luật thuê nhà riêng, cộng thêm luật tiểu bang.</span> Coi kỹ trước khi làm hợp đồng.',
+  rc_state:'Luật tiểu bang AB 1482 có thể giới hạn tăng giá tối đa {cap}%/năm (8/2026–7/2027), trừ khi nhà được miễn.',
+  ns_t:'Bước tiếp theo',
+  ns1:'Coi 5–10 căn giống nhà mình, cách khoảng 1 dặm, mới đăng trong 30 ngày. Căn nào thuê nhanh là giá thị trường thật.',
+  ns2:'Xét đơn mọi người y như nhau, có ghi giấy. Ở California không được từ chối người có Section 8 hay trợ giúp tiền thuê. Luật: <a href="https://calcivilrights.ca.gov/housing/" target="_blank" rel="noopener">CA Civil Rights Dept.</a> · <a href="https://landlordtenant.dre.ca.gov/resources/guidebook/" target="_blank" rel="noopener">Sách luật chủ nhà–người thuê CA</a>.',
+  ns3:'Coi nhà có thuộc AB 1482 hay luật thuê của city không trước khi ký. Nó quyết định sau này tăng giá, đuổi nhà ra sao: <a href="/t55/">T55</a> · <a href="https://oag.ca.gov/tenants" target="_blank" rel="noopener">CA Attorney General</a>.',
+  ns4:'Còn phân vân cho thuê hay bán? Tính thử cả hai ở <a href="/t51/">T51</a>.',
+  myth:'<b>Nhiều người hiểu sai:</b> “Cứ lấy tiền thuê cũ cộng 10% là được.” Có 2 trường hợp. Người đang ở: AB 1482 giới hạn tăng 5% + CPI, tối đa 10%. Hiện là 8.6% ở Santa Clara County, 8.8% ở Alameda County (tới 31/7/2027). Apartment rent control ở San Jose chỉ 5%, Oakland 2.3%. Người thuê mới: tiền thuê cũ không tính. Mình định giá theo thị trường hôm nay, có khi hơn, có khi kém +10%.',
+  ft_read:'Đọc thêm:',ft_lib:'Cho thuê nhà của mình',ft_vid:'Video 3 phút',ft_src:'Nguồn:',ft_fmr:'(Section8HQ trích lại; số chính thức:',ft_chk:'(tra ngày 04/11/2026)',
+  ft_est:'Chỉ là ước tính, không hứa nhà thuê được giá này. Số HUD là mức sàn tham khảo; phần chỉnh theo loại nhà, diện tích, tình trạng là ước chừng. Không phải tư vấn luật. Ken có thể gửi bảng giá thuê từ các căn gần đó.',
+  ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',county_sc:'Santa Clara',county_al:'Alameda',osc:'Nơi khác ở Santa Clara County',oac:'Nơi khác ở Alameda County',
+  t_house:'Nhà riêng',t_th:'Townhouse',t_condo:'Condo',t_adu:'ADU',
+  sms:'Chào Ken, tôi vừa xài tool tiền thuê trên tools.kenlamrealty.com. {a}, {ci}, {b} {t}, {s} sqft → cỡ {lo}–{hi}/tháng. Ken định giá thuê giùm nha.',
+  subj:'Rent estimate request — {a}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\nKhi nào cho thuê: {wh}\n\nĐịa chỉ: {a}\nThành phố: {ci}\nZip: {z}\nLoại: {t}\nPhòng ngủ/tắm: {b}/{ba}\nDiện tích: {s} sqft\nTình trạng: {co}\nĐậu xe: {pk}\nMáy giặt trong nhà: {la}\nCho nuôi thú: {pe}\nCó đồ đạc: {fu}\n\nTool ước tính (cỡ chừng): {lo} – {hi}/tháng (giữa {mid})\nHUD FY2026 FMR tham khảo: {fmr}\n\nXin gửi bảng định giá thuê.\nGửi từ tool T50 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const pct=x=>(x>0?'+':x<0?'−':'')+Math.abs(Math.round(x*1000)/10)+'%';
+const S={type:'house',cond:'avg',park:'gar',laun:'1',pets:'0',furn:'0'};
+let last={};
+
+function fillCities(){
+  const sel=$('city'), cur=sel.value||'sj', d=I18N[lang]; sel.innerHTML='';
+  for(const [v,name] of CITIES){ const o=document.createElement('option'); o.value=v; o.textContent=v==='osc'?d.osc:v==='oac'?d.oac:name; sel.appendChild(o); }
+  sel.value=cur;
+}
+const cityRow=()=>CITIES.find(r=>r[0]===$('city').value)||CITIES[0];
+const segTxt=(id)=>{const b=document.querySelector('#'+id+' button[aria-pressed="true"]'); return b?b.textContent:'';};
+
+function calc(){
+  const d=I18N[lang], cr=cityRow();
+  const I={county:cr[2],beds:$('beds').value,baths:$('baths').value,sqft:$('sqft').value,type:S.type,cond:S.cond,park:S.park,laundry:S.laun==='1',pets:S.pets==='1',furn:S.furn==='1'};
+  const R=model(I), cn=d['county_'+R.c], bl=R.beds===0?d.studio:d.bd.replace('{n}',R.beds);
+  $('range').textContent=fmt(R.lo)+' – '+fmt(R.hi);
+  $('confWhy').textContent=d.conf_why.replace('{c}',cn).replace('{b}',bl);
+  $('oLo').textContent=fmt(R.lo); $('oMid').textContent=fmt(R.mid); $('oHi').textContent=fmt(R.hi);
+  $('oFmr').textContent=fmt(R.fmr); $('fmrS').textContent=d.fmr_s.replace('{b}',bl).replace('{c}',cn);
+  $('oType').textContent=pct(R.typA); $('oSize').textContent=pct(R.sizeA); $('sizeS').textContent=d.size_s.replace('{t}',R.typ.toLocaleString('en-US'));
+  $('oCond').textContent=pct(R.condA); $('oExt').textContent=pct(R.extA);
+  $('oDep').textContent=fmt(R.dep); $('oInc').textContent=fmt(R.inc)+(lang==='vi'?'/tháng':'/mo');
+  const cityName=cr[0]==='osc'?d.osc:cr[0]==='oac'?d.oac:cr[1];
+  $('rcNote').innerHTML=LOCAL[cr[0]]?d.rc_local.replace('{city}',cityName):d.rc_state.replace('{cap}',R.cap);
+  const addr=$('addr').value.trim()||'—';
+  last={a:addr,ci:cityName,z:$('zip').value.trim()||'—',t:d['t_'+S.type],b:I.beds,ba:I.baths,s:(+I.sqft||0).toLocaleString('en-US'),co:segTxt('cond'),pk:segTxt('park'),
+    la:segTxt('laun'),pe:segTxt('pets'),fu:segTxt('furn'),lo:fmt(R.lo),hi:fmt(R.hi),mid:fmt(R.mid),fmr:fmt(R.fmr)+' ('+bl+', '+cn+')'};
+  const s=d.sms.replace('{a}',addr).replace('{ci}',cityName).replace('{b}',bl).replace('{t}',last.t).replace('{s}',last.s).replace('{lo}',last.lo).replace('{hi}',last.hi);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s);
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; fillCities(); calc();
+}
+['addr','zip','beds','baths','sqft'].forEach(id=>$(id).addEventListener('input',calc));
+$('city').addEventListener('change',()=>{ const r=cityRow(); if(r[3]) $('zip').value=r[3]; calc(); });
+const segMap={ptype:'type',cond:'cond',park:'park',laun:'laun',pets:'pets',furn:'furn'};
+for(const [id,key] of Object.entries(segMap)){
+  document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{S[key]=b.dataset.v; document.querySelectorAll('#'+id+' button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); calc();});
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const wh=$('fwhen').options[$('fwhen').selectedIndex].text;
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace('{wh}',wh).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email to ken@kenlamrealty.com; FUB Lead Email Parsing picks it up (or swap for a FUB webhook later). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
