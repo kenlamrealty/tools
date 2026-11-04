@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mobile Home Age Check · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Is a mobile or manufactured home too old for a loan or insurance? Pre-1976 vs HUD-code, FHA, Fannie Mae, CalHFA, chattel, HUD label and IBTS letter.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t166/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Mobile Home Age Check · Ken Lam Tools">
+<meta property="og:description" content="Built before or after June 15, 1976? See which loans work and what to check.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t166/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T166 additions */
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.cmp div{border:1px solid var(--line);border-radius:10px;padding:12px}
+.cmp .k{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.cmp .v{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums;margin-top:2px}
+.cmp p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.cards{display:grid;gap:10px}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
+.card b{font-weight:500;font-size:15px}
+.card span{font-size:14px;color:var(--muted)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a,.card a,.cmp a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.badge{display:inline-block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:var(--brass-soft);color:var(--fg);font-weight:500}
+.badge.no{color:var(--warn)}
+.badge.yes{color:var(--ok)}
+.total .v.txt{font-size:34px;line-height:1.15}
+.st{font-size:12px;font-weight:500;padding:2px 9px;border-radius:999px;border:1px solid var(--line);white-space:nowrap}
+.st.ok{color:var(--ok);border-color:var(--ok)}
+.st.mb{color:var(--brass);border-color:var(--brass)}
+.st.no{color:var(--warn);border-color:var(--warn)}
+.flags{margin:0;padding-left:18px;display:grid;gap:6px;font-size:14px}
+.flags:empty{display:none}
+.card a{color:var(--brass);word-break:break-word}
+
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Is this mobile home's age a problem for a loan or insurance?</h1>
+    <p class="sub" data-i="sub">June 15, 1976 is the line. Enter the year and a few details to see which loans are realistic and what to check before you offer.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="row2">
+      <div class="field">
+        <label for="year"><span data-i="l_year">Year built</span> <small data-i="l_year_s">(data plate or title)</small></label>
+        <div class="ctl"><input id="year" type="number" inputmode="numeric" min="1950" max="2026" step="1" value="1985"></div>
+      </div>
+      <div class="field">
+        <label for="sqft"><span data-i="l_sqft">Square feet</span></label>
+        <div class="ctl"><input id="sqft" type="number" inputmode="numeric" min="0" step="10" value="1200"><span class="post">sq ft</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_label">HUD label or data plate on the home?</span>
+      <div class="seg" role="group" id="labSeg">
+        <button type="button" data-v="yes" aria-pressed="true" data-i="yes">Yes</button>
+        <button type="button" data-v="no" aria-pressed="false" data-i="no">No</button>
+        <button type="button" data-v="ns" aria-pressed="false" data-i="ns">Not sure</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <span class="fl" data-i="l_sec">Sections</span>
+        <div class="seg" role="group" id="secSeg">
+          <button type="button" data-v="1" aria-pressed="false" data-i="sec1">Single</button>
+          <button type="button" data-v="2" aria-pressed="true" data-i="sec2">Multi</button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="fl" data-i="l_where">Where</span>
+        <div class="seg" role="group" id="whereSeg">
+          <button type="button" data-v="park" aria-pressed="true" data-i="w_park">In a park</button>
+          <button type="button" data-v="land" aria-pressed="false" data-i="w_land">Own land</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div><span class="badge" id="cls"></span></div>
+    <div class="total">
+      <div class="k" data-i="r_total">Can you get a loan?</div>
+      <div class="v txt" id="total">—</div>
+    </div>
+    <div class="lines" id="loans"></div>
+    <div class="line" style="border-bottom:0;padding-bottom:0"><span class="n"><b data-i="n_ins">Insurance</b><small id="insS"></small></span><span class="a" id="ins"></span></div>
+    <div class="note" id="clsNote"></div>
+    <ul class="flags" id="flags"></ul>
+  </section>
+  <video src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px;margin-top:8px" aria-label="How to use this tool"></video>
+
+  <section class="panel">
+    <h2 data-i="h_title">How to check the home yourself</h2>
+    <div class="cards">
+      <div class="card"><b data-i="h1">HUD label (tag)</b><span data-i="h1s">Small aluminum plate, about 2 × 4 inches, on the outside of each section. Three letters + six digits, like "RAD 000001". No label on a pre-June 1976 home: it was built before the HUD code.</span></div>
+      <div class="card"><b data-i="h2">Data plate</b><span data-i="h2s">Paper sheet inside: kitchen cabinet door, near the electrical panel, or a bedroom closet. It shows the manufacturer, serial number, label numbers and wind/roof load maps.</span></div>
+      <div class="card"><b data-i="h3">Serial number + HCD decal</b><span data-i="h3s">Serial is on the data plate and the HCD title. The HCD decal is on the outside. Get both from the seller; you need them for every check below.</span></div>
+      <div class="card"><b data-i="h4">Missing label? Order an IBTS letter</b><span data-i="h4s">HUD doesn't reissue labels. IBTS issues a Label Verification Letter or a copy of the data plate: about $125 regular, $150 urgent (paper form 2022). Needs serial + manufacturer, or a label number. <a href="https://lvr2.ibts.org" target="_blank" rel="noopener">lvr2.ibts.org</a> · <a href="tel:8664828868">(866) 482-8868</a></span></div>
+      <div class="card"><b data-i="h5">HCD title search</b><span data-i="h5s">Ask HCD Registration &amp; Titling for the title record: owner, liens, year, tax status. <a href="tel:8009528356">(800) 952-8356</a> · <a href="https://www.hcd.ca.gov/manufactured-and-mobilehomes" target="_blank" rel="noopener">hcd.ca.gov</a></span></div>
+    </div>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t166/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this check to yourself</h2>
+    <p data-i="f_sub">Ken will reply with lenders that take this kind of home. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Before you offer, take a photo of the data plate and one HUD label. No photos = ask why.</li>
+      <li data-i="ns2">Give the year, serial and photos to 2 lenders and ask: "Do you lend on this home, in this park?" Get it in writing.</li>
+      <li data-i="ns3">Get an insurance quote before removing your contingencies. Older homes can take longer to place.</li>
+      <li data-i="ns4">Compare loan types in <a href="/t164/">T164</a>, the full monthly cost in <a href="/t145/">T145</a>, and taxes in <a href="/t163/">T163</a>.</li>
+    </ol>
+  </section>
+  <p class="myth" data-i="myth"><b>Many people get this wrong:</b> "It's a 1990 home, so FHA is fine." Year is only one test. FHA and Fannie Mae loans on a manufactured home are for home + land as real property. On a rented park space you're usually looking at a chattel loan or FHA Title I, no matter how new the home is. The year matters most for chattel lenders and insurers.</p>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#mobile-home-loans" target="_blank" rel="noopener" data-i="ft_lib">Mobile home loans by age</a> · <a href="https://kenlamrealty.com/library#video-mobile-home" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span><span data-i="ft_src">Sources:</span>
+      <a href="https://www.hud.gov/sites/documents/09-16ml.pdf" target="_blank" rel="noopener">HUD ML 2009-16 (FHA Title II: after 6/15/1976, 400 sq ft, real estate)</a> ·
+      <a href="https://www.hud.gov/sites/dfiles/SFH/documents/SFH_FHA_INFO_2024-08.pdf" target="_blank" rel="noopener">HUD FHA Title I limits (2024)</a> ·
+      <a href="https://selling-guide.fanniemae.com/sel/b2-3-02/special-property-eligibility-and-underwriting-considerations-factory-built-housing" target="_blank" rel="noopener">Fannie Mae B2-3-02</a> ·
+      <a href="https://selling-guide.fanniemae.com/sel/b5-2-02/manufactured-housing-loan-eligibility" target="_blank" rel="noopener">Fannie Mae B5-2-02</a> ·
+      <a href="https://homebuyer.com/guidelines/freddie-mac/general-requirements-related-to-manufactured-homes-5703-2" target="_blank" rel="noopener">Freddie Mac 5703.2 (copy)</a> ·
+      <a href="https://www.calhfa.ca.gov/homeownership/programs/loans-gov.pdf" target="_blank" rel="noopener">CalHFA FHA program rules</a> ·
+      <a href="https://www.hud.gov/hud-partners/manufactured-home-labels" target="_blank" rel="noopener">HUD: labels &amp; data plates</a> ·
+      <a href="https://lvr2.ibts.org/assets/pdf/pdf-lvdp-order-form.pdf" target="_blank" rel="noopener">IBTS order form (fees)</a> ·
+      <a href="https://hcd.ca.gov/contact-us" target="_blank" rel="noopener">HCD contacts</a>
+      <span data-i="ft_chk">(checked 04/11/2026)</span></span>
+    <span data-i="ft_est">Estimates only. Each lender and insurer sets its own rules on age, size and park. FHA/Fannie rules summarized from HUD and Fannie Mae; chattel and insurance notes are general market estimates. Not a loan approval or legal advice.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Rules — edit here (checked 04/11/2026) =====
+   HUD code date 6/15/1976. Year 1976 alone is ambiguous → "check label".
+   FHA Title II (HUD ML 2009-16): built after 6/15/1976 with certification label, ≥400 sq ft, home + site classified as real
+        estate, permanent foundation per PFGMH with engineer cert. https://www.hud.gov/sites/documents/09-16ml.pdf
+   Fannie Mae B2-3-02 / B5-2-02: built to HUD code (6/15/1976), HUD data plate or label (or IBTS label verification letter /
+        duplicate data plate) — none = ineligible; ≥12 ft wide, ≥400 sq ft; real property; not previously installed elsewhere;
+        leased land only in approved condo/PUD; single-width principal residence only.
+        Freddie 5703.2: on/after 6/15/1976, ≥12 ft, ≥400 sq ft, permanently affixed to original foundation.
+   CalHFA FHA programs: follow FHA 4000.1; singlewides not eligible (same as T145). https://www.calhfa.ca.gov/homeownership/programs/loans-gov.pdf
+   FHA Title I (home only, can be in a park): limits $105,532 single / $193,719 multi (HUD 2024). HUD-code requirement for
+        Title I assumed (24 CFR 201) — KEN DUYỆT. Few lenders offer Title I — ước tính.
+   Chattel: no single rule; many chattel lenders want post-1976 HUD-code homes, some have age limits; pre-1976 often cash or
+        seller carry — ước tính, KEN DUYỆT (Triad article: FHA needs post-6/15/1976; no chattel age limit stated).
+   Insurance difficulty by age — ước tính, KEN DUYỆT: pre-1976 hard; 30+ years "moderate"; newer normal. See T175.
+   IBTS: Label Verification Letter / data plate copy $125 regular, $150 urgent, +$10 mailed copy; (866) 482-8868; labels@ibts.org.
+        https://lvr2.ibts.org/assets/pdf/pdf-lvdp-order-form.pdf (form also shows $75 — confirm; KEN DUYỆT)
+   HCD title search: HCD R&T (800) 952-8356 — fee not verified (search budget hit 04/11/2026) — KEN DUYỆT. */
+const RULES={
+  HUD_YEAR:1976, MIN_SQFT:400, OLD_INS:30, NOW:2026
+};
+/* status: ok = likely, mb = maybe/lender by lender, no = unlikely */
+
+const I18N={
+ en:{title:"Is this mobile home's age a problem for a loan or insurance?",sub:'June 15, 1976 is the line. Enter the year and a few details to see which loans are realistic and what to check before you offer.',
+  l_year:'Year built',l_year_s:'(data plate or title)',l_sqft:'Square feet',l_label:'HUD label or data plate on the home?',yes:'Yes',no:'No',ns:'Not sure',
+  l_sec:'Sections',sec1:'Single',sec2:'Multi',l_where:'Where',w_park:'In a park',w_land:'Own land',
+  r_total:'Can you get a loan?',lo_pre:'Likely: ',lo_cash:'Cash only, most likely',lo_check:'Check first: ',
+  c_pre:'Pre-HUD "mobilehome"',c_76:'1976: check the label',c_hud:'HUD-code manufactured home',c_hudnl:'HUD-code, label missing',
+  cn_pre:'Built before June 15, 1976, before the federal HUD code. Lenders and insurers call this a "mobilehome." Most mortgage programs are out. Plan on cash, seller financing, or a chattel lender that takes older homes.',
+  cn_76:'Homes from 1976 can fall on either side of June 15. The HUD label or data plate settles it. No label = treat it as pre-HUD until proven.',
+  cn_hud:'Built under the HUD code. Age is fine for FHA and Fannie Mae on paper; the bigger tests are land, foundation and size.',
+  cn_hudnl:'Built after the HUD code, but without the label or data plate most lenders stop. Fannie Mae accepts an IBTS label verification letter instead. Order it early, it takes time.',
+  L_chat:'Chattel loan (home only)',L_t1:'FHA Title I (home only)',L_fha:'FHA Title II (home + land)',L_conv:'Fannie / Freddie conventional',L_cal:'CalHFA (FHA)',L_cash:'Cash / seller carry',
+  st_ok:'Likely',st_mb:'Maybe',st_no:'Unlikely',
+  r_chat_ok:'Common choice in a park. Rates run higher than a mortgage.',r_chat_mb:'Lender by lender. Label or age may limit choices.',r_chat_no:'Few chattel lenders take pre-1976 homes.',
+  r_t1_ok:'Up to $105,532 single / $193,719 multi (2024). Few lenders offer it.',r_t1_mb:'Needs the HUD label or verification first.',r_t1_no:'HUD-code home required.',
+  r_fha_land:'Needs foundation per HUD guide + engineer cert, home + land as real estate.',r_fha_park:'Home + land must be real property. Not on a rented park space.',r_fha_old:'Must be built after 6/15/1976.',r_fha_sm:'Under 400 sq ft.',r_fha_lab:'Needs the HUD label (or IBTS letter for lenders that accept it).',
+  r_conv_land:'Real property, ≥12 ft wide, ≥400 sq ft, original site. Single-width = primary home only.',r_conv_park:'Leased land only in approved condo/PUD projects.',r_conv_old:'Built before the HUD code.',r_conv_sm:'Under 400 sq ft.',r_conv_lab:'No label or data plate = ineligible, unless IBTS letter.',
+  r_cal_sw:'CalHFA does not allow singlewides.',r_cal_ok:'Follows FHA rules, plus CalHFA income and credit rules.',r_cal_no:'Same limits as FHA Title II.',
+  r_cash:'Always works. Some sellers carry a note on older homes.',
+  i_ok:'Normal',i_mid:'Shop around',i_hard:'Harder',i_ok_s:'Most mobile home insurers will quote it (estimate).',i_mid_s:'30+ years old: fewer carriers, may need photos or an inspection (estimate).',i_hard_s:'Pre-1976: fewer carriers, higher premium, often an inspection (estimate). Get a quote before you commit.',
+  f_nolab:'No HUD label / data plate: order the IBTS letter before you remove your loan contingency.',f_pre:'Pre-1976: budget for cash or a short-term chattel loan. Resale buyers face the same problem.',
+  f_sm:'Under 400 sq ft: FHA, Fannie and Freddie are out.',f_sw:'Single-wide: CalHFA is out; Fannie/Freddie need 12 ft+ width. Measure it.',
+  f_park:'In a park: the home stays personal property. Real-property loans don\'t apply even if the home is new.',
+  f_add:'Ask about additions, carports, decks: unpermitted work shows up in HCD and insurance checks.',f_mv:'Ask if the home was ever moved. Fannie Mae won\'t take a home previously installed at another site.',
+  h_title:'How to check the home yourself',
+  h1:'HUD label (tag)',h1s:'Small aluminum plate, about 2 × 4 inches, on the outside of each section. Three letters + six digits, like "RAD 000001". No label on a pre-June 1976 home: it was built before the HUD code.',
+  h2:'Data plate',h2s:'Paper sheet inside: kitchen cabinet door, near the electrical panel, or a bedroom closet. It shows the manufacturer, serial number, label numbers and wind/roof load maps.',
+  h3:'Serial number + HCD decal',h3s:'Serial is on the data plate and the HCD title. The HCD decal is on the outside. Get both from the seller; you need them for every check below.',
+  h4:'Missing label? Order an IBTS letter',h4s:'HUD doesn\'t reissue labels. IBTS issues a Label Verification Letter or a copy of the data plate: about $125 regular, $150 urgent (paper form 2022). Needs serial + manufacturer, or a label number. <a href="https://lvr2.ibts.org" target="_blank" rel="noopener">lvr2.ibts.org</a> · <a href="tel:8664828868">(866) 482-8868</a>',
+  h5:'HCD title search',h5s:'Ask HCD Registration &amp; Titling for the title record: owner, liens, year, tax status. <a href="tel:8009528356">(800) 952-8356</a> · <a href="https://www.hcd.ca.gov/manufactured-and-mobilehomes" target="_blank" rel="noopener">hcd.ca.gov</a>',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this check to yourself',f_sub:'Ken will reply with lenders that take this kind of home. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ns_t:'Next steps',
+  ns1:'Before you offer, take a photo of the data plate and one HUD label. No photos = ask why.',
+  ns2:'Give the year, serial and photos to 2 lenders and ask: "Do you lend on this home, in this park?" Get it in writing.',
+  ns3:'Get an insurance quote before removing your contingencies. Older homes can take longer to place.',
+  ns4:'Compare loan types in <a href="/t164/">T164</a>, the full monthly cost in <a href="/t145/">T145</a>, and taxes in <a href="/t163/">T163</a>.',
+  myth:'<b>Many people get this wrong:</b> "It\'s a 1990 home, so FHA is fine." Year is only one test. FHA and Fannie Mae loans on a manufactured home are for home + land as real property. On a rented park space you\'re usually looking at a chattel loan or FHA Title I, no matter how new the home is. The year matters most for chattel lenders and insurers.',
+  ft_read:'Read more:',ft_lib:'Mobile home loans by age',ft_vid:'3-min video',ft_src:'Sources:',ft_chk:'(checked 04/11/2026)',
+  ft_est:'Estimates only. Each lender and insurer sets its own rules on age, size and park. FHA/Fannie rules summarized from HUD and Fannie Mae; chattel and insurance notes are general market estimates. Not a loan approval or legal advice.',
+  ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I checked a mobile home built {y} ({c}), {w}: {r}. I have a question.',
+  subj:'Mobile home age check — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nYear built: {y}\nHUD label: {lb}\nSections: {se}\nWhere: {w}\nSquare feet: {sf}\n\nClass: {c}\nLoans: {r}\n{list}\nInsurance: {ins}\n\nSent from tool T166 tools.kenlamrealty.com'},
+ vi:{title:'Đời nhà này còn vay và mua bảo hiểm được không?',sub:'Mốc là ngày 15/6/1976. Nhập năm xây và vài chi tiết, thấy loại vay nào còn làm được và cần kiểm gì trước khi bỏ offer.',
+  l_year:'Năm xây',l_year_s:'(trên data plate hoặc title)',l_sqft:'Diện tích',l_label:'Nhà có HUD label hay data plate không?',yes:'Có',no:'Không',ns:'Không chắc',
+  l_sec:'Số khúc',sec1:'1 khúc',sec2:'2 khúc+',l_where:'Ở đâu',w_park:'Trong park',w_land:'Đất riêng',
+  r_total:'Vay được không?',lo_pre:'Vay được: ',lo_cash:'Nhiều khả năng chỉ trả cash',lo_check:'Phải kiểm trước: ',
+  c_pre:'"Mobilehome" trước HUD code',c_76:'Năm 1976: coi label',c_hud:'Manufactured home chuẩn HUD',c_hudnl:'Chuẩn HUD nhưng mất label',
+  cn_pre:'Xây trước 15/6/1976, trước khi có HUD code liên bang. Lender và hãng bảo hiểm gọi là "mobilehome". Gần như hết đường vay mortgage. Tính trả cash, người bán cho trả góp, hoặc tìm lender chattel nhận nhà cũ.',
+  cn_76:'Nhà năm 1976 có thể trước hoặc sau ngày 15/6. HUD label hay data plate mới nói chắc được. Không có label thì coi như trước HUD cho tới khi chứng minh được.',
+  cn_hud:'Xây theo HUD code. Về tuổi thì FHA và Fannie Mae nhận; cái khó hơn là đất, móng và diện tích.',
+  cn_hudnl:'Xây sau HUD code, nhưng không có label hay data plate thì đa số lender dừng. Fannie Mae nhận thư xác nhận label của IBTS thay thế. Đặt sớm vì mất thời gian.',
+  L_chat:'Vay chattel (chỉ căn nhà)',L_t1:'FHA Title I (chỉ căn nhà)',L_fha:'FHA Title II (nhà + đất)',L_conv:'Conventional Fannie / Freddie',L_cal:'CalHFA (FHA)',L_cash:'Cash / người bán cho góp',
+  st_ok:'Được',st_mb:'Có thể',st_no:'Khó',
+  r_chat_ok:'Loại hay dùng trong park. Lãi cao hơn mortgage.',r_chat_mb:'Tùy lender. Label hoặc tuổi nhà có thể làm ít lựa chọn.',r_chat_no:'Rất ít lender chattel nhận nhà trước 1976.',
+  r_t1_ok:'Tối đa $105,532 nhà 1 khúc / $193,719 nhiều khúc (2024). Ít lender làm.',r_t1_mb:'Cần HUD label hoặc thư xác nhận trước.',r_t1_no:'Phải là nhà chuẩn HUD.',
+  r_fha_land:'Cần móng theo HUD guide + chứng nhận kỹ sư, nhà + đất là real estate.',r_fha_park:'Nhà + đất phải là bất động sản. Thuê space trong park thì không được.',r_fha_old:'Phải xây sau 15/6/1976.',r_fha_sm:'Dưới 400 sq ft.',r_fha_lab:'Cần HUD label (hoặc thư IBTS nếu lender nhận).',
+  r_conv_land:'Bất động sản, rộng ≥12 ft, ≥400 sq ft, chỗ đặt ban đầu. Nhà 1 khúc chỉ cho nhà ở chính.',r_conv_park:'Đất thuê chỉ được trong project condo/PUD đã duyệt.',r_conv_old:'Xây trước HUD code.',r_conv_sm:'Dưới 400 sq ft.',r_conv_lab:'Không label hay data plate là không được, trừ khi có thư IBTS.',
+  r_cal_sw:'CalHFA không nhận nhà 1 khúc (singlewide).',r_cal_ok:'Theo luật FHA, cộng điều kiện thu nhập và credit của CalHFA.',r_cal_no:'Giới hạn giống FHA Title II.',
+  r_cash:'Lúc nào cũng được. Nhà cũ đôi khi người bán cho trả góp.',
+  i_ok:'Bình thường',i_mid:'Hỏi nhiều nơi',i_hard:'Khó hơn',i_ok_s:'Đa số hãng bảo hiểm mobile home sẽ báo giá (ước tính).',i_mid_s:'Nhà 30 năm trở lên: ít hãng hơn, có thể đòi hình hoặc inspection (ước tính).',i_hard_s:'Trước 1976: ít hãng, phí cao hơn, hay đòi inspection (ước tính). Lấy giá trước khi quyết.',
+  f_nolab:'Không có HUD label / data plate: đặt thư IBTS trước khi bỏ loan contingency.',f_pre:'Nhà trước 1976: chuẩn bị cash hoặc vay chattel ngắn hạn. Sau này bán lại, người mua cũng gặp chuyện y vậy.',
+  f_sm:'Dưới 400 sq ft: FHA, Fannie và Freddie không nhận.',f_sw:'Nhà 1 khúc: CalHFA không nhận; Fannie/Freddie cần rộng 12 ft trở lên. Đo lại.',
+  f_park:'Trong park: căn nhà vẫn là tài sản cá nhân. Loại vay bất động sản không áp dụng, dù nhà mới.',
+  f_add:'Hỏi về phần cơi nới, carport, deck: làm không permit sẽ lòi ra khi HCD hay bảo hiểm kiểm.',f_mv:'Hỏi nhà có bị dời chỗ lần nào chưa. Fannie Mae không nhận nhà đã đặt ở chỗ khác trước.',
+  h_title:'Tự kiểm căn nhà',
+  h1:'HUD label (tag)',h1s:'Miếng nhôm nhỏ khoảng 2 × 4 inch, gắn bên ngoài mỗi khúc nhà. 3 chữ + 6 số, kiểu "RAD 000001". Nhà trước 6/1976 thì không có, vì xây trước HUD code.',
+  h2:'Data plate',h2s:'Tờ giấy dán bên trong: cửa tủ bếp, gần hộp điện, hoặc trong closet phòng ngủ. Có tên hãng, số serial, số label và bản đồ chịu gió/tải mái.',
+  h3:'Số serial + decal HCD',h3s:'Số serial có trên data plate và title HCD. Decal HCD dán bên ngoài. Xin người bán cả hai; kiểm gì ở dưới cũng cần.',
+  h4:'Mất label? Đặt thư IBTS',h4s:'HUD không cấp lại label. IBTS cấp Label Verification Letter hoặc bản sao data plate: khoảng $125 thường, $150 gấp (theo form giấy 2022). Cần số serial + tên hãng, hoặc số label. <a href="https://lvr2.ibts.org" target="_blank" rel="noopener">lvr2.ibts.org</a> · <a href="tel:8664828868">(866) 482-8868</a>',
+  h5:'Tra title ở HCD',h5s:'Hỏi HCD Registration &amp; Titling hồ sơ title: chủ, lien, năm, tình trạng thuế. <a href="tel:8009528356">(800) 952-8356</a> · <a href="https://www.hcd.ca.gov/manufactured-and-mobilehomes" target="_blank" rel="noopener">hcd.ca.gov</a>',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi kết quả này về email',f_sub:'Ken sẽ gửi lại tên lender nhận loại nhà này. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ns_t:'Bước tiếp theo',
+  ns1:'Trước khi bỏ offer, chụp hình data plate và 1 cái HUD label. Người bán không có hình thì hỏi tại sao.',
+  ns2:'Đưa năm xây, số serial và hình cho 2 lender, hỏi thẳng: "Anh/chị có cho vay căn này, trong park này không?" Xin trả lời bằng giấy.',
+  ns3:'Lấy giá bảo hiểm trước khi bỏ contingency. Nhà cũ có khi tìm hãng lâu.',
+  ns4:'So loại vay ở <a href="/t164/">T164</a>, tổng chi phí tháng ở <a href="/t145/">T145</a>, và thuế ở <a href="/t163/">T163</a>.',
+  myth:'<b>Nhiều người hiểu sai:</b> "Nhà đời 1990 thì vay FHA ngon." Năm xây chỉ là 1 điều kiện. FHA và Fannie Mae cho manufactured home là vay nhà + đất như bất động sản. Thuê space trong park thì thường chỉ còn chattel hoặc FHA Title I, nhà mới cỡ nào cũng vậy. Năm xây quan trọng nhất với lender chattel và hãng bảo hiểm.',
+  ft_read:'Đọc thêm:',ft_lib:'Vay mobile home theo đời nhà',ft_vid:'Video 3 phút',ft_src:'Nguồn:',ft_chk:'(tra ngày 04/11/2026)',
+  ft_est:'Chỉ là ước tính. Mỗi lender và hãng bảo hiểm có luật riêng về tuổi nhà, diện tích và park. Luật FHA/Fannie tóm tắt từ HUD và Fannie Mae; phần chattel và bảo hiểm là ước tính chung của thị trường. Không phải duyệt vay hay tư vấn luật.',
+  ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa coi mobile home xây năm {y} ({c}), {w}: {r}. Cho tôi hỏi thêm.',
+  subj:'Kiểm tra đời mobile home — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nNăm xây: {y}\nHUD label: {lb}\nSố khúc: {se}\nỞ: {w}\nDiện tích: {sf}\n\nPhân loại: {c}\nVay: {r}\n{list}\nBảo hiểm: {ins}\n\nGửi từ tool T166 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let lab='yes', sec=2, where='park', last={};
+
+/* Pure model — testable. i={year,lab,sec,where,sqft}. Returns class + loans [{k,s,r}] + ins + flags. */
+function model(i){
+  const y=i.year;
+  let cls;
+  if(!y||y<RULES.HUD_YEAR) cls='pre';
+  else if(y===RULES.HUD_YEAR) cls=(i.lab==='yes')?'hud':'76';
+  else cls=(i.lab==='no')?'hudnl':'hud';
+  const hud=cls==='hud'||cls==='hudnl';           /* built under HUD code */
+  const labOk=i.lab==='yes';
+  const small=i.sqft>0&&i.sqft<RULES.MIN_SQFT;
+  const park=i.where==='park';
+  const L=[];
+  /* chattel */
+  if(cls==='pre') L.push({k:'chat',s:'no',r:'r_chat_no'});
+  else if(cls==='hud'&&labOk) L.push({k:'chat',s:'ok',r:'r_chat_ok'});
+  else L.push({k:'chat',s:'mb',r:'r_chat_mb'});
+  /* FHA Title I */
+  if(!hud&&cls!=='76') L.push({k:'t1',s:'no',r:'r_t1_no'});
+  else if(labOk&&cls==='hud') L.push({k:'t1',s:'mb',r:'r_t1_ok'});
+  else L.push({k:'t1',s:'mb',r:'r_t1_mb'});
+  /* FHA Title II */
+  let f;
+  if(!hud&&cls!=='76') f={s:'no',r:'r_fha_old'};
+  else if(small) f={s:'no',r:'r_fha_sm'};
+  else if(park) f={s:'no',r:'r_fha_park'};
+  else if(!labOk) f={s:'mb',r:'r_fha_lab'};
+  else f={s:'ok',r:'r_fha_land'};
+  L.push(Object.assign({k:'fha'},f));
+  /* Conventional */
+  let c;
+  if(!hud&&cls!=='76') c={s:'no',r:'r_conv_old'};
+  else if(small) c={s:'no',r:'r_conv_sm'};
+  else if(park) c={s:'no',r:'r_conv_park'};
+  else if(!labOk) c={s:'mb',r:'r_conv_lab'};
+  else c={s:'ok',r:'r_conv_land'};
+  L.push(Object.assign({k:'conv'},c));
+  /* CalHFA */
+  if(i.sec===1) L.push({k:'cal',s:'no',r:'r_cal_sw'});
+  else if(f.s==='ok') L.push({k:'cal',s:'mb',r:'r_cal_ok'});
+  else L.push({k:'cal',s:f.s==='mb'?'mb':'no',r:f.s==='mb'?'r_cal_ok':'r_cal_no'});
+  L.push({k:'cash',s:'ok',r:'r_cash'});
+  const age=RULES.NOW-(y||0);
+  const ins=cls==='pre'?'hard':(age>=RULES.OLD_INS||cls==='76'?'mid':'ok');
+  const flags=[];
+  if(i.lab!=='yes'&&cls!=='pre') flags.push('f_nolab');
+  if(cls==='pre') flags.push('f_pre');
+  if(small) flags.push('f_sm');
+  if(i.sec===1) flags.push('f_sw');
+  if(park) flags.push('f_park');
+  if(!park) flags.push('f_mv');
+  flags.push('f_add');
+  return {cls,loans:L,ins,flags,age};
+}
+function calc(){
+  const d=I18N[lang];
+  const yv=parseInt($('year').value,10), sf=parseFloat($('sqft').value);
+  const i={year:isFinite(yv)?yv:0,lab,sec,where,sqft:isFinite(sf)?Math.max(0,sf):0};
+  const m=model(i);
+  $('cls').textContent=d['c_'+m.cls]; $('cls').className='badge '+(m.cls==='pre'?'no':(m.cls==='hud'?'yes':''));
+  $('clsNote').textContent=d['cn_'+m.cls];
+  const ok=m.loans.filter(x=>x.s==='ok'&&x.k!=='cash').map(x=>d['L_'+x.k]);
+  const mb=m.loans.filter(x=>x.s==='mb').map(x=>d['L_'+x.k]);
+  let big;
+  if(ok.length) big=d.lo_pre+ok.join(', ');
+  else if(mb.length) big=d.lo_check+mb.join(', ');
+  else big=d.lo_cash;
+  $('total').textContent=big;
+  $('loans').innerHTML=m.loans.map(x=>'<div class="line"><span class="n"><b>'+esc(d['L_'+x.k])+'</b><small>'+esc(d[x.r])+'</small></span><span class="a"><span class="st '+x.s+'">'+esc(d['st_'+x.s])+'</span></span></div>').join('');
+  $('ins').textContent=d['i_'+m.ins]; $('insS').textContent=d['i_'+m.ins+'_s'];
+  $('flags').innerHTML=m.flags.map(k=>'<li>'+esc(d[k])+'</li>').join('');
+  const segT=id=>$(id).querySelector('[aria-pressed="true"]').textContent;
+  last={y:i.year||'—',lb:segT('labSeg'),se:segT('secSeg'),w:segT('whereSeg'),sf:i.sqft||'—',c:d['c_'+m.cls],r:big,ins:d['i_'+m.ins],
+    list:m.loans.map(x=>'• '+d['L_'+x.k]+': '+d['st_'+x.s]).join('\n')};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+}
+function seg(id,cb){ $(id).addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return;
+  $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); cb(b.dataset.v); calc();}); }
+seg('labSeg',v=>lab=v); seg('secSeg',v=>sec=+v); seg('whereSeg',v=>where=v);
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+['year','sqft'].forEach(id=>$(id).addEventListener('input',calc));
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const v=Object.assign({},last,{n,e,ph});
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,v))+'&body='+encodeURIComponent(fill(d.body,v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+window.__model=model;
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

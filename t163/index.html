@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mobile Home Tax · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="What tax a mobile or manufactured home pays in Santa Clara and Alameda County: county property tax vs HCD in-lieu fee, use tax at sale, supplemental bill, tax clearance.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t163/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Mobile Home Tax · Ken Lam Tools">
+<meta property="og:description" content="Property tax or HCD in-lieu? Your yearly number, use tax at the sale, and who to call.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t163/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T163 additions */
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.cmp div{border:1px solid var(--line);border-radius:10px;padding:12px}
+.cmp .k{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.cmp .v{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums;margin-top:2px}
+.cmp p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.cards{display:grid;gap:10px}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
+.card b{font-weight:500;font-size:15px}
+.card span{font-size:14px;color:var(--muted)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a,.card a,.cmp a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.seg3 button{padding:11px 6px;font-size:14px}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:12px 4px}
+.badge{display:inline-block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:var(--brass-soft);color:var(--fg);font-weight:500}
+.badge.warn{color:var(--warn)}
+.who2{display:grid;gap:8px}
+.who2 .card a{word-break:break-word}
+
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">What tax does a mobile home pay?</h1>
+    <p class="sub" data-i="sub">County property tax or the HCD in-lieu fee. Never both. Answer 5 questions and see your yearly number plus what's due at the sale.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <span class="fl" data-i="l_sold">When was the home first sold new?</span>
+      <div class="seg seg3" role="group" id="soldSeg">
+        <button type="button" data-v="pre" aria-pressed="false" data-i="s_pre">Before 7/1/1980</button>
+        <button type="button" data-v="post" aria-pressed="true" data-i="s_post">After 7/1/1980</button>
+        <button type="button" data-v="dk" aria-pressed="false" data-i="s_dk">Don't know</button>
+      </div>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_sys">How is it taxed now?</span>
+      <div class="seg seg3" role="group" id="sysSeg">
+        <button type="button" data-v="inlieu" aria-pressed="false" data-i="y_in">HCD in-lieu</button>
+        <button type="button" data-v="county" aria-pressed="false" data-i="y_co">County tax bill</button>
+        <button type="button" data-v="dk" aria-pressed="true" data-i="y_dk">Don't know</button>
+      </div>
+      <p class="hint" data-i="sys_hint">Tip: look at the decal number on the home. Starts with "A" = HCD in-lieu. Starts with "L" = county property tax (Santa Clara County Assessor).</p>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="price"><span data-i="l_price">Purchase price</span> <small data-i="l_price_s">(home only)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" min="0" step="5000" value="250000"></div>
+      </div>
+      <div class="field" id="origF">
+        <label for="orig"><span data-i="l_orig">Price when new</span> <small data-i="l_orig_s">(on the title, if known)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="orig" type="number" inputmode="numeric" min="0" step="1000" value="15000"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <span class="fl" data-i="l_county">County</span>
+        <div class="seg" role="group" id="coSeg">
+          <button type="button" data-v="scc" aria-pressed="true">Santa Clara</button>
+          <button type="button" data-v="ala" aria-pressed="false">Alameda</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="city"><span data-i="l_city">City</span> <small data-i="l_city_s">(for sales/use tax)</small></label>
+        <div class="ctl"><select id="city"></select></div>
+      </div>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_live">Will you live in it?</span>
+      <div class="seg" role="group" id="liveSeg">
+        <button type="button" data-v="1" aria-pressed="true" data-i="yes">Yes</button>
+        <button type="button" data-v="0" aria-pressed="false" data-i="no">No</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div><span class="badge" id="sysBadge"></span></div>
+    <div class="total">
+      <div class="k" data-i="r_total">Estimated tax per year</div>
+      <div class="v"><span id="total">$0</span> <small data-i="per_yr">/yr</small></div>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b id="lnMainN"></b><small id="lnMainS"></small></span><span class="a" id="lnMain">$0</span></div>
+      <div class="line" id="lnHoxL"><span class="n"><b data-i="n_hox">Homeowners' exemption</b><small data-i="n_hox_s">$7,000 off assessed value, form BOE-266</small></span><span class="a" id="lnHox">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_mo">Per month</b><small data-i="n_mo_s">Yearly number ÷ 12</small></span><span class="a" id="lnMo">$0</span></div>
+      <div class="line" id="lnUseL"><span class="n"><b data-i="n_use">Use tax at transfer, up to</b><small id="lnUseS"></small></span><span class="a" id="lnUse">$0</span></div>
+      <div class="line" id="ln5L"><span class="n"><b data-i="n_5">Tax in 5 years</b><small data-i="n_5_s">Prop 13: assessed value up 2%/yr max</small></span><span class="a" id="ln5">$0</span></div>
+      <div class="line" id="lnCmpL"><span class="n"><b id="lnCmpN"></b><small id="lnCmpS"></small></span><span class="a" id="lnCmp">$0</span></div>
+    </div>
+    <div class="note" id="sysNote"></div>
+    <div class="note" id="suppNote"></div>
+  </section>
+  <video src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px;margin-top:8px" aria-label="How to use this tool"></video>
+
+  <section class="panel">
+    <h2 data-i="k_title">Five rules that decide your bill</h2>
+    <div class="cards">
+      <div class="card"><b data-i="k1">Sold new after 7/1/1980 = county property tax</b><span data-i="k1s">Those homes, and any home on a permanent foundation, are on the county roll. Older homes can stay on the HCD in-lieu fee as long as the fees are kept current.</span></div>
+      <div class="card"><b data-i="k2">Switching to property tax is one-way</b><span data-i="k2s">An owner on in-lieu can ask to move to the county roll. Once moved, you can never go back to the HCD fee.</span></div>
+      <div class="card"><b data-i="k3">In-lieu home sold = use tax at transfer</b><span data-i="k3s">Buyer pays use tax to HCD when registering the transfer: city rate × the lower of the price or the NADA/Kelley Blue Book retail value (HCD RT 476.4). Homes on property tax don't owe it. Transfers between parents, children, grandparents and spouses are exempt.</span></div>
+      <div class="card"><b data-i="k4">Property-tax home sold = new assessment</b><span data-i="k4s">The assessor resets the value to your price, then sends a supplemental bill for the rest of the year. After that, Prop 13 caps the yearly increase at 2%.</span></div>
+      <div class="card"><b data-i="k5">No tax clearance, no title transfer</b><span data-i="k5s">For a home on county tax, HCD won't transfer title without a tax clearance certificate from the county Tax Collector. All tax owed gets paid first. In-lieu homes skip this and go straight to HCD.</span></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="w_title">Who to call</h2>
+    <div class="cards who2" id="whoCards"></div>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t163/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this tax estimate to yourself</h2>
+    <p data-i="f_sub">Ken will reply with what to check on the title and tax status before you sign. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Get the decal number and serial number from the seller. Decal "A" or "L" tells you the tax system in 10 seconds.</li>
+      <li data-i="ns2">Ask the seller for the last tax bill or HCD renewal notice. Anything unpaid has to be cleared before title moves.</li>
+      <li data-i="ns3">Home on county tax? Have escrow order the tax clearance certificate early. It can hold up the HCD transfer.</li>
+      <li data-i="ns4">Moving in? File the Homeowners' Exemption (BOE-266) with the county assessor within 30 days of the supplemental notice.</li>
+      <li data-i="ns5">See the full monthly cost with space rent in <a href="/t145/">T145</a>, and check the loan side in <a href="/t166/">T166</a>.</li>
+    </ol>
+  </section>
+  <p class="myth" data-i="myth"><b>Many people get this wrong:</b> "Switch the old home to property tax so it's simpler." On a 1970s home the HCD in-lieu fee is often tens of dollars a year. Property tax on a $250,000 price is about $3,000. And you can't switch back. The one time switching can help: a seller who wants to spare the buyer the use tax. Run both numbers first.</p>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#mobile-home-tax" target="_blank" rel="noopener" data-i="ft_lib">Mobile home taxes, explained</a> · <a href="https://kenlamrealty.com/library#video-mobile-home" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span><span data-i="ft_src">Sources:</span>
+      <a href="https://www.sccassessor.org/property-information/resident/mobile-homes" target="_blank" rel="noopener">Santa Clara County Assessor: mobile homes (7/1/1980, one-way switch)</a> ·
+      <a href="https://www.sccassessor.org/hindi/item/370-manufactured-home-tax-clearance" target="_blank" rel="noopener">SCC: manufactured home tax clearance (decal A/L)</a> ·
+      <a href="https://www.acgov.org/assessor/about_property_assessment/manufactured-homes.htm" target="_blank" rel="noopener">Alameda County Assessor: manufactured homes</a> ·
+      <a href="https://treasurer.acgov.org/taxes-faqs/" target="_blank" rel="noopener">Alameda County Treasurer-Tax Collector</a> ·
+      <a href="https://www.santacruzcountyca.gov/tax/mobpam.htm" target="_blank" rel="noopener">County tax collector pamphlet (clearance, supplemental)</a> ·
+      <a href="https://cdtfa.ca.gov/lawguides/vol1/sutr/1610-2.html" target="_blank" rel="noopener">CDTFA Regulation 1610.2 (mobilehome sales/use tax)</a> ·
+      <a href="https://www.hcd.ca.gov/sites/default/files/docs/manufactured-and-mobilehomes/hcd-rt-476-4.pdf" target="_blank" rel="noopener">HCD RT 476.4 (use tax on transfer)</a> ·
+      <a href="https://cdtfa.ca.gov/taxes-and-fees/rates.aspx" target="_blank" rel="noopener">CDTFA tax rates (10/1/2026)</a> ·
+      <a href="https://california.public.law/codes/health_and_safety_code_section_18115" target="_blank" rel="noopener">H&amp;S Code §18115 (in-lieu fee 0.65%)</a> ·
+      <a href="https://california.public.law/codes/health_and_safety_code_section_18115.5" target="_blank" rel="noopener">§18115.5 (value schedule)</a> ·
+      <a href="https://aws.boe.ca.gov/pdf/pub800-6.pdf" target="_blank" rel="noopener">BOE: Homeowners' Exemption ($7,000, BOE-266)</a>
+      <span data-i="ft_chk">(checked 04/11/2026)</span></span>
+    <span data-i="ft_est">Estimates only. Property tax uses about 1.25% (1% base plus typical local bonds); your parcel can differ. The in-lieu fee uses the state formula on the price when new and may not match your HCD notice. Use tax uses your price; HCD may use the retail value guide if it's lower. Not tax or legal advice.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Rules — edit here (checked 04/11/2026) =====
+   7/1/1980 rule: homes sold new after 6/30/1980 (and homes on a permanent foundation) → local property tax; older can stay on
+        HCD in-lieu; converting to the local roll is one-way.  https://www.sccassessor.org/property-information/resident/mobile-homes
+   Stays on in-lieu after resale while HCD fees are current; delinquent 120+ days can trigger a tax clearance / county roll —
+        ước tính, KEN DUYỆT. https://countytreasurer.org/node/481
+   PT_RATE 1.25%: effective rate (1% base + local voter-approved), same as T01 — ước tính. BOE pub 800-6: base 1% + local bonds.
+        https://aws.boe.ca.gov/pdf/pub800-6.pdf
+   HOX $7,000 assessed value, form BOE-266 at county assessor; Feb 15 full / Dec 10 80%; supplemental: 30 days after notice.
+        https://aws.boe.ca.gov/pdf/pub800-6.pdf · https://www.sccassessor.org/apps/ux/custom/HomeOwnersExemption/HomeownersExemptionInstructions.pdf
+   PROP13 2%/yr cap. https://www.sccassessor.org/property-information/resident/mobile-homes
+   In-lieu fee: H&S §18115 — 0.65% of market value (since 1/1/2005), market value based on original sales price when new.
+        §18115.5(b) schedule: year 1 85% … 18th+ year 15%. Pre-1980 homes are 45+ years → 15%.
+        Fee ≈ 0.65% × 15% × price when new. Excludes HCD registration renewal fee — ước tính, KEN DUYỆT (HCD fee page not
+        reachable on 04/11/2026: https://www.hcd.ca.gov/mmh/registration-titling/fees).
+   Use tax: CDTFA Reg. 1610.2 — used mobilehome subject to HCD license fees → tax applies; subject to property tax → no tax.
+        Measure = retail value from a recognized guide (NADA/KBB) or the sales price if lower; separately stated in-place location value not taxed (tool shows price × rate as the MAX); buyer pays to HCD at registration.
+        Family transfers (parent, grandparent, child, grandchild, spouse) exempt. https://cdtfa.ca.gov/lawguides/vol1/sutr/1610-2.html
+        HCD RT 476.4 worksheet: https://www.hcd.ca.gov/sites/default/files/docs/manufactured-and-mobilehomes/hcd-rt-476-4.pdf
+        Note: the 75% measure (R&T §6012.8 / Reg 1610.2(b)(3)(B)) is for NEW homes sold by a dealer for residential use, not
+        resales — not used here.
+   Rates: CDTFA city & county rates effective 10/1/2026 https://cdtfa.ca.gov/taxes-and-fees/rates.aspx — check by address at
+        https://maps.cdtfa.ca.gov before closing.
+   Contacts: SCC Tax Collector (408) 808-7900, SCC Assessor (408) 299-5400 (sccassessor.org tax clearance page).
+        Alameda Treasurer-Tax Collector (510) 272-6800, 1221 Oak St Rm 131, Oakland; Alameda Assessor (510) 272-3787.
+        Alameda TTC mobile-home clearance page not found online — KEN DUYỆT. HCD Registration & Titling (800) 952-8356. */
+const RULES={
+  PT_RATE:0.0125, PT_BASE:0.01, HOX:7000, PROP13:0.02,
+  INLIEU_RATE:0.0065, INLIEU_OLD_PCT:0.15,
+  CITIES:{
+    scc:[['San Jose',10.0],['Santa Clara',9.75],['Milpitas',10.0],['Sunnyvale',9.75],['Mountain View',9.75],['Campbell',10.5],
+         ['Cupertino',9.75],['Los Gatos',9.875],['Palo Alto',9.75],['Morgan Hill',9.75],['Gilroy',9.75],['Unincorporated',9.75]],
+    ala:[['Hayward',10.75],['Oakland',10.75],['Fremont',10.25],['San Leandro',10.75],['Union City',10.75],['Newark',10.75],
+         ['Pleasanton',10.25],['Dublin',10.25],['Livermore',10.25],['Alameda',10.75],['Berkeley',10.25],['Unincorporated',10.25]]
+  }
+};
+
+const I18N={
+ en:{title:'What tax does a mobile home pay?',sub:"County property tax or the HCD in-lieu fee. Never both. Answer 5 questions and see your yearly number plus what's due at the sale.",
+  l_sold:'When was the home first sold new?',s_pre:'Before 7/1/1980',s_post:'After 7/1/1980',s_dk:"Don't know",
+  l_sys:'How is it taxed now?',y_in:'HCD in-lieu',y_co:'County tax bill',y_dk:"Don't know",
+  sys_hint:'Tip: look at the decal number on the home. Starts with "A" = HCD in-lieu. Starts with "L" = county property tax (Santa Clara County Assessor).',
+  l_price:'Purchase price',l_price_s:'(home only)',l_orig:'Price when new',l_orig_s:'(on the title, if known)',l_county:'County',l_city:'City',l_city_s:'(for sales/use tax)',
+  l_live:'Will you live in it?',yes:'Yes',no:'No',unincorp:'Unincorporated',
+  r_total:'Estimated tax per year',per_yr:'/yr',
+  b_pt:'County property tax',b_in:'HCD in-lieu fee',b_pt_q:'Most likely: county property tax',b_in_q:'Likely: HCD in-lieu (check the decal)',
+  n_pt:'Property tax',n_pt_s:'{v} assessed × 1.25% (estimate)',n_in:'HCD in-lieu fee',n_in_s:'0.65% × 15% of {o} price when new (estimate)',
+  n_hox:"Homeowners' exemption",n_hox_s:'$7,000 off assessed value, form BOE-266',n_mo:'Per month',n_mo_s:'Yearly number ÷ 12',
+  n_use:'Use tax at transfer, up to',n_use_s:'{r}% in {c} × price. One time. HCD uses the NADA value if lower, often much lower on an old home; the in-place location value is not taxed.',n_use_no:'None: home is on property tax',
+  n_5:'Tax in 5 years',n_5_s:'Prop 13: assessed value up 2%/yr max',
+  n_cmp_in:'If you switched to property tax',n_cmp_in_s:'One-way. You can never go back.',n_cmp_pt:'If it were still on in-lieu',n_cmp_pt_s:'Not possible once on the county roll',
+  note_pt:'Sold new after 7/1/1980 or already on the county roll: you get a county tax bill in two installments (Dec 10 and Apr 10). When you buy, the assessor resets the value to your price.',
+  note_in:'Pre-1980 home on the HCD in-lieu fee: you pay HCD each year with the registration, no county bill. It stays this way after you buy as long as the fees stay current. The catch: you pay use tax once, when HCD registers the transfer.',
+  note_dk:'You said "don\'t know" on both, so this shows county property tax, the more common case. Check the decal: "A" = in-lieu, "L" = property tax. Or call HCD at (800) 952-8356.',
+  note_mis:'Heads up: a home sold new after 7/1/1980 should be on county property tax, not in-lieu. Confirm the decal and the "first sold" date with HCD before you count on the lower fee.',
+  supp_pt:'Supplemental bill: after you buy, expect one extra county bill for the months left in the tax year, based on (your price − the old assessed value). It comes separately, often months after closing. Lenders usually do not escrow it.',
+  supp_in:'No supplemental bill on in-lieu homes. But additions or big remodels with permits can be picked up by the assessor.',
+  w_title:'Who to call',
+  w_hcd:'HCD Registration &amp; Titling',w_hcd_s:'Title search, decal, in-lieu fees, transfer. (800) 952-8356',
+  w_tc_scc:'Santa Clara County Tax Collector',w_tc_scc_s:'Tax clearance certificate for homes on county tax. <a href="tel:4088087900">(408) 808-7900</a>',
+  w_as_scc:'Santa Clara County Assessor',w_as_scc_s:'Value, supplemental, Homeowners\' Exemption (BOE-266). <a href="tel:4082995400">(408) 299-5400</a> · <a href="https://www.sccassessor.org/property-information/resident/mobile-homes" target="_blank" rel="noopener">sccassessor.org</a>',
+  w_tc_ala:'Alameda County Treasurer-Tax Collector',w_tc_ala_s:'Tax clearance and tax bills. <a href="tel:5102726800">(510) 272-6800</a> · 1221 Oak St, Rm 131, Oakland',
+  w_as_ala:'Alameda County Assessor',w_as_ala_s:'Value, supplemental, Homeowners\' Exemption (BOE-266). <a href="tel:5102723787">(510) 272-3787</a>',
+  k_title:'Five rules that decide your bill',
+  k1:'Sold new after 7/1/1980 = county property tax',k1s:'Those homes, and any home on a permanent foundation, are on the county roll. Older homes can stay on the HCD in-lieu fee as long as the fees are kept current.',
+  k2:'Switching to property tax is one-way',k2s:'An owner on in-lieu can ask to move to the county roll. Once moved, you can never go back to the HCD fee.',
+  k3:'In-lieu home sold = use tax at transfer',k3s:"Buyer pays use tax to HCD when registering the transfer: city rate × the lower of the price or the NADA/Kelley Blue Book retail value (HCD RT 476.4). Homes on property tax don't owe it. Transfers between parents, children, grandparents and spouses are exempt.",
+  k4:'Property-tax home sold = new assessment',k4s:'The assessor resets the value to your price, then sends a supplemental bill for the rest of the year. After that, Prop 13 caps the yearly increase at 2%.',
+  k5:'No tax clearance, no title transfer',k5s:"For a home on county tax, HCD won't transfer title without a tax clearance certificate from the county Tax Collector. All tax owed gets paid first. In-lieu homes skip this and go straight to HCD.",
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this tax estimate to yourself',f_sub:'Ken will reply with what to check on the title and tax status before you sign. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ns_t:'Next steps',
+  ns1:'Get the decal number and serial number from the seller. Decal "A" or "L" tells you the tax system in 10 seconds.',
+  ns2:'Ask the seller for the last tax bill or HCD renewal notice. Anything unpaid has to be cleared before title moves.',
+  ns3:'Home on county tax? Have escrow order the tax clearance certificate early. It can hold up the HCD transfer.',
+  ns4:"Moving in? File the Homeowners' Exemption (BOE-266) with the county assessor within 30 days of the supplemental notice.",
+  ns5:'See the full monthly cost with space rent in <a href="/t145/">T145</a>, and check the loan side in <a href="/t166/">T166</a>.',
+  myth:'<b>Many people get this wrong:</b> "Switch the old home to property tax so it\'s simpler." On a 1970s home the HCD in-lieu fee is often tens of dollars a year. Property tax on a $250,000 price is about $3,000. And you can\'t switch back. The one time switching can help: a seller who wants to spare the buyer the use tax. Run both numbers first.',
+  ft_read:'Read more:',ft_lib:'Mobile home taxes, explained',ft_vid:'3-min video',ft_src:'Sources:',ft_chk:'(checked 04/11/2026)',
+  ft_est:"Estimates only. Property tax uses about 1.25% (1% base plus typical local bonds); your parcel can differ. The in-lieu fee uses the state formula on the price when new and may not match your HCD notice. Use tax uses your price; HCD may use the retail value guide if it's lower. Not tax or legal advice.",
+  ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I ran the mobile home tax tool: price {p}, {sys} → about {t}/yr{u}. I have a question.',
+  sms_u:', use tax at sale about {u}',
+  subj:'Mobile home tax estimate — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nFirst sold new: {sold}\nTax system now: {sysIn}\nPurchase price: {p}\nPrice when new: {o}\nCounty / city: {co} / {city}\nWill live there: {live}\n\nResult: {sys}\nYearly tax: {t}/yr ({m}/mo)\nHomeowners\' exemption: {hx}\nUse tax at sale: {u}\nIn 5 years: {t5}\nOther system: {cmp}\n\nSent from tool T163 tools.kenlamrealty.com'},
+ vi:{title:'Mobile home đóng thuế gì?',sub:'Thuế nhà của county hoặc phí in-lieu của HCD. Không bao giờ đóng cả hai. Trả lời 5 câu là thấy số thuế mỗi năm và tiền phải đóng lúc mua.',
+  l_sold:'Nhà bán mới lần đầu năm nào?',s_pre:'Trước 1/7/1980',s_post:'Sau 1/7/1980',s_dk:'Không biết',
+  l_sys:'Giờ đang đóng thuế kiểu nào?',y_in:'HCD in-lieu',y_co:'Bill thuế county',y_dk:'Không biết',
+  sys_hint:'Mẹo: coi số decal trên nhà. Bắt đầu bằng "A" = HCD in-lieu. Bắt đầu bằng "L" = thuế nhà county (theo Assessor Santa Clara).',
+  l_price:'Giá mua',l_price_s:'(chỉ căn nhà)',l_orig:'Giá lúc mới',l_orig_s:'(ghi trên title, nếu biết)',l_county:'County',l_city:'City',l_city_s:'(để tính sales/use tax)',
+  l_live:'Mình có ở căn này không?',yes:'Có',no:'Không',unincorp:'Ngoài city (unincorporated)',
+  r_total:'Thuế ước tính mỗi năm',per_yr:'/năm',
+  b_pt:'Thuế nhà county',b_in:'Phí in-lieu HCD',b_pt_q:'Nhiều khả năng: thuế nhà county',b_in_q:'Có thể: HCD in-lieu (coi decal)',
+  n_pt:'Thuế nhà',n_pt_s:'Giá trị {v} × 1.25% (ước tính)',n_in:'Phí in-lieu HCD',n_in_s:'0.65% × 15% của giá lúc mới {o} (ước tính)',
+  n_hox:"Homeowners' exemption",n_hox_s:'Trừ $7,000 giá trị tính thuế, form BOE-266',n_mo:'Mỗi tháng',n_mo_s:'Số mỗi năm ÷ 12',
+  n_use:'Use tax lúc sang tên, tối đa',n_use_s:'{r}% ở {c} × giá mua. Đóng 1 lần. HCD lấy giá NADA nếu thấp hơn, nhà cũ thường thấp hơn nhiều; phần giá trị vị trí (in-place location value) không bị tính.',n_use_no:'Không có: nhà đang đóng thuế county',
+  n_5:'Thuế sau 5 năm',n_5_s:'Prop 13: giá trị tính thuế tăng tối đa 2%/năm',
+  n_cmp_in:'Nếu đổi sang thuế nhà county',n_cmp_in_s:'Đổi 1 chiều. Không quay lại được.',n_cmp_pt:'Nếu còn ở in-lieu',n_cmp_pt_s:'Đã lên roll county thì không về lại được',
+  note_pt:'Nhà bán mới sau 1/7/1980 hoặc đã lên roll của county: mỗi năm nhận bill thuế county, chia 2 kỳ (10/12 và 10/4). Mình mua thì assessor tính lại giá trị theo giá mua.',
+  note_in:'Nhà trước 1980 đang đóng in-lieu cho HCD: mỗi năm đóng cho HCD chung với registration, không có bill county. Mua rồi vẫn giữ kiểu này nếu đóng phí đúng hạn. Cái phải nhớ: đóng use tax 1 lần khi HCD sang tên.',
+  note_dk:'Anh/chị chọn "không biết" cả hai, nên tool tính theo thuế nhà county, trường hợp hay gặp hơn. Coi decal: "A" = in-lieu, "L" = thuế county. Hoặc gọi HCD (800) 952-8356.',
+  note_mis:'Lưu ý: nhà bán mới sau 1/7/1980 thường phải đóng thuế county, không phải in-lieu. Hỏi HCD cho chắc decal và ngày bán mới trước khi tính theo phí thấp.',
+  supp_pt:'Bill supplemental: mua xong sẽ có thêm 1 bill thuế cho mấy tháng còn lại của năm thuế, tính trên (giá mua − giá trị cũ). Bill tới riêng, nhiều khi vài tháng sau khi close. Lender thường không trả dùm khoản này.',
+  supp_in:'Nhà in-lieu không có bill supplemental. Nhưng nếu cơi nới, sửa lớn có permit thì assessor có thể tính thuế phần đó.',
+  w_title:'Gọi ai',
+  w_hcd:'HCD Registration &amp; Titling',w_hcd_s:'Tra title, decal, phí in-lieu, sang tên. (800) 952-8356',
+  w_tc_scc:'Tax Collector, Santa Clara County',w_tc_scc_s:'Tax clearance cho nhà đóng thuế county. <a href="tel:4088087900">(408) 808-7900</a>',
+  w_as_scc:'Assessor, Santa Clara County',w_as_scc_s:'Giá trị tính thuế, supplemental, Homeowners\' Exemption (BOE-266). <a href="tel:4082995400">(408) 299-5400</a> · <a href="https://www.sccassessor.org/property-information/resident/mobile-homes" target="_blank" rel="noopener">sccassessor.org</a>',
+  w_tc_ala:'Treasurer-Tax Collector, Alameda County',w_tc_ala_s:'Tax clearance và bill thuế. <a href="tel:5102726800">(510) 272-6800</a> · 1221 Oak St, Rm 131, Oakland',
+  w_as_ala:'Assessor, Alameda County',w_as_ala_s:'Giá trị tính thuế, supplemental, Homeowners\' Exemption (BOE-266). <a href="tel:5102723787">(510) 272-3787</a>',
+  k_title:'Năm luật quyết định tiền thuế',
+  k1:'Bán mới sau 1/7/1980 = thuế nhà county',k1s:'Mấy căn này, và căn nào đã đặt lên móng cố định, đều nằm trong roll của county. Nhà cũ hơn có thể vẫn đóng in-lieu cho HCD nếu đóng phí đều.',
+  k2:'Đổi sang thuế county là 1 chiều',k2s:'Chủ nhà in-lieu có thể xin chuyển sang thuế county. Chuyển rồi là không bao giờ quay lại phí HCD được.',
+  k3:'Mua nhà in-lieu = đóng use tax lúc sang tên',k3s:'Người mua đóng use tax cho HCD khi đăng ký sang tên: thuế suất của city × giá mua hoặc giá NADA/Kelley Blue Book, lấy số thấp hơn (HCD RT 476.4). Nhà đóng thuế county thì không có. Cha mẹ, con, ông bà, vợ chồng cho nhau thì được miễn.',
+  k4:'Mua nhà thuế county = tính lại giá trị',k4s:'Assessor đặt lại giá trị theo giá mua, rồi gửi bill supplemental cho phần còn lại của năm. Sau đó Prop 13 giới hạn mỗi năm tăng tối đa 2%.',
+  k5:'Không có tax clearance thì không sang tên',k5s:'Nhà đóng thuế county: HCD không sang tên nếu chưa có tax clearance certificate của Tax Collector county. Nợ thuế phải trả hết trước. Nhà in-lieu thì không cần, đi thẳng HCD.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi số thuế này về email',f_sub:'Ken sẽ gửi lại mấy điểm cần kiểm title và thuế trước khi ký. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ns_t:'Bước tiếp theo',
+  ns1:'Xin người bán số decal và số serial. Decal "A" hay "L" là biết kiểu thuế trong 10 giây.',
+  ns2:'Xin bill thuế gần nhất hoặc giấy gia hạn của HCD. Còn nợ gì phải trả xong mới sang tên được.',
+  ns3:'Nhà đóng thuế county? Nhắc escrow xin tax clearance certificate sớm. Chậm khâu này là kẹt sang tên ở HCD.',
+  ns4:"Dọn vào ở? Nộp Homeowners' Exemption (BOE-266) cho assessor trong 30 ngày sau khi nhận giấy báo supplemental.",
+  ns5:'Coi tổng chi phí tháng có tiền đất ở <a href="/t145/">T145</a>, và coi vay được không ở <a href="/t166/">T166</a>.',
+  myth:'<b>Nhiều người hiểu sai:</b> "Đổi nhà cũ sang thuế county cho gọn." Nhà đời 1970, phí in-lieu nhiều khi chỉ vài chục đô một năm. Thuế county trên giá $250,000 là khoảng $3,000. Mà đổi rồi không quay lại được. Chỉ có 1 lúc đổi có lợi: người bán muốn người mua khỏi đóng use tax. Tính cả hai số trước đã.',
+  ft_read:'Đọc thêm:',ft_lib:'Thuế mobile home, nói cho dễ hiểu',ft_vid:'Video 3 phút',ft_src:'Nguồn:',ft_chk:'(tra ngày 04/11/2026)',
+  ft_est:'Chỉ là ước tính. Thuế nhà tính khoảng 1.25% (1% gốc + bonds địa phương trung bình); mỗi parcel có thể khác. Phí in-lieu tính theo công thức tiểu bang trên giá lúc mới, có thể khác giấy báo HCD. Use tax tính trên giá mua; HCD có thể dùng giá NADA nếu thấp hơn. Không phải tư vấn thuế hay luật.',
+  ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa tính thuế mobile home: giá {p}, {sys} → khoảng {t}/năm{u}. Cho tôi hỏi thêm.',
+  sms_u:', use tax lúc mua khoảng {u}',
+  subj:'Ước tính thuế mobile home — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nBán mới lần đầu: {sold}\nĐang đóng thuế: {sysIn}\nGiá mua: {p}\nGiá lúc mới: {o}\nCounty / city: {co} / {city}\nỞ căn này: {live}\n\nKết quả: {sys}\nThuế mỗi năm: {t}/năm ({m}/tháng)\nHomeowners\' exemption: {hx}\nUse tax lúc mua: {u}\nSau 5 năm: {t5}\nKiểu thuế kia: {cmp}\n\nGửi từ tool T163 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?Math.max(0,v):0};
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+let sold='post', sys='dk', co='scc', live=true, last={};
+
+/* Pure model — testable in node. i={sold,sys,price,orig,co,rate,live} */
+function model(i){
+  let use; /* 'pt' or 'in' */
+  if(i.sys==='county') use='pt';
+  else if(i.sys==='inlieu') use='in';
+  else use=(i.sold==='pre')?'in':'pt';
+  const guess=i.sys==='dk';
+  const mismatch=i.sys==='inlieu'&&i.sold==='post';
+  const hoxAv=i.live?Math.min(RULES.HOX,i.price):0;
+  const ptAv=Math.max(0,i.price-hoxAv);
+  const pt=ptAv*RULES.PT_RATE;
+  const hoxSave=hoxAv*RULES.PT_RATE;
+  const inl=i.orig*RULES.INLIEU_OLD_PCT*RULES.INLIEU_RATE;
+  const pt5=Math.max(0,i.price*Math.pow(1+RULES.PROP13,5)-hoxAv)*RULES.PT_RATE;
+  const useTax=use==='in'?i.price*i.rate/100:0;
+  const yearly=use==='pt'?pt:inl;
+  return {use,guess,mismatch,pt,ptAv,hoxSave,inl,pt5,useTax,yearly,monthly:yearly/12};
+}
+function fillCities(){
+  const s=$('city'), keep=s.value; s.innerHTML='';
+  RULES.CITIES[co].forEach(([n,r],k)=>{const o=document.createElement('option');o.value=k;o.dataset.r=r;
+    o.textContent=(n==='Unincorporated'?I18N[lang].unincorp:n)+' · '+r+'%';s.appendChild(o);});
+  if(keep&&+keep<s.options.length) s.value=keep;
+}
+function whoCards(){
+  const d=I18N[lang], ks=co==='scc'?['tc_scc','as_scc']:['tc_ala','as_ala'];
+  $('whoCards').innerHTML=['hcd'].concat(ks).map(k=>'<div class="card"><b>'+d['w_'+k]+'</b><span>'+d['w_'+k+'_s']+'</span></div>').join('');
+}
+function calc(){
+  const d=I18N[lang];
+  const opt=$('city').selectedOptions[0], rate=opt?+opt.dataset.r:10, cityN=opt?opt.textContent.split(' · ')[0]:'';
+  const i={sold,sys,price:num('price'),orig:num('orig'),co,rate,live};
+  const m=model(i);
+  $('total').textContent=fmt(m.yearly);
+  $('sysBadge').textContent=m.guess?(m.use==='pt'?d.b_pt_q:d.b_in_q):(m.use==='pt'?d.b_pt:d.b_in);
+  $('sysBadge').classList.toggle('warn',m.mismatch);
+  if(m.use==='pt'){ $('lnMainN').textContent=d.n_pt; $('lnMainS').textContent=fill(d.n_pt_s,{v:fmt(m.ptAv)}); $('lnMain').textContent=fmt(m.pt); }
+  else { $('lnMainN').textContent=d.n_in; $('lnMainS').textContent=fill(d.n_in_s,{o:fmt(i.orig)}); $('lnMain').textContent=fmt(m.inl); }
+  $('lnHoxL').classList.toggle('hide',m.use!=='pt'||!live); $('lnHox').textContent='−'+fmt(m.hoxSave);
+  $('lnMo').textContent=fmt(m.monthly);
+  $('lnUse').textContent=m.use==='in'?fmt(m.useTax):'$0';
+  $('lnUseS').textContent=m.use==='in'?fill(d.n_use_s,{r:rate,c:cityN}):d.n_use_no;
+  $('ln5L').classList.toggle('hide',m.use!=='pt'); $('ln5').textContent=fmt(m.pt5);
+  $('origF').classList.toggle('hide',m.use!=='in'&&sold!=='pre');
+  if(m.use==='in'){ $('lnCmpN').textContent=d.n_cmp_in; $('lnCmpS').textContent=d.n_cmp_in_s; $('lnCmp').textContent=fmt(m.pt); $('lnCmpL').classList.remove('hide'); }
+  else if(sold==='pre'){ $('lnCmpN').textContent=d.n_cmp_pt; $('lnCmpS').textContent=d.n_cmp_pt_s; $('lnCmp').textContent=fmt(m.inl); $('lnCmpL').classList.remove('hide'); }
+  else $('lnCmpL').classList.add('hide');
+  $('sysNote').textContent=m.mismatch?d.note_mis:(sys==='dk'&&sold==='dk'?d.note_dk:(m.use==='pt'?d.note_pt:d.note_in));
+  $('suppNote').textContent=m.use==='pt'?d.supp_pt:d.supp_in;
+  const soldT={pre:d.s_pre,post:d.s_post,dk:d.s_dk}[sold], sysT={inlieu:d.y_in,county:d.y_co,dk:d.y_dk}[sys];
+  last={p:fmt(i.price),o:fmt(i.orig),sold:soldT,sysIn:sysT,co:co==='scc'?'Santa Clara':'Alameda',city:cityN,live:live?d.yes:d.no,
+    sys:$('sysBadge').textContent,t:fmt(m.yearly),m:fmt(m.monthly),hx:(m.use==='pt'&&live)?'−'+fmt(m.hoxSave)+'/yr':'—',
+    u:m.use==='in'?fmt(m.useTax):'$0',t5:m.use==='pt'?fmt(m.pt5):'—',cmp:$('lnCmpL').classList.contains('hide')?'—':$('lnCmpN').textContent+': '+$('lnCmp').textContent};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,Object.assign({},last,{u:m.use==='in'?fill(d.sms_u,{u:last.u}):''})));
+}
+function seg(id,cb){ $(id).addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return;
+  $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); cb(b.dataset.v); calc();}); }
+seg('soldSeg',v=>sold=v); seg('sysSeg',v=>sys=v); seg('liveSeg',v=>live=v==='1');
+seg('coSeg',v=>{co=v; $('city').value='0'; fillCities(); $('city').value='0'; whoCards();});
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; fillCities(); whoCards(); calc();
+}
+['price','orig'].forEach(id=>$(id).addEventListener('input',calc));
+$('city').addEventListener('change',calc);
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const v=Object.assign({},last,{n,e,ph});
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,v))+'&body='+encodeURIComponent(fill(d.body,v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+window.__model=model;
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
