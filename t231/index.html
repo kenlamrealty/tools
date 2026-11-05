@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rental Operating Expenses · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Yearly cost to run a rental in Santa Clara or Alameda County: property tax, insurance, utilities, repairs, CapEx, management, vacancy and city fees.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t231/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Rental Operating Expenses · Ken Lam Tools">
+<meta property="og:description" content="Yearly cost to run a rental in Santa Clara or Alameda County: property tax, insurance, utilities, repairs, CapEx, management, vacancy and city fees.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t231/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.hide{display:none!important}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.sec-k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:6px 0 0}
+.chip{display:inline-block;font-size:12px;font-weight:500;line-height:1.2;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;margin-left:8px}
+.chip.g{color:var(--ok);border-color:var(--ok)}
+.chip.y{color:var(--brass);border-color:var(--brass)}
+.chip.r{color:var(--warn);border-color:var(--warn);background:var(--brass-soft)}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.line .a{display:flex;align-items:center}
+.total .v.neg{color:var(--warn)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+
+/* group additions (T230–T239) */
+:root{--ok-soft:#E7EFE6;--warn-soft:#F6E6DA}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--ok-soft:#24301F;--warn-soft:#3A271B}}
+:root[data-theme="dark"]{--ok-soft:#24301F;--warn-soft:#3A271B}
+.embed .kl-back{display:none}
+.adv{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:0 14px}
+.adv summary{cursor:pointer;padding:12px 0;font-size:14px;color:var(--fg);font-weight:500;list-style:none}
+.adv summary::-webkit-details-marker{display:none}
+.adv summary::after{content:' +';color:var(--brass)}
+.adv[open] summary::after{content:' \2212'}
+.adv .inputs{padding:2px 0 16px}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl .chev{color:var(--muted);font-size:13px;pointer-events:none}
+.verdict{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.verdict.g{background:var(--ok-soft)}
+.verdict.r{background:var(--warn-soft)}
+.verdict b{font-weight:600}
+.est{font-size:11px;color:var(--brass);border:1px solid var(--brass);border-radius:999px;padding:0 6px;margin-left:6px;white-space:nowrap;font-weight:500;letter-spacing:.02em}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums;table-layout:fixed}
+.tbl th{font-weight:500;color:var(--muted);font-size:12px;text-align:right;padding:6px 0 8px;border-bottom:1px solid var(--line)}
+.tbl td{text-align:right;padding:9px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl td:first-child{color:var(--muted)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">What does it cost to run a rental each year?</h1>
+    <p class="sub" data-i="sub">Every bill, line by line, before the mortgage. Santa Clara and Alameda County defaults.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="price"><span data-i="l_price">Purchase price</span></label>
+      <div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" min="0" step="5000" value="1400000"></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="units"><span data-i="l_units">Units</span></label>
+        <div class="ctl"><input id="units" type="number" inputmode="numeric" min="1" max="50" step="1" value="4"></div>
+      </div>
+      <div class="field">
+        <label for="urent"><span data-i="l_urent">Rent per unit</span></label>
+        <div class="ctl"><span class="pre">$</span><input id="urent" type="number" inputmode="numeric" min="0" step="25" value="2450"><span class="post" data-i="per_mo">/mo</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="year"><span data-i="l_year">Year built</span></label>
+        <div class="ctl"><input id="year" type="number" inputmode="numeric" min="1850" max="2030" step="1" value="1965"></div>
+      </div>
+      <div class="field">
+        <label for="city"><span data-i="l_city">City</span></label>
+        <div class="ctl"><select id="city">
+          <option value="sj">San Jose</option>
+          <option value="oak">Oakland</option>
+          <option value="brk">Berkeley</option>
+          <option value="fre">Fremont</option>
+          <option value="scc" data-i="o_scc">Other Santa Clara County</option>
+          <option value="ala" data-i="o_ala">Other Alameda County</option>
+        </select><span class="chev" aria-hidden="true">▾</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_util">Water, sewer, trash, common-area power</span>
+      <div class="seg" role="group" id="utilSeg">
+        <button type="button" data-v="owner" aria-pressed="true" data-i="u_owner">I pay</button>
+        <button type="button" data-v="tenant" aria-pressed="false" data-i="u_tenant">Tenants pay</button>
+      </div>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_pm">Management</span>
+      <div class="seg" role="group" id="pmSeg">
+        <button type="button" data-v="self" aria-pressed="false" data-i="pm_self">Self-manage</button>
+        <button type="button" data-v="pm" aria-pressed="true" data-i="pm_pm">Hire a PM</button>
+      </div>
+    </div>
+
+    <details class="adv">
+      <summary data-i="adv">More settings (rates and reserves)</summary>
+      <div class="inputs">
+        <div class="row2">
+          <div class="field">
+            <label for="tax"><span data-i="l_tax">Property tax</span> <small data-i="l_tax_s">(% of price/yr)</small></label>
+            <div class="ctl"><input id="tax" type="number" inputmode="decimal" min="0" max="5" step="0.05" value="1.25"><span class="post">%</span></div>
+          </div>
+          <div class="field">
+            <label for="assess"><span data-i="l_assess">Direct assessments</span> <small data-i="l_assess_s">(parcel tax, sewer)</small></label>
+            <div class="ctl"><span class="pre">$</span><input id="assess" type="number" inputmode="numeric" min="0" step="100" value="0"><span class="post" data-i="per_yr">/yr</span></div>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="insp"><span data-i="l_ins">Insurance</span> <small data-i="l_ins_s">(% of price/yr)</small></label>
+            <div class="ctl"><input id="insp" type="number" inputmode="decimal" min="0" max="5" step="0.05" value="0.35"><span class="post">%</span></div>
+          </div>
+          <div class="field">
+            <label for="vac"><span data-i="l_vac">Vacancy</span></label>
+            <div class="ctl"><input id="vac" type="number" inputmode="decimal" min="0" max="100" step="1" value="5"><span class="post">%</span></div>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="rep"><span data-i="l_rep">Repairs</span> <small data-i="l_rep_s">(% of rent, auto by age)</small></label>
+            <div class="ctl"><input id="rep" type="number" inputmode="decimal" min="0" max="50" step="1" value="8"><span class="post">%</span></div>
+          </div>
+          <div class="field">
+            <label for="capex"><span data-i="l_capex">CapEx reserve</span> <small data-i="l_capex_s">(per unit, auto by age)</small></label>
+            <div class="ctl"><span class="pre">$</span><input id="capex" type="number" inputmode="numeric" min="0" step="50" value="750"><span class="post" data-i="per_yr2">/yr</span></div>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="utilu"><span data-i="l_utilu">Utilities if you pay</span> <small data-i="l_utilu_s">(per unit)</small></label>
+            <div class="ctl"><span class="pre">$</span><input id="utilu" type="number" inputmode="numeric" min="0" step="5" value="87.5"><span class="post" data-i="per_mo2">/mo</span></div>
+          </div>
+          <div class="field">
+            <label for="pmp"><span data-i="l_pmp">PM fee</span> <small data-i="l_pmp_s">(% of rent collected)</small></label>
+            <div class="ctl"><input id="pmp" type="number" inputmode="decimal" min="0" max="30" step="0.5" value="8"><span class="post">%</span></div>
+          </div>
+        </div>
+        <p class="hint" data-i="adv_h">Repairs and CapEx change by year built until you type your own number. Before 1980: 8% and $750/unit. 1980–2009: 6% and $500. 2010 or newer: 5% and $325. All estimates.</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">Operating expenses</div>
+      <div class="v"><span id="tot">$0</span> <small data-i="per_yr3">/yr</small></div>
+    </div>
+    <div class="meta">
+      <span><b id="pum">$0</b> <span data-i="m_pum">per unit, per month</span> · <span data-i="m_er">Expense ratio</span> <b id="er">0%</b><span class="chip" id="cEr"></span></span>
+      <span><span data-i="m_egi">Rent collected</span>: <b id="egi">$0</b><span data-i="m_yr">/yr</span> · NOI: <b id="noi">$0</b><span data-i="m_yr2">/yr</span></span>
+    </div>
+    <table class="tbl" aria-label="Expense lines"><colgroup><col style="width:56%"><col style="width:24%"><col style="width:20%"></colgroup>
+      <thead><tr><th data-i="th_item">Item</th><th data-i="th_yr">Per year</th><th data-i="th_mo">/ unit / mo</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_vac">Vacancy loss</b><small data-i="n_vac_s">Not a bill, but rent you won't collect</small></span><span class="a" id="vacL">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_all">Total incl. vacancy</b><small data-i="n_all_s">Share of full rent that never reaches you</small></span><span class="a"><span id="all">$0</span>&nbsp;<span id="allp" style="color:var(--muted);font-weight:400"></span></span></div>
+    </div>
+    <div class="note" id="feeNote"></div>
+    <div class="panel" style="padding:14px 16px;gap:8px">
+      <p class="sec-k" style="margin:0" data-i="k_t146">Use these numbers in T146</p>
+      <p class="hint" style="font-size:13px" id="t146txt"></p>
+      <a class="btn" href="/t146/" id="t146Btn" data-i="b_t146">Open T146 cash flow →</a>
+    </div>
+    <p class="hint" data-i="rule">Expense ratio 35–45% is common for older 2–4 units. Under 30%? Something is probably missing. Insurance, utilities, repairs, CapEx and PM are estimates.</p>
+  </section>
+  <video src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px;margin-top:8px" aria-label="How to use this tool"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t231/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this expense list to yourself</h2>
+    <p data-i="f_sub">Ken will reply and can compare it with the seller's real T-12 and rent roll. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Ask the seller for the T-12 (last 12 months of real bills) and compare line by line with this list.</li>
+      <li data-i="ns2">Plug the total into <a href="/t146/">T146</a> to see cash flow, or into <a href="/t230/">T230</a> to see the most you should pay.</li>
+      <li data-i="ns3">Check how far rent can move and if bills jump: <a href="/t234/">T234 stress test</a>.</li>
+      <li data-i="ns4">City rent rules (AB 1482, San Jose ARO, Oakland) decide how fast rent can catch up: <a href="/t55/">T55</a>.</li>
+    </ol>
+  </section>
+  <p class="myth" data-i="myth"><b>Many people get this wrong:</b> "the seller's expenses are the expenses." The seller's 1.25% tax line is on their old Prop 13 value. You pay tax on your price. On a long-held fourplex that one line can jump by $10,000+ a year.</p>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#dau-tu-nha-cho-thue" target="_blank" rel="noopener" data-i="ft_lib">Library (coming soon)</a> · <a href="https://kenlamrealty.com/library#video-dau-tu" target="_blank" rel="noopener" data-i="ft_vid">Kiến Thức Địa Ốc video (coming soon)</a></span>
+    <span><span data-i="ft_src">Sources:</span> <a href="https://www.jvmlending.com/blog/santa-clara-county-property-tax/" target="_blank" rel="noopener">Santa Clara tax rates FY2025-26</a> · <a href="https://www.jvmlending.com/blog/alameda-county-property-tax-your-complete-guide/" target="_blank" rel="noopener">Alameda tax rates</a> · <a href="https://sanjoseca.gov/your-government/departments-offices/finance/business-tax-registration/business-tax-rates" target="_blank" rel="noopener">San Jose business tax</a> · <a href="https://caanet.org/caa-challenges-san-joses-proposed-fee-hike-for-rental-housing-providers/" target="_blank" rel="noopener">San Jose ARO/TPO fees</a> · <a href="https://www.oaklandca.gov/Business/For-Landlords/Business-Taxes-for-Landlords" target="_blank" rel="noopener">Oakland business tax &amp; RAP</a> · <a href="https://rentboard.berkeleyca.gov/elected-rent-board/news/registration-fees-fiscal-year-fy-2026-2027" target="_blank" rel="noopener">Berkeley registration FY26-27</a> · <a href="https://www.fremont.gov/government/departments/housing/rent-review-program/landlord-fee-self-reporting-form" target="_blank" rel="noopener">Fremont rent review fee</a> · <a href="https://www.steadily.com/rental-property-insurance/california" target="_blank" rel="noopener">Landlord insurance CA</a> · <a href="https://utopiamanagement.com/how-much-does-property-management-cost-in-san-jose" target="_blank" rel="noopener">PM fees San Jose</a> <span data-i="ft_chk">(checked 05/11/2026)</span></span>
+    <span data-i="ft_est">General information only, not tax, legal or financial advice. Ask your CPA, insurance agent or attorney. Insurance, utilities, repairs, CapEx, PM and vacancy are estimates. Some city fee amounts are not yet confirmed for 2026-27.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 05/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Assumptions — edit here (checked 05/11/2026, /home/claude/dautu/FACTS.md) =====
+   TAX 1.25%/yr of price: project standard Santa Clara & Alameda (FACTS §2.1; SCC FY25-26 1.12–1.24%, Oakland 1.3391%).
+   ASSESS $1,000/yr direct assessments (parcel tax, sewer… typical $500–$2,500, higher Oakland/Berkeley), ước tính — KEN DUYỆT.
+   INS 0.35% of price/yr (same as T146: $4,900 on $1.4M; 2–4 units Bay Area $2,500–$6,000/yr, Steadily), ước tính.
+   UTIL $87.50/unit/mo water+sewer+trash+common power if owner pays (T146 default $350 for 4 units), ước tính — KEN DUYỆT.
+   VACANCY 5% (CBRE Q2 2026: SJ 2.6%, East Bay 3.5% → tool uses 5% to be careful), ước tính.
+   REPAIRS % of collected rent & CAPEX $/unit/yr by age (FACTS §5: repairs 5–10%, pre-1980 8–10%; CapEx $250–$400 new → $500–$1,000 old), ước tính.
+   PM 8% of collected rent (SJ common 8–10%), ước tính. Leasing fee not included.
+   City fees (per unit per year unless noted):
+   - San Jose ARO $75 (3+ units built before 07/09/1979) + TPO $15 (3+ units) — 2023 rates, FY26-27 UNVERIFIED
+       https://caanet.org/caa-challenges-san-joses-proposed-fee-hike-for-rental-housing-providers/
+   - San Jose business tax (rental, from 01/07/2024): $216.35 base (1–2 units) + $12.02/unit for units 3–35, $18.03/unit 36–100, + $4 SB1186
+       https://sanjoseca.gov/your-government/departments-offices/finance/business-tax-registration/business-tax-rates
+       (tool reads "per unit" as each unit above 2 — KEN DUYỆT)
+   - Oakland business tax $13.95 per $1,000 gross rent; RAP fee $137/unit (tool applies to buildings before 1983 — coverage UNVERIFIED)
+       https://www.oaklandca.gov/Business/For-Landlords/Business-Taxes-for-Landlords
+   - Berkeley registration FY2026-27 $397/unit fully covered ($244 partially covered)
+       https://rentboard.berkeleyca.gov/elected-rent-board/news/registration-fees-fiscal-year-fy-2026-2027
+   - Fremont rent review fee FY2025-26 $23/unit (owners with 5+ units)
+       https://www.fremont.gov/government/departments/housing/rent-review-program/landlord-fee-self-reporting-form */
+const D={tax:1.25, assess:1000, insPct:0.35, utilUnit:87.5, vac:5, pm:8};
+const AGE=[ /* [built before, repairs %, capex $/unit/yr] */ [1980,8,750],[2010,6,500],[9999,5,325] ];
+const SJ={aroUnit:75, tpoUnit:15, aroBefore:1979.69 /* 07/09/1979 */, btBase:216.35, bt3_35:12.02, bt36_100:18.03, sb1186:4};
+const OAK={btPer1000:13.95, rapUnit:137, rapBefore:1983};
+const BRK={regFull:397, regPart:244};
+const FRE={feeUnit:23, minUnits:5};
+const TH={er:[35,45] /* expense ratio: ≤35 lean, ≤45 typical, above = heavy */};
+
+const I18N={
+ en:{title:'What does it cost to run a rental each year?',sub:'Every bill, line by line, before the mortgage. Santa Clara and Alameda County defaults.',
+  l_price:'Purchase price',l_units:'Units',l_urent:'Rent per unit',per_mo:'/mo',per_mo2:'/mo',per_yr:'/yr',per_yr2:'/yr',per_yr3:'/yr',
+  l_year:'Year built',l_city:'City',o_scc:'Other Santa Clara County',o_ala:'Other Alameda County',
+  l_util:'Water, sewer, trash, common-area power',u_owner:'I pay',u_tenant:'Tenants pay',l_pm:'Management',pm_self:'Self-manage',pm_pm:'Hire a PM',
+  adv:'More settings (rates and reserves)',l_tax:'Property tax',l_tax_s:'(% of price/yr)',l_assess:'Direct assessments',l_assess_s:'(parcel tax, sewer)',
+  l_ins:'Insurance',l_ins_s:'(% of price/yr)',l_vac:'Vacancy',l_rep:'Repairs',l_rep_s:'(% of rent, auto by age)',l_capex:'CapEx reserve',l_capex_s:'(per unit, auto by age)',
+  l_utilu:'Utilities if you pay',l_utilu_s:'(per unit)',l_pmp:'PM fee',l_pmp_s:'(% of rent collected)',
+  adv_h:'Repairs and CapEx change by year built until you type your own number. Before 1980: 8% and $750/unit. 1980–2009: 6% and $500. 2010 or newer: 5% and $325. All estimates.',
+  r_total:'Operating expenses',m_pum:'per unit, per month',m_er:'Expense ratio',m_egi:'Rent collected',m_yr:'/yr',m_yr2:'/yr',
+  th_item:'Item',th_yr:'Per year',th_mo:'/ unit / mo',
+  i_tax:'Property tax',i_tax_s:'{p}% of your price (Prop 13 resets at sale)',i_assess:'Direct assessments',i_assess_s:'Parcel tax, sewer, etc.',
+  i_ins:'Landlord insurance',i_util:'Water, sewer, trash, common power',i_util_s:'Owner-paid',i_rep:'Repairs',i_rep_s:'{p}% of rent collected',
+  i_capex:'CapEx reserve',i_capex_s:'Roof, water heater, flooring… {x}/unit/yr',i_pm:'Property management',i_pm_s:'{p}% of rent collected',
+  i_aro:'San Jose ARO fee',i_tpo:'San Jose TPO fee',i_sjbt:'San Jose business tax',i_oakbt:'Oakland business tax',i_oakbt_s:'$13.95 per $1,000 of rent',
+  i_rap:'Oakland RAP fee',i_brk:'Berkeley rent registration',i_brk_s:'Fully covered rate; partially covered $244/unit',i_fre:'Fremont rent review fee',
+  est:'estimate',unv:'not confirmed',
+  n_vac:'Vacancy loss',n_vac_s:"Not a bill, but rent you won't collect",n_all:'Total incl. vacancy',n_all_s:'Share of full rent that never reaches you',
+  fee_sj:'San Jose: ARO covers 3+ units built before Sept 7, 1979 (max 5% rent increase a year and yearly Rent Registry). TPO just-cause rules cover 3+ units. Fee amounts shown are 2023 rates; 2026-27 not yet confirmed.',
+  fee_sj2:'San Jose: 1–2 units are not under ARO/TPO fees. Business tax still applies to rentals.',
+  fee_oak:'Oakland: business tax is due March 1 every year ($109 one-time registration). RAP fee shown for buildings before 1983 (coverage not yet confirmed from city).',
+  fee_brk:'Berkeley: registration fee FY2026-27. Partially covered units pay $244 instead of $397.',
+  fee_fre:'Fremont: $23/unit rent review fee applies to owners with 5+ units. Increases over 5% in 12 months can be sent to review.',
+  fee_none:'No city rental fee added. Check your city for a business license and any local rent program.',
+  k_t146:'Use these numbers in T146',
+  t146:'Type into T146 → Property tax {tax}% · Insurance {ins}/yr · Utilities {ut}/mo (add {fee}/mo city fees + assessments) · Repairs {rep}% · CapEx {cx}% · Management {pm}% · Vacancy {vac}%.',
+  b_t146:'Open T146 cash flow →',
+  rule:'Expense ratio 35–45% is common for older 2–4 units. Under 30%? Something is probably missing. Insurance, utilities, repairs, CapEx and PM are estimates.',
+  c_g:'Lean',c_y:'Typical',c_r:'Heavy',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this expense list to yourself',f_sub:"Ken will reply and can compare it with the seller's real T-12 and rent roll. No spam.",f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ns_t:'Next steps',
+  ns1:'Ask the seller for the T-12 (last 12 months of real bills) and compare line by line with this list.',
+  ns2:'Plug the total into <a href="/t146/">T146</a> to see cash flow, or into <a href="/t230/">T230</a> to see the most you should pay.',
+  ns3:'Check how far rent can move and if bills jump: <a href="/t234/">T234 stress test</a>.',
+  ns4:'City rent rules (AB 1482, San Jose ARO, Oakland) decide how fast rent can catch up: <a href="/t55/">T55</a>.',
+  myth:"<b>Many people get this wrong:</b> \"the seller's expenses are the expenses.\" The seller's tax line is on their old Prop 13 value. You pay tax on your price. On a long-held fourplex that one line can jump by $10,000+ a year.",
+  ft_read:'Read more:',ft_lib:'Library (coming soon)',ft_vid:'Kiến Thức Địa Ốc video (coming soon)',ft_src:'Sources:',ft_chk:'(checked 05/11/2026)',
+  ft_est:'General information only, not tax, legal or financial advice. Ask your CPA, insurance agent or attorney. Insurance, utilities, repairs, CapEx, PM and vacancy are estimates. Some city fee amounts are not yet confirmed for 2026-27.',
+  ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I used T231: {u} units in {c}, price {p}. Expenses {tot}/yr ({pum}/unit/mo), expense ratio {er}. Can we talk?',
+  subj:'Rental operating expenses — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nPrice: {p} · Units: {u} · Rent/unit: {r}/mo · Built: {y} · City: {c}\nUtilities: {up} · Management: {pmw}\n\n{lines}\n\nTotal operating expenses: {tot}/yr\nPer unit per month: {pum}\nExpense ratio: {er}\nVacancy loss: {vl}/yr\nNOI: {noi}/yr\n\nEstimate only. Sent from tool T231 tools.kenlamrealty.com'},
+ vi:{title:'Nuôi căn nhà cho thuê mỗi năm tốn bao nhiêu?',sub:'Từng khoản bill, chưa tính tiền loan. Số mặc định cho Santa Clara và Alameda County.',
+  l_price:'Giá mua',l_units:'Số căn',l_urent:'Tiền thuê mỗi căn',per_mo:'/tháng',per_mo2:'/tháng',per_yr:'/năm',per_yr2:'/năm',per_yr3:'/năm',
+  l_year:'Năm xây',l_city:'Thành phố',o_scc:'Thành phố khác ở Santa Clara County',o_ala:'Thành phố khác ở Alameda County',
+  l_util:'Nước, cống, rác, điện khu chung',u_owner:'Chủ trả',u_tenant:'Người thuê trả',l_pm:'Quản lý',pm_self:'Tự quản lý',pm_pm:'Thuê PM',
+  adv:'Tùy chỉnh thêm (tỷ lệ và quỹ sửa)',l_tax:'Thuế nhà',l_tax_s:'(% giá/năm)',l_assess:'Phí cộng vào bill thuế',l_assess_s:'(parcel tax, cống)',
+  l_ins:'Bảo hiểm',l_ins_s:'(% giá/năm)',l_vac:'Thời gian trống',l_rep:'Sửa vặt',l_rep_s:'(% tiền thuê, tự đổi theo năm xây)',l_capex:'Quỹ sửa lớn (CapEx)',l_capex_s:'(mỗi căn, tự đổi theo năm xây)',
+  l_utilu:'Điện nước nếu chủ trả',l_utilu_s:'(mỗi căn)',l_pmp:'Phí PM',l_pmp_s:'(% tiền thuê thu được)',
+  adv_h:'Sửa vặt và CapEx tự đổi theo năm xây, tới khi mình tự gõ số. Trước 1980: 8% và $750/căn. 1980–2009: 6% và $500. Từ 2010: 5% và $325. Đều là ước tính.',
+  r_total:'Chi phí vận hành',m_pum:'mỗi căn, mỗi tháng',m_er:'Expense ratio',m_egi:'Tiền thuê thu được',m_yr:'/năm',m_yr2:'/năm',
+  th_item:'Khoản',th_yr:'Mỗi năm',th_mo:'/ căn / tháng',
+  i_tax:'Thuế nhà',i_tax_s:'{p}% giá mình mua (Prop 13 tính lại khi bán)',i_assess:'Phí cộng vào bill thuế',i_assess_s:'Parcel tax, cống…',
+  i_ins:'Bảo hiểm chủ nhà',i_util:'Nước, cống, rác, điện khu chung',i_util_s:'Chủ trả',i_rep:'Sửa vặt',i_rep_s:'{p}% tiền thuê thu được',
+  i_capex:'Quỹ sửa lớn (CapEx)',i_capex_s:'Mái, bình nước nóng, sàn… {x}/căn/năm',i_pm:'Công ty quản lý (PM)',i_pm_s:'{p}% tiền thuê thu được',
+  i_aro:'Phí ARO San Jose',i_tpo:'Phí TPO San Jose',i_sjbt:'Business tax San Jose',i_oakbt:'Business tax Oakland',i_oakbt_s:'$13.95 cho mỗi $1,000 tiền thuê',
+  i_rap:'Phí RAP Oakland',i_brk:'Phí đăng ký rent Berkeley',i_brk_s:'Mức fully covered; partially covered $244/căn',i_fre:'Phí rent review Fremont',
+  est:'ước tính',unv:'chưa xác nhận',
+  n_vac:'Mất vì nhà trống',n_vac_s:'Không phải bill, nhưng là tiền thuê không thu được',n_all:'Tổng, kể cả nhà trống',n_all_s:'Phần tiền thuê không bao giờ về túi mình',
+  fee_sj:'San Jose: ARO áp dụng nhà 3+ căn xây trước 7/9/1979 (tăng tối đa 5%/năm, phải khai Rent Registry hàng năm). TPO (just cause) áp dụng nhà 3+ căn. Phí đang hiện là mức 2023; mức 2026-27 chưa xác nhận.',
+  fee_sj2:'San Jose: nhà 1–2 căn không đóng phí ARO/TPO. Business tax vẫn phải đóng cho nhà cho thuê.',
+  fee_oak:'Oakland: business tax hạn 1/3 hàng năm (đăng ký lần đầu $109). Phí RAP tính cho nhà xây trước 1983 (phạm vi áp dụng chưa xác nhận từ city).',
+  fee_brk:'Berkeley: phí đăng ký FY2026-27. Căn partially covered đóng $244 thay vì $397.',
+  fee_fre:'Fremont: phí rent review $23/căn cho chủ có từ 5 căn. Tăng hơn 5% trong 12 tháng thì người thuê được xin review.',
+  fee_none:'Không cộng phí thành phố. Hỏi city về business license và chương trình rent địa phương.',
+  k_t146:'Dùng số này trong T146',
+  t146:'Gõ vào T146 → Thuế nhà {tax}% · Bảo hiểm {ins}/năm · Điện nước {ut}/tháng (đã cộng {fee}/tháng phí city + phí bill thuế) · Sửa vặt {rep}% · CapEx {cx}% · Quản lý {pm}% · Trống {vac}%.',
+  b_t146:'Mở T146 tính cash flow →',
+  rule:'Expense ratio 35–45% là bình thường với nhà 2–4 căn cũ. Dưới 30%? Chắc là thiếu khoản nào đó. Bảo hiểm, điện nước, sửa vặt, CapEx và PM là ước tính.',
+  c_g:'Gọn',c_y:'Bình thường',c_r:'Nặng',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi bảng chi phí này về email',f_sub:'Ken nhận được sẽ trả lời và có thể so với T-12 và rent roll thật của người bán. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ns_t:'Bước tiếp theo',
+  ns1:'Xin người bán bản T-12 (bill thật 12 tháng qua) rồi so từng dòng với bảng này.',
+  ns2:'Bỏ tổng chi phí vào <a href="/t146/">T146</a> để coi cash flow, hoặc vào <a href="/t230/">T230</a> để coi nên trả tối đa bao nhiêu.',
+  ns3:'Coi tiền thuê xuống hay bill tăng thì sao: <a href="/t234/">T234 stress test</a>.',
+  ns4:'Luật tiền thuê (AB 1482, ARO San Jose, Oakland) quyết định bao lâu tiền thuê mới lên kịp: <a href="/t55/">T55</a>.',
+  myth:'<b>Nhiều người hiểu sai:</b> "chi phí người bán đưa là chi phí thật." Thuế nhà của người bán tính trên giá Prop 13 cũ. Mình thì đóng thuế trên giá mình mua. Fourplex giữ lâu năm, riêng dòng này có thể tăng hơn $10,000 một năm.',
+  ft_read:'Đọc thêm:',ft_lib:'Library (sắp có)',ft_vid:'Video Kiến Thức Địa Ốc (sắp có)',ft_src:'Nguồn:',ft_chk:'(tra 05/11/2026)',
+  ft_est:'Thông tin chung, không phải tư vấn thuế, luật hay tài chính. Hỏi CPA, agent bảo hiểm hoặc luật sư. Bảo hiểm, điện nước, sửa vặt, CapEx, PM và thời gian trống là ước tính. Một số phí thành phố 2026-27 chưa xác nhận.',
+  ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa xài T231: {u} căn ở {c}, giá {p}. Chi phí {tot}/năm ({pum}/căn/tháng), expense ratio {er}. Cho tôi hỏi thêm.',
+  subj:'Chi phí nuôi nhà cho thuê — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nGiá: {p} · Số căn: {u} · Tiền thuê/căn: {r}/tháng · Năm xây: {y} · City: {c}\nĐiện nước: {up} · Quản lý: {pmw}\n\n{lines}\n\nTổng chi phí vận hành: {tot}/năm\nMỗi căn mỗi tháng: {pum}\nExpense ratio: {er}\nMất vì nhà trống: {vl}/năm\nNOI: {noi}/năm\n\nChỉ là ước tính. Gửi từ tool T231 tools.kenlamrealty.com'}
+};
+let lang='en', util='owner', pm='pm', last={}, touched={rep:false,capex:false};
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+try{ if(new URLSearchParams(location.search).get('embed')==='1') document.documentElement.classList.add('embed'); }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'-$':'$')+Math.abs(Math.round(n)).toLocaleString('en-US');
+const pct=(x,dp=1)=>isFinite(x)?(x*100).toFixed(dp)+'%':'—';
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]!=null?v[k]:m);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ageRow=y=>AGE.find(a=>y<a[0])||AGE[AGE.length-1];
+
+/* City fees: returns [{k,amt,sub,flag}] — flag 'est' | 'unv' */
+function cityFees(i,gsi){
+  const u=i.units, out=[];
+  if(i.city==='sj'){
+    if(u>=3 && i.year<SJ.aroBefore) out.push({k:'i_aro',amt:SJ.aroUnit*u,flag:'unv'});
+    if(u>=3) out.push({k:'i_tpo',amt:SJ.tpoUnit*u,flag:'unv'});
+    const t1=Math.max(0,Math.min(u,35)-2), t2=Math.max(0,Math.min(u,100)-35);
+    out.push({k:'i_sjbt',amt:SJ.btBase+SJ.bt3_35*t1+SJ.bt36_100*t2+SJ.sb1186,flag:'est'});
+  } else if(i.city==='oak'){
+    out.push({k:'i_oakbt',amt:gsi*OAK.btPer1000/1000,flag:''});
+    if(i.year<OAK.rapBefore) out.push({k:'i_rap',amt:OAK.rapUnit*u,flag:'unv'});
+  } else if(i.city==='brk'){
+    out.push({k:'i_brk',amt:BRK.regFull*u,flag:''});
+  } else if(i.city==='fre'){
+    if(u>=FRE.minUnits) out.push({k:'i_fre',amt:FRE.feeUnit*u,flag:''});
+  }
+  return out;
+}
+/* Pure model — annual. Repairs and PM on collected rent (EGI), same as T146. Expense ratio = OpEx ÷ EGI. */
+function model(i){
+  const gsi=i.units*i.rentU*12, vacL=gsi*i.vac/100, egi=gsi-vacL;
+  const L=[];
+  L.push({k:'i_tax',amt:i.price*i.tax/100,sub:'i_tax_s',sv:{p:i.tax}});
+  if(i.assess>0) L.push({k:'i_assess',amt:i.assess,sub:'i_assess_s',flag:'est'});
+  L.push({k:'i_ins',amt:i.price*i.insPct/100,flag:'est'});
+  if(i.util==='owner') L.push({k:'i_util',amt:i.utilU*12*i.units,sub:'i_util_s',flag:'est'});
+  L.push({k:'i_rep',amt:egi*i.rep/100,sub:'i_rep_s',sv:{p:i.rep},flag:'est'});
+  L.push({k:'i_capex',amt:i.capexU*i.units,sub:'i_capex_s',sv:{x:fmt(i.capexU)},flag:'est'});
+  if(i.pm==='pm') L.push({k:'i_pm',amt:egi*i.pmPct/100,sub:'i_pm_s',sv:{p:i.pmPct},flag:'est'});
+  const fees=cityFees(i,gsi); fees.forEach(f=>L.push(f));
+  const tot=L.reduce((s,x)=>s+x.amt,0);
+  const feeTot=fees.reduce((s,x)=>s+x.amt,0)+(i.assess>0?i.assess:0);
+  return {gsi,vacL,egi,L,tot,feeTot,pum:i.units>0?tot/i.units/12:0,er:egi>0?tot/egi:NaN,noi:egi-tot,all:tot+vacL,allp:gsi>0?(tot+vacL)/gsi:NaN};
+}
+function inputs(){
+  return {price:num('price'),units:Math.max(1,Math.round(num('units'))),rentU:num('urent'),year:num('year')||1965,city:$('city').value,util,pm,
+    tax:num('tax'),assess:num('assess'),insPct:num('insp'),vac:num('vac'),rep:num('rep'),capexU:num('capex'),utilU:num('utilu'),pmPct:num('pmp')};
+}
+function autoAge(){ const a=ageRow(num('year')||1965); if(!touched.rep) $('rep').value=a[1]; if(!touched.capex) $('capex').value=a[2]; }
+function calc(){
+  const d=I18N[lang], i=inputs(), m=model(i);
+  $('tot').textContent=fmt(m.tot); $('pum').textContent=fmt(m.pum);
+  $('er').textContent=pct(m.er,0);
+  const ec=$('cEr'), v=m.er*100; let c=''; if(isFinite(v)) c=v<=TH.er[0]?'g':v<=TH.er[1]?'y':'r';
+  ec.className='chip '+c; ec.textContent=c?d['c_'+c]:''; ec.style.display=c?'':'none';
+  $('egi').textContent=fmt(m.egi); $('noi').textContent=fmt(m.noi);
+  $('rows').innerHTML=m.L.map(x=>{
+    const tag=x.flag?`<span class="est">${d[x.flag]}</span>`:'';
+    const sub=x.sub?`<br><small style="font-size:12px">${esc(fill(d[x.sub],x.sv||{}))}</small>`:'';
+    return `<tr><td>${d[x.k]}${tag}${sub}</td><td>${fmt(x.amt)}</td><td>${fmt(x.amt/i.units/12)}</td></tr>`;}).join('');
+  $('vacL').textContent=fmt(m.vacL); $('all').textContent=fmt(m.all); $('allp').textContent=isFinite(m.allp)?'('+pct(m.allp,0)+')':'';
+  const fk=i.city==='sj'?(i.units>=3?'fee_sj':'fee_sj2'):i.city==='oak'?'fee_oak':i.city==='brk'?'fee_brk':i.city==='fre'?'fee_fre':'fee_none';
+  $('feeNote').textContent=d[fk];
+  /* T146 does not read URL params → show the numbers to type in */
+  const utM=(i.util==='owner'?i.utilU*i.units:0)+m.feeTot/12;
+  const cxPct=m.egi>0?(i.capexU*i.units)/m.egi*100:0;
+  $('t146txt').textContent=fill(d.t146,{tax:i.tax,ins:fmt(i.price*i.insPct/100),ut:fmt(utM),fee:fmt(m.feeTot/12),rep:i.rep,cx:cxPct.toFixed(1),pm:i.pm==='pm'?i.pmPct:0,vac:i.vac});
+  const cityName=$('city').options[$('city').selectedIndex].text;
+  last={p:fmt(i.price),u:i.units,r:fmt(i.rentU),y:i.year,c:cityName,up:d[i.util==='owner'?'u_owner':'u_tenant'],pmw:d[i.pm==='pm'?'pm_pm':'pm_self'],
+    lines:m.L.map(x=>d[x.k]+(x.flag?' ('+d[x.flag]+')':'')+': '+fmt(x.amt)+'/yr').join('\n'),
+    tot:fmt(m.tot),pum:fmt(m.pum),er:pct(m.er,0),vl:fmt(m.vacL),noi:fmt(m.noi)};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+}
+function seg(id,v,set){ document.querySelectorAll('#'+id+' button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v?'true':'false')); set(v); calc(); }
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+$('tax').value=D.tax; $('assess').value=D.assess; $('insp').value=D.insPct; $('utilu').value=D.utilUnit; $('vac').value=D.vac; $('pmp').value=D.pm;
+autoAge();
+['price','units','urent','tax','assess','insp','vac','utilu','pmp'].forEach(id=>$(id).addEventListener('input',calc));
+$('year').addEventListener('input',()=>{autoAge();calc();});
+$('city').addEventListener('change',calc);
+['rep','capex'].forEach(id=>$(id).addEventListener('input',()=>{touched[id]=true;calc();}));
+$('utilSeg').addEventListener('click',e=>{const b=e.target.closest('button'); if(b) seg('utilSeg',b.dataset.v,v=>util=v);});
+$('pmSeg').addEventListener('click',e=>{const b=e.target.closest('button'); if(b) seg('pmSeg',b.dataset.v,v=>pm=v);});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const v=Object.assign({},last,{n,e,ph});
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing), như T146. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,v))+'&body='+encodeURIComponent(fill(d.body,v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+window.__model=model;
+applyLang();
+
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

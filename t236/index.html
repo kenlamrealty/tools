@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rent Roll vs Market · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Rent roll vs market rent for Bay Area rentals: loss-to-lease, the legal max raise under AB 1482, San Jose ARO, Oakland, Berkeley, Mountain View, Hayward and Alameda, and years to catch up.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t236/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Rent Roll vs Market · Ken Lam Tools">
+<meta property="og:description" content="Rent roll vs market rent for Bay Area rentals: loss-to-lease, the legal max raise under AB 1482, San Jose ARO, Oakland, Berkeley, Mountain View, Hayward and Alameda, and years to catch up.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t236/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T236 additions */
+.hide{display:none!important}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.sec-k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:6px 0 0}
+.chip{display:inline-block;font-size:12px;font-weight:500;line-height:1.2;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;margin-left:8px}
+.chip.g{color:var(--ok);border-color:var(--ok)}
+.chip.y{color:var(--brass);border-color:var(--brass)}
+.chip.r{color:var(--warn);border-color:var(--warn);background:var(--brass-soft)}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.line .a{display:flex;align-items:center}
+.total .v.neg{color:var(--warn)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.hide{display:none!important}
+html.embed .kl-back{display:none}
+html.embed body{padding-top:8px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.sec-k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:6px 0 0}
+.chip{display:inline-block;font-size:12px;font-weight:500;line-height:1.2;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;margin-left:8px}
+.chip.g{color:var(--ok);border-color:var(--ok)}
+.chip.y{color:var(--brass);border-color:var(--brass)}
+.chip.r{color:var(--warn);border-color:var(--warn);background:var(--brass-soft)}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.line .a{display:flex;align-items:center}
+.total .v.neg{color:var(--warn)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl select:focus-visible{outline:none}
+.ctl .chev{color:var(--muted);font-size:13px;pointer-events:none}
+details.more{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:0 14px}
+details.more summary{cursor:pointer;padding:12px 0;font-size:14px;font-weight:500;color:var(--muted);list-style:none}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary::before{content:'+ ';color:var(--brass)}
+details.more[open] summary::before{content:'− '}
+details.more .inner{display:grid;gap:14px;padding:0 0 14px}
+.est{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--brass);font-weight:500;margin-left:6px}
+.urows{display:grid;gap:8px}
+.uhead,.urow{display:grid;grid-template-columns:22px minmax(0,1fr) minmax(0,1fr) 30px;gap:8px;align-items:center}
+.uhead span{font-size:12px;color:var(--muted);font-weight:500}
+.urow .ul{font-size:13px;color:var(--muted);text-align:center}
+.urow .ctl{padding:0 8px}
+.urow .ctl input{font-size:17px;padding:10px 4px}
+.urow .x{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;width:30px;height:30px;font:inherit;cursor:pointer;padding:0}
+.addrow{justify-self:start;border:1px dashed var(--line);background:transparent;color:var(--fg);font:inherit;font-size:14px;padding:8px 14px;border-radius:999px;cursor:pointer}
+.addrow:hover,.urow .x:hover{border-color:var(--brass)}
+.law{display:grid;gap:4px}
+.law .tag{justify-self:start;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:4px 11px;background:var(--brass-soft);color:var(--fg);font-weight:500}
+.law .tag.ex{background:transparent;border:1px dashed var(--muted);color:var(--muted)}
+.law .why{font-size:14px;color:var(--muted);margin:0}
+.ytbl{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.ytbl th{font-size:12px;font-weight:500;color:var(--muted);text-align:right;padding:6px 4px;border-bottom:1px solid var(--line)}
+.ytbl td{text-align:right;padding:7px 4px;border-bottom:1px solid var(--line)}
+.ytbl th:first-child,.ytbl td:first-child{text-align:left}
+.ytbl td.ok{color:var(--ok);font-weight:500}
+.ytbl td.far{color:var(--warn);font-weight:500}
+.total .v.word{font-size:46px}
+
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Rents below market: how long to catch up?</h1>
+    <p class="sub" data-i="sub">Enter the rent roll and today's market rent. See the loss-to-lease, the legal max raise each year, and how many years until the rents catch up.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="city"><span data-i="l_city">City</span></label>
+      <div class="ctl"><select id="city">
+        <option value="sj">San Jose</option>
+        <option value="oak">Oakland</option>
+        <option value="brk">Berkeley</option>
+        <option value="mv">Mountain View</option>
+        <option value="hay">Hayward</option>
+        <option value="ala">Alameda</option>
+        <option value="fre">Fremont</option>
+        <option value="sc">Santa Clara</option>
+        <option value="sun">Sunnyvale</option>
+        <option value="osc" data-i="o_osc">Other Santa Clara County</option>
+        <option value="oac" data-i="o_oac">Other Alameda County</option>
+      </select><span class="chev">▾</span></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="ptype"><span data-i="l_type">Property type</span></label>
+        <div class="ctl"><select id="ptype">
+          <option value="sfh" data-i="o_sfh">Single-family / condo, no exemption notice</option>
+          <option value="sfhx" data-i="o_sfhx">Single-family / condo, exemption notice given</option>
+          <option value="dupo" data-i="o_dupo">Duplex, owner lives in the other unit</option>
+          <option value="dup" data-i="o_dup">Duplex, owner doesn't live there</option>
+          <option value="apt" selected data-i="o_apt">Apartment building, 3+ units</option>
+        </select><span class="chev">▾</span></div>
+      </div>
+      <div class="field">
+        <label for="year"><span data-i="l_year">Year built</span></label>
+        <div class="ctl"><input id="year" type="number" inputmode="numeric" min="1850" max="2030" step="1" value="1975"></div>
+      </div>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_roll">Rent roll</span>
+      <div class="urows" id="urows">
+        <div class="uhead"><span>#</span><span data-i="h_cur">Current rent /mo</span><span data-i="h_mkt">Market rent /mo</span><span></span></div>
+      </div>
+      <button type="button" class="addrow" id="addRow" data-i="b_add">+ Add unit</button>
+      <p class="hint" data-i="roll_h">Up to 8 units. Market rent = what a vacant unit like it rents for today (check comps or HUD FMR in T51).</p>
+    </div>
+    <details class="more">
+      <summary data-i="more">More options</summary>
+      <div class="inner">
+        <div class="row2">
+          <div class="field">
+            <label for="mg"><span data-i="l_mg">Market rent growth</span> <small data-i="l_mg_s">(per year)</small><span class="est" data-i="est">estimate</span></label>
+            <div class="ctl"><input id="mg" type="number" inputmode="decimal" min="-10" max="15" step="0.5" value="3"><span class="post">%</span></div>
+          </div>
+          <div class="field">
+            <label for="cap"><span data-i="l_cap">Cap rate</span> <small data-i="l_cap_s">(to price the loss)</small><span class="est" data-i="est3">estimate</span></label>
+            <div class="ctl"><input id="cap" type="number" inputmode="decimal" min="1" max="15" step="0.25" value="4.25"><span class="post">%</span></div>
+          </div>
+        </div>
+        <p class="hint" data-i="cap_h">Default cap rate: Santa Clara County 2–4 units 4.25%, Alameda County 5.0% (mid of typical ranges, estimate). Change the city and it resets.</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="law">
+      <span class="tag" id="lawTag"></span>
+      <p class="why" id="lawWhy"></p>
+    </div>
+    <div class="total">
+      <div class="k" data-i="r_total">Years until rents catch up</div>
+      <div class="v" id="yrsV"><span id="yrs">0</span> <small id="yrsU"></small></div>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_ltl">Loss-to-lease</b><small data-i="n_ltl_s">Market rent − current rent, all units</small></span><span class="a" id="ltl">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_ltlm">Per month</b><small id="ltlps"></small></span><span class="a" id="ltlm">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_max">Max legal raise, next increase</b><small id="maxs"></small></span><span class="a"><span id="maxp">0%</span></span></div>
+      <div class="line"><span class="n"><b data-i="n_maxd">That raise in dollars</b><small data-i="n_maxd_s">All units together, capped at market</small></span><span class="a" id="maxd">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_val">Value lost to loss-to-lease</b><small id="vals"></small></span><span class="a" id="val">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_cum">Rent you give up until caught up</b><small data-i="n_cum_s">Sum of the yearly gap, while the same tenants stay</small></span><span class="a" id="cum">$0</span></div>
+    </div>
+    <p class="sec-k" data-i="k_tbl">Year by year</p>
+    <div style="overflow-x:auto">
+      <table class="ytbl" id="ytbl"></table>
+    </div>
+    <p class="sec-k" data-i="k_units">Each unit</p>
+    <div class="lines" id="ulines"></div>
+    <div class="note" id="noteV" data-i="note_v">A unit resets to market when the tenant moves out voluntarily (Costa-Hawkins vacancy decontrol). This tool assumes the same tenants stay, one raise a year at the legal max.</div>
+    <div class="note" data-i="note_est">Future years assume today's cap repeats and market rent grows at the rate you set. Real CPI caps change every year. Estimate only.</div>
+  </section>
+  <video src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px;margin-top:8px" aria-label="How to use this tool"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t236/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this rent roll check to yourself</h2>
+    <p data-i="f_sub">Ken will reply and can pull real rent comps for the building. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Next step</h2>
+    <ol>
+      <li data-i="ns1">Ready to send a raise? Get the exact max, the earliest date and the notice days in <a href="/t55/">T55</a>.</li>
+      <li data-i="ns2">Put today's rent roll, not the pro forma, into the cash flow math: <a href="/t146/">T146</a>.</li>
+      <li data-i="ns3">Ask the seller for every lease, the last increase date per unit and the city rent registry printout before you remove contingencies.</li>
+      <li data-i="ns4">See what the depreciation does to your tax on this building: <a href="/t235/">T235</a>.</li>
+    </ol>
+  </section>
+  <p class="myth" data-i="myth"><b>Many people get this wrong:</b> "Rents are $600 under market, so I'll raise them after closing." Under San Jose ARO that's 5% a year. If market rent grows 3% a year, you close the gap by about 2% a year. A 25% gap can take more than 10 years. Pay for the rent roll you get, not the one you hope for.</p>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <span data-i="ft_lib">Library (coming soon)</span> · <span data-i="ft_vid">Kiến Thức Địa Ốc video (coming soon)</span></span>
+    <span><span data-i="ft_src">Sources</span> (05/11/2026):
+      <a href="https://oag.ca.gov/tenants" target="_blank" rel="noopener">CA AG (AB 1482)</a> ·
+      <a href="https://www.dir.ca.gov/OPRL/CPI/PresentCCPIchange.PDF" target="_blank" rel="noopener">CA DIR CPI</a> ·
+      <a href="https://www.bls.gov/regions/west/news-release/2026/consumerpriceindex_sanfrancisco_20260512.htm" target="_blank" rel="noopener">BLS SF-area CPI</a> ·
+      <a href="https://sanjoseca.gov/your-government/departments-offices/housing/tenants/learn-about-rent-stabilization" target="_blank" rel="noopener">San Jose ARO</a> ·
+      <a href="https://www.oaklandca.gov/Community/Housing-Programs-Support/For-Landlords/Allowable-Rent-Increases/Learn-More-About-Allowable-Rent-Increases" target="_blank" rel="noopener">Oakland RAP</a> ·
+      <a href="https://rentboard.berkeleyca.gov/rights-responsibilities/rent-levels/annual-general-adjustment" target="_blank" rel="noopener">Berkeley AGA</a> ·
+      <a href="https://mountainview.gov/our-city/departments/housing/rent-stabilization/rent-and-allowed-rent-increases" target="_blank" rel="noopener">Mountain View CSFRA</a> ·
+      <a href="https://www.hayward-ca.gov/services/city-services/information-landlords" target="_blank" rel="noopener">Hayward RRSO</a> ·
+      <a href="https://www.alamedarentprogram.org" target="_blank" rel="noopener">Alameda Rent Program</a></span>
+    <span data-i="ft_est">General information, not legal, tax or financial advice. Every building has its own history (banked increases, petitions, registry). Confirm with the city rent program or a landlord-tenant attorney.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 05/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== RULES — copied 1:1 from T55 (/t55/) so both tools agree. Edit T55 and here together. =====
+   Looked up 04/11/2026.
+   AB 1482 (Civil Code §1947.12): cap = 5% + regional CPI (April→April), max 10%, over any 12 months,
+     measured from the LOWEST rent in the prior 12 months; same tenant: at most 2 increments in 12 months.
+     Regional CPI = BLS index for the region; if none, the California CPI from CA DIR.
+     - Alameda County is in the BLS "San Francisco area" (Alameda, Contra Costa, Marin, SF, San Mateo).
+       April 2026 12-mo change = 3.8% → cap 8.8% for Aug 1 2026–Jul 31 2027.
+       https://www.bls.gov/regions/west/news-release/2026/consumerpriceindex_sanfrancisco_20260512.htm (04/11/2026)
+       https://www.sf.gov/information/california-tenant-protection-act-2019-ab-1482 (04/11/2026: "currently 8.8% (5% + 3.8%)")
+     - Santa Clara County is NOT in a BLS regional index → California CPI (DIR), April 2026 = 3.6% → 8.6%.
+       https://www.dir.ca.gov/OPRL/CPI/PresentCCPIchange.PDF (04/11/2026, table updated 10/15/2026)
+       KEN DUYỆT: some Santa Clara Co. groups publish a different figure; confirm before telling clients.
+     Exemptions used: certificate of occupancy within last 15 years (rolling); owner-occupied duplex
+       (owner lived there when tenant moved in); single-family/condo when owner is NOT a corp/REIT/LLC with a
+       corporate member AND tenant got the written exemption notice. https://oag.ca.gov/tenants (04/11/2026)
+     Sunset: AB 1482 runs through Jan 1, 2030.
+   Notice (Civil Code §827): ≤10% → 30 days, >10% → 90 days. Mailed: +5 days (CCP §1013). AG page confirms 30/90.
+   San Jose ARO: apartments 3+ units built & occupied before Sept 7 1979; one 5% increase per 12 months; duplexes,
+     SFH, ADUs exempt. https://sanjoseca.gov/your-government/departments-offices/housing/tenants/learn-about-rent-stabilization (04/11/2026)
+   Oakland RAP: 60% of CPI, max 3%. Aug 1 2025–Jul 31 2026 = 0.8%; Aug 1 2026–Jul 31 2027 = 2.3%. Once per 12 months,
+     30-day notice + RAP Notice; banking up to 5 yrs. Exempt: built after Jan 1 1983, SFH/condo (Costa-Hawkins),
+     the owner's own unit. https://www.oaklandca.gov/Community/Housing-Programs-Support/Rent-Adjustment-Program-RAP/For-Property-Owners/Properties-Exempt-from-the-Rent-Adjustment-Program (04/11/2026)
+     KEN DUYỆT: tenant unit in an owner-occupied duplex treated as covered (not listed as exempt).
+   Berkeley: AGA = 65% of CPI, capped at 5%, raises rent ceilings every Jan 1. 2026 AGA = 1.0%; 2027 AGA = 2.5%.
+     Fully covered: most multi-unit built before June 1980. SFH/condo: partial (no rent ceiling unless tenant moved in before 1996).
+     No coverage: "Golden Duplex" owner-occupied since 12/31/1979.
+     https://rentboard.berkeleyca.gov/rights-responsibilities/rent-levels/annual-general-adjustment (04/11/2026)
+     https://rentboard.berkeleyca.gov/rights-responsibilities/rent-control-101/your-unit-covered-rent-control (04/11/2026)
+   Mountain View CSFRA: AGA = 100% of Bay Area CPI (Feb→Feb), min 2% max 5%; 2026 AGA = 2.5% (Sept 1 2026–Aug 31 2027).
+     Fully covered: 3+ units built before 1995; 1995–2017: eviction protections only. Once per 12 months.
+     https://mountainview.gov/our-city/departments/housing/rent-stabilization/outreach-and-information/faqs (formula)
+     2.5% seen on official 2026 notice form (Rev. 2026.06.01) https://www.mountainview.gov/home/showpublisheddocument/13369/639165210020770000
+     — form not opened directly; matches SF-area Feb 2026 CPI 2.5% in DIR table. KEN DUYỆT.
+   Hayward RRSO: multi-unit built before July 1 1979; 5% once per 12 months (banked up to 10% total); SFH exempt;
+     copy of notice to Rent Review Office within 30 days. https://www.hayward-ca.gov/services/city-services/information-landlords (04/11/2026)
+     KEN DUYỆT: owner-occupied duplex treated as covered (page doesn't say).
+   Alameda (city): AGA Sept 1 2026–Aug 31 2027 = 2.7% (70% of CPI); multi-unit (2+) built before Feb 1995.
+     https://www.alamedarentprogram.org (04/11/2026)
+   Fremont: no cap beyond AB 1482; tenant can request non-binding Rent Review if increase > 5%.
+     https://www.fremont.gov/government/departments/housing/rent-review-program/rent-review-process (04/11/2026)
+*/
+const RULES={
+  cpiRegion:{sj:'ca',mv:'ca',sc:'ca',sun:'ca',osc:'ca',oak:'sf',brk:'sf',hay:'sf',ala:'sf',fre:'sf',oac:'sf'},
+  ab1482:{base:5,max:10,newYears:15,periods:[{from:'2026-08-01',to:'2027-07-31',sf:3.8,ca:3.6}]},
+  noticeDays:{upTo10:30,over10:90,mailExtra:5},
+  local:{
+    sj:{name:'San Jose ARO',types:['apt'],before:1979,fixed:5,link:'https://sanjoseca.gov/your-government/departments-offices/housing/tenants/learn-about-rent-stabilization'},
+    oak:{name:'Oakland RAP',types:['dupo','dup','apt'],before:1983,periods:[{from:'2025-08-01',to:'2026-07-31',pct:0.8},{from:'2026-08-01',to:'2027-07-31',pct:2.3}],link:'https://www.oaklandca.gov/Community/Housing-Programs-Support/For-Landlords/Allowable-Rent-Increases/Learn-More-About-Allowable-Rent-Increases'},
+    brk:{name:'Berkeley Rent Ordinance',types:['dupo','dup','apt'],before:1980,jan1:true,periods:[{from:'2026-01-01',to:'2026-12-31',pct:1.0},{from:'2027-01-01',to:'2027-12-31',pct:2.5}],link:'https://rentboard.berkeleyca.gov/rights-responsibilities/rent-levels/annual-general-adjustment'},
+    mv:{name:'Mountain View CSFRA',types:['apt'],before:1995,periods:[{from:'2026-09-01',to:'2027-08-31',pct:2.5}],link:'https://mountainview.gov/our-city/departments/housing/rent-stabilization/rent-and-allowed-rent-increases'},
+    hay:{name:'Hayward RRSO',types:['dupo','dup','apt'],before:1979,fixed:5,link:'https://www.hayward-ca.gov/services/city-services/information-landlords'},
+    ala:{name:'Alameda Rent Program',types:['dupo','dup','apt'],before:1995,periods:[{from:'2026-09-01',to:'2027-08-31',pct:2.7}],link:'https://www.alamedarentprogram.org'}
+  },
+  links:{fre:'https://www.fremont.gov/government/departments/housing/rent-review-program/rent-review-process',def:'https://oag.ca.gov/tenants'},
+  cityNames:{sj:'San Jose',oak:'Oakland',brk:'Berkeley',mv:'Mountain View',hay:'Hayward',ala:'Alameda',fre:'Fremont',sc:'Santa Clara',sun:'Sunnyvale',osc:'Santa Clara County',oac:'Alameda County'}
+};
+const UPDATED='05/11/2026';
+/* T236-only assumptions (ước tính — KEN DUYỆT):
+   CAP_DEFAULT: Santa Clara Co. 2–4u 4.25% (mid of SJ 3.75–4.75%), Alameda Co. 2–4u 5.0% (mid of Oakland 4.5–5.5%).
+     FACTS §5, apartmentloanstore.com/oakland + Crexi SJ 4-plex (05/11/2026) — UNVERIFIED exact.
+   MKT_GROWTH 3%/yr default: ước tính (CBRE Q2 2026: SJ +6.4% YoY, East Bay +3.3%).
+   Projection: same tenants, one raise per 12 months at the legal max, today's cap repeats every year, max 30 years. */
+const CAP_DEFAULT={sc:4.25, al:5.0}, MKT_GROWTH=3, HORIZON=30, MAX_UNITS=8;
+const COUNTY={sj:'sc',mv:'sc',sc:'sc',sun:'sc',osc:'sc',oak:'al',brk:'al',hay:'al',ala:'al',fre:'al',oac:'al'};
+
+/* Which rule applies + next max % (same order as T55: local first, then AB 1482, then exempt). */
+function D(s){const [y,m,d]=s.split('-').map(Number);return new Date(Date.UTC(y,m-1,d));}
+function iso(d){return d.toISOString().slice(0,10);}
+function pickPeriod(periods,s){for(const p of periods){if(s>=p.from&&s<=p.to)return {p,stale:false};}
+  const last=periods[periods.length-1]; return s>last.to?{p:last,stale:true}:{p:periods[0],stale:true};}
+function capRule(city,ptype,year,todayIso){
+  const R=RULES, today=D(todayIso), curYear=today.getUTCFullYear(), type=ptype==='sfhx'?'sfh':ptype, loc=R.local[city];
+  const eff=iso(new Date(today.getTime()+30*864e5));           /* earliest raise ≈ 30-day notice from today */
+  if(loc && loc.types.includes(type) && year<loc.before){
+    let pct, stale=false;
+    if(loc.fixed!=null) pct=loc.fixed;
+    else { const e = loc.jan1 ? (curYear+1)+'-01-01' : eff; const r=pickPeriod(loc.periods,e); pct=r.p.pct; stale=r.stale; }
+    return {kind:'local',law:loc.name,pct,stale,before:loc.before};
+  }
+  if(year > curYear - R.ab1482.newYears) return {kind:'exempt',reason:'new',pct:null};
+  if(type==='dupo') return {kind:'exempt',reason:'dupo',pct:null};
+  if(ptype==='sfhx') return {kind:'exempt',reason:'sfh',pct:null};
+  const r=pickPeriod(R.ab1482.periods,eff), reg=R.cpiRegion[city], cpi=r.p[reg];
+  return {kind:'state',law:'AB 1482',pct:Math.round(Math.min(R.ab1482.base+cpi,R.ab1482.max)*10)/10,cpi,reg,stale:r.stale,
+    reason: ptype==='sfh'?'sfhNoNotice':(loc && loc.types.includes(type)?'localTooNew':'state')};
+}
+/* Pure projection. units:[{cur,mkt}], capPct (null = no cap), g market growth %, cr cap rate % */
+function project(units,capPct,g,cr){
+  const c = capPct==null ? Infinity : capPct/100, gr=g/100;
+  const per=units.map(u=>{
+    let rent=u.cur, n=0, cum=0, rows=[];
+    const gap0=Math.max(0,u.mkt-u.cur);
+    if(gap0<=0) return {cur:u.cur,mkt:u.mkt,gap0,n:0,cum:0,rows:[],next:0};
+    for(let t=1;t<=HORIZON;t++){
+      const m=u.mkt*Math.pow(1+gr,t-1);                 /* market rent during year t */
+      rent=Math.min(rent*(1+c), m);                      /* raise t, never above market */
+      rows.push({rent,m});
+      const gap=Math.max(0,m-rent); cum+=gap*12;
+      if(gap<0.5){ n=t; break; }
+    }
+    const next=Math.min(u.cur*c, gap0);
+    return {cur:u.cur,mkt:u.mkt,gap0,n:n||Infinity,cum,rows,next};
+  });
+  const ltlM=per.reduce((s,u)=>s+u.gap0,0), N=per.reduce((s,u)=>Math.max(s,u.n),0);
+  const years=[]; const span=Math.min(isFinite(N)?N:HORIZON,HORIZON);
+  for(let t=1;t<=span;t++){ let r=0,m=0; per.forEach(u=>{ const row=u.rows[t-1]; const mt=u.mkt*Math.pow(1+gr,t-1);
+      r+= row?row.rent:mt; m+=mt; }); years.push({t,r,m,gap:m-r}); }
+  return {per,ltlM,ltlY:ltlM*12,N,next:per.reduce((s,u)=>s+u.next,0),value:cr>0?ltlM*12/(cr/100):0,
+    cum:per.reduce((s,u)=>s+u.cum,0),curM:per.reduce((s,u)=>s+u.cur,0),mktM:per.reduce((s,u)=>s+u.mkt,0),years};
+}
+
+const I18N={
+ en:{title:'Rents below market: how long to catch up?',sub:"Enter the rent roll and today's market rent. See the loss-to-lease, the legal max raise each year, and how many years until the rents catch up.",
+  l_city:'City',o_osc:'Other Santa Clara County',o_oac:'Other Alameda County',l_type:'Property type',
+  o_sfh:'Single-family / condo, no exemption notice',o_sfhx:'Single-family / condo, exemption notice given',o_dupo:'Duplex, owner lives in the other unit',o_dup:"Duplex, owner doesn't live there",o_apt:'Apartment building, 3+ units',
+  l_year:'Year built',l_roll:'Rent roll',h_cur:'Current rent /mo',h_mkt:'Market rent /mo',b_add:'+ Add unit',
+  roll_h:'Up to 8 units. Market rent = what a vacant unit like it rents for today (check comps or HUD FMR in <a href="/t51/">T51</a>).',
+  more:'More options',l_mg:'Market rent growth',l_mg_s:'(per year)',est:'estimate',est3:'estimate',l_cap:'Cap rate',l_cap_s:'(to price the loss)',
+  cap_h:'Default cap rate: Santa Clara County 2–4 units 4.25%, Alameda County 5.0% (mid of typical ranges, estimate). Change the city and it resets.',
+  t_local:'Local rent control',t_state:'State cap · AB 1482',t_exempt:'No rent cap',
+  w_local:'{law}: {type} built before {before}. Max {pct}% per 12 months. Stricter than AB 1482, so it wins.',
+  w_state:'AB 1482: 5% + {cpi}% CPI ({reg}) = {pct}% per 12 months, max 10%.',
+  w_localTooNew:'Built too late for {law}, so the state cap applies: 5% + {cpi}% CPI ({reg}) = {pct}%.',
+  w_sfhNoNotice:'Single-family home without the written exemption notice: the state cap applies, 5% + {cpi}% CPI ({reg}) = {pct}%.',
+  w_new:'Built within the last 15 years. No AB 1482 cap yet, no local cap. You can go to market at the next raise (over 10% needs 90 days notice).',
+  w_dupo:'Owner-occupied duplex: exempt from AB 1482 if the owner lived there when this tenant moved in. Watch out: the exemption ends when you buy it and don\'t live there.',
+  w_sfh:'Single-family or condo, individual owner, tenant got the exemption notice: no state cap. Over 10% needs 90 days notice.',
+  reg_ca:'California CPI',reg_sf:'SF-Oakland-Hayward CPI',
+  stale:' The posted figure has expired; next year\'s number isn\'t out yet. Check T55.',
+  ty_apt:'3+ units',ty_dup:'duplex',ty_dupo:'duplex',ty_sfh:'single-family',ty_sfhx:'single-family',
+  r_total:'Years until rents catch up',u_yr:'years',u_yr1:'year',u_now:'at market',u_never:'30+ years',
+  n_ltl:'Loss-to-lease',n_ltl_s:'Market rent − current rent, all units',ltlp:'{p} below market · {y}/yr',n_ltlm:'Per month',
+  n_max:'Max legal raise, next increase',max_s:'{law}',max_none:'No cap',n_maxd:'That raise in dollars',n_maxd_s:'All units together, capped at market',
+  n_val:'Value lost to loss-to-lease',val_s:'Yearly loss-to-lease ÷ {c}% cap rate',n_cum:'Rent you give up until caught up',n_cum_s:'Sum of the yearly gap, while the same tenants stay',
+  k_tbl:'Year by year',k_units:'Each unit',th_y:'Year',th_r:'Rent /mo',th_m:'Market /mo',th_g:'Gap /mo',
+  u_line:'Unit {k}',u_sub:'{c} → market {m}',u_ok:'at market',u_n:'{n} yrs',u_n1:'1 yr',u_inf:'30+ yrs',
+  note_v:'A unit resets to market when the tenant moves out on their own (Costa-Hawkins vacancy decontrol). This tool assumes the same tenants stay, one raise a year at the legal max.',
+  note_est:"Future years assume today's cap repeats and market rent grows at the rate you set. Real CPI caps change every year. Estimate only.",
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this rent roll check to yourself',f_sub:'Ken will reply and can pull real rent comps for the building. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ns_t:'Next step',
+  ns1:'Ready to send a raise? Get the exact max, the earliest date and the notice days in <a href="/t55/">T55</a>.',
+  ns2:'Put today\'s rent roll, not the pro forma, into the cash flow math: <a href="/t146/">T146</a>.',
+  ns3:'Ask the seller for every lease, the last increase date per unit and the city rent registry printout before you remove contingencies.',
+  ns4:'See what the depreciation does to your tax on this building: <a href="/t235/">T235</a>.',
+  myth:'<b>Many people get this wrong:</b> "Rents are $600 under market, so I\'ll raise them after closing." Under San Jose ARO that\'s 5% a year. If market rent grows 3% a year, you close the gap by about 2% a year. A 25% gap can take more than 10 years. Pay for the rent roll you get, not the one you hope for.',
+  ft_read:'Read more:',ft_lib:'Library (coming soon)',ft_vid:'Kiến Thức Địa Ốc video (coming soon)',ft_src:'Sources',
+  ft_est:'General information, not legal, tax or financial advice. Every building has its own history (banked increases, petitions, registry). Confirm with the city rent program or a landlord-tenant attorney.',
+  ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I ran T236 on tools.kenlamrealty.com: {city}, {u} units, loss-to-lease {ly}/yr, max raise {pct}, {n} to catch up. Can we talk?',
+  subj:'Rent roll vs market — {nm}',
+  body:'Name: {nm}\nEmail: {em}\nPhone: {ph}\n\nCity: {city} · Type: {ty} · Built: {yb}\nRule: {law}\nUnits: {u}\n{rows}\n\nCurrent rent: {cm}/mo · Market: {mm}/mo\nLoss-to-lease: {lm}/mo · {ly}/yr\nMax raise next: {pct} ({md}/mo)\nYears to catch up: {n}\nRent given up until then: {cum}\nValue lost at {cr}% cap: {val}\nMarket growth assumed: {g}%/yr\n\nEstimate only, not legal advice.\nSent from tool T236 tools.kenlamrealty.com'},
+ vi:{title:'Tiền thuê thấp hơn thị trường: bao lâu mới lên kịp?',sub:'Nhập rent roll và giá thuê thị trường. Ra liền loss-to-lease, luật cho tăng tối đa bao nhiêu mỗi năm, và mấy năm mới đuổi kịp.',
+  l_city:'City',o_osc:'City khác ở Santa Clara County',o_oac:'City khác ở Alameda County',l_type:'Loại nhà',
+  o_sfh:'Single-family / condo, chưa gửi giấy miễn',o_sfhx:'Single-family / condo, đã gửi giấy miễn',o_dupo:'Duplex, chủ ở 1 căn',o_dup:'Duplex, chủ không ở',o_apt:'Chung cư 3 căn trở lên',
+  l_year:'Năm xây',l_roll:'Rent roll',h_cur:'Đang thu /tháng',h_mkt:'Giá thị trường /tháng',b_add:'+ Thêm căn',
+  roll_h:'Tối đa 8 căn. Giá thị trường = căn trống giống vậy giờ cho thuê được bao nhiêu (coi comps hoặc HUD FMR ở <a href="/t51/">T51</a>).',
+  more:'Tùy chỉnh thêm',l_mg:'Giá thuê thị trường tăng',l_mg_s:'(mỗi năm)',est:'ước tính',est3:'ước tính',l_cap:'Cap rate',l_cap_s:'(để quy ra giá nhà)',
+  cap_h:'Cap rate mặc định: Santa Clara County 2–4 căn 4.25%, Alameda County 5.0% (giữa khoảng thường gặp, ước tính). Đổi city là tự đặt lại.',
+  t_local:'Rent control của city',t_state:'Luật tiểu bang · AB 1482',t_exempt:'Không giới hạn',
+  w_local:'{law}: {type} xây trước {before}. Tối đa {pct}% mỗi 12 tháng. Chặt hơn AB 1482 nên áp dụng luật city.',
+  w_state:'AB 1482: 5% + {cpi}% CPI ({reg}) = {pct}% mỗi 12 tháng, không quá 10%.',
+  w_localTooNew:'Xây sau mốc của {law}, nên theo luật tiểu bang: 5% + {cpi}% CPI ({reg}) = {pct}%.',
+  w_sfhNoNotice:'Nhà single-family chưa gửi giấy báo miễn: vẫn theo luật tiểu bang, 5% + {cpi}% CPI ({reg}) = {pct}%.',
+  w_new:'Nhà xây chưa tới 15 năm. Chưa bị AB 1482, city cũng không giới hạn. Lần tăng tới có thể lên giá thị trường (tăng trên 10% phải báo trước 90 ngày).',
+  w_dupo:'Duplex chủ ở 1 căn: miễn AB 1482 nếu chủ đã ở đó từ lúc người thuê dọn vô. Coi chừng: mình mua mà không dọn vô ở thì hết được miễn.',
+  w_sfh:'Single-family hoặc condo, chủ là cá nhân, người thuê đã nhận giấy báo miễn: không bị giới hạn. Tăng trên 10% phải báo trước 90 ngày.',
+  reg_ca:'CPI California',reg_sf:'CPI vùng SF-Oakland-Hayward',
+  stale:' Số đã công bố đã hết hạn, số năm tới chưa ra. Coi lại T55.',
+  ty_apt:'Nhà 3+ căn',ty_dup:'Duplex',ty_dupo:'Duplex',ty_sfh:'Nhà single-family',ty_sfhx:'Nhà single-family',
+  r_total:'Mấy năm mới đuổi kịp thị trường',u_yr:'năm',u_yr1:'năm',u_now:'đã bằng thị trường',u_never:'hơn 30 năm',
+  n_ltl:'Loss-to-lease',n_ltl_s:'Giá thị trường − tiền đang thu, cộng mọi căn',ltlp:'Thấp hơn thị trường {p} · {y}/năm',n_ltlm:'Mỗi tháng',
+  n_max:'Luật cho tăng tối đa lần tới',max_s:'{law}',max_none:'Không giới hạn',n_maxd:'Lần tăng đó ra tiền',n_maxd_s:'Cộng mọi căn, không quá giá thị trường',
+  n_val:'Giá nhà mất vì loss-to-lease',val_s:'Loss-to-lease 1 năm ÷ cap rate {c}%',n_cum:'Tiền thuê bị hụt cho tới khi kịp',n_cum_s:'Cộng phần thiếu từng năm, nếu người thuê cũ vẫn ở',
+  k_tbl:'Từng năm',k_units:'Từng căn',th_y:'Năm',th_r:'Tiền thuê /tháng',th_m:'Thị trường /tháng',th_g:'Thiếu /tháng',
+  u_line:'Căn {k}',u_sub:'{c} → thị trường {m}',u_ok:'đã bằng',u_n:'{n} năm',u_n1:'1 năm',u_inf:'30+ năm',
+  note_v:'Người thuê tự dọn đi thì căn đó được cho thuê lại theo giá thị trường (Costa-Hawkins). Tool này tính trường hợp người thuê cũ ở hoài, mỗi năm tăng 1 lần ở mức tối đa.',
+  note_est:'Các năm sau tính theo mức trần hiện tại lặp lại và giá thị trường tăng theo % mình nhập. Thực tế mức CPI đổi mỗi năm. Chỉ là ước tính.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi bảng rent roll này về email',f_sub:'Ken nhận được sẽ trả lời và có thể kéo comps giá thuê thật cho căn này. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ns_t:'Bước tiếp theo',
+  ns1:'Sắp gửi giấy tăng tiền thuê? Coi mức tối đa, ngày sớm nhất và số ngày báo trước ở <a href="/t55/">T55</a>.',
+  ns2:'Lấy rent roll thật hôm nay, không phải pro forma, bỏ vào tính cash flow ở <a href="/t146/">T146</a>.',
+  ns3:'Trước khi bỏ contingency: xin seller đủ lease, ngày tăng tiền gần nhất từng căn, và bản in rent registry của city.',
+  ns4:'Coi khấu hao giúp giảm thuế bao nhiêu cho căn này ở <a href="/t235/">T235</a>.',
+  myth:'<b>Nhiều người hiểu sai:</b> "Tiền thuê thấp hơn thị trường $600, mua xong tăng lên là được." Theo ARO San Jose chỉ được 5% một năm. Thị trường cũng tăng 3% một năm, vậy mỗi năm chỉ rút ngắn khoảng 2%. Thấp 25% thì có khi hơn 10 năm mới kịp. Trả giá theo rent roll đang có, đừng trả theo rent roll mình mong.',
+  ft_read:'Đọc thêm:',ft_lib:'Library (sắp có)',ft_vid:'Video Kiến Thức Địa Ốc (sắp có)',ft_src:'Nguồn',
+  ft_est:'Thông tin chung, không phải tư vấn luật, thuế hay tài chính. Mỗi căn có lịch sử riêng (tăng dồn, petition, registry). Hỏi lại rent program của city hoặc luật sư landlord-tenant.',
+  ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa tính T236 trên tools.kenlamrealty.com: {city}, {u} căn, loss-to-lease {ly}/năm, được tăng tối đa {pct}, {n} mới kịp. Cho tôi hỏi thêm.',
+  subj:'Rent roll so với thị trường — {nm}',
+  body:'Tên: {nm}\nEmail: {em}\nPhone: {ph}\n\nCity: {city} · Loại: {ty} · Năm xây: {yb}\nLuật: {law}\nSố căn: {u}\n{rows}\n\nĐang thu: {cm}/tháng · Thị trường: {mm}/tháng\nLoss-to-lease: {lm}/tháng · {ly}/năm\nTăng tối đa lần tới: {pct} ({md}/tháng)\nMấy năm mới kịp: {n}\nTiền thuê hụt tới lúc đó: {cum}\nGiá nhà mất ở cap {cr}%: {val}\nGiá thị trường tăng: {g}%/năm\n\nChỉ là ước tính, không phải tư vấn luật.\nGửi từ tool T236 tools.kenlamrealty.com'}
+};
+let lang='en', last={};
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'-$':'$')+Math.abs(Math.round(n)).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]!=null?v[k]:m);
+const todayIso=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+const DEF_ROWS=[[2050,2650],[2100,2650],[2400,2650],[2650,2650]];
+
+function addRow(cur,mkt){
+  const box=$('urows'), n=box.querySelectorAll('.urow').length; if(n>=MAX_UNITS) return;
+  const r=document.createElement('div'); r.className='urow';
+  r.innerHTML='<span class="ul"></span><div class="ctl"><span class="pre">$</span><input type="number" inputmode="numeric" min="0" step="25" class="uc" aria-label="Current rent"></div>'+
+    '<div class="ctl"><span class="pre">$</span><input type="number" inputmode="numeric" min="0" step="25" class="um" aria-label="Market rent"></div><button type="button" class="x" aria-label="Remove">×</button>';
+  box.appendChild(r);
+  const c=r.querySelector('.uc'), m=r.querySelector('.um');
+  setTimeout(()=>{ c.value=cur; m.value=mkt; calc(); },0);
+  c.addEventListener('input',calc); m.addEventListener('input',calc);
+  r.querySelector('.x').onclick=()=>{ if(box.querySelectorAll('.urow').length>1){ r.remove(); calc(); } };
+}
+function units(){ return [...document.querySelectorAll('#urows .urow')].map(r=>({cur:Math.max(0,parseFloat(r.querySelector('.uc').value)||0),mkt:Math.max(0,parseFloat(r.querySelector('.um').value)||0)})); }
+function calc(){
+  const d=I18N[lang], city=$('city').value, ptype=$('ptype').value, year=Math.round(num('year'));
+  document.querySelectorAll('#urows .urow').forEach((r,k)=>{ r.querySelector('.ul').textContent=k+1; });
+  $('addRow').classList.toggle('hide',document.querySelectorAll('#urows .urow').length>=MAX_UNITS);
+  const rule=capRule(city,ptype,year,todayIso()), U=units(), cr=num('cap'), g=num('mg');
+  const P=project(U,rule.pct,g,cr);
+  const tag=$('lawTag'); tag.textContent=d['t_'+rule.kind]; tag.className='tag'+(rule.kind==='exempt'?' ex':'');
+  const regName=rule.reg?d['reg_'+rule.reg]:'';
+  const lawName=rule.kind==='local'?rule.law:(rule.reason==='localTooNew'?RULES.local[city].name:'');
+  let why;
+  if(rule.kind==='local') why=fill(d.w_local,{law:rule.law,type:d['ty_'+ptype],before:rule.before,pct:rule.pct});
+  else if(rule.kind==='state') why=fill(d['w_'+rule.reason]||d.w_state,{law:lawName,cpi:rule.cpi,reg:regName,pct:rule.pct});
+  else why=d['w_'+rule.reason];
+  if(rule.stale) why+=d.stale;
+  $('lawWhy').textContent=why;
+  const N=P.N, yv=$('yrsV');
+  let nTxt;
+  if(P.ltlM<=0){ $('yrs').textContent='0'; $('yrsU').textContent=d.u_now; nTxt=d.u_now; }
+  else if(!isFinite(N)){ $('yrs').textContent='30+'; $('yrsU').textContent=d.u_yr; nTxt=d.u_never; }
+  else { $('yrs').textContent=N; $('yrsU').textContent=N===1?d.u_yr1:d.u_yr; nTxt=N+' '+(N===1?d.u_yr1:d.u_yr); }
+  yv.classList.toggle('neg',!isFinite(N)||N>=10);
+  $('ltl').textContent=fmt(P.ltlY)+(lang==='vi'?'/năm':'/yr');
+  $('ltlm').textContent=fmt(P.ltlM)+(lang==='vi'?'/tháng':'/mo');
+  $('ltlps').textContent=fill(d.ltlp,{p:P.mktM>0?(P.ltlM/P.mktM*100).toFixed(1)+'%':'0%',y:fmt(P.ltlY)});
+  $('maxp').textContent=rule.pct==null?d.max_none:rule.pct+'%';
+  $('maxs').textContent=rule.kind==='exempt'?d.t_exempt:fill(d.max_s,{law:rule.kind==='local'?rule.law:'AB 1482'});
+  $('maxd').textContent=fmt(P.next)+(lang==='vi'?'/tháng':'/mo');
+  $('val').textContent=fmt(P.value); $('vals').textContent=fill(d.val_s,{c:cr});
+  $('cum').textContent=fmt(P.cum);
+  /* year table: show up to 12 rows */
+  const ys=P.years, show=ys.length>12?ys.filter((y,k)=>k<10||k===ys.length-1):ys;
+  let h='<thead><tr><th>'+d.th_y+'</th><th>'+d.th_r+'</th><th>'+d.th_m+'</th><th>'+d.th_g+'</th></tr></thead><tbody>';
+  show.forEach(y=>{ const ok=y.gap<0.5*U.length; h+='<tr><td>'+y.t+'</td><td>'+fmt(y.r)+'</td><td>'+fmt(y.m)+'</td><td class="'+(ok?'ok':'far')+'">'+(ok?'✓':fmt(y.gap))+'</td></tr>'; });
+  $('ytbl').innerHTML=ys.length?h+'</tbody>':'';
+  $('ytbl').parentElement.previousElementSibling.classList.toggle('hide',!ys.length);
+  $('ulines').innerHTML=P.per.map((u,k)=>'<div class="line"><span class="n"><b>'+fill(d.u_line,{k:k+1})+'</b><small>'+fill(d.u_sub,{c:fmt(u.cur),m:fmt(u.mkt)})+'</small></span><span class="a">'+
+    (u.gap0<=0?d.u_ok:!isFinite(u.n)?d.u_inf:u.n===1?d.u_n1:fill(d.u_n,{n:u.n}))+'</span></div>').join('');
+  last={city:$('city').options[$('city').selectedIndex].text,ty:$('ptype').options[$('ptype').selectedIndex].text,yb:year,law:$('lawTag').textContent+' — '+why,u:U.length,
+    rows:U.map((u,k)=>'#'+(k+1)+': '+fmt(u.cur)+' → '+fmt(u.mkt)).join('\n'),cm:fmt(P.curM),mm:fmt(P.mktM),lm:fmt(P.ltlM),ly:fmt(P.ltlY),
+    pct:rule.pct==null?d.max_none:rule.pct+'%',md:fmt(P.next),n:nTxt,cum:fmt(P.cum),cr,val:fmt(P.value),g};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+  klSend();
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+const EMBED=/[?&]embed=1/.test(location.search);
+let klSend=()=>{};
+if(EMBED){ document.documentElement.classList.add('embed'); let lastH=0;
+  klSend=()=>{ const w=document.querySelector('.wrap'); const h=Math.ceil(w.getBoundingClientRect().bottom+window.scrollY+40); if(Math.abs(h-lastH)<4) return; lastH=h; try{ parent.postMessage({klToolsHeight:h},'*'); }catch(e){} };
+  window.addEventListener('resize',()=>klSend());
+  document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('a[href]'); if(!a) return; const h=a.getAttribute('href'); if(h.startsWith('#')||a.target==='_blank') return; if(h.startsWith('/')) a.href='https://tools.kenlamrealty.com'+h; a.target='_top'; },true); }
+$('city').addEventListener('change',()=>{ $('cap').value=CAP_DEFAULT[COUNTY[$('city').value]]; calc(); });
+['ptype'].forEach(id=>$(id).addEventListener('change',calc));
+['year','mg','cap'].forEach(id=>$(id).addEventListener('input',calc));
+$('addRow').onclick=()=>{ const u=units(), l=u[u.length-1]||{cur:2000,mkt:2500}; addRow(l.cur,l.mkt); };
+document.querySelector('details.more').addEventListener('toggle',()=>klSend());
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus(); klSend();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], v=Object.assign({},last,{nm:$('fname').value.trim()||'—',em:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'});
+  /* LEAD → FUB: mailto ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,v))+'&body='+encodeURIComponent(fill(d.body,v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){} };
+window.__project=project; window.__capRule=capRule;
+DEF_ROWS.forEach(r=>addRow(r[0],r[1]));
+$('cap').value=CAP_DEFAULT.sc;
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

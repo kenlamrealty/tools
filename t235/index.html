@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rental Taxes &amp; Depreciation · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Rental depreciation calculator for Bay Area landlords: 27.5-year depreciation, the $25,000 passive loss allowance, estimated federal + California tax saved, and recapture when you sell.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t235/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Rental Taxes &amp; Depreciation · Ken Lam Tools">
+<meta property="og:description" content="Rental depreciation calculator for Bay Area landlords: 27.5-year depreciation, the $25,000 passive loss allowance, estimated federal + California tax saved, and recapture when you sell.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t235/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T235 additions */
+.hide{display:none!important}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.sec-k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:6px 0 0}
+.chip{display:inline-block;font-size:12px;font-weight:500;line-height:1.2;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;margin-left:8px}
+.chip.g{color:var(--ok);border-color:var(--ok)}
+.chip.y{color:var(--brass);border-color:var(--brass)}
+.chip.r{color:var(--warn);border-color:var(--warn);background:var(--brass-soft)}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.line .a{display:flex;align-items:center}
+.total .v.neg{color:var(--warn)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.hide{display:none!important}
+html.embed .kl-back{display:none}
+html.embed body{padding-top:8px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.sec-k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:6px 0 0}
+.chip{display:inline-block;font-size:12px;font-weight:500;line-height:1.2;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;margin-left:8px}
+.chip.g{color:var(--ok);border-color:var(--ok)}
+.chip.y{color:var(--brass);border-color:var(--brass)}
+.chip.r{color:var(--warn);border-color:var(--warn);background:var(--brass-soft)}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.line .a{display:flex;align-items:center}
+.total .v.neg{color:var(--warn)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl select:focus-visible{outline:none}
+.ctl .chev{color:var(--muted);font-size:13px;pointer-events:none}
+details.more{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:0 14px}
+details.more summary{cursor:pointer;padding:12px 0;font-size:14px;font-weight:500;color:var(--muted);list-style:none}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary::before{content:'+ ';color:var(--brass)}
+details.more[open] summary::before{content:'− '}
+details.more .inner{display:grid;gap:14px;padding:0 0 14px}
+.est{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--brass);font-weight:500;margin-left:6px}
+
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Rental taxes &amp; depreciation</h1>
+    <p class="sub" data-i="sub">How much depreciation you get, whether the paper loss cuts your tax this year, and what comes back when you sell.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="price"><span data-i="l_price">Purchase price</span></label>
+      <div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" min="0" step="5000" value="1400000"></div>
+    </div>
+    <div class="field">
+      <label for="land"><span data-i="l_land">Land share of the price</span> <small data-i="l_land_s">(from the tax bill: Land ÷ Land + Improvements)</small><span class="est" data-i="est">estimate</span></label>
+      <div class="ctl"><input id="land" type="number" inputmode="decimal" min="0" max="95" step="1" value="50"><span class="post">%</span></div>
+    </div>
+    <div class="field">
+      <label for="cash"><span data-i="l_cash">Rental profit or loss before depreciation</span> <small data-i="l_cash_s">(rent − all expenses − mortgage interest, per year; type a minus for a loss)</small></label>
+      <div class="ctl"><span class="pre">$</span><input id="cash" type="number" inputmode="numeric" step="500" value="6000"><span class="post" data-i="per_yr">/yr</span></div>
+    </div>
+    <div class="field">
+      <label for="magi"><span data-i="l_magi">Your household MAGI</span> <small data-i="l_magi_s">(roughly your AGI, before rental losses)</small></label>
+      <div class="ctl"><span class="pre">$</span><input id="magi" type="number" inputmode="numeric" min="0" step="1000" value="140000"><span class="post" data-i="per_yr2">/yr</span></div>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_st">Filing status</span>
+      <div class="seg" role="group" id="stSeg">
+        <button type="button" data-v="single" aria-pressed="false" data-i="st_s">Single</button>
+        <button type="button" data-v="mfj" aria-pressed="true" data-i="st_m">Married filing jointly</button>
+      </div>
+    </div>
+
+    <details class="more">
+      <summary data-i="more">More options</summary>
+      <div class="inner">
+        <div class="field">
+          <label for="ti"><span data-i="l_ti">Taxable income without the rental</span> <small data-i="l_ti_s">(after deductions; sets your tax bracket)</small></label>
+          <div class="ctl"><span class="pre">$</span><input id="ti" type="number" inputmode="numeric" min="0" step="1000" value="110000"><span class="post" data-i="per_yr3">/yr</span></div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="addb"><span data-i="l_addb">Closing costs + upgrades</span> <small data-i="l_addb_s">(added to basis)</small></label>
+            <div class="ctl"><span class="pre">$</span><input id="addb" type="number" inputmode="numeric" min="0" step="1000" value="0"></div>
+          </div>
+          <div class="field">
+            <label for="mon"><span data-i="l_mon">Month rented out</span> <small data-i="l_mon_s">(1–12, first year)</small></label>
+            <div class="ctl"><input id="mon" type="number" inputmode="numeric" min="1" max="12" step="1" value="1"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="yrs"><span data-i="l_yrs">Years you plan to hold</span> <small data-i="l_yrs_s">(for the recapture estimate)</small></label>
+          <div class="ctl"><input id="yrs" type="number" inputmode="numeric" min="1" max="40" step="1" value="10"><span class="post" data-i="u_yrs">years</span></div>
+        </div>
+        <div class="field">
+          <span class="fl" data-i="l_role">Your role</span>
+          <div class="seg" role="group" id="roleSeg">
+            <button type="button" data-v="active" aria-pressed="true" data-i="r_act">Active landlord</button>
+            <button type="button" data-v="rep" aria-pressed="false" data-i="r_rep">Real estate professional</button>
+          </div>
+          <p class="hint" data-i="role_h">Real estate professional (IRS): more than half your work time and over 750 hours a year in real estate, plus material participation. A W-2 job usually rules it out.</p>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k"><span data-i="r_total">Tax saved by depreciation</span><span class="est" data-i="est2">estimate</span></div>
+      <div class="v" id="saveV"><span id="save">$0</span> <small data-i="per_yr4">/yr</small></div>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_dep">Depreciation per year</b><small data-i="n_dep_s">Building only ÷ 27.5 years. Land never depreciates.</small></span><span class="a" id="dep">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_y1">First-year depreciation</b><small id="y1s"></small></span><span class="a" id="y1">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_bld">Building value (depreciable)</b><small data-i="n_bld_s">(price + basis add-ons) × (1 − land %)</small></span><span class="a" id="bld">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_paper">Rental result after depreciation</b><small data-i="n_paper_s">What Schedule E shows. Minus = loss on paper.</small></span><span class="a" id="paper">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_allow">Loss you can use this year</b><small id="allows"></small></span><span class="a"><span id="allow">$0</span><span class="chip" id="cAllow"></span></span></div>
+      <div class="line"><span class="n"><b data-i="n_susp">Loss carried forward</b><small data-i="n_susp_s">Not lost. Used in later years or when you sell.</small></span><span class="a" id="susp">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_fed">Federal tax saved</b><small id="feds"></small></span><span class="a" id="fed">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_ca">California tax saved</b><small id="cas"></small></span><span class="a" id="ca">$0</span></div>
+    </div>
+    <p class="sec-k" data-i="k_sell">When you sell</p>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_taken">Depreciation taken</b><small id="takens"></small></span><span class="a" id="taken">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_rec">Federal recapture tax</b><small data-i="n_rec_s">Ordinary rates, capped at 25% (unrecaptured §1250)</small></span><span class="a" id="rec">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_rca">California on that part</b><small data-i="n_rca_s">CA taxes it as regular income</small></span><span class="a" id="rca">$0</span></div>
+    </div>
+    <div class="note" id="allowNote"></div>
+    <div class="note" data-i="est_note">Estimate only, not tax advice. Uses 2026 federal brackets and the 2025 California schedule (latest published). California rules can differ from federal. NIIT, AMT, credits and other income are left out. Ask a CPA before you file.</div>
+  </section>
+  <video src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px;margin-top:8px" aria-label="How to use this tool"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t235/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this estimate to yourself</h2>
+    <p data-i="f_sub">Ken will reply and can connect you with CPAs who work with Bay Area landlords. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Next step</h2>
+    <ol>
+      <li data-i="ns1">Not sure of the profit before depreciation? Run rent, expenses and loan in <a href="/t146/">T146</a>.</li>
+      <li data-i="ns2">Pull the property tax bill. The Land vs Improvements split there is the number your CPA will likely use.</li>
+      <li data-i="ns3">Thinking of selling later? See how a 1031 exchange defers the recapture: <a href="/t222/">T222</a>.</li>
+      <li data-i="ns4">Rents below market? See how fast the law lets you catch up: <a href="/t236/">T236</a>.</li>
+    </ol>
+  </section>
+  <p class="myth" data-i="myth"><b>Many people get this wrong:</b> "My rental shows a loss, so it cuts my W-2 tax." Only if your MAGI is under $150,000 (and fully only under $100,000). Above that the loss is parked, not gone. And depreciation you skip still gets taxed when you sell, because the IRS counts what was "allowable."</p>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <span data-i="ft_lib">Library (coming soon)</span> · <span data-i="ft_vid">Kiến Thức Địa Ốc video (coming soon)</span></span>
+    <span><span data-i="ft_src">Sources</span> (05/11/2026):
+      <a href="https://www.irs.gov/publications/p527" target="_blank" rel="noopener">IRS Pub 527</a> ·
+      <a href="https://www.irs.gov/publications/p946" target="_blank" rel="noopener">IRS Pub 946</a> ·
+      <a href="https://www.irs.gov/publications/p925" target="_blank" rel="noopener">IRS Pub 925 (§469)</a> ·
+      <a href="https://www.irs.gov/taxtopics/tc409" target="_blank" rel="noopener">IRS Topic 409</a> ·
+      <a href="https://kpmg.com/us/en/taxnewsflash/news/2025/10/tnf-rev-proc-2025-32-inflation-adjustments-for-2026-individual-taxpayers.html" target="_blank" rel="noopener">2026 brackets (Rev. Proc. 2025-32)</a> ·
+      <a href="https://www.ftb.ca.gov/forms/2025/2025-540-tax-rate-schedules.pdf" target="_blank" rel="noopener">FTB 2025 rate schedules</a> ·
+      <a href="https://www.ballardspahr.com/insights/alerts-and-articles/2025/07/tax-impact-of-the-obbba-what-the-new-budget-law-means-for-housing-and-real-estate" target="_blank" rel="noopener">OBBBA summary</a></span>
+    <span data-i="ft_est">General information, not tax, legal or financial advice. Ask a CPA before you file or buy.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 05/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== TAX + DEPRECIATION RULES — sửa 1 chỗ ở đây (tra 05/11/2026) =====
+   Depreciation: residential rental building 27.5 yrs straight-line, mid-month (GDS). Land not depreciable.
+     Year 1 % = (12 − month + 0.5)/12 ÷ 27.5 (Jan → 3.485%, full year 3.636%). IRS Pub 527/946 https://www.irs.gov/publications/p527
+     Land split: assessor Land vs Improvements ratio is the common method. LAND_DEFAULT 50% = ước tính — KEN DUYỆT.
+     California also 27.5-yr straight line; CA never follows bonus depreciation (FACTS §2.6).
+   Passive loss §469(i): $25,000 special allowance for active participation, reduced $1 per $2 of MAGI over $100,000,
+     gone at $150,000 (MFS living apart $12,500 / $50K–$75K — not built in). Not inflation-indexed. OBBBA did not change it.
+     https://www.irs.gov/publications/p925 ; https://www.ballardspahr.com/insights/alerts-and-articles/2025/07/tax-impact-of-the-obbba-what-the-new-budget-law-means-for-housing-and-real-estate
+     Real estate professional: >50% of work time + >750 hrs/yr in real property trades + material participation → no passive limit.
+     KEN DUYỆT: tool applies the same allowance to CA; CA may treat real-estate-professional losses differently — CPA.
+   Recapture: unrecaptured §1250 gain taxed at ordinary rates capped at 25%: IRS Topic 409 https://www.irs.gov/taxtopics/tc409
+   Brackets copied from T222 (same sources, checked 04/11/2026):
+   FED_ORD 2026 (10–37%): Rev. Proc. 2025-32 via KPMG summary
+     https://kpmg.com/us/en/taxnewsflash/news/2025/10/tnf-rev-proc-2025-32-inflation-adjustments-for-2026-individual-taxpayers.html
+     (lower brackets from the same KPMG page — KEN DUYỆT). Only Single + MFJ built in.
+   CA = 2025 schedules X/Y (2026 not published yet): https://www.ftb.ca.gov/forms/2025/2025-540-tax-rate-schedules.pdf
+     + 1% Behavioral Health Services Tax over $1,000,000: https://www.ftb.ca.gov/forms/2026/2026-540-es-instructions.html
+   Simplifications: "taxable income without the rental" used for both federal and CA; NIIT, AMT, credits ignored.
+   ======================================================================================================== */
+const RULE={LIFE:27.5, LAND_DEFAULT:50, PAL:{allow:25000, start:100000, end:150000}};
+const TAX={
+  FED_YEAR:2026,
+  FED_ORD:{
+    single:[[12400,.10],[50400,.12],[105700,.22],[201775,.24],[256225,.32],[640600,.35],[Infinity,.37]],
+    mfj:[[24800,.10],[100800,.12],[211400,.22],[403550,.24],[512450,.32],[768700,.35],[Infinity,.37]]},
+  REC_CAP:0.25,
+  CA_YEAR:2025,
+  CA:{
+    single:[[11079,.01],[26264,.02],[41452,.04],[57542,.06],[72724,.08],[371479,.093],[445771,.103],[742953,.113],[Infinity,.123]],
+    mfj:[[22158,.01],[52528,.02],[82904,.04],[115084,.06],[145448,.08],[742958,.093],[891542,.103],[1485906,.113],[Infinity,.123]]},
+  CA_BHST:{rate:0.01, over:1000000}
+};
+const UPDATED='05/11/2026';
+function slice(br,a,b,cap){ let t=0,lo=0; for(const [hi,r] of br){ const x=Math.max(0,Math.min(b,hi)-Math.max(a,lo)); t+=x*Math.min(r,cap); lo=hi; } return t; }
+const fedTax=(st,x)=>slice(TAX.FED_ORD[st],0,Math.max(0,x),1);
+const caTax=(st,x)=>{ x=Math.max(0,x); return slice(TAX.CA[st],0,x,1)+TAX.CA_BHST.rate*Math.max(0,x-TAX.CA_BHST.over); };
+const rateAt=(br,x)=>{ for(const [hi,r] of br){ if(Math.max(0,x)<hi) return r; } return br[br.length-1][1]; };
+
+/* Pure model. i: {price,land,addb,cash,magi,ti,st,mon,yrs,role} */
+function model(i){
+  const bld=Math.max(0,(i.price+i.addb)*(1-Math.min(95,Math.max(0,i.land))/100));
+  const dep=bld/RULE.LIFE, m=Math.min(12,Math.max(1,Math.round(i.mon)||1));
+  const y1=bld*((12-m+0.5)/12)/RULE.LIFE;
+  const allowance = i.role==='rep' ? Infinity : Math.max(0,RULE.PAL.allow-0.5*Math.max(0,i.magi-RULE.PAL.start));
+  const use=x=> x>=0 ? x : -Math.min(-x,allowance);          /* taxable rental income after passive limit */
+  const paper=i.cash-dep, T0=use(i.cash), T1=use(paper);
+  const loss=Math.max(0,-paper), allowed=Math.min(loss,allowance), susp=loss-allowed;
+  const O=Math.max(0,i.ti);
+  const fed=fedTax(i.st,O+T0)-fedTax(i.st,O+T1), ca=caTax(i.st,O+T0)-caTax(i.st,O+T1);
+  const N=Math.min(40,Math.max(1,Math.round(i.yrs)||1));
+  const taken=Math.min(bld, N===1?y1:y1+dep*(N-1));
+  const rec=slice(TAX.FED_ORD[i.st],O,O+taken,TAX.REC_CAP), rca=caTax(i.st,O+taken)-caTax(i.st,O);
+  return {bld,dep,y1,m,allowance,paper,loss,allowed,susp,fed,ca,save:fed+ca,N,taken,rec,rca,
+    fedR:rateAt(TAX.FED_ORD[i.st],O+T1), caR:rateAt(TAX.CA[i.st],O+T1)};
+}
+
+const I18N={
+ en:{title:'Rental taxes &amp; depreciation',sub:'How much depreciation you get, whether the paper loss cuts your tax this year, and what comes back when you sell.',
+  l_price:'Purchase price',l_land:'Land share of the price',l_land_s:'(from the tax bill: Land ÷ Land + Improvements)',est:'estimate',est2:'estimate',
+  l_cash:'Rental profit or loss before depreciation',l_cash_s:'(rent − all expenses − mortgage interest, per year; type a minus for a loss)',per_yr:'/yr',per_yr2:'/yr',per_yr3:'/yr',per_yr4:'/yr',
+  l_magi:'Your household MAGI',l_magi_s:'(roughly your AGI, before rental losses)',l_st:'Filing status',st_s:'Single',st_m:'Married filing jointly',
+  more:'More options',l_ti:'Taxable income without the rental',l_ti_s:'(after deductions; sets your tax bracket)',l_addb:'Closing costs + upgrades',l_addb_s:'(added to basis)',
+  l_mon:'Month rented out',l_mon_s:'(1–12, first year)',l_yrs:'Years you plan to hold',l_yrs_s:'(for the recapture estimate)',u_yrs:'years',
+  l_role:'Your role',r_act:'Active landlord',r_rep:'Real estate professional',
+  role_h:'Real estate professional (IRS): more than half your work time and over 750 hours a year in real estate, plus material participation. A W-2 job usually rules it out.',
+  r_total:'Tax saved by depreciation',n_dep:'Depreciation per year',n_dep_s:'Building only ÷ 27.5 years. Land never depreciates.',
+  n_y1:'First-year depreciation',y1s:'Mid-month rule, rented from month {m}',n_bld:'Building value (depreciable)',n_bld_s:'(price + basis add-ons) × (1 − land %)',
+  n_paper:'Rental result after depreciation',n_paper_s:'What Schedule E shows. Minus = loss on paper.',
+  n_allow:'Loss you can use this year',allow_s:'Your $25,000 allowance at this MAGI: {a}',allow_rep:'Real estate professional: no passive limit',
+  n_susp:'Loss carried forward',n_susp_s:'Not lost. Used in later years or when you sell.',
+  n_fed:'Federal tax saved',fed_s:'{y} brackets · your bracket {r}',n_ca:'California tax saved',ca_s:'{y} CA schedule · your bracket {r}',
+  k_sell:'When you sell',n_taken:'Depreciation taken',taken_s:'After {n} years',n_rec:'Federal recapture tax',n_rec_s:'Ordinary rates, capped at 25% (unrecaptured §1250)',
+  n_rca:'California on that part',n_rca_s:'CA taxes it as regular income',
+  c_full:'Full',c_part:'Partial',c_none:'None',c_na:'No loss',
+  an_none:'<b>Your paper loss is {l}, but MAGI of {m} is over $150,000.</b> None of it cuts your tax this year. It carries forward and offsets future rental profit, or all of it when you sell.',
+  an_part:'<b>Your $25,000 allowance shrinks $1 for every $2 of MAGI over $100,000.</b> At {m} you can use {a}. The other {s} carries forward.',
+  an_full:'<b>The whole paper loss of {l} offsets your other income this year.</b> That is where the tax saving comes from.',
+  an_pos:'<b>Still a profit after depreciation ({p}).</b> Depreciation shelters {d} of rent from tax. No passive-loss limit to worry about.',
+  an_rep:'<b>As a real estate professional, the full loss of {l} can offset your other income.</b> The IRS checks hours logs. Keep yours.',
+  est_note:'Estimate only, not tax advice. Uses 2026 federal brackets and the 2025 California schedule (latest published). California rules can differ from federal. NIIT, AMT, credits and other income are left out. Ask a CPA before you file.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this estimate to yourself',f_sub:'Ken will reply and can connect you with CPAs who work with Bay Area landlords. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ns_t:'Next step',
+  ns1:'Not sure of the profit before depreciation? Run rent, expenses and loan in <a href="/t146/">T146</a>.',
+  ns2:'Pull the property tax bill. The Land vs Improvements split there is the number your CPA will likely use.',
+  ns3:'Thinking of selling later? See how a 1031 exchange defers the recapture: <a href="/t222/">T222</a>.',
+  ns4:'Rents below market? See how fast the law lets you catch up: <a href="/t236/">T236</a>.',
+  myth:'<b>Many people get this wrong:</b> "My rental shows a loss, so it cuts my W-2 tax." Only if your MAGI is under $150,000 (and fully only under $100,000). Above that the loss is parked, not gone. And depreciation you skip still gets taxed when you sell, because the IRS counts what was "allowable."',
+  ft_read:'Read more:',ft_lib:'Library (coming soon)',ft_vid:'Kiến Thức Địa Ốc video (coming soon)',ft_src:'Sources',
+  ft_est:'General information, not tax, legal or financial advice. Ask a CPA before you file or buy.',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I ran T235 on tools.kenlamrealty.com: price {p}, depreciation {dep}/yr, paper result {pr}, est. tax saved {sv}/yr. Can we talk?',
+  subj:'Rental tax estimate — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nPrice: {p} · Land: {ld}% · Basis add-ons: {ab}\nProfit before depreciation: {c}/yr\nMAGI: {mg} · Taxable income w/o rental: {ti} · {st}\nRole: {ro}\n\nBuilding value: {b}\nDepreciation: {dep}/yr (first year {y1})\nResult after depreciation: {pr}/yr\nLoss used this year: {al}\nLoss carried forward: {su}\nFederal saved: {fd}\nCalifornia saved: {ca}\nTotal tax saved (estimate): {sv}/yr\n\nAfter {yn} years: depreciation taken {tk}, federal recapture {rc}, CA {rca}\n\nEstimate only, not tax advice. Ask a CPA.\nSent from tool T235 tools.kenlamrealty.com'},
+ vi:{title:'Thuế &amp; khấu hao nhà cho thuê',sub:'Được khấu hao bao nhiêu, lỗ trên giấy có giảm thuế năm nay không, và bán nhà thì phải trả lại bao nhiêu.',
+  l_price:'Giá mua',l_land:'Phần đất trong giá',l_land_s:'(xem tax bill: Land ÷ Land + Improvements)',est:'ước tính',est2:'ước tính',
+  l_cash:'Lời hoặc lỗ cho thuê, chưa tính khấu hao',l_cash_s:'(tiền thuê − mọi chi phí − tiền lời trả ngân hàng, mỗi năm; lỗ thì gõ dấu trừ)',per_yr:'/năm',per_yr2:'/năm',per_yr3:'/năm',per_yr4:'/năm',
+  l_magi:'MAGI cả nhà',l_magi_s:'(gần bằng AGI, chưa trừ lỗ cho thuê)',l_st:'Khai thuế',st_s:'Độc thân',st_m:'Vợ chồng khai chung',
+  more:'Tùy chỉnh thêm',l_ti:'Thu nhập chịu thuế, chưa tính căn này',l_ti_s:'(sau khi trừ deduction; quyết định bậc thuế)',l_addb:'Closing cost + nâng cấp',l_addb_s:'(cộng vào basis)',
+  l_mon:'Tháng bắt đầu cho thuê',l_mon_s:'(1–12, năm đầu)',l_yrs:'Định giữ bao nhiêu năm',l_yrs_s:'(để ước tính recapture)',u_yrs:'năm',
+  l_role:'Mình là ai',r_act:'Chủ nhà tự lo',r_rep:'Real estate professional',
+  role_h:'Real estate professional (theo IRS): hơn nửa thời gian làm việc và trên 750 giờ/năm trong ngành nhà đất, có trực tiếp tham gia. Có job W-2 toàn thời gian thì gần như không đạt.',
+  r_total:'Thuế tiết kiệm nhờ khấu hao',n_dep:'Khấu hao mỗi năm',n_dep_s:'Chỉ phần nhà ÷ 27.5 năm. Đất không khấu hao.',
+  n_y1:'Khấu hao năm đầu',y1s:'Tính giữa tháng, cho thuê từ tháng {m}',n_bld:'Giá trị phần nhà (được khấu hao)',n_bld_s:'(giá + phần cộng basis) × (1 − % đất)',
+  n_paper:'Kết quả sau khấu hao',n_paper_s:'Số trên Schedule E. Âm = lỗ trên giấy.',
+  n_allow:'Lỗ được trừ năm nay',allow_s:'Mức $25,000 của mình ở MAGI này còn: {a}',allow_rep:'Real estate professional: không bị giới hạn passive',
+  n_susp:'Lỗ dời qua năm sau',n_susp_s:'Không mất. Xài ở năm sau hoặc khi bán nhà.',
+  n_fed:'Thuế liên bang tiết kiệm',fed_s:'Bậc thuế {y} · bậc của mình {r}',n_ca:'Thuế California tiết kiệm',ca_s:'Bảng CA {y} · bậc của mình {r}',
+  k_sell:'Khi bán nhà',n_taken:'Tổng khấu hao đã lấy',taken_s:'Sau {n} năm',n_rec:'Thuế recapture liên bang',n_rec_s:'Tính như thu nhập thường, tối đa 25% (unrecaptured §1250)',
+  n_rca:'California trên phần đó',n_rca_s:'CA đánh như thu nhập thường',
+  c_full:'Hết',c_part:'Một phần',c_none:'Không',c_na:'Không lỗ',
+  an_none:'<b>Lỗ trên giấy {l}, nhưng MAGI {m} đã quá $150,000.</b> Năm nay không trừ được đồng nào. Lỗ được dời qua năm sau để trừ vào tiền lời cho thuê, hoặc trừ hết khi bán nhà.',
+  an_part:'<b>Mức $25,000 bị giảm $1 cho mỗi $2 MAGI trên $100,000.</b> Với MAGI {m} thì trừ được {a}. Phần còn lại {s} dời qua năm sau.',
+  an_full:'<b>Trừ hết lỗ trên giấy {l} vào thu nhập khác năm nay.</b> Thuế tiết kiệm là từ chỗ này.',
+  an_pos:'<b>Sau khấu hao vẫn còn lời ({p}).</b> Khấu hao che được {d} tiền thuê khỏi thuế. Không bị giới hạn passive loss.',
+  an_rep:'<b>Là real estate professional thì trừ hết lỗ {l} vào thu nhập khác.</b> IRS hay đòi sổ ghi giờ. Nhớ giữ.',
+  est_note:'Chỉ là ước tính, không phải tư vấn thuế. Dùng bậc thuế liên bang 2026 và bảng California 2025 (bản mới nhất đã công bố). Luật California có chỗ khác liên bang. Chưa tính NIIT, AMT, credit và thu nhập khác. Hỏi CPA trước khi khai.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi bảng ước tính này về email',f_sub:'Ken nhận được sẽ trả lời và giới thiệu CPA quen làm cho chủ nhà Bay Area. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ns_t:'Bước tiếp theo',
+  ns1:'Chưa chắc lời/lỗ trước khấu hao? Nhập tiền thuê, chi phí, loan ở <a href="/t146/">T146</a>.',
+  ns2:'Lấy tax bill ra coi. Tỷ lệ Land / Improvements trên đó thường là số CPA sẽ dùng.',
+  ns3:'Sau này tính bán? Coi 1031 exchange hoãn thuế recapture ra sao ở <a href="/t222/">T222</a>.',
+  ns4:'Tiền thuê đang thấp hơn thị trường? Coi luật cho tăng bao lâu mới kịp ở <a href="/t236/">T236</a>.',
+  myth:'<b>Nhiều người hiểu sai:</b> "Nhà cho thuê lỗ trên giấy thì trừ vào lương W-2." Chỉ khi MAGI dưới $150,000 (trừ đủ khi dưới $100,000). Cao hơn thì lỗ bị treo lại, không mất. Còn khấu hao mà không khai thì khi bán vẫn bị tính thuế, vì IRS tính theo số "được phép lấy" (allowable).',
+  ft_read:'Đọc thêm:',ft_lib:'Library (sắp có)',ft_vid:'Video Kiến Thức Địa Ốc (sắp có)',ft_src:'Nguồn',
+  ft_est:'Thông tin chung, không phải tư vấn thuế, luật hay tài chính. Hỏi CPA trước khi khai thuế hay mua nhà.',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa tính T235 trên tools.kenlamrealty.com: giá {p}, khấu hao {dep}/năm, kết quả sau khấu hao {pr}, thuế tiết kiệm ước tính {sv}/năm. Cho tôi hỏi thêm.',
+  subj:'Ước tính thuế nhà cho thuê — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nGiá: {p} · Đất: {ld}% · Cộng basis: {ab}\nLời/lỗ trước khấu hao: {c}/năm\nMAGI: {mg} · Thu nhập chịu thuế chưa tính căn này: {ti} · {st}\nVai trò: {ro}\n\nGiá trị phần nhà: {b}\nKhấu hao: {dep}/năm (năm đầu {y1})\nKết quả sau khấu hao: {pr}/năm\nLỗ trừ được năm nay: {al}\nLỗ dời qua năm sau: {su}\nLiên bang tiết kiệm: {fd}\nCalifornia tiết kiệm: {ca}\nTổng thuế tiết kiệm (ước tính): {sv}/năm\n\nSau {yn} năm: khấu hao đã lấy {tk}, recapture liên bang {rc}, CA {rca}\n\nChỉ là ước tính, không phải tư vấn thuế. Hỏi CPA.\nGửi từ tool T235 tools.kenlamrealty.com'}
+};
+let lang='en', st='mfj', role='active', last={};
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'-$':'$')+Math.abs(Math.round(n)).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]!=null?v[k]:m);
+const pc=r=>(r*100).toFixed(r*100%1?1:0)+'%';
+
+function inputs(){ return {price:num('price'),land:num('land'),addb:num('addb'),cash:num('cash'),magi:num('magi'),ti:num('ti'),st,mon:num('mon'),yrs:num('yrs'),role}; }
+function calc(){
+  const d=I18N[lang], i=inputs(), m=model(i);
+  $('save').textContent=fmt(m.save);
+  $('dep').textContent=fmt(m.dep); $('y1').textContent=fmt(m.y1); $('y1s').textContent=fill(d.y1s,{m:m.m});
+  $('bld').textContent=fmt(m.bld); $('paper').textContent=fmt(m.paper);
+  $('allow').textContent=fmt(m.allowed);
+  $('allows').textContent= role==='rep' ? d.allow_rep : fill(d.allow_s,{a:fmt(m.allowance)});
+  $('susp').textContent=fmt(m.susp);
+  $('fed').textContent=fmt(m.fed); $('feds').textContent=fill(d.fed_s,{y:TAX.FED_YEAR,r:pc(m.fedR)});
+  $('ca').textContent=fmt(m.ca); $('cas').textContent=fill(d.ca_s,{y:TAX.CA_YEAR,r:pc(m.caR)});
+  $('taken').textContent=fmt(m.taken); $('takens').textContent=fill(d.taken_s,{n:m.N});
+  $('rec').textContent=fmt(m.rec); $('rca').textContent=fmt(m.rca);
+  const ch=$('cAllow'); let c,t;
+  if(m.loss<=0){c='';t=d.c_na;} else if(m.susp<=0.5){c='g';t=d.c_full;} else if(m.allowed>0){c='y';t=d.c_part;} else {c='r';t=d.c_none;}
+  ch.className='chip '+c; ch.textContent=t;
+  let note;
+  if(m.loss<=0) note=fill(d.an_pos,{p:fmt(m.paper),d:fmt(m.dep)});
+  else if(role==='rep') note=fill(d.an_rep,{l:fmt(m.loss)});
+  else if(m.allowed<=0) note=fill(d.an_none,{l:fmt(m.loss),m:fmt(i.magi)});
+  else if(m.susp>0.5) note=fill(d.an_part,{m:fmt(i.magi),a:fmt(m.allowed),s:fmt(m.susp)});
+  else note=fill(d.an_full,{l:fmt(m.loss)});
+  $('allowNote').innerHTML=note;
+  last={p:fmt(i.price),ld:i.land,ab:fmt(i.addb),c:fmt(i.cash),mg:fmt(i.magi),ti:fmt(i.ti),st:st==='mfj'?d.st_m:d.st_s,ro:role==='rep'?d.r_rep:d.r_act,
+    b:fmt(m.bld),dep:fmt(m.dep),y1:fmt(m.y1),pr:fmt(m.paper),al:fmt(m.allowed),su:fmt(m.susp),fd:fmt(m.fed),ca:fmt(m.ca),sv:fmt(m.save),
+    yn:m.N,tk:fmt(m.taken),rc:fmt(m.rec),rca:fmt(m.rca)};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+  klSend();
+}
+function seg(id,v){ document.querySelectorAll('#'+id+' button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v?'true':'false')); }
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+/* embed mode (?embed=1): iframe on kenlamrealty.com, height via postMessage klToolsHeight */
+const EMBED=/[?&]embed=1/.test(location.search);
+let klSend=()=>{};
+if(EMBED){ document.documentElement.classList.add('embed'); let lastH=0;
+  klSend=()=>{ const w=document.querySelector('.wrap'); const h=Math.ceil(w.getBoundingClientRect().bottom+window.scrollY+40); if(Math.abs(h-lastH)<4) return; lastH=h; try{ parent.postMessage({klToolsHeight:h},'*'); }catch(e){} };
+  window.addEventListener('resize',()=>klSend());
+  document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('a[href]'); if(!a) return; const h=a.getAttribute('href'); if(h.startsWith('#')||a.target==='_blank') return; if(h.startsWith('/')) a.href='https://tools.kenlamrealty.com'+h; a.target='_top'; },true); }
+['price','land','addb','cash','magi','ti','mon','yrs'].forEach(id=>$(id).addEventListener('input',calc));
+document.querySelector('details.more').addEventListener('toggle',()=>klSend());
+$('stSeg').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; st=b.dataset.v; seg('stSeg',st); calc();});
+$('roleSeg').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; role=b.dataset.v; seg('roleSeg',role); calc();});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus(); klSend();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], v=Object.assign({},last,{n:$('fname').value.trim()||'—',e:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'});
+  /* LEAD → FUB: mailto ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,v))+'&body='+encodeURIComponent(fill(d.body,v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){} };
+window.__model=model;
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
