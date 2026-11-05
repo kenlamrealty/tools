@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Open or Expired Permit? · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<style>
+/* ---- Thêm (lấy từ T92, không đổi class cũ) ---- */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl.sel::after{content:"";width:8px;height:8px;border:solid var(--muted);border-width:0 1.5px 1.5px 0;transform:rotate(45deg) translateY(-3px);flex:none}
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.checks label{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:8px 13px;font-size:14px;color:var(--muted);cursor:pointer;user-select:none}
+.checks input{accent-color:var(--brass);margin:0}
+.checks label:has(input:checked){background:var(--brass-soft);color:var(--fg);border-color:var(--brass)}
+.tg{display:grid;gap:8px}
+.tg label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;align-items:start;font-size:14px;color:var(--fg);cursor:pointer;line-height:1.4}
+.tg input{accent-color:var(--brass);width:18px;height:18px;margin:1px 0 0}
+.tg small{display:block;color:var(--muted);font-size:12px}
+.total .v .of{font-size:30px;color:var(--muted)}
+.total .cnt2{margin-top:8px;font-size:14px;color:var(--muted)}
+.total .cnt2 b{color:var(--fg);font-weight:500}
+.pjs{display:grid;border-top:1px solid var(--line)}
+.pj{padding:14px 0;border-bottom:1px solid var(--line);display:grid;gap:6px}
+.pj-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.pj-h b{font-weight:500;font-size:16px;min-width:0}
+.st{font-size:11px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;border-radius:999px;padding:3px 9px;border:1px solid var(--line);color:var(--muted)}
+.st.y{border-color:var(--brass);background:var(--brass-soft);color:var(--warn)}
+.st.d{border-style:dashed;color:var(--fg)}
+.pj .why{font-size:14px;color:var(--fg);margin:0;line-height:1.45}
+.pj dl{margin:2px 0 0;display:grid;grid-template-columns:minmax(0,7.5em) minmax(0,1fr);gap:4px 10px;font-size:13px}
+.pj dt{color:var(--muted)}
+.pj dd{margin:0;min-width:0}
+.pj dd a{color:var(--brass);text-decoration:none}
+.pj dd small{color:var(--muted)}
+.next-steps{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.next-steps h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.next-steps ol,.next-steps ul{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.next-steps a{color:var(--brass)}
+.myth{font-size:14px;line-height:1.5;border-left:2px solid var(--brass);padding:2px 0 2px 12px;margin:0}
+.myth b{font-weight:500}
+.srcs a{word-break:break-word}
+.ck{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.empty{font-size:14px;color:var(--muted);padding:12px 0}
+</style>
+<style>
+/* ---- T235 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.ctl select optgroup{font-weight:600}
+.ckl{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);cursor:pointer;margin-top:2px}
+.ckl input{accent-color:var(--brass);width:18px;height:18px;margin:0}
+.ctl.dis{opacity:.45}
+.badge{display:inline-block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:3px 10px;border:1px solid var(--line);color:var(--muted)}
+.badge.ok{border-color:var(--ok);color:var(--ok)}
+.badge.warn{border-color:var(--warn);color:var(--warn);background:var(--brass-soft)}
+.total .v.warnv{color:var(--warn)}
+.total .v.okv{color:var(--ok)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.next ol,.next ul{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px;line-height:1.5}
+.next a,.result a{color:var(--brass)}
+.err{font-size:14px;color:var(--warn);border:1px solid var(--warn);border-radius:10px;padding:10px 12px}
+.err[hidden]{display:none}
+</style>
+<meta name="description" content="Enter the issue date and last inspection. See if the permit is still alive under California&#x27;s 12-month / 180-day rule, days left, and who fixes it before close.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t235/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Open or Expired Permit? · Ken Lam Tools">
+<meta property="og:description" content="Enter the issue date and last inspection. See if the permit is still alive under California&#x27;s 12-month / 180-day rule, days left, and who fixes it before close.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t235/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Is this permit still open, or expired?</h1>
+    <p class="sub" data-i="sub">Enter the dates from the city portal. See if the permit is still alive, how many days are left, and who should fix it before close.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="city"><span data-i="l_city">City</span></label>
+      <div class="ctl sel"><select id="city"></select></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="issued"><span data-i="l_iss">Date issued</span></label>
+        <div class="ctl"><input id="issued" type="date" value="2025-12-01"></div>
+      </div>
+      <div class="field">
+        <label for="last"><span data-i="l_last">Last passed inspection</span></label>
+        <div class="ctl" id="lastCtl"><input id="last" type="date" value="2026-04-20"></div>
+        <label class="ckl"><input type="checkbox" id="noInsp"><span data-i="l_none">No inspection yet</span></label>
+      </div>
+    </div>
+    <div class="field">
+      <label for="status"><span data-i="l_st">Status on the portal</span></label>
+      <div class="ctl sel"><select id="status">
+        <option value="issued" data-i="s_issued">Issued</option>
+        <option value="insp" data-i="s_insp">Inspections in progress / Pending inspection</option>
+        <option value="final" data-i="s_final">Finaled / Final / Completed</option>
+        <option value="expired" data-i="s_expired">Expired</option>
+        <option value="closed" data-i="s_closed">Closed</option>
+        <option value="void" data-i="s_void">Void / Cancelled / Withdrawn</option>
+      </select></div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_role">I am the</span></label>
+      <div class="seg" id="role">
+        <button type="button" data-v="buyer" aria-pressed="true" data-i="r_buyer">Buyer</button>
+        <button type="button" data-v="seller" aria-pressed="false" data-i="r_seller">Seller</button>
+        <button type="button" data-v="owner" aria-pressed="false" data-i="r_owner">Owner, not selling</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="close"><span data-i="l_close">Close of escrow </span><small data-i="l_opt">(optional)</small></label>
+      <div class="ctl"><input id="close" type="date" value=""></div>
+    </div>
+  </section>
+
+  <div class="err" id="err" hidden></div>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" id="rk"></div>
+      <div class="v" id="rv"></div>
+      <div class="cnt2" id="rsub"></div>
+    </div>
+    <div class="lines" id="lines"></div>
+    <div class="status" id="verdict"></div>
+    <div class="note" id="cityNote"></div>
+  </section>
+
+  <section class="next" aria-label="What to do">
+    <h2 data-i="todo_h">What to do now</h2>
+    <ol id="todo"></ol>
+  </section>
+
+  <p class="myth"><b data-i="my_k">Many people get this wrong:</b> <span data-i="my_v">"The work is done, so an expired permit doesn't matter." It does. No final inspection means the city never signed off. To reopen it, new work has to meet today's code, not the code from the year it was issued.</span></p>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="ns_h">Next steps</h2>
+    <ol>
+      <li data-i="ns1">New to permits? Start with <a href="/t230/">T230 What is a permit</a>.</li>
+      <li data-i="ns2">Find the permit and its inspections on the city portal with <a href="/t231/">T231</a>.</li>
+      <li data-i="ns3">Buying? Send the seller the right questions with <a href="/t237/">T237</a>, and price the risk with <a href="/t233/">T233</a>.</li>
+      <li data-i="ns4">Permit dead and the work was never signed off? See how to legalize it in <a href="/t234/">T234</a>.</li>
+    </ol>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" aria-label="Video" onerror="this.remove()"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t235/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this permit check to yourself</h2>
+    <p data-i="f_sub">Ken can tell you who usually fixes an open permit before close. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#permit-het-han" target="_blank" rel="noopener" data-i="ft_lib">Open and expired permits when you buy or sell</a> · <a href="https://kenlamrealty.com/library#video-permit" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span data-i="ft_est">A guide, not legal advice. Each city can amend the state rule, and fees change. Call the permit center before you count on a date.</span>
+    <span class="srcs"><span data-i="ft_src">Sources:</span>
+      <a href="https://gocodebook.com/library/us/ca/ca-residential-code/chapter-1-scope-and-application/section-r105-permits" target="_blank" rel="noopener">2025 CRC R105.5 / R105.5.1</a> ·
+      <a href="https://california.public.law/codes/health_and_safety_code_section_18938.6" target="_blank" rel="noopener">H&amp;S §18938.6</a> ·
+      <a href="https://www.oaklandca.gov/Planning-Building/Permit-Process-Overview/Apply-for-a-Permit-Extension-or-Reinstatement" target="_blank" rel="noopener">Oakland extension / reinstatement</a> ·
+      <a href="https://sjdevelopmentservices.freshdesk.com/support/solutions/articles/73000607697-permit-extensions-how-to-reactivate-reinstate-or-renew-an-expired-permit" target="_blank" rel="noopener">San Jose permit extensions</a> ·
+      <a href="https://sanjoseca.gov/home/showpublisheddocument/25933/636690739550070000" target="_blank" rel="noopener">San Jose expired permit (Investigation Survey)</a> ·
+      <a href="https://m.acgov.org/pwa/documents/Fee_Sch_A_Handout.pdf" target="_blank" rel="noopener">Alameda County fee schedule</a>
+      · <span data-i="ft_chk">Checked 05/11/2026.</span></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 05/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số liệu / luật — sửa ở đây khi đổi (tra 05/11/2026, nguồn: /permit/FACTS.md) =====
+   F1.2 California R105.5.1 (2025 CRC, theo H&S §18938.5/§18938.6): permit còn hiệu lực nếu bắt đầu làm trong 12 THÁNG sau khi cấp;
+        sau đó ngưng / bỏ dở 180 ngày thì hết hạn. Gia hạn bằng văn bản, mỗi lần ≤180 ngày, phải có lý do chính đáng.
+        https://gocodebook.com/library/us/ca/ca-residential-code/chapter-1-scope-and-application/section-r105-permits
+        https://california.public.law/codes/health_and_safety_code_section_18938.6
+   F1.1 Mẫu IRC R105.5: 180 ngày từ ngày cấp để bắt đầu → một số city có local amendment dùng mốc này (hiện thêm cho biết).
+   F1.4 Oakland: major inspection được duyệt trong 6 tháng từ ngày cấp và mỗi 6 tháng sau đó; xong scope trong 2 năm;
+        >3 năm chưa final có thể tính thêm impact fee. Form Issued Permit Extension/Reinstatement, bbpermitextension@oaklandca.gov,
+        phí + 9.5% Records + 5.25% Tech; 510-238-3444.
+   F1.5/F1.6 San Jose: gia hạn → buildingpermits@sanjoseca.gov hoặc 408-535-3885; đã hết hạn → Investigation Survey Request,
+        phí = 1 giờ inspection mỗi lần (giá giờ chưa tra), việc mới theo code hiện hành, có "Permit to Final Only".
+   F44/F56 Unincorporated Alameda County: permit renewal $140 tối thiểu / permit.
+   Mốc biên: ngày thứ 180 sau inspection cuối (hoặc đúng ngày tròn 12 tháng) = ngày cuối còn hiệu lực; qua ngày đó = hết hạn. (KEN DUYỆT)
+*/
+const RULE={startMonths:12, idleDays:180, extDays:180, modelStartDays:180, okMonths:6, okDoneMonths:24, okImpactMonths:36,
+  acuRenew:140, okPct:'9.5% + 5.25%', sjExtEmail:'buildingpermits@sanjoseca.gov', sjExtPh:'408-535-3885',
+  okExtEmail:'bbpermitextension@oaklandca.gov', okExtPh:'510-238-3444'};
+/* City / permit center — FACTS F10–F38 (tra 05/11/2026). [SECONDARY] = nguồn phụ jaspector, Ken click thử.
+   t92 = mã city bên T92 (chỉ sj, sc, sv, mp, fr, ok; còn lại 'ot'). */
+const CITIES={
+ sj:{n:'San Jose',co:'scc',url:'https://www.sjpermits.org',pn:'SJPermits.org',ph:'408-535-3555',t92:'sj'},
+ sc:{n:'Santa Clara',co:'scc',url:'https://aca-prod.accela.com/SANTACLARA',pn:'Santa Clara POP (Accela)',ph:'408-615-2420',t92:'sc'},
+ sv:{n:'Sunnyvale',co:'scc',url:'https://sunnyvaleca-energovpub.tylerhost.net/apps/SelfService',pn:'Sunnyvale e-OneStop',ph:'408-730-7444',t92:'sv'},
+ mp:{n:'Milpitas',co:'scc',url:'https://trakit.ci.milpitas.ca.gov/etrakit3/',pn:'Milpitas eTRAKiT',ph:'408-586-3240',t92:'mp'},
+ cu:{n:'Cupertino',co:'scc',url:'https://aca.accela.com/CUPERTINO',pn:'Cupertino Accela',ph:'408-777-3228',t92:'ot'},
+ mv:{n:'Mountain View',co:'scc',url:'https://epermits.mountainview.gov',pn:'ePermitsMV',ph:'650-903-6313',t92:'ot'},
+ pa:{n:'Palo Alto',co:'scc',url:'https://aca-prod.accela.com/PALOALTO',pn:'Palo Alto Accela',ph:'650-329-2100',t92:'ot'},
+ ca:{n:'Campbell',co:'scc',url:'https://www.mgoconnect.org/cp/portal',pn:'MGO Connect',ph:'408-866-2130',t92:'ot'},
+ lg:{n:'Los Gatos',co:'scc',url:'https://permits.losgatosca.gov',pn:'Los Gatos Accela',ph:'408-354-6876',t92:'ot'},
+ sa:{n:'Saratoga',co:'scc',url:'https://sara.csqrcloud.com/community-etrakit/',pn:'Saratoga eTRAKiT',ph:'408-868-1290',t92:'ot'},
+ la:{n:'Los Altos',co:'scc',url:'https://trakit.losaltosca.gov/etrakit/',pn:'Los Altos eTRAKiT',ph:'650-947-2752',t92:'ot'},
+ mh:{n:'Morgan Hill',co:'scc',url:'https://morg-trk.aspgov.com/eTRAKiT/',pn:'Morgan Hill eTRAKiT',ph:'408-778-6480',t92:'ot'},
+ gi:{n:'Gilroy',co:'scc',url:'https://gilroyca-energovweb.tylerhost.net/apps/SelfService',pn:'Gilroy GO Permit',ph:'',t92:'ot'},
+ scc:{n:'Santa Clara County (unincorporated)',vn:'Santa Clara County (ngoài city)',co:'scc',url:'https://aca-prod.accela.com/SCCGOV',pn:'County Accela',ph:'408-299-5700',t92:'ot'},
+ ok:{n:'Oakland',co:'ala',url:'https://aca-prod.accela.com/OAKLAND',pn:'Oakland Online Permit Center',ph:'510-238-3444',t92:'ok'},
+ fr:{n:'Fremont',co:'ala',url:'https://aca-prod.accela.com/COF',pn:'Fremont Citizen Access',ph:'510-494-4460',t92:'fr'},
+ hay:{n:'Hayward',co:'ala',url:'https://haywardca-energovpub.tylerhost.net/Apps/SelfService',pn:'Hayward e-Permits',ph:'510-583-4140',t92:'ot'},
+ sl:{n:'San Leandro',co:'ala',url:'https://www.sanleandro.org/PermitPortal',pn:'San Leandro Accela',ph:'510-577-3405',t92:'ot'},
+ uc:{n:'Union City',co:'ala',url:'',pn:'',ph:'510-675-5313',t92:'ot'},
+ nw:{n:'Newark',co:'ala',url:'https://nwca-trk.aspgov.com/eTRAKiT/',pn:'Newark eTRAKiT',ph:'510-578-4261',t92:'ot'},
+ ple:{n:'Pleasanton',co:'ala',url:'https://aca.cityofpleasantonca.gov/CitizenAccess',pn:'Pleasanton Accela',ph:'925-931-5300',t92:'ot'},
+ liv:{n:'Livermore',co:'ala',url:'https://aca-prod.accela.com/LIVERMORE',pn:'Livermore Accela',ph:'925-960-4410',t92:'ot'},
+ dub:{n:'Dublin',co:'ala',url:'https://dublinca-energovweb.tylerhost.net/apps/selfservice',pn:'Dublin EnerGov',ph:'925-833-6620',t92:'ot'},
+ brk:{n:'Berkeley',co:'ala',url:'https://aca-prod.accela.com/BERKELEY',pn:'Berkeley Accela',ph:'510-981-7440',t92:'ot'},
+ ala:{n:'Alameda',co:'ala',url:'https://aca-prod.accela.com/alameda',pn:'Alameda Accela',ph:'510-747-6800',t92:'ot'},
+ acu:{n:'Alameda County (unincorporated)',vn:'Alameda County (ngoài city)',co:'ala',url:'https://acpermit.acgov.org/Portal/',pn:'County Public Portal',ph:'510-670-5440',t92:'ot'},
+ emv:{n:'Emeryville',co:'ala',url:'',pn:'',ph:'510-596-4310',t92:'ot'},
+ alb:{n:'Albany',co:'ala',url:'https://cityofalbanyca.tylerportico.com',pn:'Albany Portico',ph:'510-528-5760',t92:'ot'},
+ pie:{n:'Piedmont',co:'ala',url:'https://pied-trk.aspgov.com/eTRAKiT/',pn:'Piedmont eTRAKiT',ph:'510-420-3050',t92:'ot'}
+};
+function fillCities(sel,lang,cur){
+  const g={scc:'Santa Clara County',ala:'Alameda County'}; sel.innerHTML='';
+  ['scc','ala'].forEach(co=>{ const og=document.createElement('optgroup'); og.label=g[co];
+    Object.keys(CITIES).filter(k=>CITIES[k].co===co).forEach(k=>{ const o=document.createElement('option'); o.value=k;
+      o.textContent=(lang==='vi'&&CITIES[k].vn)||CITIES[k].n; og.appendChild(o); }); sel.appendChild(og); });
+  sel.value=CITIES[cur]?cur:'sj';
+}
+
+
+/*PURE-START*/
+const DAY=864e5;
+function P(s){ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||''); if(!m) return null; const t=Date.UTC(+m[1],+m[2]-1,+m[3]); const d=new Date(t);
+  return (d.getUTCMonth()===+m[2]-1&&d.getUTCDate()===+m[3])?t:null; }
+function addDays(t,n){ return t+n*DAY; }
+function addMonths(t,n){ const d=new Date(t), y=d.getUTCFullYear(), m=d.getUTCMonth()+n, day=d.getUTCDate();
+  const last=new Date(Date.UTC(y,m+1,0)).getUTCDate(); return Date.UTC(y,m,Math.min(day,last)); }
+function diff(a,b){ return Math.round((b-a)/DAY); }
+function iso(t){ return new Date(t).toISOString().slice(0,10); }
+/* o={city,issued,last|null,status,today,close|null} (ngày dạng ms UTC) */
+function evaluate(o){
+  const R={kind:'calc',err:null};
+  if(o.issued==null){ R.err='e_iss'; return R; }
+  if(o.issued>o.today){ R.err='e_future'; return R; }
+  if(o.last!=null&&o.last<o.issued){ R.err='e_order'; return R; }
+  if(o.last!=null&&o.last>o.today){ R.err='e_future'; return R; }
+  if(o.status==='final'){ R.kind='final'; return R; }
+  if(o.status==='void'){ R.kind='void'; return R; }
+  const ok=o.city==='ok';
+  R.sinceIssue=diff(o.issued,o.today);
+  R.sinceLast=o.last!=null?diff(o.last,o.today):null;
+  if(ok){
+    const ref=o.last!=null?o.last:o.issued, d6=addMonths(ref,RULE.okMonths), d2=addMonths(o.issued,RULE.okDoneMonths);
+    R.rule=d2<d6?'ok2':'ok6'; R.deadline=Math.min(d6,d2); R.ok2=d2; R.ok3=addMonths(o.issued,RULE.okImpactMonths);
+  } else if(o.last!=null){
+    R.rule='idle'; R.deadline=addDays(o.last,RULE.idleDays);
+  } else {
+    R.rule='start'; R.deadline=addMonths(o.issued,RULE.startMonths); R.model=addDays(o.issued,RULE.modelStartDays);
+  }
+  R.left=diff(o.today,R.deadline);            /* ≥0 còn hiệu lực (0 = hôm nay là ngày cuối); <0 đã quá */
+  R.expired=R.left<0;
+  if(o.status==='expired'||o.status==='closed'){ R.kind=o.status; }
+  if(o.close!=null){ R.closeGap=diff(o.close,R.deadline); R.expBeforeClose=R.deadline<o.close; }
+  return R;
+}
+/*PURE-END*/
+
+const I18N={
+ en:{title:'Is this permit still open, or expired?',sub:'Enter the dates from the city portal. See if the permit is still alive, how many days are left, and who should fix it before close.',
+  l_city:'City',l_iss:'Date issued',l_last:'Last passed inspection',l_none:'No inspection yet',l_st:'Status on the portal',
+  s_issued:'Issued',s_insp:'Inspections in progress / Pending inspection',s_final:'Finaled / Final / Completed',s_expired:'Expired',s_closed:'Closed',s_void:'Void / Cancelled / Withdrawn',
+  l_role:'I am the',r_buyer:'Buyer',r_seller:'Seller',r_owner:'Owner, not selling',l_close:'Close of escrow ',l_opt:'(optional)',
+  e_iss:'Enter the date the permit was issued.',e_future:'A date is in the future. Check the dates on the portal.',e_order:'The last inspection is before the issue date. Check the dates.',
+  k_left:'Days left before it expires',k_over:'Expired',k_final:'Permit status',k_void:'Permit status',
+  u_left:'days left',u_last:'today is the last day',u_over:'days past the deadline',
+  v_final:'Finaled',v_void:'No permit',
+  sub_dl:'Deadline: {d}',sub_final:'The city signed off. This is the status you want to see.',sub_void:'This permit never covered the work. If the work was done anyway, it is unpermitted.',
+  ln_iss:'Issued',ln_last:'Last passed inspection',ln_since:'Days since then',ln_dl:'Deadline',ln_rule:'Rule used',ln_model:'Stricter cities (180 days from issue)',ln_ok2:'Oakland: must be done by',ln_ok3:'Oakland: impact fee risk after',ln_close:'Close of escrow',ln_none:'none yet',
+  rule_start:'California: work must start within 12 months of issue (R105.5.1)',rule_idle:'California: 180 days with no passed inspection = expired',rule_ok6:'Oakland: a major inspection every 6 months',rule_ok2:'Oakland: all work done within 2 years',
+  vd_alive:'<b>Still alive.</b> Book the next inspection before {d}. Don\'t wait for the last day.',vd_today:'<b>Today is the last day.</b> Call the city today for an inspection or a written extension.',
+  vd_dead:'<b>Expired by the dates.</b> The portal may not show it yet. A city can still have a local rule, so call to confirm.',
+  vd_pexp:'<b>The portal says Expired.</b> The work was never signed off. It needs a reactivation or a new permit.',
+  vd_closed:'<b>Closed does not always mean done.</b> It can be closed after a final, or closed because it expired. Open the record and read the reason.',
+  vd_final:'<b>Nothing to fix.</b> Save a copy of the final inspection for your house file and the next buyer.',
+  vd_void:'<b>Void or withdrawn.</b> If the work was built anyway, treat it as unpermitted. See T234.',
+  vd_close_bad:' <b>It runs out {n} days before close of escrow.</b>',vd_close_ok:' It stays alive {n} days past close of escrow.',
+  n_sj:'San Jose: ask for an extension at {e} or {p}. Already expired: file an "Investigation Survey Request". The fee is 1 hour of inspection per visit, and any new work must meet today\'s code. There is also a "Permit to Final Only" option.',
+  n_ok:'Oakland: use the "Issued Permit Extension/Reinstatement" form, email {e}, or call {p}. The fee comes with {pct} added on top.',
+  n_acu:'Unincorporated Alameda County: permit renewal is at least ${f} per permit.',
+  n_ot:'{c}: ask the permit center for the extension fee and form{p}. Each extension is up to 180 days, in writing, with a good reason, and should be asked for before the deadline.',
+  t_ext:'Ask for an extension in writing before the deadline. Each one is up to 180 days and needs a good reason.',
+  t_book:'Book the next inspection now. A passed inspection resets the 180-day clock.',
+  t_okbook:'Oakland counts major inspections (foundation, underfloor, frame, final). Book one before the 6-month mark.',
+  t_buyer_open:'Ask the seller in writing: who will get this permit finaled, and by when? Put the answer in the contract (repair or credit) before your contingency ends.',
+  t_buyer_dead:'Treat the work as not signed off. Ask the seller to reactivate and final it before close, or ask for a credit. Your lender or appraiser may ask about it too.',
+  t_seller_open:'Get it finaled before you list or during escrow. An open permit scares buyers and slows the deal.',
+  t_seller_dead:'Disclose it. Then reactivate it or price it in. Reopening means new work must meet today\'s code, so get a contractor quote first.',
+  t_owner_open:'Keep the job moving. A permit that dies mid-job means fees again and a recheck of work already done.',
+  t_owner_dead:'Call the city before you do more work on it. Old work may have to be opened up for the inspector.',
+  t_close:'Close is after the deadline. The seller should handle it before close: extension, inspection or final. Get it in writing.',
+  t_final:'Download or screenshot the final inspection and keep it with your house papers.',
+  t_final_b:'Buyer: check the final covers the work you see (the right room, the right scope).',
+  t_void:'Look for a newer permit that replaced it on the portal. Nothing there? The work is unpermitted.',
+  t_closed:'Open the permit record. Look for a final inspection date. No final? Treat it like Expired.',
+  my_k:'Many people get this wrong:',my_v:'"The work is done, so an expired permit doesn\'t matter." It does. No final inspection means the city never signed off. To reopen it, new work has to meet today\'s code, not the code from the year it was issued.',
+  todo_h:'What to do now',ns_h:'Next steps',
+  ns1:'New to permits? Start with <a href="/t230/">T230 What is a permit</a>.',
+  ns2:'Find the permit and its inspections on the city portal with <a href="/t231/">T231</a>.',
+  ns3:'Buying? Send the seller the right questions with <a href="/t237/">T237</a>, and price the risk with <a href="/t233/">T233</a>.',
+  ns4:'Permit dead and the work was never signed off? See how to legalize it in <a href="/t234/">T234</a>.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this permit check to yourself',f_sub:'Ken can tell you who usually fixes an open permit before close. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'Open and expired permits when you buy or sell',ft_vid:'3-min video',
+  ft_est:'A guide, not legal advice. Each city can amend the state rule, and fees change. Call the permit center before you count on a date.',
+  ft_src:'Sources:',ft_chk:'Checked 05/11/2026.',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I checked a permit in {city} on tools.kenlamrealty.com: {res}. I am the {role}. Can you help?',
+  subj:'Permit open or expired — {city} — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nCity: {city}\nI am the: {role}\nPortal status: {st}\nIssued: {iss}\nLast passed inspection: {last}\nResult: {res}\nDeadline: {dl}\nClose of escrow: {close}\n\nSent from tool T235 tools.kenlamrealty.com'},
+ vi:{title:'Permit còn mở hay đã hết hạn?',sub:'Nhập ngày trên portal của city. Tool cho biết permit còn sống không, còn mấy ngày, và ai nên lo trước khi close.',
+  l_city:'City',l_iss:'Ngày cấp permit',l_last:'Ngày inspection cuối (đã đậu)',l_none:'Chưa có inspection nào',l_st:'Trạng thái trên portal',
+  s_issued:'Issued (đã cấp)',s_insp:'Đang inspection / Pending inspection',s_final:'Finaled / Final / Completed',s_expired:'Expired (hết hạn)',s_closed:'Closed (đóng hồ sơ)',s_void:'Void / Cancelled / Withdrawn (hủy, rút)',
+  l_role:'Mình là',r_buyer:'Người mua',r_seller:'Người bán',r_owner:'Chủ nhà, chưa bán',l_close:'Ngày close escrow ',l_opt:'(không bắt buộc)',
+  e_iss:'Nhập ngày cấp permit.',e_future:'Có ngày nằm trong tương lai. Coi lại ngày trên portal.',e_order:'Ngày inspection cuối trước ngày cấp. Coi lại ngày.',
+  k_left:'Còn bao nhiêu ngày trước khi hết hạn',k_over:'Đã hết hạn',k_final:'Trạng thái permit',k_void:'Trạng thái permit',
+  u_left:'ngày còn lại',u_last:'hôm nay là ngày cuối',u_over:'ngày quá hạn',
+  v_final:'Đã final',v_void:'Không có permit',
+  sub_dl:'Hạn chót: {d}',sub_final:'City đã ký duyệt cuối. Đây là trạng thái mình muốn thấy.',sub_void:'Permit này không còn che cho việc làm. Nếu vẫn xây thì phần đó là không permit.',
+  ln_iss:'Ngày cấp',ln_last:'Inspection cuối (đã đậu)',ln_since:'Đã qua bao nhiêu ngày',ln_dl:'Hạn chót',ln_rule:'Luật áp dụng',ln_model:'City khắt khe hơn (180 ngày từ ngày cấp)',ln_ok2:'Oakland: phải xong trước',ln_ok3:'Oakland: có thể bị thêm impact fee sau',ln_close:'Ngày close escrow',ln_none:'chưa có',
+  rule_start:'California: phải bắt đầu làm trong 12 tháng từ ngày cấp (R105.5.1)',rule_idle:'California: 180 ngày không có inspection đậu = hết hạn',rule_ok6:'Oakland: cứ 6 tháng phải có 1 major inspection',rule_ok2:'Oakland: phải làm xong hết trong 2 năm',
+  vd_alive:'<b>Còn sống.</b> Hẹn inspection kế tiếp trước ngày {d}. Đừng đợi tới ngày chót.',vd_today:'<b>Hôm nay là ngày cuối.</b> Gọi city ngay hôm nay để hẹn inspection hoặc xin gia hạn bằng văn bản.',
+  vd_dead:'<b>Tính theo ngày thì đã hết hạn.</b> Portal có thể chưa cập nhật. City cũng có thể có luật riêng, nên gọi hỏi cho chắc.',
+  vd_pexp:'<b>Portal ghi Expired.</b> Việc làm chưa được duyệt cuối. Phải reactivate hoặc xin permit mới.',
+  vd_closed:'<b>Closed chưa chắc là xong.</b> Có khi đóng sau khi final, có khi đóng vì hết hạn. Mở hồ sơ ra đọc lý do.',
+  vd_final:'<b>Không có gì phải lo.</b> Lưu bản final inspection vào hồ sơ nhà, sau này bán đưa người mua.',
+  vd_void:'<b>Đã hủy hoặc rút.</b> Nếu vẫn xây thì coi như phần đó không permit. Xem T234.',
+  vd_close_bad:' <b>Hết hạn trước ngày close escrow {n} ngày.</b>',vd_close_ok:' Còn hiệu lực thêm {n} ngày sau ngày close escrow.',
+  n_sj:'San Jose: xin gia hạn qua {e} hoặc gọi {p}. Đã hết hạn thì nộp "Investigation Survey Request". Phí = 1 giờ inspection mỗi lần tới, và phần làm mới phải theo code hiện hành. Có lựa chọn "Permit to Final Only".',
+  n_ok:'Oakland: dùng form "Issued Permit Extension/Reinstatement", email {e}, hoặc gọi {p}. Phí cộng thêm {pct}.',
+  n_acu:'Alameda County (ngoài city): gia hạn (renewal) tối thiểu ${f} mỗi permit.',
+  n_ot:'{c}: hỏi permit center phí và form gia hạn{p}. Mỗi lần gia hạn tối đa 180 ngày, làm bằng văn bản, có lý do chính đáng, và nên xin trước hạn chót.',
+  t_ext:'Xin gia hạn bằng văn bản trước hạn chót. Mỗi lần tối đa 180 ngày, phải có lý do chính đáng.',
+  t_book:'Hẹn inspection kế tiếp ngay. Đậu 1 inspection là đồng hồ 180 ngày tính lại từ đầu.',
+  t_okbook:'Oakland chỉ tính major inspection (móng, gầm sàn, khung, final). Hẹn 1 cái trước mốc 6 tháng.',
+  t_buyer_open:'Hỏi seller bằng văn bản: ai lo final permit này, xong ngày nào? Ghi câu trả lời vào hợp đồng (sửa hoặc credit) trước khi hết contingency.',
+  t_buyer_dead:'Coi như phần này chưa được duyệt. Yêu cầu seller reactivate và final trước close, hoặc xin credit. Lender hay appraiser cũng có thể hỏi.',
+  t_seller_open:'Final cho xong trước khi đăng bán hoặc trong escrow. Permit còn mở làm người mua ngại, deal chậm.',
+  t_seller_dead:'Phải khai ra (disclose). Rồi reactivate hoặc tính vào giá. Mở lại là phần làm mới phải theo code hiện hành, nên lấy báo giá thợ trước.',
+  t_owner_open:'Làm cho liên tục. Permit chết giữa chừng là trả phí lại và bị kiểm lại phần đã làm.',
+  t_owner_dead:'Gọi city trước khi làm tiếp. Phần cũ có thể phải mở ra cho inspector coi.',
+  t_close:'Ngày close nằm sau hạn chót. Seller nên lo trước close: gia hạn, inspection hoặc final. Ghi rõ bằng văn bản.',
+  t_final:'Tải hoặc chụp màn hình final inspection, cất chung giấy tờ nhà.',
+  t_final_b:'Người mua: coi kỹ final có đúng phần mình thấy không (đúng phòng, đúng phạm vi).',
+  t_void:'Tìm trên portal xem có permit mới thay thế không. Không có thì phần đó là không permit.',
+  t_closed:'Mở hồ sơ permit. Tìm ngày final inspection. Không có final thì coi như Expired.',
+  my_k:'Nhiều người hiểu sai:',my_v:'"Làm xong rồi, permit hết hạn cũng không sao." Có sao. Không có final inspection là city chưa ký duyệt. Muốn mở lại thì phần làm mới phải theo code hiện hành, không phải code năm cấp permit.',
+  todo_h:'Việc cần làm ngay',ns_h:'Bước tiếp theo',
+  ns1:'Mới nghe chữ permit? Bắt đầu ở <a href="/t230/">T230 Permit là gì</a>.',
+  ns2:'Tra permit và các lần inspection trên portal của city với <a href="/t231/">T231</a>.',
+  ns3:'Đang mua? Gửi seller đúng câu hỏi với <a href="/t237/">T237</a>, và tính rủi ro với <a href="/t233/">T233</a>.',
+  ns4:'Permit chết mà việc chưa được duyệt? Coi cách hợp thức hóa ở <a href="/t234/">T234</a>.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi kết quả kiểm permit qua email',f_sub:'Ken có thể nói cho mình biết thường ai lo permit còn mở trước khi close. Không spam.',f_name:'Tên',f_phone:'Điện thoại (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Gửi là xong. Nếu không mở được, copy số dưới đây và nhắn tin cho Ken.',f_or:'Hoặc nhắn tin:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Permit còn mở, hết hạn khi mua bán nhà',ft_vid:'Video 3 phút',
+  ft_est:'Thông tin tham khảo, không phải tư vấn pháp lý. Mỗi city có thể sửa luật tiểu bang, phí cũng đổi. Gọi permit center trước khi tính theo ngày này.',
+  ft_src:'Nguồn:',ft_chk:'Tra ngày 05/11/2026.',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa kiểm permit ở {city} trên tools.kenlamrealty.com: {res}. Tôi là {role}. Ken giúp tôi với.',
+  subj:'Permit còn mở hay hết hạn — {city} — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nCity: {city}\nTôi là: {role}\nTrạng thái portal: {st}\nNgày cấp: {iss}\nInspection cuối: {last}\nKết quả: {res}\nHạn chót: {dl}\nClose escrow: {close}\n\nGửi từ tool T235 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fd(t){ if(t==null) return '—'; const d=new Date(t), y=d.getUTCFullYear(), m=d.getUTCMonth(), dd=d.getUTCDate();
+  return lang==='vi'?String(dd).padStart(2,'0')+'/'+String(m+1).padStart(2,'0')+'/'+y:MON[m]+' '+dd+', '+y; }
+let role='buyer', city='sj', last={}, TODAY=null;
+(function(){
+  let t=null; try{ const p=new URLSearchParams(location.search);
+    if(p.get('city')&&CITIES[p.get('city')]) city=p.get('city');
+    if(P(p.get('issued'))!=null) $('issued').value=p.get('issued');
+    if(p.get('last')==='none'){ $('noInsp').checked=true; } else if(P(p.get('last'))!=null) $('last').value=p.get('last');
+    const st=p.get('status'); if(st&&['issued','insp','final','expired','closed','void'].includes(st)) $('status').value=st;
+    const r=p.get('role'); if(r&&['buyer','seller','owner'].includes(r)) role=r;
+    if(P(p.get('close'))!=null) $('close').value=p.get('close');
+    t=P(p.get('today'));
+  }catch(e){}
+  if(t==null){ const n=new Date(); t=Date.UTC(n.getFullYear(),n.getMonth(),n.getDate()); }
+  TODAY=t;
+})();
+const F=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+function calc(){
+  const d=I18N[lang]; city=$('city').value; const C=CITIES[city];
+  $('lastCtl').classList.toggle('dis',$('noInsp').checked); $('last').disabled=$('noInsp').checked;
+  document.querySelectorAll('#role button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===role?'true':'false'));
+  const o={city,issued:P($('issued').value),last:$('noInsp').checked?null:P($('last').value),status:$('status').value,today:TODAY,close:P($('close').value)};
+  const R=evaluate(o);
+  const E=$('err'); E.hidden=!R.err; if(R.err) E.textContent=d[R.err];
+  const rv=$('rv'); rv.className='v';
+  const L=[], todo=[]; let verdict='', vcls='ok', res='', note='';
+  if(R.err){ $('rk').textContent=d.k_left; rv.textContent='—'; $('rsub').textContent=''; }
+  else if(R.kind==='final'){ $('rk').textContent=d.k_final; rv.textContent=d.v_final; rv.classList.add('okv'); $('rsub').textContent=d.sub_final;
+    verdict=d.vd_final; todo.push(d.t_final); if(role==='buyer') todo.push(d.t_final_b); res=d.v_final; }
+  else if(R.kind==='void'){ $('rk').textContent=d.k_void; rv.textContent=d.v_void; rv.classList.add('warnv'); $('rsub').textContent=d.sub_void;
+    verdict=d.vd_void; vcls='warn'; todo.push(d.t_void); res=d.v_void; }
+  else {
+    const dead=R.expired||R.kind==='expired';
+    if(R.expired){ $('rk').textContent=d.k_over; rv.innerHTML=(-R.left)+' <small>'+d.u_over+'</small>'; rv.classList.add('warnv'); }
+    else if(R.left===0){ $('rk').textContent=d.k_left; rv.innerHTML='0 <small>'+d.u_last+'</small>'; rv.classList.add('warnv'); }
+    else { $('rk').textContent=d.k_left; rv.innerHTML=R.left+' <small>'+d.u_left+'</small>'; }
+    $('rsub').textContent=F(d.sub_dl,{d:fd(R.deadline)});
+    L.push([d.ln_iss,fd(o.issued)]);
+    L.push([d.ln_last,o.last!=null?fd(o.last):d.ln_none]);
+    L.push([d.ln_since,(o.last!=null?R.sinceLast:R.sinceIssue)+(lang==='vi'?' ngày':' days')]);
+    L.push([d.ln_rule,d['rule_'+R.rule]]);
+    L.push([d.ln_dl,fd(R.deadline),R.expired||R.left===0]);
+    if(R.rule==='start') L.push([d.ln_model,fd(R.model),R.model<TODAY]);
+    if(city==='ok'){ if(R.rule!=='ok2') L.push([d.ln_ok2,fd(R.ok2)]); L.push([d.ln_ok3,fd(R.ok3)]); }
+    if(o.close!=null) L.push([d.ln_close,fd(o.close),R.expBeforeClose]);
+    if(R.kind==='expired'){ verdict=d.vd_pexp; vcls='warn'; }
+    else if(R.kind==='closed'){ verdict=d.vd_closed; vcls='warn'; todo.push(d.t_closed); }
+    else if(R.expired){ verdict=d.vd_dead; vcls='warn'; }
+    else if(R.left===0){ verdict=d.vd_today; vcls='warn'; }
+    else verdict=F(d.vd_alive,{d:fd(R.deadline)});
+    if(o.close!=null&&!dead){ verdict+=R.expBeforeClose?F(d.vd_close_bad,{n:-R.closeGap}):F(d.vd_close_ok,{n:R.closeGap}); if(R.expBeforeClose) vcls='warn'; }
+    if(!dead){ todo.push(city==='ok'?d.t_okbook:d.t_book); todo.push(d.t_ext); }
+    todo.push(d['t_'+role+(dead?'_dead':'_open')]);
+    if(o.close!=null&&R.expBeforeClose&&!dead&&role!=='owner') todo.push(d.t_close);
+    res=R.expired?(-R.left)+' '+d.u_over:(R.left===0?d.u_last:R.left+' '+d.u_left);
+    if(R.kind==='expired'||R.kind==='closed') res=d['s_'+R.kind]+' · '+res;
+  }
+  $('lines').innerHTML=L.map(x=>'<div class="line'+(x[2]?' pmi':'')+'"><span class="n">'+x[0]+'</span><span class="a">'+x[1]+'</span></div>').join('');
+  const V=$('verdict'); V.className='status '+vcls; V.innerHTML=verdict; V.hidden=!verdict;
+  const cn=(lang==='vi'&&C.vn)||C.n;
+  if(city==='sj') note=F(d.n_sj,{e:RULE.sjExtEmail,p:RULE.sjExtPh});
+  else if(city==='ok') note=F(d.n_ok,{e:RULE.okExtEmail,p:RULE.okExtPh,pct:RULE.okPct});
+  else if(city==='acu') note=F(d.n_acu,{f:RULE.acuRenew})+' '+F(d.n_ot,{c:cn,p:' · '+C.ph});
+  else note=F(d.n_ot,{c:cn,p:C.ph?' · '+C.ph:''});
+  $('cityNote').innerHTML=note; $('cityNote').classList.toggle('hide',R.kind==='final'||!!R.err);
+  $('todo').innerHTML=todo.map(x=>'<li>'+x+'</li>').join('');
+  last={city:cn,role:d['r_'+role],st:d['s_'+o.status],iss:fd(o.issued),last:o.last!=null?fd(o.last):d.ln_none,res:res||'—',
+    dl:R.deadline?fd(R.deadline):'—',close:o.close!=null?fd(o.close):'—'};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(F(d.sms,last));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  fillCities($('city'),lang,city); calc();
+}
+['city','issued','last','noInsp','status','close'].forEach(id=>{$(id).addEventListener('change',calc); $(id).addEventListener('input',calc);});
+$('role').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; role=b.dataset.v; calc();});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const v=Object.assign({},last,{n,e,ph});
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing), giống T92. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(F(d.subj,v))+'&body='+encodeURIComponent(F(d.body,v));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+try{if(/[?&]embed=1/.test(location.search))a.style.display='none';}catch(e){}
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
