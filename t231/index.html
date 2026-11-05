@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Credit Utilization Calculator</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T37 thêm (không đổi class cũ) ---- */
+.score{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.score b{font-family:var(--display);font-weight:400;font-size:40px;line-height:1;font-variant-numeric:tabular-nums;color:var(--fg)}
+.score span{font-size:13px;color:var(--muted)}
+.rng{width:100%;margin:4px 0 0;accent-color:var(--brass);height:28px;cursor:pointer}
+.ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.total .pay{margin-top:10px;font-size:15px;color:var(--muted)}
+.total .pay b{color:var(--fg);font-size:22px;font-weight:500;font-variant-numeric:tabular-nums}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45;background:var(--brass-soft)}
+.status b{font-weight:500}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.tbl th{font-size:12px;font-weight:500;color:var(--muted);text-align:right;padding:6px 0;border-bottom:1px solid var(--line)}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl td{padding:9px 0;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.tbl td small{color:var(--muted);font-size:11px;display:block;white-space:normal}
+.tbl tr.me td{color:var(--brass);font-weight:600}
+.tbl tr.me td small{color:var(--brass);font-weight:400}
+.tbl td.x{color:var(--warn)}
+.tbl tr.me td.x{color:var(--brass)}
+.tblk{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.tlw{display:grid;gap:12px}
+.tlw h2,.next h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-r{display:flex;align-items:center;gap:10px}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.gcal{font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.task .why a{color:var(--brass)}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+</style>
+<meta name="description" content="Enter balances and limits for up to 5 cards. See each card and total utilization, and what to pay to get to 30% and 10%.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t231/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Credit Utilization Calculator · Ken Lam Tools">
+<meta property="og:description" content="Enter balances and limits for up to 5 cards. See each card and total utilization, and what to pay to get to 30% and 10%.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t231/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+/* Credit group additions (T230–T239) */
+.embed .kl-back{display:none}
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.seg4{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg4 button{border:0;background:transparent;color:var(--muted);font:inherit;font-size:14px;padding:11px 8px;cursor:pointer;line-height:1.25}
+.seg4 button+button{border-left:1px solid var(--line)}
+.seg4 button:nth-child(3){border-left:0}
+.seg4 button:nth-child(n+3){border-top:1px solid var(--line)}
+.seg4 button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+.total .v.word{font-size:46px;overflow-wrap:anywhere}
+.total .vs{font-size:14px;color:var(--muted);margin-top:8px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.mhl{list-style:none;margin:0;padding:0;display:grid;gap:10px}.mhl li{display:grid;gap:2px;border-top:1px solid var(--line);padding-top:10px}.mhl li:first-child{border-top:0;padding-top:0}.mhl a{color:var(--fg);text-decoration:none;font-weight:500}.mhl a b{color:var(--brass);font-weight:600;margin-right:4px}.mhl span{color:var(--muted);font-size:14px}
+.mhl a:hover{color:var(--brass)}
+.fac{display:grid;gap:5px;padding:10px 0;border-bottom:1px solid var(--line)}
+.fac .ft{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:15px}
+.fac .ft b{font-weight:500}
+.fac .ft span{font-size:13px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.fac .bar i{background:var(--brass)}
+.fac.lo .bar i{background:var(--warn)}
+.fac.hi .bar i{background:var(--ok)}
+.fac small{font-size:13px;color:var(--muted)}
+.todo{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px;line-height:1.5}
+.todo a,.panel a,.note a{color:var(--brass)}
+.crd{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:10px;background:var(--panel)}
+.crd-h{display:flex;justify-content:space-between;align-items:center;font-size:14px}
+.crd-h b{font-weight:500}
+.crd .ctl{background:var(--bg)}
+.crd .ctl input{font-size:18px}
+.rm{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:13px;padding:4px 10px;border-radius:999px;cursor:pointer}
+.add{justify-self:start;border:1px dashed var(--brass);background:transparent;color:var(--brass);font:inherit;font-size:14px;padding:9px 14px;border-radius:10px;cursor:pointer}
+.add[disabled]{opacity:.45;cursor:default}
+.row3{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.row3 .field:last-child{grid-column:1/-1}
+@media (min-width:520px){.row3{grid-template-columns:minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,.8fr)}.row3 .field:last-child{grid-column:auto}}
+.u-ok{color:var(--ok)!important}.u-mid{color:var(--brass)!important}.u-hi{color:var(--warn)!important}
+.tblw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl td.u{font-weight:600}
+.tbl th+th,.tbl td+td{padding-left:10px}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.cmp>div{border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0}
+.cmp>div.pick{border-color:var(--brass);background:var(--brass-soft)}
+.cmp .k{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.cmp .v{font-family:var(--display);font-size:34px;line-height:1.1;font-variant-numeric:tabular-nums;margin-top:4px}
+.cmp .v small{font-family:var(--body);font-size:13px;color:var(--muted)}
+.cmp p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.mk{position:relative;height:16px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mk span{position:absolute;top:0;transform:translateX(-50%)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/" data-i="back">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">How much of my credit limit am I using?</h1>
+    <p class="sub" data-i="sub">Enter each card's balance and limit, up to 5 cards. See your utilization per card and in total, and how much to pay to get under 30% or 10%.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div id="cards" class="inputs"></div>
+    <button type="button" class="add" id="addBtn" data-i="add">+ Add a card</button>
+    <p class="hint" data-i="h_priv">Balances and limits only. No card numbers. Nothing is sent or saved.</p>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_k">Total utilization</div>
+      <div class="v"><span id="tot">0%</span></div>
+      <div class="vs" id="totS"></div>
+    </div>
+    <div>
+      <div class="bar" aria-hidden="true" style="height:10px"><i class="b1" id="totBar" style="width:0"></i></div>
+      <div class="mk" aria-hidden="true"><span style="left:10%">10%</span><span style="left:30%">30%</span><span style="left:50%">50%</span><span style="left:75%">75%</span></div>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_to30">Pay to get under 30% total</b></span><span class="a" id="to30">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_to10">Pay to get under 10% total</b></span><span class="a" id="to10">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_all30">Pay to get every card under 30%</b></span><span class="a" id="all30">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_all10">Pay to get every card under 10%</b></span><span class="a" id="all10">$0</span></div>
+    </div>
+    <div>
+      <div class="tblk" data-i="t_k">Card by card</div>
+      <div class="tblw"><table class="tbl" id="tbl"></table></div>
+      <div class="legend" style="margin-top:8px"><span><i style="background:var(--ok)"></i><span data-i="lg1">under 10%</span></span><span><i style="background:var(--brass)"></i><span data-i="lg2">10–30%</span></span><span><i style="background:var(--warn)"></i><span data-i="lg3">over 30%</span></span></div>
+    </div>
+    <div class="note" data-i="stmt_note"><b>Timing matters.</b> Card companies usually report the balance on your statement closing date, not the due date. Pay before the closing date and the lower balance is what the bureaus see.</div>
+  </section>
+
+  <p class="myth" data-i="myth"><b>Common myth:</b> "Keep a small balance on the card to build credit." You don't need to carry a balance or pay interest. Let the statement show a small amount, then pay it in full. And 30% is not a magic line: FICO says lower is better, under 10% helps.</p>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">Have a lump sum? Split it the smart way with <a href="/t232/">T232</a>.</li>
+      <li data-i="nx2">Look up each card's statement closing date in the app, and set a reminder 2–3 days before it.</li>
+      <li data-i="nx3">Already applying for a loan? Paid down a lot? Ask your lender about a rapid rescore (only a lender can order one).</li>
+      <li data-i="nx4">See the full picture in <a href="/t230/">T230</a>, and what your score costs per month in <a href="/t37/">T37</a>.</li>
+    </ol>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" aria-label="Video guide"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this result to yourself</h2>
+    <p data-i="f_sub">Send opens an email with your result filled in, to Ken and for your records. No spam.</p>
+    <div class="field"><label for="fname" data-i="f_name">Name</label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone" data-i="f_phone">Phone (optional)</label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#credit-score" target="_blank" rel="noopener" data-i="ft_lib">Library: credit scores and your mortgage</a> · <a href="https://kenlamrealty.com/library#video-credit" target="_blank" rel="noopener" data-i="ft_vid">Real estate basics video</a> · <a href="/t230/" data-i="ft_grp">All credit tools</a></span>
+    <span data-i="ft_disc">For information only.</span>
+    <span class="src"><span data-i="ft_src">Sources</span> (05/11/2026):
+      <a href="https://myfico.com/credit-education/blog/credit-utilization-be" target="_blank" rel="noopener">myFICO: utilization &amp; statement balance</a> ·
+      <a href="https://businesswire.com/news/home/20240702397066/en" target="_blank" rel="noopener">FICO 850 study 07/02/2024</a> ·
+      <a href="https://www.myfico.com/crediteducation/whatsinyourscore.aspx" target="_blank" rel="noopener">myFICO: What’s in my FICO Scores</a> ·
+      <a href="https://equifax.com/personal/education/credit/score/articles/-/learn/what-is-a-rapid-rescore" target="_blank" rel="noopener">Equifax: rapid rescore</a></span>
+    <span class="who">Ken Lam Realty · Ken Lam, Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 05/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số liệu — sửa ở đây (tra 05/11/2026, nguồn: /home/claude/credit/FACTS.md mục G) =====
+   Số báo lên bureau thường là số dư ngày statement closing; trả trước ngày đó để utilization thấp —
+     https://myfico.com/credit-education/blog/credit-utilization-be (09/02/2022).
+   FICO: không có mốc rơi ở 30%; càng thấp càng tốt, dưới 10% có lợi — cùng nguồn. 30% giữ lại vì nhiều người hỏi.
+   Người 850 trung bình utilization ~4.1% — FICO 07/02/2024 https://businesswire.com/news/home/20240702397066/en
+   Màu: <10% xanh, 10–30% đồng, >30% cam — mốc để đọc cho dễ, không phải ngưỡng của FICO. */
+const RULES={T_LOW:10,T_MID:30,MAX_CARDS:5,AVG_850:4.1};
+const I18N={
+ vi:{doc_title:'Tính Utilization Thẻ',title:'Mình đang xài bao nhiêu % hạn mức thẻ?',sub:'Nhập số dư và hạn mức từng thẻ, tối đa 5 thẻ. Ra liền utilization từng thẻ, tổng, và phải trả bao nhiêu để xuống dưới 30% hay 10%.',
+  card:'Thẻ',l_bal:'Số dư (balance)',l_lim:'Hạn mức (limit)',rm:'Bỏ',add:'+ Thêm thẻ',h_priv:'Chỉ nhập số dư và hạn mức. Không nhập số thẻ. Không gửi, không lưu đi đâu.',
+  r_k:'Utilization tổng',tot_s:'{b} trên {l} hạn mức',
+  st_none:'Nhập số dư và hạn mức của ít nhất 1 thẻ.',
+  st_lo:'<b>Dưới 10%. Rất tốt.</b> Người được 850 trung bình xài khoảng 4.1%.',
+  st_mid:'<b>Được, nhưng còn lên được.</b> Trả thêm {x} trước ngày statement là xuống dưới 10%.',
+  st_hi:'<b>Utilization đang cao.</b> Đây là phần lên điểm nhanh nhất: trả {x} là xuống dưới 30%, {y} là dưới 10%.',
+  st_one:' Thẻ {c} riêng nó đang {p}. Thẻ nào cao cũng bị tính, không chỉ tổng.',
+  n_to30:'Trả bao nhiêu để tổng dưới 30%',n_to10:'Trả bao nhiêu để tổng dưới 10%',n_all30:'Trả bao nhiêu để thẻ nào cũng dưới 30%',n_all10:'Trả bao nhiêu để thẻ nào cũng dưới 10%',
+  t_k:'Từng thẻ',th_c:'Thẻ',th_u:'Utilization',th_30:'Trả → 30%',th_10:'Trả → 10%',th_sum:'Tổng',nolim:'chưa có hạn mức',
+  lg1:'dưới 10%',lg2:'10–30%',lg3:'trên 30%',
+  stmt_note:'<b>Trả đúng lúc mới ăn.</b> Ngân hàng thường báo lên bureau số dư ngày statement closing, không phải ngày due. Trả trước ngày closing thì bureau thấy số dư thấp.',
+  myth:'<b>Nhiều người hiểu sai:</b> "Phải để dư nợ trên thẻ mới lên điểm." Không cần để nợ, không cần trả lãi. Cho statement ghi số nhỏ rồi trả hết. Và 30% không phải mốc thần kỳ: FICO nói càng thấp càng tốt, dưới 10% là có lợi.',
+  nx1:'Có 1 khoản tiền trả nợ? Chia tiền cho đúng với <a href="/t232/">T232</a>.',
+  nx2:'Vô app ngân hàng coi ngày statement closing từng thẻ, đặt nhắc trước 2–3 ngày.',
+  nx3:'Đang xin loan mà vừa trả bớt nhiều? Hỏi lender làm rapid rescore (chỉ lender đặt được).',
+  nx4:'Coi toàn bộ sức khỏe credit ở <a href="/t230/">T230</a>, và điểm mình tốn bao nhiêu mỗi tháng ở <a href="/t37/">T37</a>.',
+  sms:'Chào Ken, tôi xài tool utilization (T231): tổng {u} ({b}/{l}). Trả {x30} để dưới 30%, {x10} để dưới 10%. Nhờ Ken chỉ thêm.',
+  subj:'Utilization thẻ tín dụng — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nUtilization tổng: {u}\nTổng số dư: {b}\nTổng hạn mức: {l}\nTrả để tổng dưới 30%: {x30}\nTrả để tổng dưới 10%: {x10}\nTrả để từng thẻ dưới 30%: {a30}\nTrả để từng thẻ dưới 10%: {a10}\n\n{rows}\n\nNhớ trả trước ngày statement closing.\nGửi từ tool T231 tools.kenlamrealty.com'},
+ en:{doc_title:'Credit Utilization Calculator',title:'How much of my credit limit am I using?',sub:"Enter each card's balance and limit, up to 5 cards. See your utilization per card and in total, and how much to pay to get under 30% or 10%.",
+  card:'Card',l_bal:'Balance',l_lim:'Credit limit',rm:'Remove',add:'+ Add a card',h_priv:'Balances and limits only. No card numbers. Nothing is sent or saved.',
+  r_k:'Total utilization',tot_s:'{b} of {l} in limits',
+  st_none:'Enter the balance and limit for at least one card.',
+  st_lo:'<b>Under 10%. Very good.</b> People with an 850 average about 4.1%.',
+  st_mid:'<b>OK, with room to improve.</b> Pay {x} before the statement date to get under 10%.',
+  st_hi:'<b>Utilization is high.</b> This is the fastest part to fix: pay {x} to get under 30%, {y} to get under 10%.',
+  st_one:' Card {c} on its own is at {p}. High cards count too, not just the total.',
+  n_to30:'Pay to get under 30% total',n_to10:'Pay to get under 10% total',n_all30:'Pay to get every card under 30%',n_all10:'Pay to get every card under 10%',
+  t_k:'Card by card',th_c:'Card',th_u:'Utilization',th_30:'Pay → 30%',th_10:'Pay → 10%',th_sum:'Total',nolim:'no limit',
+  lg1:'under 10%',lg2:'10–30%',lg3:'over 30%',
+  stmt_note:'<b>Timing matters.</b> Card companies usually report the balance on your statement closing date, not the due date. Pay before the closing date and the lower balance is what the bureaus see.',
+  myth:'<b>Common myth:</b> "Keep a small balance on the card to build credit." You don\'t need to carry a balance or pay interest. Let the statement show a small amount, then pay it in full. And 30% is not a magic line: FICO says lower is better, under 10% helps.',
+  nx1:'Have a lump sum? Split it the smart way with <a href="/t232/">T232</a>.',
+  nx2:"Look up each card's statement closing date in the app, and set a reminder 2–3 days before it.",
+  nx3:'Already applying for a loan and paid down a lot? Ask your lender about a rapid rescore (only a lender can order one).',
+  nx4:'See the full picture in <a href="/t230/">T230</a>, and what your score costs per month in <a href="/t37/">T37</a>.',
+  sms:'Hi Ken, I used the utilization tool (T231): total {u} ({b}/{l}). Pay {x30} to get under 30%, {x10} to get under 10%. Any advice?',
+  subj:'Credit card utilization — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nTotal utilization: {u}\nTotal balances: {b}\nTotal limits: {l}\nPay to get total under 30%: {x30}\nPay to get total under 10%: {x10}\nPay to get each card under 30%: {a30}\nPay to get each card under 10%: {a10}\n\n{rows}\n\nPay before the statement closing date.\nSent from tool T231 tools.kenlamrealty.com'}
+};
+
+const COMMON={
+ vi:{b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video',
+  f_title:'Gửi kết quả này về email',f_sub:'Bấm Gửi là mở email có sẵn kết quả, gửi cho Ken và cho mình giữ. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Bài Library: điểm tín dụng và vay nhà',ft_vid:'Video Kiến Thức Địa Ốc',ft_grp:'Mọi tool điểm tín dụng',
+  ft_disc:'Thông tin tham khảo, không phải tư vấn pháp lý, tài chính hay cam kết cho vay. Điểm thật do FICO/VantageScore và 3 bureau tính.',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',back:'← Tất cả tools',nx_title:'Bước tiếp theo'},
+ en:{b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch video',
+  f_title:'Email this result to yourself',f_sub:'Send opens an email with your result filled in, to Ken and for your records. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'Library: credit scores and your mortgage',ft_vid:'Real estate basics video',ft_grp:'All credit tools',
+  ft_disc:'For information only. Not legal or financial advice and not a commitment to lend. Your real scores come from FICO/VantageScore and the 3 bureaus.',
+  ft_src:'Sources',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',back:'← All tools',nx_title:'Next steps'}
+};
+for(const k in COMMON){ I18N[k]=Object.assign({},COMMON[k],I18N[k]); }
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'-':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const num=el=>{ const v=parseFloat((typeof el==='string'?$(el):el).value); return isFinite(v)?v:0; };
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const p1=x=>(Math.round(x*10)/10).toLocaleString('en-US',{maximumFractionDigits:1});
+let last={};
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; document.title=d.doc_title||document.title; calc();
+}
+function setSms(){ const d=I18N[lang]; const s=d.sms.replace(/\{(\w+)\}/g,(m,k)=>last[k]??m); $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s); }
+async function copyText(txt,btn){ try{ await navigator.clipboard.writeText(txt); }catch(e){ const t=document.createElement('textarea'); t.value=txt; t.style.position='fixed'; t.style.opacity='0'; document.body.appendChild(t); t.select(); try{document.execCommand('copy')}catch(_){} t.remove(); } if(btn){ const o=btn.textContent; btn.textContent='✓'; setTimeout(()=>{btn.textContent=o},1400);} }
+function initCommon(){
+  $('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+  $('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+  $('sendBtn').onclick=()=>{
+    const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+    const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+    /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing), hoặc thay bằng fetch() tới FUB webhook khi có endpoint. */
+    const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+    const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+    $('sent').hidden=false;
+  };
+  $('copyBtn').onclick=()=>copyText('4086662825',$('copyBtn'));
+  try{ if(new URLSearchParams(location.search).get('embed')==='1') document.documentElement.classList.add('embed'); }catch(e){}
+  applyLang();
+}
+
+const DEF=[[4200,10000],[1800,3000]];
+function cardHtml(k,b,l){
+  return '<div class="crd" data-c="'+k+'"><div class="crd-h"><b><span data-i="card">Card</span> <span class="cn"></span></b><button type="button" class="rm" data-i="rm">Remove</button></div>'
+   +'<div class="row2"><div class="field"><label for="b'+k+'" data-i="l_bal">Balance</label><div class="ctl"><span class="pre">$</span><input id="b'+k+'" class="bal" type="number" inputmode="numeric" min="0" step="100" value="'+b+'"></div></div>'
+   +'<div class="field"><label for="l'+k+'" data-i="l_lim">Credit limit</label><div class="ctl"><span class="pre">$</span><input id="l'+k+'" class="lim" type="number" inputmode="numeric" min="0" step="500" value="'+l+'"></div></div></div></div>';
+}
+let ck=0;
+function addCard(b,l){ if(document.querySelectorAll('.crd').length>=RULES.MAX_CARDS) return; ck++; $('cards').insertAdjacentHTML('beforeend',cardHtml(ck,b,l)); relabel(); }
+function relabel(){
+  const d=I18N[lang], cs=[...document.querySelectorAll('.crd')];
+  cs.forEach((c,i)=>{ c.querySelector('.cn').textContent=i+1; c.querySelectorAll('[data-i]').forEach(el=>{const k=el.dataset.i; if(typeof d[k]==='string') el.innerHTML=d[k];}); c.querySelector('.rm').hidden=cs.length<2; });
+  $('addBtn').disabled=cs.length>=RULES.MAX_CARDS;
+}
+/* Tính — hàm thuần */
+const need=(b,l,t)=>Math.max(0,b-l*t/100);
+function util(cards){
+  const ok=cards.filter(c=>c.l>0||c.b>0);
+  const B=ok.reduce((s,c)=>s+c.b,0), L=ok.reduce((s,c)=>s+c.l,0);
+  const rows=cards.map((c,i)=>({i:i+1,b:c.b,l:c.l,u:c.l>0?c.b/c.l*100:null,p30:c.l>0?need(c.b,c.l,30):c.b,p10:c.l>0?need(c.b,c.l,10):c.b}));
+  return {B,L,u:L>0?B/L*100:null,to30:need(B,L,30),to10:need(B,L,10),all30:rows.reduce((s,r)=>s+r.p30,0),all10:rows.reduce((s,r)=>s+r.p10,0),rows};
+}
+const cls=u=>u==null?'':(u<RULES.T_LOW?'u-ok':(u<=RULES.T_MID?'u-mid':'u-hi'));
+const pu=u=>u==null?'—':p1(u)+'%';
+function calc(){
+  const d=I18N[lang];
+  relabel();
+  const cards=[...document.querySelectorAll('.crd')].map(c=>({b:Math.max(0,num(c.querySelector('.bal'))),l:Math.max(0,num(c.querySelector('.lim')))}));
+  const r=util(cards);
+  $('tot').textContent=pu(r.u); $('tot').className=cls(r.u);
+  $('totS').textContent=d.tot_s.replace('{b}',fmt(r.B)).replace('{l}',fmt(r.L));
+  $('totBar').style.width=Math.min(100,r.u||0)+'%';
+  $('to30').textContent=fmt(r.to30); $('to10').textContent=fmt(r.to10); $('all30').textContent=fmt(r.all30); $('all10').textContent=fmt(r.all10);
+  let st;
+  if(r.u==null) st=d.st_none;
+  else if(r.u<RULES.T_LOW) st=d.st_lo;
+  else if(r.u<=RULES.T_MID) st=d.st_mid.replace('{x}',fmt(r.to10));
+  else st=d.st_hi.replace('{x}',fmt(r.to30)).replace('{y}',fmt(r.to10));
+  const hi=r.rows.filter(x=>x.u!=null).sort((a,b)=>b.u-a.u)[0];
+  if(r.u!=null && hi && hi.u>RULES.T_MID && r.u<=RULES.T_MID) st+=d.st_one.replace('{c}',hi.i).replace('{p}',pu(hi.u));
+  $('status').innerHTML=st;
+  let h='<thead><tr><th>'+esc(d.th_c)+'</th><th>'+esc(d.th_u)+'</th><th>'+esc(d.th_30)+'</th><th>'+esc(d.th_10)+'</th></tr></thead><tbody>', txt=[];
+  r.rows.forEach(x=>{ h+='<tr><td>'+x.i+'<small>'+fmt(x.b)+' / '+(x.l>0?fmt(x.l):esc(d.nolim))+'</small></td><td class="u '+cls(x.u)+'">'+pu(x.u)+'</td><td>'+fmt(x.p30)+'</td><td>'+fmt(x.p10)+'</td></tr>';
+    txt.push(d.card+' '+x.i+': '+fmt(x.b)+' / '+fmt(x.l)+' = '+pu(x.u)+' · →30%: '+fmt(x.p30)+' · →10%: '+fmt(x.p10)); });
+  h+='<tr><td><b>'+esc(d.th_sum)+'</b></td><td class="u '+cls(r.u)+'">'+pu(r.u)+'</td><td>'+fmt(r.to30)+'</td><td>'+fmt(r.to10)+'</td></tr>';
+  $('tbl').innerHTML=h+'</tbody>';
+  last={u:pu(r.u),b:fmt(r.B),l:fmt(r.L),x30:fmt(r.to30),x10:fmt(r.to10),a30:fmt(r.all30),a10:fmt(r.all10),rows:txt.join('\n')};
+  setSms();
+}
+DEF.forEach(x=>addCard(x[0],x[1]));
+$('addBtn').onclick=()=>{ addCard(0,0); calc(); const cs=document.querySelectorAll('.crd .bal'); if(cs.length) cs[cs.length-1].focus(); };
+$('cards').addEventListener('input',calc);
+$('cards').addEventListener('click',e=>{ const b=e.target.closest('.rm'); if(!b) return; b.closest('.crd').remove(); calc(); });
+initCommon();
+</script>
+</body>
+</html>

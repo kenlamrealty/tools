@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Credit Health Check-up</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T37 thêm (không đổi class cũ) ---- */
+.score{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.score b{font-family:var(--display);font-weight:400;font-size:40px;line-height:1;font-variant-numeric:tabular-nums;color:var(--fg)}
+.score span{font-size:13px;color:var(--muted)}
+.rng{width:100%;margin:4px 0 0;accent-color:var(--brass);height:28px;cursor:pointer}
+.ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.total .pay{margin-top:10px;font-size:15px;color:var(--muted)}
+.total .pay b{color:var(--fg);font-size:22px;font-weight:500;font-variant-numeric:tabular-nums}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45;background:var(--brass-soft)}
+.status b{font-weight:500}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.tbl th{font-size:12px;font-weight:500;color:var(--muted);text-align:right;padding:6px 0;border-bottom:1px solid var(--line)}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl td{padding:9px 0;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.tbl td small{color:var(--muted);font-size:11px;display:block;white-space:normal}
+.tbl tr.me td{color:var(--brass);font-weight:600}
+.tbl tr.me td small{color:var(--brass);font-weight:400}
+.tbl td.x{color:var(--warn)}
+.tbl tr.me td.x{color:var(--brass)}
+.tblk{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.tlw{display:grid;gap:12px}
+.tlw h2,.next h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-r{display:flex;align-items:center;gap:10px}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.gcal{font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.task .why a{color:var(--brass)}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+</style>
+<meta name="description" content="Five quick answers, an estimated credit tier, the five FICO factors with their weights, the 3 fixes to do first, and the mortgage score lines.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t230/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Credit Health Check-up · Ken Lam Tools">
+<meta property="og:description" content="Five quick answers, an estimated credit tier, the five FICO factors with their weights, the 3 fixes to do first, and the mortgage score lines.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t230/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+/* Credit group additions (T230–T239) */
+.embed .kl-back{display:none}
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.seg4{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg4 button{border:0;background:transparent;color:var(--muted);font:inherit;font-size:14px;padding:11px 8px;cursor:pointer;line-height:1.25}
+.seg4 button+button{border-left:1px solid var(--line)}
+.seg4 button:nth-child(3){border-left:0}
+.seg4 button:nth-child(n+3){border-top:1px solid var(--line)}
+.seg4 button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+.total .v.word{font-size:46px;overflow-wrap:anywhere}
+.total .vs{font-size:14px;color:var(--muted);margin-top:8px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.mhl{list-style:none;margin:0;padding:0;display:grid;gap:10px}.mhl li{display:grid;gap:2px;border-top:1px solid var(--line);padding-top:10px}.mhl li:first-child{border-top:0;padding-top:0}.mhl a{color:var(--fg);text-decoration:none;font-weight:500}.mhl a b{color:var(--brass);font-weight:600;margin-right:4px}.mhl span{color:var(--muted);font-size:14px}
+.mhl a:hover{color:var(--brass)}
+.fac{display:grid;gap:5px;padding:10px 0;border-bottom:1px solid var(--line)}
+.fac .ft{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:15px}
+.fac .ft b{font-weight:500}
+.fac .ft span{font-size:13px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.fac .bar i{background:var(--brass)}
+.fac.lo .bar i{background:var(--warn)}
+.fac.hi .bar i{background:var(--ok)}
+.fac small{font-size:13px;color:var(--muted)}
+.todo{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px;line-height:1.5}
+.todo a,.panel a,.note a{color:var(--brass)}
+.crd{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:10px;background:var(--panel)}
+.crd-h{display:flex;justify-content:space-between;align-items:center;font-size:14px}
+.crd-h b{font-weight:500}
+.crd .ctl{background:var(--bg)}
+.crd .ctl input{font-size:18px}
+.rm{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:13px;padding:4px 10px;border-radius:999px;cursor:pointer}
+.add{justify-self:start;border:1px dashed var(--brass);background:transparent;color:var(--brass);font:inherit;font-size:14px;padding:9px 14px;border-radius:10px;cursor:pointer}
+.add[disabled]{opacity:.45;cursor:default}
+.row3{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.row3 .field:last-child{grid-column:1/-1}
+@media (min-width:520px){.row3{grid-template-columns:minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,.8fr)}.row3 .field:last-child{grid-column:auto}}
+.u-ok{color:var(--ok)!important}.u-mid{color:var(--brass)!important}.u-hi{color:var(--warn)!important}
+.tblw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl td.u{font-weight:600}
+.tbl th+th,.tbl td+td{padding-left:10px}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.cmp>div{border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0}
+.cmp>div.pick{border-color:var(--brass);background:var(--brass-soft)}
+.cmp .k{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.cmp .v{font-family:var(--display);font-size:34px;line-height:1.1;font-variant-numeric:tabular-nums;margin-top:4px}
+.cmp .v small{font-family:var(--body);font-size:13px;color:var(--muted)}
+.cmp p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.mk{position:relative;height:16px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mk span{position:absolute;top:0;transform:translateX(-50%)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/" data-i="back">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Credit health check-up</h1>
+    <p class="sub" data-i="sub">Five quick answers. See which part of your credit is strong, which part drags, and what to fix first before you apply for a home loan.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <span class="fl" data-i="l_late">Late payments in the last 24 months</span>
+      <div class="seg4" id="late" role="group">
+        <button type="button" data-v="0" aria-pressed="true" data-i="lt0">None</button>
+        <button type="button" data-v="1" aria-pressed="false" data-i="lt1">1 late</button>
+        <button type="button" data-v="2" aria-pressed="false" data-i="lt2">2 or more</button>
+        <button type="button" data-v="3" aria-pressed="false" data-i="lt3">Collection / charge-off</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="util"><span data-i="l_util">Card utilization, all cards</span></label>
+        <div class="ctl"><input id="util" type="number" inputmode="decimal" min="0" max="200" step="1" value="35"><span class="post">%</span></div>
+        <p class="hint" data-i="h_util">Total balances ÷ total limits. Not sure? Use <a href="/t231/">T231</a>.</p>
+      </div>
+      <div class="field">
+        <label for="age"><span data-i="l_age">Oldest account</span></label>
+        <div class="ctl"><input id="age" type="number" inputmode="decimal" min="0" max="80" step="0.5" value="4"><span class="post" data-i="yrs">years</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="inq"><span data-i="l_inq">Hard inquiries, last 12 months</span></label>
+        <div class="ctl"><input id="inq" type="number" inputmode="numeric" min="0" max="50" step="1" value="2"></div>
+      </div>
+      <div class="field">
+        <label for="mix"><span data-i="l_mix">Types of accounts</span></label>
+        <div class="ctl"><input id="mix" type="number" inputmode="numeric" min="0" max="6" step="1" value="2"><span class="post" data-i="types">types</span></div>
+        <p class="hint" data-i="h_mix">Card, auto loan, student loan, mortgage, personal loan…</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_k">Estimated tier (not a score)</div>
+      <div class="v word" id="tier">Good</div>
+      <div class="vs" id="tierS"></div>
+    </div>
+    <div class="status" id="status"></div>
+    <div>
+      <div class="tblk" data-i="f_k">The 5 FICO factors, weighted</div>
+      <div id="facs"></div>
+      <p class="hint" style="margin-top:8px" data-i="f_note">Bar width = FICO's general weight (35/30/15/10/10). Colour = how you did on this check. FICO says the weights vary from person to person.</p>
+    </div>
+    <div>
+      <div class="tblk" data-i="d_k">Do these 3 first</div>
+      <ol class="todo" id="todo"></ol>
+    </div>
+    <div class="note hide" id="thinNote" data-i="thin_note">FICO needs at least one account open 6 months or more, reported in the last 6 months. Under that, you may not have a FICO score yet. Start with <a href="/t238/">T238</a>.</div>
+    <div>
+      <div class="tblk" data-i="m_k">Mortgage score lines (2026)</div>
+      <div class="lines">
+        <div class="line"><span class="n"><b>FHA</b> <span data-i="m_fha_s">580+ = 3.5% down · 500–579 = 10% down</span></span><span class="a" id="mFha"></span></div>
+        <div class="line"><span class="n"><b>Conventional</b> <span data-i="m_conv_s">Fannie DU has no minimum since 11/16/2025; most lenders still want about 620+ (estimate)</span></span><span class="a" id="mConv"></span></div>
+        <div class="line"><span class="n"><b>CalHFA</b> <span data-i="m_cal_s">Dream For All / Conventional: 680 minimum</span></span><span class="a" id="mCal"></span></div>
+        <div class="line"><span class="n"><b>Jumbo</b> <span data-i="m_jum_s">usually 700+ (estimate)</span></span><span class="a" id="mJum"></span></div>
+        <div class="line"><span class="n"><b data-i="m_best">Best Fannie pricing</b> <span data-i="m_best_s">780+ pays the lowest credit fee (LLPA)</span></span><span class="a" id="mBest"></span></div>
+      </div>
+    </div>
+    <div class="note" data-i="est_note">This is a rough check-up, not a credit score. The points come from a simple scale we built on FICO's published weights, not FICO's formula. Mortgage lenders pull Classic FICO from all 3 bureaus (since 9/9/2026 they may use VantageScore 4.0), so your app score can differ.</div>
+  </section>
+
+  <section class="panel" id="crAll">
+    <h2 data-i="cr_t">All credit tools</h2>
+    <div data-i="cr_list"><ul class="mhl"><li><a href="/t231/"><b>T231</b> Credit utilization calculator</a><span>Enter balances and limits for up to 5 cards: see each card and total %, and what to pay to get to 30% / 10%.</span></li><li><a href="/t232/"><b>T232</b> Which card to pay first?</a><span>Have a lump sum? Compare the score-first split with the interest-first split, card by card.</span></li><li><a href="/t233/"><b>T233</b> How long does it stay? When can I get a mortgage?</a><span>Late payment, collection, bankruptcy, foreclosure: when it falls off and the earliest date for each loan type.</span></li><li><a href="/t234/"><b>T234</b> Credit report dispute letter</a><span>A filled-in dispute or goodwill letter, the 3 bureau addresses, the 30/45-day deadline and a mailing checklist.</span></li><li><a href="/t235/"><b>T235</b> What loans does my score qualify for?</a><span>Enter your score and down payment: see which of Conventional, FHA, VA, Jumbo and CalHFA fit.</span></li><li><a href="/t236/"><b>T236</b> Which score does the lender use?</a><span>Enter each borrower’s 3 scores: see the middle score and the score the lender uses for the loan.</span></li><li><a href="/t237/"><b>T237</b> Rate shopping window</a><span>Pick the date of the first credit pull: see the last day to shop rates and count as one inquiry.</span></li><li><a href="/t238/"><b>T238</b> Credit-building plan before you buy</a><span>Pick your situation and target month: get a month-by-month plan to be ready before you apply.</span></li><li><a href="/t239/"><b>T239</b> Credit freeze &amp; identity theft</a><span>Freeze, fraud alert, IdentityTheft.gov: a step-by-step checklist and a reminder to lift it before a lender pulls.</span></li><li><a href="/t37/"><b>T37</b> How much is my credit score costing me?</a><span>Slide your score: see the estimated rate, monthly payment and what it costs next to a 760+ borrower.</span></li></ul></div>
+  </section>
+
+  <p class="myth" data-i="myth"><b>Common myth:</b> "Under 30% utilization is all you need." FICO says its data shows no cliff at 30%. Lower is better, and under 10% helps. People with an 850 average about 4.1%.</p>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">Pull all 3 reports free at <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">AnnualCreditReport.com</a> (free every week). Checking your own is a soft pull.</li>
+      <li data-i="nx2">Find the card that pushes your utilization up with <a href="/t231/">T231</a>, then split your cash with <a href="/t232/">T232</a>.</li>
+      <li data-i="nx3">See which loans your score fits in <a href="/t235/">T235</a>, and what each band costs per month in <a href="/t37/">T37</a>.</li>
+    </ol>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" aria-label="Video guide"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this result to yourself</h2>
+    <p data-i="f_sub">Send opens an email with your result filled in, to Ken and for your records. No spam.</p>
+    <div class="field"><label for="fname" data-i="f_name">Name</label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone" data-i="f_phone">Phone (optional)</label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#credit-score" target="_blank" rel="noopener" data-i="ft_lib">Library: credit scores and your mortgage</a> · <a href="https://kenlamrealty.com/library#video-credit" target="_blank" rel="noopener" data-i="ft_vid">Real estate basics video</a></span>
+    <span data-i="ft_disc">For information only.</span>
+    <span class="src"><span data-i="ft_src">Sources</span> (05/11/2026):
+      <a href="https://www.myfico.com/crediteducation/whatsinyourscore.aspx" target="_blank" rel="noopener">myFICO: What’s in my FICO Scores (general weights)</a> ·
+      <a href="https://MyFico.com/credit-education/faq/scores/fico-score-requirements" target="_blank" rel="noopener">myFICO: minimum scoring criteria</a> ·
+      <a href="https://myfico.com/credit-education/blog/credit-utilization-be" target="_blank" rel="noopener">myFICO: utilization</a> ·
+      <a href="https://businesswire.com/news/home/20240702397066/en" target="_blank" rel="noopener">FICO 850 study 07/02/2024</a> ·
+      <a href="https://selling-guide.fanniemae.com/sel/b3-5.1-01/general-requirements-credit-scores" target="_blank" rel="noopener">Fannie Mae Selling Guide B3-5.1-01</a> ·
+      <a href="https://singlefamily.fanniemae.com/media/9391/display" target="_blank" rel="noopener">Fannie Mae LLPA Matrix 09/09/2026</a> ·
+      <a href="https://www.hud.gov/sites/default/files/hudclips/documents/2026-11hsgml.pdf" target="_blank" rel="noopener">HUD ML 2026-11</a> ·
+      <a href="https://www.calhfa.ca.gov/homeownership/materials/files/tool-matrix-dfa.pdf" target="_blank" rel="noopener">CalHFA Dream For All matrix</a> ·
+      <a href="https://www.fhfa.gov/policy/credit-scores" target="_blank" rel="noopener">FHFA credit scores</a> ·
+      <a href="https://www.experian.com/blogs/ask-experian/how-long-do-hard-inquiries-stay-on-your-credit-report/" target="_blank" rel="noopener">Experian: hard inquiries</a> ·
+      <a href="https://consumer.ftc.gov/blog/2020/05/credit-reports-are-now-free-every-week" target="_blank" rel="noopener">FTC: free weekly reports</a></span>
+    <span class="who">Ken Lam Realty · Ken Lam, Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 05/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số liệu — sửa ở đây (tra 05/11/2026, nguồn: /home/claude/credit/FACTS.md) =====
+   WEIGHTS 35/30/15/10/10: trọng số chung FICO công bố — myFICO "What's in my FICO Scores"
+     https://www.myfico.com/crediteducation/whatsinyourscore.aspx. FICO ghi: tùy từng người. (FACTS tag UNVERIFIED vì fetch bị chặn; số chuẩn FICO.)
+   SCALE (điểm 0–100 mỗi yếu tố) + TIERS: thang ĐƠN GIẢN tự đặt, ƯỚC TÍNH — KEN DUYỆT. Không phải công thức FICO.
+   THIN 0.5 năm: FICO cần ≥1 tài khoản mở ≥6 tháng — https://MyFico.com/credit-education/faq/scores/fico-score-requirements
+   Util <10% giúp, không có mốc 30%: https://myfico.com/credit-education/blog/credit-utilization-be ; 850 trung bình 4.1%: FICO 07/02/2024.
+   MORT: FHA 580/500 (HUD ML 2026-11) · Fannie DU không min từ 16/11/2025, thực tế ~620 (ƯỚC TÍNH) · CalHFA 680 · Jumbo 700 (ƯỚC TÍNH) · LLPA tốt nhất 780+. */
+const RULES={
+  WEIGHTS:{pay:35,owed:30,len:15,newc:10,mix:10},
+  SCALE:{
+    pay:[100,55,30,10],                                   /* none / 1 late / 2+ / collection-charge-off */
+    owed:[[10,100],[30,75],[50,50],[75,30],[Infinity,10]],/* utilization % < x → điểm */
+    len:[[1,20],[2,40],[5,60],[10,80],[Infinity,100]],    /* tuổi tài khoản lâu nhất (năm) < x */
+    newc:[[1,100],[3,80],[5,55],[Infinity,30]],           /* hard inquiries 12 tháng < x */
+    mix:[0,50,80,100]                                     /* số loại tài khoản 0/1/2/3+ */
+  },
+  TIERS:[[85,'t4'],[70,'t3'],[55,'t2'],[0,'t1']],         /* tổng điểm ≥ x */
+  CAP_LATE:'t2',                                          /* 2+ late hoặc collection: tối đa hạng Fair */
+  THIN_YEARS:0.5,
+  MORT:{fha:580,fha10:500,conv:620,cal:680,jumbo:700,best:780}
+};
+const FAC=['pay','owed','len','newc','mix'];
+const I18N={
+ vi:{doc_title:'Kiểm Tra Sức Khỏe Tín Dụng',title:'Kiểm tra sức khỏe tín dụng',sub:'Trả lời 5 câu. Thấy ngay phần nào của credit đang tốt, phần nào kéo xuống, và nên sửa gì trước khi xin loan mua nhà.',
+  l_late:'Trễ hạn trong 24 tháng qua',lt0:'Không có',lt1:'Trễ 1 lần',lt2:'2 lần trở lên',lt3:'Collection / charge-off',
+  l_util:'Utilization, tất cả thẻ',h_util:'Tổng số dư ÷ tổng hạn mức. Không chắc? Xài <a href="/t231/">T231</a>.',
+  l_age:'Tài khoản lâu nhất',yrs:'năm',l_inq:'Hard inquiry 12 tháng qua',l_mix:'Số loại tài khoản',types:'loại',h_mix:'Thẻ, vay xe, vay học, mortgage, personal loan…',
+  r_k:'Hạng ước tính (không phải điểm)',t4:'Mạnh',t3:'Khá',t2:'Trung bình',t1:'Cần sửa',
+  pts:'{p}/100 điểm trên bảng kiểm này (không phải credit score)',
+  st:'Kéo xuống nhiều nhất: <b>{f}</b>. Sửa chỗ này trước là có lợi nhất.',st_ok:'<b>Cả 5 phần đều ổn.</b> Giữ vậy tới ngày close: không mở thẻ mới, không mua xe.',
+  cap:' Có late/collection nên hạng tối đa là Trung bình.',
+  f_k:'5 yếu tố FICO, theo trọng số',f_note:'Bề ngang thanh = trọng số chung của FICO (35/30/15/10/10). Màu = bạn làm tốt tới đâu trên bảng này. FICO nói trọng số khác nhau tùy người.',
+  fn_pay:'Lịch sử trả đúng hạn',fn_owed:'Số nợ đang có (utilization)',fn_len:'Tuổi credit',fn_newc:'Credit mới (inquiry)',fn_mix:'Loại tài khoản',
+  fw:'{w}% trọng số · {s}/100',
+  fd_pay:['Không trễ lần nào. Tốt nhất rồi.','1 lần trễ trong 24 tháng vẫn kéo điểm xuống.','Trễ nhiều lần là phần nặng nhất.','Collection/charge-off nằm trên report 7 năm (tính từ ~180 ngày sau lần trễ đầu).'],
+  fd_owed:'Đang xài {u}% hạn mức.',fd_len:'Tài khoản lâu nhất {a} năm.',fd_newc:'{n} hard inquiry trong 12 tháng. Mỗi cái thường dưới 5 điểm.',fd_mix:'{m} loại tài khoản.',
+  d_k:'3 việc nên làm trước',
+  do_pay:'Bật autopay ít nhất mức tối thiểu cho mọi khoản. Muốn biết vết late bao lâu mới mất: <a href="/t233/">T233</a>.',
+  do_pay3:'Kiểm collection/charge-off có đúng không. Sai thì dispute (<a href="/t234/">T234</a>); đúng thì nó vẫn nằm đó, coi ngày rơi ở <a href="/t233/">T233</a>.',
+  do_owed:'Đưa utilization xuống dưới 10%, trả trước ngày statement closing. Coi thẻ nào kéo: <a href="/t231/">T231</a>, chia tiền trả: <a href="/t232/">T232</a>.',
+  do_len:'Đừng đóng thẻ cũ nhất. Để mở, mỗi năm quẹt 1 lần nhỏ.',
+  do_newc:'Ngưng xin thẻ/vay mới 6–12 tháng trước khi mua nhà. So rate mortgage thì dồn trong 14 ngày: <a href="/t237/">T237</a>.',
+  do_mix:'Đừng mở tài khoản chỉ để có thêm loại. Phần này chỉ 10%. Lộ trình xây credit: <a href="/t238/">T238</a>.',
+  do_rep:'Lấy report cả 3 bureau miễn phí ở <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">AnnualCreditReport.com</a>, coi có gì sai.',
+  do_frz:'Đang freeze credit? Nhớ mở tạm trước khi lender kéo: <a href="/t239/">T239</a>.',
+  do_rate:'Coi điểm hiện tại vay được loại nào: <a href="/t235/">T235</a>.',
+  thin_note:'FICO cần ít nhất 1 tài khoản mở từ 6 tháng trở lên, có báo cáo trong 6 tháng qua. Chưa đủ thì có thể chưa có điểm FICO. Bắt đầu với <a href="/t238/">T238</a>.',
+  m_k:'Mốc điểm vay nhà (2026)',m_fha_s:'580+ = down 3.5% · 500–579 = down 10%',m_conv_s:'Fannie DU bỏ điểm tối thiểu từ 16/11/2025; đa số lender vẫn muốn khoảng 620+ (ước tính)',
+  m_cal_s:'Dream For All / Conventional: tối thiểu 680',m_jum_s:'thường 700+ (ước tính)',m_best:'Giá Fannie tốt nhất',m_best_s:'780+ trả phí credit (LLPA) thấp nhất',mt:'mốc {n}',
+  est_note:'Đây là bảng kiểm thô, không phải credit score. Điểm ở đây là thang đơn giản dựa trên trọng số FICO công bố, không phải công thức của FICO. Lender mortgage kéo Classic FICO cả 3 bureau (từ 9/9/2026 được xài VantageScore 4.0), nên điểm trên app có thể khác.',
+  cr_t:'Mọi tool điểm tín dụng',cr_list:"<ul class=\"mhl\"><li><a href=\"/t231/\"><b>T231</b> Utilization: đang xài bao nhiêu % hạn mức</a><span>Nhập số dư và hạn mức tới 5 thẻ: ra % từng thẻ, % tổng, phải trả bao nhiêu để xuống 30% / 10%.</span></li><li><a href=\"/t232/\"><b>T232</b> Có tiền trả nợ thẻ: trả thẻ nào trước?</a><span>Có một khoản tiền: so cách lên điểm nhanh với cách đỡ tiền lãi, chia tiền từng thẻ.</span></li><li><a href=\"/t233/\"><b>T233</b> Vết xấu bao lâu mới mất? Bao lâu mua nhà lại được?</a><span>Late, collection, bankruptcy, foreclosure: ngày rơi khỏi report và ngày sớm nhất vay lại từng loại loan.</span></li><li><a href=\"/t234/\"><b>T234</b> Viết thư dispute sai sót gửi bureau</a><span>Thư dispute hoặc goodwill điền sẵn, địa chỉ 3 bureau, hạn trả lời 30/45 ngày, checklist gửi certified mail.</span></li><li><a href=\"/t235/\"><b>T235</b> Điểm này vay được loại nào?</a><span>Nhập điểm và tiền down: Conventional, FHA, VA, Jumbo, CalHFA cái nào được, cái nào sát.</span></li><li><a href=\"/t236/\"><b>T236</b> Lender lấy điểm nào? (2 người đứng tên)</a><span>Nhập 3 điểm của từng người: ra middle score và điểm lender dùng cho cả hồ sơ.</span></li><li><a href=\"/t237/\"><b>T237</b> Đi hỏi nhiều lender có bị trừ điểm?</a><span>Chọn ngày lender đầu tiên kéo credit: ra ngày chót để so rate mà chỉ tính 1 inquiry.</span></li><li><a href=\"/t238/\"><b>T238</b> Kế hoạch tăng điểm trước khi mua nhà</a><span>Chọn tình trạng và tháng muốn mua: ra lộ trình từng tháng để có điểm tốt trước khi xin loan.</span></li><li><a href=\"/t239/\"><b>T239</b> Khóa credit &amp; bị lấy cắp danh tính</a><span>Freeze, fraud alert, identitytheft.gov: checklist từng bước và nhắc mở freeze trước khi lender kéo credit.</span></li><li><a href=\"/t37/\"><b>T37</b> Điểm credit làm mình trả thêm bao nhiêu?</a><span>Kéo thanh điểm: ra lãi ước tính, tiền trả mỗi tháng và trả thêm bao nhiêu so với người 760+.</span></li></ul>",
+  myth:'<b>Nhiều người hiểu sai:</b> "Utilization dưới 30% là đủ." FICO nói dữ liệu của họ không thấy mốc 30% nào hết. Càng thấp càng tốt, dưới 10% là có lợi. Người được 850 trung bình chỉ xài khoảng 4.1%.',
+  nx1:'Lấy report cả 3 bureau miễn phí ở <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">AnnualCreditReport.com</a> (miễn phí mỗi tuần). Tự xem là soft pull, không trừ điểm.',
+  nx2:'Tìm thẻ đang đẩy utilization lên bằng <a href="/t231/">T231</a>, rồi chia tiền trả bằng <a href="/t232/">T232</a>.',
+  nx3:'Coi điểm này vay được loại nào ở <a href="/t235/">T235</a>, và mỗi nhóm điểm tốn bao nhiêu mỗi tháng ở <a href="/t37/">T37</a>.',
+  sms:'Chào Ken, tôi xài tool kiểm tra credit (T230): hạng ước tính {t}, {p}/100. Utilization {u}%, late: {l}. Nhờ Ken chỉ giùm nên làm gì trước khi xin loan.',
+  subj:'Kiểm tra sức khỏe tín dụng — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nHạng ước tính: {t} ({p}/100, không phải credit score)\nTrễ hạn 24 tháng: {l}\nUtilization: {u}%\nTài khoản lâu nhất: {a} năm\nHard inquiry 12 tháng: {i}\nSố loại tài khoản: {m}\n\n{f}\n\n3 việc nên làm trước:\n{d}\n\nThông tin tham khảo, không phải tư vấn tài chính.\nGửi từ tool T230 tools.kenlamrealty.com'},
+ en:{doc_title:'Credit Health Check-up',title:'Credit health check-up',sub:'Five quick answers. See which part of your credit is strong, which part drags, and what to fix first before you apply for a home loan.',
+  l_late:'Late payments in the last 24 months',lt0:'None',lt1:'1 late',lt2:'2 or more',lt3:'Collection / charge-off',
+  l_util:'Card utilization, all cards',h_util:'Total balances ÷ total limits. Not sure? Use <a href="/t231/">T231</a>.',
+  l_age:'Oldest account',yrs:'years',l_inq:'Hard inquiries, last 12 months',l_mix:'Types of accounts',types:'types',h_mix:'Card, auto loan, student loan, mortgage, personal loan…',
+  r_k:'Estimated tier (not a score)',t4:'Strong',t3:'Good',t2:'Fair',t1:'Needs work',
+  pts:'{p}/100 on this check-up (not a credit score)',
+  st:'Biggest drag: <b>{f}</b>. Fixing this first pays off the most.',st_ok:'<b>All 5 parts look fine.</b> Keep it that way until closing: no new cards, no car loan.',
+  cap:' A late or collection caps the tier at Fair.',
+  f_k:'The 5 FICO factors, weighted',f_note:"Bar width = FICO's general weight (35/30/15/10/10). Colour = how you did on this check. FICO says the weights vary from person to person.",
+  fn_pay:'Payment history',fn_owed:'Amounts owed (utilization)',fn_len:'Length of credit history',fn_newc:'New credit (inquiries)',fn_mix:'Credit mix',
+  fw:'{w}% weight · {s}/100',
+  fd_pay:['No lates. As good as it gets.','One late in 24 months still pulls you down.','Several lates is the heaviest hit there is.','Collections/charge-offs stay 7 years (clock starts ~180 days after the first missed payment).'],
+  fd_owed:'Using {u}% of your limits.',fd_len:'Oldest account: {a} years.',fd_newc:'{n} hard inquiries in 12 months. Each is usually under 5 points.',fd_mix:'{m} account types.',
+  d_k:'Do these 3 first',
+  do_pay:'Turn on autopay for at least the minimum on everything. How long a late stays: <a href="/t233/">T233</a>.',
+  do_pay3:"Check that the collection/charge-off is accurate. If it's wrong, dispute it (<a href=\"/t234/\">T234</a>); if it's right it stays, see when it falls off in <a href=\"/t233/\">T233</a>.",
+  do_owed:'Get utilization under 10% and pay before the statement closing date. Find the card: <a href="/t231/">T231</a>; split your cash: <a href="/t232/">T232</a>.',
+  do_len:"Don't close your oldest card. Keep it open and use it lightly once a year.",
+  do_newc:'Stop applying for new cards or loans 6–12 months before you buy. Shop mortgage rates inside 14 days: <a href="/t237/">T237</a>.',
+  do_mix:"Don't open an account just for the mix. It's only 10%. Building plan: <a href=\"/t238/\">T238</a>.",
+  do_rep:'Pull all 3 reports free at <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">AnnualCreditReport.com</a> and look for errors.',
+  do_frz:'Credit frozen? Lift it before a lender pulls: <a href="/t239/">T239</a>.',
+  do_rate:'See which loans your score fits: <a href="/t235/">T235</a>.',
+  thin_note:'FICO needs at least one account open 6 months or more, reported in the last 6 months. Under that, you may not have a FICO score yet. Start with <a href="/t238/">T238</a>.',
+  m_k:'Mortgage score lines (2026)',m_fha_s:'580+ = 3.5% down · 500–579 = 10% down',m_conv_s:'Fannie DU has no minimum since 11/16/2025; most lenders still want about 620+ (estimate)',
+  m_cal_s:'Dream For All / Conventional: 680 minimum',m_jum_s:'usually 700+ (estimate)',m_best:'Best Fannie pricing',m_best_s:'780+ pays the lowest credit fee (LLPA)',mt:'line {n}',
+  est_note:"This is a rough check-up, not a credit score. The points come from a simple scale we built on FICO's published weights, not FICO's formula. Mortgage lenders pull Classic FICO from all 3 bureaus (since 9/9/2026 they may use VantageScore 4.0), so your app score can differ.",
+  cr_t:'All credit tools',cr_list:"<ul class=\"mhl\"><li><a href=\"/t231/\"><b>T231</b> Credit utilization calculator</a><span>Enter balances and limits for up to 5 cards: see each card and total %, and what to pay to get to 30% / 10%.</span></li><li><a href=\"/t232/\"><b>T232</b> Which card to pay first?</a><span>Have a lump sum? Compare the score-first split with the interest-first split, card by card.</span></li><li><a href=\"/t233/\"><b>T233</b> How long does it stay? When can I get a mortgage?</a><span>Late payment, collection, bankruptcy, foreclosure: when it falls off and the earliest date for each loan type.</span></li><li><a href=\"/t234/\"><b>T234</b> Credit report dispute letter</a><span>A filled-in dispute or goodwill letter, the 3 bureau addresses, the 30/45-day deadline and a mailing checklist.</span></li><li><a href=\"/t235/\"><b>T235</b> What loans does my score qualify for?</a><span>Enter your score and down payment: see which of Conventional, FHA, VA, Jumbo and CalHFA fit.</span></li><li><a href=\"/t236/\"><b>T236</b> Which score does the lender use?</a><span>Enter each borrower’s 3 scores: see the middle score and the score the lender uses for the loan.</span></li><li><a href=\"/t237/\"><b>T237</b> Rate shopping window</a><span>Pick the date of the first credit pull: see the last day to shop rates and count as one inquiry.</span></li><li><a href=\"/t238/\"><b>T238</b> Credit-building plan before you buy</a><span>Pick your situation and target month: get a month-by-month plan to be ready before you apply.</span></li><li><a href=\"/t239/\"><b>T239</b> Credit freeze &amp; identity theft</a><span>Freeze, fraud alert, IdentityTheft.gov: a step-by-step checklist and a reminder to lift it before a lender pulls.</span></li><li><a href=\"/t37/\"><b>T37</b> How much is my credit score costing me?</a><span>Slide your score: see the estimated rate, monthly payment and what it costs next to a 760+ borrower.</span></li></ul>",
+  myth:'<b>Common myth:</b> "Under 30% utilization is all you need." FICO says its data shows no cliff at 30%. Lower is better, and under 10% helps. People with an 850 average about 4.1%.',
+  nx1:'Pull all 3 reports free at <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">AnnualCreditReport.com</a> (free every week). Checking your own is a soft pull.',
+  nx2:'Find the card that pushes your utilization up with <a href="/t231/">T231</a>, then split your cash with <a href="/t232/">T232</a>.',
+  nx3:'See which loans your score fits in <a href="/t235/">T235</a>, and what each band costs per month in <a href="/t37/">T37</a>.',
+  sms:'Hi Ken, I used the credit check-up (T230): estimated tier {t}, {p}/100. Utilization {u}%, lates: {l}. What should I fix before I apply?',
+  subj:'Credit health check-up — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nEstimated tier: {t} ({p}/100, not a credit score)\nLates (24 mo): {l}\nUtilization: {u}%\nOldest account: {a} years\nHard inquiries (12 mo): {i}\nAccount types: {m}\n\n{f}\n\nDo these 3 first:\n{d}\n\nFor information only, not financial advice.\nSent from tool T230 tools.kenlamrealty.com'}
+};
+
+const COMMON={
+ vi:{b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video',
+  f_title:'Gửi kết quả này về email',f_sub:'Bấm Gửi là mở email có sẵn kết quả, gửi cho Ken và cho mình giữ. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Bài Library: điểm tín dụng và vay nhà',ft_vid:'Video Kiến Thức Địa Ốc',ft_grp:'Mọi tool điểm tín dụng',
+  ft_disc:'Thông tin tham khảo, không phải tư vấn pháp lý, tài chính hay cam kết cho vay. Điểm thật do FICO/VantageScore và 3 bureau tính.',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',back:'← Tất cả tools',nx_title:'Bước tiếp theo'},
+ en:{b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch video',
+  f_title:'Email this result to yourself',f_sub:'Send opens an email with your result filled in, to Ken and for your records. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'Library: credit scores and your mortgage',ft_vid:'Real estate basics video',ft_grp:'All credit tools',
+  ft_disc:'For information only. Not legal or financial advice and not a commitment to lend. Your real scores come from FICO/VantageScore and the 3 bureaus.',
+  ft_src:'Sources',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',back:'← All tools',nx_title:'Next steps'}
+};
+for(const k in COMMON){ I18N[k]=Object.assign({},COMMON[k],I18N[k]); }
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'-':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const num=el=>{ const v=parseFloat((typeof el==='string'?$(el):el).value); return isFinite(v)?v:0; };
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const p1=x=>(Math.round(x*10)/10).toLocaleString('en-US',{maximumFractionDigits:1});
+let last={};
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; document.title=d.doc_title||document.title; calc();
+}
+function setSms(){ const d=I18N[lang]; const s=d.sms.replace(/\{(\w+)\}/g,(m,k)=>last[k]??m); $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s); }
+async function copyText(txt,btn){ try{ await navigator.clipboard.writeText(txt); }catch(e){ const t=document.createElement('textarea'); t.value=txt; t.style.position='fixed'; t.style.opacity='0'; document.body.appendChild(t); t.select(); try{document.execCommand('copy')}catch(_){} t.remove(); } if(btn){ const o=btn.textContent; btn.textContent='✓'; setTimeout(()=>{btn.textContent=o},1400);} }
+function initCommon(){
+  $('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+  $('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+  $('sendBtn').onclick=()=>{
+    const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+    const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+    /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing), hoặc thay bằng fetch() tới FUB webhook khi có endpoint. */
+    const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+    const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+    $('sent').hidden=false;
+  };
+  $('copyBtn').onclick=()=>copyText('4086662825',$('copyBtn'));
+  try{ if(new URLSearchParams(location.search).get('embed')==='1') document.documentElement.classList.add('embed'); }catch(e){}
+  applyLang();
+}
+
+let late=0;
+const step=(tbl,x)=>{ for(const [lim,s] of tbl) if(x<lim) return s; return tbl[tbl.length-1][1]; };
+/* Tính — hàm thuần */
+function check(i){
+  const S=RULES.SCALE, sc={
+    pay:S.pay[i.late], owed:step(S.owed,i.util), len:step(S.len,i.age), newc:step(S.newc,i.inq), mix:S.mix[Math.min(3,Math.max(0,Math.floor(i.mix)))]
+  };
+  let tot=0; FAC.forEach(f=>{ tot+=RULES.WEIGHTS[f]*sc[f]/100; }); tot=Math.round(tot);
+  let tier=RULES.TIERS.find(t=>tot>=t[0])[1], capped=false;
+  const order=['t1','t2','t3','t4'];
+  if(i.late>=2 && order.indexOf(tier)>order.indexOf(RULES.CAP_LATE)){ tier=RULES.CAP_LATE; capped=true; }
+  const loss=FAC.map(f=>({f,l:RULES.WEIGHTS[f]*(100-sc[f])/100})).sort((a,b)=>b.l-a.l);
+  return {sc,tot,tier,capped,loss};
+}
+function calc(){
+  const d=I18N[lang], i={late, util:Math.max(0,num('util')), age:Math.max(0,num('age')), inq:Math.max(0,Math.round(num('inq'))), mix:Math.max(0,Math.round(num('mix')))};
+  const r=check(i);
+  $('tier').textContent=d[r.tier]; $('tierS').textContent=d.pts.replace('{p}',r.tot);
+  const worst=r.loss[0];
+  $('status').innerHTML=(worst.l>0?d.st.replace('{f}',d['fn_'+worst.f]):d.st_ok)+(r.capped?d.cap:'');
+  const desc={pay:d.fd_pay[i.late],owed:d.fd_owed.replace('{u}',p1(i.util)),len:d.fd_len.replace('{a}',p1(i.age)),newc:d.fd_newc.replace('{n}',i.inq),mix:d.fd_mix.replace('{m}',i.mix)};
+  let h='', ftxt=[];
+  FAC.forEach(f=>{ const w=RULES.WEIGHTS[f], s=r.sc[f], cls=s>=80?'hi':(s<50?'lo':'');
+    h+='<div class="fac '+cls+'"><div class="ft"><b>'+esc(d['fn_'+f])+'</b><span>'+esc(d.fw.replace('{w}',w).replace('{s}',s))+'</span></div>'
+      +'<div class="bar" style="width:'+(w/35*100)+'%" aria-hidden="true"><i style="width:'+s+'%"></i></div><small>'+esc(desc[f])+'</small></div>';
+    ftxt.push(d['fn_'+f]+' ('+w+'%): '+s+'/100'); });
+  $('facs').innerHTML=h;
+  const todo=[]; r.loss.forEach(x=>{ if(x.l>0 && todo.length<3) todo.push(x.f==='pay'&&i.late===3?'do_pay3':'do_'+x.f); });
+  ['do_rep','do_rate','do_frz'].forEach(k=>{ if(todo.length<3) todo.push(k); });
+  $('todo').innerHTML=todo.map(k=>'<li>'+d[k]+'</li>').join('');
+  $('thinNote').classList.toggle('hide',i.age>=RULES.THIN_YEARS);
+  const M=RULES.MORT, mt=n=>d.mt.replace('{n}',n);
+  $('mFha').textContent=mt(M.fha); $('mConv').textContent=mt(M.conv); $('mCal').textContent=mt(M.cal); $('mJum').textContent=mt(M.jumbo); $('mBest').textContent=mt(M.best);
+  const strip=s=>s.replace(/<[^>]+>/g,'');
+  last={t:d[r.tier],p:r.tot,u:p1(i.util),l:strip(d['lt'+i.late]),a:p1(i.age),i:i.inq,m:i.mix,f:ftxt.join('\n'),d:todo.map((k,j)=>(j+1)+'. '+strip(d[k])).join('\n')};
+  setSms();
+}
+document.querySelectorAll('#late button').forEach(b=>b.addEventListener('click',()=>{
+  late=+b.dataset.v; document.querySelectorAll('#late button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); calc(); }));
+['util','age','inq','mix'].forEach(id=>$(id).addEventListener('input',calc));
+initCommon();
+</script>
+</body>
+</html>

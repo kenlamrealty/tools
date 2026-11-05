@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Which Card To Pay First</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T37 thêm (không đổi class cũ) ---- */
+.score{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.score b{font-family:var(--display);font-weight:400;font-size:40px;line-height:1;font-variant-numeric:tabular-nums;color:var(--fg)}
+.score span{font-size:13px;color:var(--muted)}
+.rng{width:100%;margin:4px 0 0;accent-color:var(--brass);height:28px;cursor:pointer}
+.ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.total .pay{margin-top:10px;font-size:15px;color:var(--muted)}
+.total .pay b{color:var(--fg);font-size:22px;font-weight:500;font-variant-numeric:tabular-nums}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45;background:var(--brass-soft)}
+.status b{font-weight:500}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.tbl th{font-size:12px;font-weight:500;color:var(--muted);text-align:right;padding:6px 0;border-bottom:1px solid var(--line)}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl td{padding:9px 0;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.tbl td small{color:var(--muted);font-size:11px;display:block;white-space:normal}
+.tbl tr.me td{color:var(--brass);font-weight:600}
+.tbl tr.me td small{color:var(--brass);font-weight:400}
+.tbl td.x{color:var(--warn)}
+.tbl tr.me td.x{color:var(--brass)}
+.tblk{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.tlw{display:grid;gap:12px}
+.tlw h2,.next h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-r{display:flex;align-items:center;gap:10px}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.gcal{font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.task .why a{color:var(--brass)}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+</style>
+<meta name="description" content="Have cash to pay down cards? Compare the score-first split with the interest-first split: dollars per card, utilization before and after, interest saved per year.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t232/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Which Card To Pay First? · Ken Lam Tools">
+<meta property="og:description" content="Have cash to pay down cards? Compare the score-first split with the interest-first split: dollars per card, utilization before and after, interest saved per year.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t232/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+/* Credit group additions (T230–T239) */
+.embed .kl-back{display:none}
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.seg4{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg4 button{border:0;background:transparent;color:var(--muted);font:inherit;font-size:14px;padding:11px 8px;cursor:pointer;line-height:1.25}
+.seg4 button+button{border-left:1px solid var(--line)}
+.seg4 button:nth-child(3){border-left:0}
+.seg4 button:nth-child(n+3){border-top:1px solid var(--line)}
+.seg4 button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+.total .v.word{font-size:46px;overflow-wrap:anywhere}
+.total .vs{font-size:14px;color:var(--muted);margin-top:8px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.mhl{list-style:none;margin:0;padding:0;display:grid;gap:10px}.mhl li{display:grid;gap:2px;border-top:1px solid var(--line);padding-top:10px}.mhl li:first-child{border-top:0;padding-top:0}.mhl a{color:var(--fg);text-decoration:none;font-weight:500}.mhl a b{color:var(--brass);font-weight:600;margin-right:4px}.mhl span{color:var(--muted);font-size:14px}
+.mhl a:hover{color:var(--brass)}
+.fac{display:grid;gap:5px;padding:10px 0;border-bottom:1px solid var(--line)}
+.fac .ft{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:15px}
+.fac .ft b{font-weight:500}
+.fac .ft span{font-size:13px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.fac .bar i{background:var(--brass)}
+.fac.lo .bar i{background:var(--warn)}
+.fac.hi .bar i{background:var(--ok)}
+.fac small{font-size:13px;color:var(--muted)}
+.todo{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px;line-height:1.5}
+.todo a,.panel a,.note a{color:var(--brass)}
+.crd{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:10px;background:var(--panel)}
+.crd-h{display:flex;justify-content:space-between;align-items:center;font-size:14px}
+.crd-h b{font-weight:500}
+.crd .ctl{background:var(--bg)}
+.crd .ctl input{font-size:18px}
+.rm{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:13px;padding:4px 10px;border-radius:999px;cursor:pointer}
+.add{justify-self:start;border:1px dashed var(--brass);background:transparent;color:var(--brass);font:inherit;font-size:14px;padding:9px 14px;border-radius:10px;cursor:pointer}
+.add[disabled]{opacity:.45;cursor:default}
+.row3{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.row3 .field:last-child{grid-column:1/-1}
+@media (min-width:520px){.row3{grid-template-columns:minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,.8fr)}.row3 .field:last-child{grid-column:auto}}
+.u-ok{color:var(--ok)!important}.u-mid{color:var(--brass)!important}.u-hi{color:var(--warn)!important}
+.tblw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl td.u{font-weight:600}
+.tbl th+th,.tbl td+td{padding-left:10px}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.cmp>div{border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0}
+.cmp>div.pick{border-color:var(--brass);background:var(--brass-soft)}
+.cmp .k{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.cmp .v{font-family:var(--display);font-size:34px;line-height:1.1;font-variant-numeric:tabular-nums;margin-top:4px}
+.cmp .v small{font-family:var(--body);font-size:13px;color:var(--muted)}
+.cmp p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.mk{position:relative;height:16px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mk span{position:absolute;top:0;transform:translateX(-50%)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/" data-i="back">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">I have cash for my cards. Which one do I pay first?</h1>
+    <p class="sub" data-i="sub">Two smart ways to split the same money. One moves your score faster. The other saves more interest. See both side by side.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="cash"><span data-i="l_cash">Cash you can put toward cards now</span></label>
+      <div class="ctl"><span class="pre">$</span><input id="cash" type="number" inputmode="numeric" min="0" step="100" value="3000"></div>
+    </div>
+    <div id="cards" class="inputs"></div>
+    <button type="button" class="add" id="addBtn" data-i="add">+ Add a card</button>
+    <p class="hint" data-i="h_priv">Balances, limits and APR only. No card numbers. Nothing is sent or saved.</p>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="cmp">
+      <div id="boxS"><div class="k" data-i="m_s">Score first</div><div class="v" id="sU">0%</div><p data-i="m_s_p">total utilization after</p><p><b id="sI">$0</b> <span data-i="per_yr_s">interest saved/yr</span></p></div>
+      <div id="boxI"><div class="k" data-i="m_i">Interest first</div><div class="v" id="iU">0%</div><p data-i="m_i_p">total utilization after</p><p><b id="iI">$0</b> <span data-i="per_yr_s">interest saved/yr</span></p></div>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_before">Total utilization now</b></span><span class="a" id="uB">0%</span></div>
+      <div class="line"><span class="n"><b data-i="n_max">Highest single card</b> <span data-i="n_max_s">now → score first / interest first</span></span><span class="a" id="mx">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_diff">Extra interest saved by interest first</b> <span data-i="n_diff_s">(per year, estimate)</span></span><span class="a" id="dI">$0</span></div>
+      <div class="line hide" id="leftLine"><span class="n"><b data-i="n_left">Left over after paying everything</b></span><span class="a" id="left">$0</span></div>
+    </div>
+    <div>
+      <div class="tblk" data-i="t_k">How to split the money</div>
+      <div class="tblw"><table class="tbl" id="tbl"></table></div>
+    </div>
+    <div class="note" data-i="est_note">Interest saved per year is an estimate: amount paid × APR, assuming the balance would otherwise sit there for a year. Real interest depends on daily balances and new purchases. Utilization is only as good as what's on your statement closing date.</div>
+  </section>
+
+  <p class="myth" data-i="myth"><b>Common myth:</b> "Paying off the biggest balance helps my score most." The score looks at utilization, total and per card. $1,000 that takes a $1,500 / $2,000 card from 75% to 25% can do more than the same $1,000 on a $9,000 balance.</p>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">Applying for a mortgage in the next 1–3 months? Use the score-first split, and pay before each statement closing date.</li>
+      <li data-i="nx2">Not buying soon? Interest first saves real money. Then set autopay so no payment is ever late.</li>
+      <li data-i="nx3">Check every card's utilization after paying with <a href="/t231/">T231</a>, then your full picture in <a href="/t230/">T230</a>.</li>
+    </ol>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" aria-label="Video guide"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this result to yourself</h2>
+    <p data-i="f_sub">Send opens an email with your result filled in, to Ken and for your records. No spam.</p>
+    <div class="field"><label for="fname" data-i="f_name">Name</label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone" data-i="f_phone">Phone (optional)</label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#credit-score" target="_blank" rel="noopener" data-i="ft_lib">Library: credit scores and your mortgage</a> · <a href="https://kenlamrealty.com/library#video-credit" target="_blank" rel="noopener" data-i="ft_vid">Real estate basics video</a> · <a href="/t230/" data-i="ft_grp">All credit tools</a></span>
+    <span data-i="ft_disc">For information only.</span>
+    <span class="src"><span data-i="ft_src">Sources</span> (05/11/2026):
+      <a href="https://myfico.com/credit-education/blog/credit-utilization-be" target="_blank" rel="noopener">myFICO: utilization &amp; statement balance</a> ·
+      <a href="https://www.myfico.com/crediteducation/whatsinyourscore.aspx" target="_blank" rel="noopener">myFICO: What’s in my FICO Scores</a> ·
+      <a href="https://businesswire.com/news/home/20240702397066/en" target="_blank" rel="noopener">FICO 850 study 07/02/2024</a></span>
+    <span class="who">Ken Lam Realty · Ken Lam, Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 05/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số liệu — sửa ở đây (tra 05/11/2026, nguồn: /home/claude/credit/FACTS.md mục G) =====
+   Utilization tính trên số dư statement closing; thấp hơn tốt hơn, <10% có lợi, không có mốc rơi ở 30% —
+     https://myfico.com/credit-education/blog/credit-utilization-be
+   "Lên điểm nhanh" = chia tiền để kéo % thẻ cao nhất xuống trước (san đều %), thẻ có số dư mà không có hạn mức trả trước.
+   "Đỡ tiền lãi" = APR cao trước (avalanche).
+   Tiền lãi đỡ/năm = tiền trả × APR — ƯỚC TÍNH ĐƠN GIẢN (không tính lãi kép/ngày, không tính mua thêm). */
+const RULES={T_LOW:10,T_MID:30,MAX_CARDS:5,SOON_MONTHS:3};
+const I18N={
+ vi:{doc_title:'Trả Thẻ Nào Trước',title:'Có tiền trả nợ thẻ. Trả thẻ nào trước?',sub:'Hai cách chia cùng một số tiền. Một cách lên điểm nhanh hơn. Cách kia đỡ tiền lãi hơn. Coi cả hai cạnh nhau.',
+  l_cash:'Số tiền có thể trả thẻ ngay',card:'Thẻ',l_bal:'Số dư',l_lim:'Hạn mức',l_apr:'APR',rm:'Bỏ',add:'+ Thêm thẻ',h_priv:'Chỉ nhập số dư, hạn mức, APR. Không nhập số thẻ. Không gửi, không lưu đi đâu.',
+  m_s:'Lên điểm nhanh',m_i:'Đỡ tiền lãi',m_s_p:'utilization tổng sau khi trả',m_i_p:'utilization tổng sau khi trả',per_yr_s:'tiền lãi đỡ/năm',
+  st_none:'Nhập số tiền và ít nhất 1 thẻ có số dư.',
+  st_same:'<b>Hai cách ra gần như nhau.</b> Trả theo bảng dưới là được cả hai.',
+  st_diff:'<b>Sắp xin loan mua nhà (1–3 tháng)?</b> Chọn "Lên điểm nhanh": thẻ cao nhất xuống còn {ms}. <b>Chưa mua?</b> "Đỡ tiền lãi" đỡ thêm khoảng {di}/năm.',
+  st_all:'<b>Đủ tiền trả hết mọi thẻ.</b> Trả hết, còn dư {lf}.',
+  n_before:'Utilization tổng hiện giờ',n_max:'Thẻ cao nhất',n_max_s:'bây giờ → lên điểm / đỡ lãi',n_diff:'"Đỡ tiền lãi" đỡ thêm',n_diff_s:'(mỗi năm, ước tính)',n_left:'Còn dư sau khi trả hết',
+  t_k:'Chia tiền như vầy',th_c:'Thẻ',th_now:'Bây giờ',th_s:'Lên điểm',th_i:'Đỡ lãi',th_sum:'Tổng',nolim:'chưa có hạn mức',
+  est_note:'Tiền lãi đỡ mỗi năm là ước tính: tiền trả × APR, coi như số dư đó nằm yên 1 năm. Lãi thật tùy số dư từng ngày và có mua thêm không. Utilization chỉ tính số dư ngày statement closing.',
+  myth:'<b>Nhiều người hiểu sai:</b> "Trả thẻ nợ nhiều nhất là lên điểm nhiều nhất." Điểm nhìn utilization, cả tổng lẫn từng thẻ. $1,000 kéo thẻ $1,500 / $2,000 từ 75% xuống 25% có khi lợi hơn bỏ $1,000 đó vô thẻ đang nợ $9,000.',
+  nx1:'Sắp xin loan mua nhà trong 1–3 tháng? Chia theo "Lên điểm nhanh", và trả trước ngày statement closing từng thẻ.',
+  nx2:'Chưa mua liền? "Đỡ tiền lãi" đỡ tiền thật. Rồi bật autopay để không bao giờ trễ.',
+  nx3:'Trả xong coi lại từng thẻ ở <a href="/t231/">T231</a>, rồi toàn bộ credit ở <a href="/t230/">T230</a>.',
+  sms:'Chào Ken, tôi xài tool trả thẻ nào trước (T232): có {c}. Lên điểm nhanh: utilization còn {su}. Đỡ lãi: đỡ {ii}/năm. Nhờ Ken chỉ thêm.',
+  subj:'Trả thẻ nào trước — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nTiền có: {c}\nUtilization tổng bây giờ: {ub}\n\nCÁCH 1 — Lên điểm nhanh: utilization còn {su}, thẻ cao nhất {sm}, đỡ lãi ~{si}/năm\nCÁCH 2 — Đỡ tiền lãi: utilization còn {iu}, thẻ cao nhất {im}, đỡ lãi ~{ii}/năm\n\n{rows}\n\nƯớc tính, trả trước ngày statement closing.\nGửi từ tool T232 tools.kenlamrealty.com'},
+ en:{doc_title:'Which Card To Pay First',title:'I have cash for my cards. Which one do I pay first?',sub:'Two smart ways to split the same money. One moves your score faster. The other saves more interest. See both side by side.',
+  l_cash:'Cash you can put toward cards now',card:'Card',l_bal:'Balance',l_lim:'Limit',l_apr:'APR',rm:'Remove',add:'+ Add a card',h_priv:'Balances, limits and APR only. No card numbers. Nothing is sent or saved.',
+  m_s:'Score first',m_i:'Interest first',m_s_p:'total utilization after',m_i_p:'total utilization after',per_yr_s:'interest saved/yr',
+  st_none:'Enter the cash amount and at least one card with a balance.',
+  st_same:'<b>Both ways come out about the same.</b> Follow the table below and you get both.',
+  st_diff:'<b>Applying for a mortgage in 1–3 months?</b> Pick "Score first": your highest card drops to {ms}. <b>Not buying yet?</b> "Interest first" saves about {di} more per year.',
+  st_all:'<b>Enough to pay off every card.</b> Pay them all and keep {lf}.',
+  n_before:'Total utilization now',n_max:'Highest single card',n_max_s:'now → score first / interest first',n_diff:'Extra interest saved by interest first',n_diff_s:'(per year, estimate)',n_left:'Left over after paying everything',
+  t_k:'How to split the money',th_c:'Card',th_now:'Now',th_s:'Score',th_i:'Interest',th_sum:'Total',nolim:'no limit',
+  est_note:"Interest saved per year is an estimate: amount paid × APR, assuming the balance would otherwise sit there for a year. Real interest depends on daily balances and new purchases. Utilization is only as good as what's on your statement closing date.",
+  myth:'<b>Common myth:</b> "Paying off the biggest balance helps my score most." The score looks at utilization, total and per card. $1,000 that takes a $1,500 / $2,000 card from 75% to 25% can do more than the same $1,000 on a $9,000 balance.',
+  nx1:'Applying for a mortgage in the next 1–3 months? Use the score-first split, and pay before each statement closing date.',
+  nx2:'Not buying soon? Interest first saves real money. Then set autopay so no payment is ever late.',
+  nx3:"Check every card's utilization after paying with <a href=\"/t231/\">T231</a>, then your full picture in <a href=\"/t230/\">T230</a>.",
+  sms:'Hi Ken, I used the pay-which-card tool (T232): I have {c}. Score first: utilization down to {su}. Interest first: saves {ii}/yr. Any advice?',
+  subj:'Which card to pay first — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nCash: {c}\nTotal utilization now: {ub}\n\nOPTION 1 — Score first: utilization {su}, highest card {sm}, ~{si}/yr interest saved\nOPTION 2 — Interest first: utilization {iu}, highest card {im}, ~{ii}/yr interest saved\n\n{rows}\n\nEstimate. Pay before the statement closing date.\nSent from tool T232 tools.kenlamrealty.com'}
+};
+
+const COMMON={
+ vi:{b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video',
+  f_title:'Gửi kết quả này về email',f_sub:'Bấm Gửi là mở email có sẵn kết quả, gửi cho Ken và cho mình giữ. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Bài Library: điểm tín dụng và vay nhà',ft_vid:'Video Kiến Thức Địa Ốc',ft_grp:'Mọi tool điểm tín dụng',
+  ft_disc:'Thông tin tham khảo, không phải tư vấn pháp lý, tài chính hay cam kết cho vay. Điểm thật do FICO/VantageScore và 3 bureau tính.',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',back:'← Tất cả tools',nx_title:'Bước tiếp theo'},
+ en:{b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch video',
+  f_title:'Email this result to yourself',f_sub:'Send opens an email with your result filled in, to Ken and for your records. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'Library: credit scores and your mortgage',ft_vid:'Real estate basics video',ft_grp:'All credit tools',
+  ft_disc:'For information only. Not legal or financial advice and not a commitment to lend. Your real scores come from FICO/VantageScore and the 3 bureaus.',
+  ft_src:'Sources',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',back:'← All tools',nx_title:'Next steps'}
+};
+for(const k in COMMON){ I18N[k]=Object.assign({},COMMON[k],I18N[k]); }
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'-':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const num=el=>{ const v=parseFloat((typeof el==='string'?$(el):el).value); return isFinite(v)?v:0; };
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const p1=x=>(Math.round(x*10)/10).toLocaleString('en-US',{maximumFractionDigits:1});
+let last={};
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; document.title=d.doc_title||document.title; calc();
+}
+function setSms(){ const d=I18N[lang]; const s=d.sms.replace(/\{(\w+)\}/g,(m,k)=>last[k]??m); $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s); }
+async function copyText(txt,btn){ try{ await navigator.clipboard.writeText(txt); }catch(e){ const t=document.createElement('textarea'); t.value=txt; t.style.position='fixed'; t.style.opacity='0'; document.body.appendChild(t); t.select(); try{document.execCommand('copy')}catch(_){} t.remove(); } if(btn){ const o=btn.textContent; btn.textContent='✓'; setTimeout(()=>{btn.textContent=o},1400);} }
+function initCommon(){
+  $('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+  $('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+  $('sendBtn').onclick=()=>{
+    const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+    const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+    /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing), hoặc thay bằng fetch() tới FUB webhook khi có endpoint. */
+    const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+    const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+    $('sent').hidden=false;
+  };
+  $('copyBtn').onclick=()=>copyText('4086662825',$('copyBtn'));
+  try{ if(new URLSearchParams(location.search).get('embed')==='1') document.documentElement.classList.add('embed'); }catch(e){}
+  applyLang();
+}
+
+const DEF=[[1500,2000,29.99],[9000,15000,22.99],[2500,8000,26.99]];
+function cardHtml(k,b,l,a){
+  return '<div class="crd" data-c="'+k+'"><div class="crd-h"><b><span data-i="card">Card</span> <span class="cn"></span></b><button type="button" class="rm" data-i="rm">Remove</button></div>'
+   +'<div class="row3"><div class="field"><label for="b'+k+'" data-i="l_bal">Balance</label><div class="ctl"><span class="pre">$</span><input id="b'+k+'" class="bal" type="number" inputmode="numeric" min="0" step="100" value="'+b+'"></div></div>'
+   +'<div class="field"><label for="l'+k+'" data-i="l_lim">Limit</label><div class="ctl"><span class="pre">$</span><input id="l'+k+'" class="lim" type="number" inputmode="numeric" min="0" step="500" value="'+l+'"></div></div>'
+   +'<div class="field"><label for="a'+k+'" data-i="l_apr">APR</label><div class="ctl"><input id="a'+k+'" class="apr" type="number" inputmode="decimal" min="0" max="99" step="0.01" value="'+a+'"><span class="post">%</span></div></div></div></div>';
+}
+let ck=0;
+function addCard(b,l,a){ if(document.querySelectorAll('.crd').length>=RULES.MAX_CARDS) return; ck++; $('cards').insertAdjacentHTML('beforeend',cardHtml(ck,b,l,a)); relabel(); }
+function relabel(){
+  const d=I18N[lang], cs=[...document.querySelectorAll('.crd')];
+  cs.forEach((c,i)=>{ c.querySelector('.cn').textContent=i+1; c.querySelectorAll('[data-i]').forEach(el=>{const k=el.dataset.i; if(typeof d[k]==='string') el.innerHTML=d[k];}); c.querySelector('.rm').hidden=cs.length<2; });
+  $('addBtn').disabled=cs.length>=RULES.MAX_CARDS;
+}
+/* Tính — hàm thuần */
+function scoreFirst(cards,cash){
+  /* 1) thẻ có số dư mà hạn mức 0: trả trước. 2) san % : tìm mức t để Σ max(0,b−l·t)=tiền còn lại */
+  const pay=cards.map(()=>0); let m=cash;
+  cards.forEach((c,i)=>{ if(c.l<=0 && c.b>0){ const x=Math.min(m,c.b); pay[i]=x; m-=x; } });
+  const idx=cards.map((c,i)=>i).filter(i=>cards[i].l>0 && cards[i].b>0);
+  const tot=idx.reduce((s,i)=>s+cards[i].b,0);
+  if(m>=tot){ idx.forEach(i=>pay[i]=cards[i].b); return pay; }
+  if(m<=0) return pay;
+  let lo=0, hi=Math.max(...idx.map(i=>cards[i].b/cards[i].l));
+  const f=t=>idx.reduce((s,i)=>s+Math.max(0,cards[i].b-cards[i].l*t),0);
+  for(let k=0;k<100;k++){ const mid=(lo+hi)/2; if(f(mid)>m) lo=mid; else hi=mid; }
+  idx.forEach(i=>pay[i]=Math.max(0,cards[i].b-cards[i].l*hi));
+  return pay;
+}
+function interestFirst(cards,cash){
+  const pay=cards.map(()=>0); let m=cash;
+  cards.map((c,i)=>i).sort((a,b)=>cards[b].apr-cards[a].apr||cards[b].b-cards[a].b).forEach(i=>{ const x=Math.min(m,cards[i].b); pay[i]=x; m-=x; });
+  return pay;
+}
+function summary(cards,pay){
+  const B=cards.reduce((s,c,i)=>s+c.b-pay[i],0), L=cards.reduce((s,c)=>s+c.l,0);
+  const per=cards.map((c,i)=>c.l>0?(c.b-pay[i])/c.l*100:(c.b-pay[i]>0.5?Infinity:null));
+  const mx=per.filter(x=>x!=null).reduce((a,b)=>Math.max(a,b),0);
+  return {u:L>0?B/L*100:null,mx,per,int:cards.reduce((s,c,i)=>s+pay[i]*c.apr/100,0),paid:pay.reduce((a,b)=>a+b,0)};
+}
+function plan(cards,cash){
+  const now=summary(cards,cards.map(()=>0)), sp=scoreFirst(cards,cash), ip=interestFirst(cards,cash);
+  const totalBal=cards.reduce((s,c)=>s+c.b,0);
+  return {now,sp,ip,s:summary(cards,sp),i:summary(cards,ip),left:Math.max(0,cash-totalBal)};
+}
+const pu=u=>u==null?'—':(u===Infinity?'∞':p1(u)+'%');
+const cls=u=>u==null?'':(u<RULES.T_LOW?'u-ok':(u<=RULES.T_MID?'u-mid':'u-hi'));
+function calc(){
+  const d=I18N[lang];
+  relabel();
+  const cash=Math.max(0,num('cash'));
+  const cards=[...document.querySelectorAll('.crd')].map(c=>({b:Math.max(0,num(c.querySelector('.bal'))),l:Math.max(0,num(c.querySelector('.lim'))),apr:Math.max(0,num(c.querySelector('.apr')))}));
+  const r=plan(cards,cash);
+  $('sU').textContent=pu(r.s.u); $('iU').textContent=pu(r.i.u);
+  $('sI').textContent=fmt(r.s.int); $('iI').textContent=fmt(r.i.int);
+  $('uB').textContent=pu(r.now.u);
+  $('mx').textContent=pu(r.now.mx)+' → '+pu(r.s.mx)+' / '+pu(r.i.mx);
+  const di=r.i.int-r.s.int; $('dI').textContent=fmt(Math.max(0,di));
+  $('leftLine').classList.toggle('hide',!(r.left>0.5)); $('left').textContent=fmt(r.left);
+  const hasBal=cards.some(c=>c.b>0);
+  let st;
+  if(!hasBal||cash<=0) st=d.st_none;
+  else if(r.left>0.5||cash>=cards.reduce((s,c)=>s+c.b,0)) st=d.st_all.replace('{lf}',fmt(r.left));
+  else if(Math.abs(di)<1 && Math.abs(r.s.mx-r.i.mx)<0.5) st=d.st_same;
+  else st=d.st_diff.replace('{ms}',pu(r.s.mx)).replace('{di}',fmt(Math.max(0,di)));
+  $('status').innerHTML=st;
+  $('boxS').classList.toggle('pick',r.s.mx<r.i.mx-0.5); $('boxI').classList.toggle('pick',di>=1);
+  let h='<thead><tr><th>'+esc(d.th_c)+'</th><th>'+esc(d.th_now)+'</th><th>'+esc(d.th_s)+'</th><th>'+esc(d.th_i)+'</th></tr></thead><tbody>', txt=[];
+  cards.forEach((c,k)=>{ const un=c.l>0?c.b/c.l*100:(c.b>0?Infinity:null);
+    h+='<tr><td>'+(k+1)+'<small>'+fmt(c.b)+' / '+(c.l>0?fmt(c.l):esc(d.nolim))+' · '+p1(c.apr)+'%</small></td>'
+      +'<td class="u '+cls(un)+'">'+pu(un)+'</td>'
+      +'<td>'+fmt(r.sp[k])+'<small class="'+cls(r.s.per[k])+'">→ '+pu(r.s.per[k])+'</small></td>'
+      +'<td>'+fmt(r.ip[k])+'<small class="'+cls(r.i.per[k])+'">→ '+pu(r.i.per[k])+'</small></td></tr>';
+    txt.push(d.card+' '+(k+1)+' ('+fmt(c.b)+'/'+fmt(c.l)+', '+p1(c.apr)+'%): '+d.th_s+' '+fmt(r.sp[k])+' → '+pu(r.s.per[k])+' · '+d.th_i+' '+fmt(r.ip[k])+' → '+pu(r.i.per[k])); });
+  h+='<tr><td><b>'+esc(d.th_sum)+'</b></td><td class="u '+cls(r.now.u)+'">'+pu(r.now.u)+'</td><td>'+fmt(r.s.paid)+'<small>→ '+pu(r.s.u)+'</small></td><td>'+fmt(r.i.paid)+'<small>→ '+pu(r.i.u)+'</small></td></tr>';
+  $('tbl').innerHTML=h+'</tbody>';
+  last={c:fmt(cash),ub:pu(r.now.u),su:pu(r.s.u),sm:pu(r.s.mx),si:fmt(r.s.int),iu:pu(r.i.u),im:pu(r.i.mx),ii:fmt(r.i.int),rows:txt.join('\n')};
+  setSms();
+}
+DEF.forEach(x=>addCard(x[0],x[1],x[2]));
+$('addBtn').onclick=()=>{ addCard(0,0,0); calc(); const cs=document.querySelectorAll('.crd .bal'); if(cs.length) cs[cs.length-1].focus(); };
+$('cards').addEventListener('input',calc);
+$('cash').addEventListener('input',calc);
+$('cards').addEventListener('click',e=>{ const b=e.target.closest('.rm'); if(!b) return; b.closest('.crd').remove(); calc(); });
+initCommon();
+</script>
+</body>
+</html>
