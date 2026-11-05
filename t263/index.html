@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>House Hacking: Live in One, Rent the Rest · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="House hacking calculator for a 2–4 unit in Santa Clara or Alameda: your real monthly housing cost after rent from the other units, vs renting, and cash to close with FHA or conventional 5% down.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t263/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="House Hacking: Live in One, Rent the Rest · Ken Lam Tools">
+<meta property="og:description" content="Live in one unit, rent the others. Your real cost per month, vs renting, and cash to bring to escrow.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t263/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T146 additions */
+.hide{display:none!important}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.sec-k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:6px 0 0}
+.chip{display:inline-block;font-size:12px;font-weight:500;line-height:1.2;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;margin-left:8px}
+.chip.g{color:var(--ok);border-color:var(--ok)}
+.chip.y{color:var(--brass);border-color:var(--brass)}
+.chip.r{color:var(--warn);border-color:var(--warn);background:var(--brass-soft)}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.line .a{display:flex;align-items:center}
+.total .v.neg{color:var(--warn)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+
+/* ---- T262/T263 thêm ---- */
+.seg.s5 button{font-size:14px;padding:11px 4px}
+.seg button:disabled{opacity:.45;cursor:not-allowed}
+details.more{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:0 14px}
+details.more summary{cursor:pointer;padding:13px 0;font-size:14px;font-weight:500;color:var(--fg);list-style:none;display:flex;justify-content:space-between;gap:12px}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary::after{content:'+';color:var(--brass);font-size:18px;line-height:1}
+details.more[open] summary::after{content:'\2212'}
+details.more .in{display:grid;gap:14px;padding:2px 0 16px}
+.types{display:grid;gap:12px}
+.types h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.ty{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:8px;min-width:0}
+.ty.f2{border-color:var(--brass)}
+.ty.f0{opacity:.8}
+.ty .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.ty h3{font-family:var(--display);font-weight:400;font-size:24px;line-height:1.15;margin:0}
+.fit{font-size:12px;border-radius:999px;padding:2px 10px;border:1px solid var(--line);white-space:nowrap}
+.fit.f2{color:var(--ok);border-color:var(--ok)}
+.fit.f1{color:var(--brass);border-color:var(--brass)}
+.fit.f0{color:var(--warn);border-color:var(--warn)}
+.ty p{margin:0;font-size:14px;color:var(--muted);line-height:1.5}
+.ty p b{color:var(--fg);font-weight:500}
+.ty .lines{border-top:1px solid var(--line)}
+.ty .line{font-size:14px;padding:8px 0}
+.est{font-size:11px;color:var(--brass);border:1px solid var(--brass);border-radius:999px;padding:0 6px;margin-left:6px;white-space:nowrap;font-weight:400}
+.total .v.nm{font-size:40px;line-height:1.1}
+.total .w{font-size:14px;color:var(--muted);margin-top:6px}
+.total .w b{color:var(--fg);font-weight:500}
+.embed .kl-back{display:none}
+html.embed body{padding-top:8px}
+.disc{font-size:12px;color:var(--muted);margin:0}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Live in one unit, rent the rest</h1>
+    <p class="sub" data-i="sub">House hacking a duplex, triplex or fourplex. See what you really pay each month after rent, vs renting, and the cash you bring to escrow.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="price"><span data-i="l_price">Purchase price</span></label>
+      <div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" min="0" step="5000" value="1300000"></div>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_units">Units in the building</span>
+      <div class="seg" role="group" id="units">
+        <button type="button" data-v="2" aria-pressed="true">2</button>
+        <button type="button" data-v="3" aria-pressed="false">3</button>
+        <button type="button" data-v="4" aria-pressed="false">4</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="rent"><span data-i="l_rent">Rent from the other units</span> <small id="rentS" data-i="l_rent_s1">(total, the 1 unit you don't live in)</small></label>
+      <div class="ctl"><span class="pre">$</span><input id="rent" type="number" inputmode="numeric" min="0" step="50" value="3000"><span class="post" data-i="per_mo">/mo</span></div>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_loan">Loan</span>
+      <div class="seg" role="group" id="ltype">
+        <button type="button" data-v="fha" aria-pressed="true" data-i="t_fha">FHA 3.5%</button>
+        <button type="button" data-v="conv" aria-pressed="false" data-i="t_conv">Conventional 5%</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="mine"><span data-i="l_mine">Rent for a unit like yours</span> <small data-i="l_mine_s">(what you'd pay to rent it)</small></label>
+      <div class="ctl"><span class="pre">$</span><input id="mine" type="number" inputmode="numeric" min="0" step="50" value="3000"><span class="post" data-i="per_mo2">/mo</span></div>
+    </div>
+
+    <details class="more">
+      <summary data-i="more">More settings</summary>
+      <div class="in">
+        <div class="row2">
+          <div class="field">
+            <label for="rate"><span data-i="l_rate">Interest rate</span> <small data-i="l_rate_s">(estimate, edit)</small></label>
+            <div class="ctl"><input id="rate" type="number" inputmode="decimal" min="0" max="20" step="0.01" value="7.24"><span class="post">%</span></div>
+          </div>
+          <div class="field">
+            <label for="cc"><span data-i="l_cc">Closing costs</span> <small data-i="l_cc_s">(% of price, estimate)</small></label>
+            <div class="ctl"><input id="cc" type="number" inputmode="decimal" min="0" max="10" step="0.1" value="2"><span class="post">%</span></div>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="tax"><span data-i="l_tax">Property tax</span> <small data-i="l_tax_s">(% of price/yr)</small></label>
+            <div class="ctl"><input id="tax" type="number" inputmode="decimal" min="0" max="5" step="0.05" value="1.25"><span class="post">%</span></div>
+          </div>
+          <div class="field">
+            <label for="ins"><span data-i="l_ins">Insurance</span> <small data-i="l_ins_s">(estimate)</small></label>
+            <div class="ctl"><span class="pre">$</span><input id="ins" type="number" inputmode="numeric" min="0" step="100" value="4600"><span class="post" data-i="per_yr">/yr</span></div>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="res"><span data-i="l_res">Set aside from rent</span> <small data-i="l_res_s">(vacancy + repairs + CapEx)</small></label>
+            <div class="ctl"><input id="res" type="number" inputmode="decimal" min="0" max="60" step="1" value="15"><span class="post">%</span></div>
+          </div>
+          <div class="field">
+            <label for="util"><span data-i="l_util">Shared utilities you pay</span> <small data-i="l_util_s">(water, garbage)</small></label>
+            <div class="ctl"><span class="pre">$</span><input id="util" type="number" inputmode="numeric" min="0" step="25" value="0"><span class="post" data-i="per_mo3">/mo</span></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="hoa"><span data-i="l_hoa">HOA</span></label>
+          <div class="ctl"><span class="pre">$</span><input id="hoa" type="number" inputmode="numeric" min="0" step="25" value="0"><span class="post" data-i="per_mo4">/mo</span></div>
+        </div>
+        <p class="hint" data-i="more_h">Rate default is the Freddie Mac weekly average for 30-yr fixed (7.24%). Insurance follows the price (about 0.35%/yr) until you type your own quote. 15% set-aside = 5% vacancy + 5% repairs + 5% CapEx, estimate.</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">What you really pay</div>
+      <div class="v" id="netV"><span id="net">$0</span> <small data-i="per_mo5">/mo</small></div>
+      <div class="w" id="vs"></div>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_piti">Full house payment (PITI)</b><small data-i="n_piti_s">Principal, interest, tax, insurance, mortgage insurance, HOA</small></span><span class="a" id="piti">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_rent">− Rent from the other units</b></span><span class="a" id="rentA">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_res">+ Set aside and shared utilities</b><small data-i="n_res_s">Vacancy, repairs, CapEx · estimate</small></span><span class="a" id="resA">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_prin">Of that, principal you keep</b><small data-i="n_prin_s">Loan paydown, first year average</small></span><span class="a" id="prin">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_cash">Cash to bring to escrow</b><small id="cashS"></small></span><span class="a" id="cash">$0</span></div>
+    </div>
+    <div class="meta">
+      <span><span data-i="m_loan">Loan</span>: <b id="loan">$0</b> · <span data-i="m_rate">Rate</span>: <b id="rateA">0%</b> · <span data-i="m_mi">Mortgage insurance</span>: <b id="mi">$0</b><span data-i="m_mo">/mo</span></span>
+      <span><span data-i="m_inc">Rent the lender counts (75%)</span>: <b id="inc">$0</b><span data-i="m_mo2">/mo</span></span>
+      <span id="other"></span>
+    </div>
+    <div class="note hide" id="ssNote"></div>
+    <div class="note hide" id="limNote"></div>
+    <p class="hint" data-i="rule">Rate, insurance, PMI and set-aside are estimates. A lender quote for your credit always wins.</p>
+  </section>
+
+  <video src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px;margin-top:8px" aria-label="How to use this tool"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t263/guide.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this to yourself</h2>
+    <p data-i="f_sub">Ken will reply and can find 2–4 unit listings that fit this budget. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Compare every loan type (FHA, 5% conventional, DSCR, investor) in <a href="/t262/">T262 Rental loans</a>.</li>
+      <li data-i="ns2">Check the rent you typed against HUD fair market rents in <a href="/t51/">T51</a>.</li>
+      <li data-i="ns3">Moving out later? Run it as a full rental in <a href="/t146/">T146 Rental cash flow</a>.</li>
+      <li data-i="ns4">See what happens if a unit sits empty or rent drops in <a href="/t264/">T264 Stress test</a>.</li>
+    </ol>
+  </section>
+  <p class="myth" data-i="myth"><b>Many people get this wrong:</b> "the tenants pay my whole mortgage." In the Bay Area they rarely do. The win is usually smaller: you pay less than rent for a similar place, and part of what you pay is principal that stays yours. Count repairs and empty months, or the math lies to you.</p>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <span data-i="ft_lib">Library (coming soon)</span> · <span data-i="ft_vid">Kiến Thức Địa Ốc video (coming soon)</span></span>
+    <span><span data-i="ft_src">Sources:</span> <a href="https://singlefamily.fanniemae.com/media/20786/display" target="_blank" rel="noopener">Fannie Mae Eligibility Matrix (04/2026)</a> · <a href="https://www.fhfa.gov/document/fhfa-cll-addendum-cy2026.pdf" target="_blank" rel="noopener">FHFA 2026 loan limits</a> · <a href="https://www.hsh.com/ls-ca.html" target="_blank" rel="noopener">HSH county limits 2–4 units</a> · <a href="https://mortgageresearch.com/articles/fha-self-sufficiency-test" target="_blank" rel="noopener">FHA self-sufficiency test</a> · <a href="https://archives.hud.gov/news/2024/2023-05hsgml.pdf" target="_blank" rel="noopener">HUD ML 2023-05 (MIP)</a> · <a href="https://selling-guide.fanniemae.com/1032995141" target="_blank" rel="noopener">Fannie B3-3.8-01 (rental income)</a> · <a href="https://www.freddiemac.com/pmms" target="_blank" rel="noopener">Freddie Mac PMMS (7.24%, 29/10/2026)</a> <span data-i="ft_chk">(checked 05/11/2026)</span></span>
+    <span data-i="ft_est">General information, not tax, legal or financial advice. Rate, PMI, insurance and set-aside are estimates. Ask a lender, CPA or attorney before you decide.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 05/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Numbers — edit here (one place). Checked 05/11/2026, see /home/claude/dautu/FACTS.md. Same constants as T262. =====
+   LIMITS 2026 Santa Clara = Alameda (conforming = FHA ceiling): FHFA https://www.fhfa.gov/document/fhfa-cll-addendum-cy2026.pdf ;
+     2–4u county via HSH https://www.hsh.com/ls-ca.html . BASELINE (US) 2026 = standard conforming max for 5% down.
+   Fannie Eligibility Matrix 01/04/2026 https://singlefamily.fanniemae.com/media/20786/display :
+     owner-occupied 2–4u 95% LTV (DU, loan ≤ baseline); high-balance owner-occupied 2u ≤85%, 3–4u ≤75%.
+   FHA: 3.5% down, live in 1 unit. Self-sufficiency (3–4u): 75% of market rent of ALL units (incl. yours) ≥ PITI.
+     https://mortgageresearch.com/articles/fha-self-sufficiency-test
+   FHA MIP — HUD ML 2023-05: UFMIP 1.75% financed; annual 0.50%/0.55% (base ≤$726,200), 0.70%/0.75% above (LTV ≤95 / >95). Same as T13.
+   Lender counts 75% of rent: Fannie B3-3.8-01 / Form 1025 https://selling-guide.fanniemae.com/1032995141
+   BASE_RATE 7.24%: Freddie Mac PMMS 29/10/2026 (owner-occupied, no investor add). FHA uses same rate: ước tính — KEN DUYỆT.
+   PMI 740 credit from T13 grid (>90–95% LTV 0.53%/yr, >85–90 0.38, >80–85 0.20): ESTIMATE — KEN DUYỆT.
+   INS_PCT 0.35%/yr, CLOSING 2%, TAX 1.25%, set-aside 15% (vacancy 5 + repairs 5 + CapEx 5 like T146): ESTIMATE.
+   Default rent ~$3,000/unit and "unit like yours" $3,000: ước tính between HUD FY2026 2BR FMR San Jose $3,483 / Oakland $2,912. */
+const LIMITS={2:1599375,3:1933200,4:2402625};
+const BASELINE={2:1066250,3:1288800,4:1601750};
+const OWN_LTV=0.95, OWN_HB_LTV={2:0.85,3:0.75,4:0.75};
+const FHA={down:0.035,ufmip:0.0175,baseCut:726200,lo:{le95:0.0050,gt95:0.0055},hi:{le95:0.0070,gt95:0.0075},ssFactor:0.75};
+const RENT_COUNT=0.75, BASE_RATE=7.24, TERM=30, INS_PCT=0.35;
+const PMI={gt90:0.53,gt85:0.38,gt80:0.20};
+
+const I18N={
+ en:{title:'Live in one unit, rent the rest',sub:'House hacking a duplex, triplex or fourplex. See what you really pay each month after rent, vs renting, and the cash you bring to escrow.',
+  l_price:'Purchase price',l_units:'Units in the building',l_rent:'Rent from the other units',l_rent_s1:"(total, the 1 unit you don't live in)",l_rent_sn:"(total, the {n} units you don't live in)",
+  per_mo:'/mo',per_mo2:'/mo',per_mo3:'/mo',per_mo4:'/mo',per_mo5:'/mo',per_yr:'/yr',
+  l_loan:'Loan',t_fha:'FHA 3.5%',t_conv:'Conventional 5%',l_mine:'Rent for a unit like yours',l_mine_s:"(what you'd pay to rent it)",
+  more:'More settings',l_rate:'Interest rate',l_rate_s:'(estimate, edit)',l_cc:'Closing costs',l_cc_s:'(% of price, estimate)',l_tax:'Property tax',l_tax_s:'(% of price/yr)',
+  l_ins:'Insurance',l_ins_s:'(estimate)',l_res:'Set aside from rent',l_res_s:'(vacancy + repairs + CapEx)',l_util:'Shared utilities you pay',l_util_s:'(water, garbage)',l_hoa:'HOA',
+  more_h:'Rate default is the Freddie Mac weekly average for 30-yr fixed (7.24%). Insurance follows the price (about 0.35%/yr) until you type your own quote. 15% set-aside = 5% vacancy + 5% repairs + 5% CapEx, estimate.',
+  r_total:'What you really pay',n_piti:'Full house payment (PITI)',n_piti_s:'Principal, interest, tax, insurance, mortgage insurance, HOA',n_rent:'− Rent from the other units',
+  n_res:'+ Set aside and shared utilities',n_res_s:'Vacancy, repairs, CapEx · estimate',n_prin:'Of that, principal you keep',n_prin_s:'Loan paydown, first year average',n_cash:'Cash to bring to escrow',
+  cash_s:'Down {d} ({p}%) + closing {c}',
+  m_loan:'Loan',m_rate:'Rate',m_mi:'Mortgage insurance',m_mo:'/mo',m_inc:'Rent the lender counts (75%)',m_mo2:'/mo',
+  vs_less:'<b>{x}/mo less</b> than renting a unit like yours ({r}).',vs_more:'<b>{x}/mo more</b> than renting a unit like yours ({r}). Principal you keep: {k}/mo.',vs_pos:'<b>The other units cover everything</b>, plus {x}/mo extra. Rare in the Bay Area. Double-check the rent.',
+  other:'With {n}: cash {c} · you pay {x}/mo',
+  ss_ok:'FHA self-sufficiency test (3–4 units): <b>passes</b>. 75% of all market rent incl. your unit {a} ≥ PITI {b}.',
+  ss_no:'FHA self-sufficiency test (3–4 units): <b>fails</b>. 75% of all market rent incl. your unit {a} is under PITI {b}. FHA likely says no. Try conventional, a lower price or more down.',
+  lim_fha:'Price is above the 2026 FHA limit for {u} units ({l}). Down raised to {d} so the loan fits.',
+  lim_base:'5% down only works while the loan is at or under {b}. Down raised to {d} to stay there. Still cheaper than high-balance.',
+  lim_hb:'Loan is above {b}, so it is high-balance: Fannie wants at least {p}% down for {u} units here.',
+  lim_over:'Price is above the 2026 conforming limit for {u} units ({l}). Down raised to {d}, or ask about jumbo.',
+  rule:'Rate, insurance, PMI and set-aside are estimates. A lender quote for your credit always wins.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this to yourself',f_sub:'Ken will reply and can find 2–4 unit listings that fit this budget. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ns_t:'Next steps',
+  ns1:'Compare every loan type (FHA, 5% conventional, DSCR, investor) in <a href="/t262/">T262 Rental loans</a>.',
+  ns2:'Check the rent you typed against HUD fair market rents in <a href="/t51/">T51</a>.',
+  ns3:'Moving out later? Run it as a full rental in <a href="/t146/">T146 Rental cash flow</a>.',
+  ns4:'See what happens if a unit sits empty or rent drops in <a href="/t264/">T264 Stress test</a>.',
+  myth:'<b>Many people get this wrong:</b> "the tenants pay my whole mortgage." In the Bay Area they rarely do. The win is usually smaller: you pay less than rent for a similar place, and part of what you pay is principal that stays yours. Count repairs and empty months, or the math lies to you.',
+  ft_read:'Read more:',ft_lib:'Library (coming soon)',ft_vid:'Kiến Thức Địa Ốc video (coming soon)',ft_src:'Sources:',ft_chk:'(checked 05/11/2026)',
+  ft_est:'General information, not tax, legal or financial advice. Rate, PMI, insurance and set-aside are estimates. Ask a lender, CPA or attorney before you decide.',
+  ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  fhaN:'FHA 3.5%',convN:'Conventional 5%',
+  sms:'Hi Ken, I ran house hacking on tools.kenlamrealty.com/t263: price {p}, {u} units, rent from others {r}/mo, {l}. I pay {x}/mo, cash {c}. Can we talk?',
+  subj:'House hacking — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nPrice: {p}\nUnits: {u}\nLoan: {l} · Rate {rt}%\nRent from other units: {r}/mo\nRent for a unit like mine: {m}/mo\n\nPITI: {piti}/mo\nSet aside + utilities: {res}/mo\nWhat I really pay: {x}/mo\nVs renting: {vs}\nPrincipal kept: {k}/mo\nCash to escrow: {c} (down {d})\nRent the lender counts: {inc}/mo\nFHA self-sufficiency: {ss}\n\nSent from tool T263 tools.kenlamrealty.com',
+  pass:'pass',fail:'fail',na:'not needed (duplex)'},
+ vi:{title:'Ở 1 căn, cho thuê căn còn lại',sub:'House hacking nhà 2, 3, 4 căn. Coi mỗi tháng mình thật sự trả bao nhiêu sau khi trừ tiền thuê, so với đi thuê, và tiền mang tới escrow.',
+  l_price:'Giá mua',l_units:'Nhà có mấy căn',l_rent:'Tiền thuê các căn kia',l_rent_s1:'(tổng, 1 căn mình không ở)',l_rent_sn:'(tổng, {n} căn mình không ở)',
+  per_mo:'/tháng',per_mo2:'/tháng',per_mo3:'/tháng',per_mo4:'/tháng',per_mo5:'/tháng',per_yr:'/năm',
+  l_loan:'Loại vay',t_fha:'FHA 3.5%',t_conv:'Conventional 5%',l_mine:'Thuê 1 căn giống căn mình ở',l_mine_s:'(nếu đi thuê thì trả bao nhiêu)',
+  more:'Tùy chỉnh thêm',l_rate:'Lãi suất',l_rate_s:'(ước tính, sửa được)',l_cc:'Closing cost',l_cc_s:'(% giá, ước tính)',l_tax:'Thuế nhà',l_tax_s:'(% giá/năm)',
+  l_ins:'Bảo hiểm',l_ins_s:'(ước tính)',l_res:'Để dành từ tiền thuê',l_res_s:'(trống + sửa + CapEx)',l_util:'Điện nước chung mình trả',l_util_s:'(nước, rác)',l_hoa:'HOA',
+  more_h:'Lãi mặc định là mức trung bình tuần của Freddie Mac cho 30 năm cố định (7.24%). Bảo hiểm tự chạy theo giá (khoảng 0.35%/năm) cho tới khi mình gõ số báo giá thật. Để dành 15% = 5% trống + 5% sửa + 5% CapEx, ước tính.',
+  r_total:'Mình thật sự trả',n_piti:'Tiền nhà đầy đủ (PITI)',n_piti_s:'Gốc, lãi, thuế, bảo hiểm, bảo hiểm vay, HOA',n_rent:'− Tiền thuê các căn kia',
+  n_res:'+ Để dành và điện nước chung',n_res_s:'Trống, sửa, CapEx · ước tính',n_prin:'Trong đó, tiền gốc mình giữ',n_prin_s:'Trả bớt loan, trung bình năm đầu',n_cash:'Tiền mang tới escrow',
+  cash_s:'Down {d} ({p}%) + closing {c}',
+  m_loan:'Loan',m_rate:'Lãi',m_mi:'Bảo hiểm vay',m_mo:'/tháng',m_inc:'Tiền thuê lender tính (75%)',m_mo2:'/tháng',
+  vs_less:'<b>Ít hơn {x}/tháng</b> so với đi thuê căn giống vậy ({r}).',vs_more:'<b>Nhiều hơn {x}/tháng</b> so với đi thuê căn giống vậy ({r}). Tiền gốc mình giữ: {k}/tháng.',vs_pos:'<b>Các căn kia trả hết</b>, còn dư {x}/tháng. Ở Bay Area hiếm lắm. Coi lại tiền thuê cho chắc.',
+  other:'Nếu đi {n}: tiền mặt {c} · mình trả {x}/tháng',
+  ss_ok:'FHA self-sufficiency test (3–4 căn): <b>đạt</b>. 75% tổng tiền thuê thị trường, tính luôn căn mình, {a} ≥ PITI {b}.',
+  ss_no:'FHA self-sufficiency test (3–4 căn): <b>không đạt</b>. 75% tổng tiền thuê thị trường, tính luôn căn mình, {a} thấp hơn PITI {b}. FHA gần như sẽ từ chối. Thử conventional, giá thấp hơn hoặc down nhiều hơn.',
+  lim_fha:'Giá vượt giới hạn FHA 2026 cho {u} căn ({l}). Down tăng lên {d} để loan vừa giới hạn.',
+  lim_base:'Down 5% chỉ được khi loan bằng hoặc dưới {b}. Down tăng lên {d} để nằm đúng mức đó. Vẫn rẻ hơn đi high-balance.',
+  lim_hb:'Loan trên {b} nên là high-balance: Fannie đòi down ít nhất {p}% cho {u} căn ở mức này.',
+  lim_over:'Giá vượt giới hạn conforming 2026 cho {u} căn ({l}). Down tăng lên {d}, hoặc hỏi vay jumbo.',
+  rule:'Lãi, bảo hiểm, PMI và tiền để dành là ước tính. Lender báo giá theo credit của mình mới là số thật.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi kết quả này về email',f_sub:'Ken nhận được sẽ trả lời và tìm nhà 2–4 căn vừa túi tiền này. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ns_t:'Bước tiếp theo',
+  ns1:'So hết các loại vay (FHA, conventional 5%, DSCR, nhà đầu tư) ở <a href="/t262/">T262 Vay nhà cho thuê</a>.',
+  ns2:'So tiền thuê mình nhập với giá thuê HUD (FMR) ở <a href="/t51/">T51</a>.',
+  ns3:'Sau này dọn ra? Tính lại như nhà cho thuê hết ở <a href="/t146/">T146 Cash flow nhà cho thuê</a>.',
+  ns4:'Coi 1 căn bị trống hay tiền thuê giảm thì sao ở <a href="/t264/">T264 Stress test</a>.',
+  myth:'<b>Nhiều người hiểu sai:</b> "người thuê trả hết tiền nhà cho mình." Ở Bay Area ít khi vậy. Cái lời thường nhỏ hơn: mình trả ít hơn đi thuê chỗ tương tự, và một phần tiền trả là tiền gốc, vẫn là của mình. Không tính tiền sửa và tháng trống là tự gạt mình.',
+  ft_read:'Đọc thêm:',ft_lib:'Library (sắp có)',ft_vid:'Video Kiến Thức Địa Ốc (sắp có)',ft_src:'Nguồn:',ft_chk:'(tra 05/11/2026)',
+  ft_est:'Thông tin chung, không phải tư vấn thuế, luật hay tài chính. Lãi, PMI, bảo hiểm và tiền để dành là ước tính. Hỏi lender, CPA hoặc luật sư trước khi quyết.',
+  ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  fhaN:'FHA 3.5%',convN:'Conventional 5%',
+  sms:'Chào Ken, tôi vừa tính house hacking trên tools.kenlamrealty.com/t263: giá {p}, {u} căn, tiền thuê các căn kia {r}/tháng, {l}. Mình trả {x}/tháng, tiền mặt {c}. Cho tôi hỏi thêm.',
+  subj:'House hacking — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nGiá: {p}\nSố căn: {u}\nVay: {l} · Lãi {rt}%\nTiền thuê các căn kia: {r}/tháng\nThuê căn giống căn mình: {m}/tháng\n\nPITI: {piti}/tháng\nĐể dành + điện nước: {res}/tháng\nMình thật sự trả: {x}/tháng\nSo với đi thuê: {vs}\nTiền gốc giữ: {k}/tháng\nTiền mang tới escrow: {c} (down {d})\nTiền thuê lender tính: {inc}/tháng\nFHA self-sufficiency: {ss}\n\nGửi từ tool T263 tools.kenlamrealty.com',
+  pass:'đạt',fail:'không đạt',na:'không cần (duplex)'}
+};
+let lang='en', units=2, ltype='fha', insTouched=false, last={};
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>{ if(!isFinite(n)) return '—'; const r=Math.round(n); return (r<0?'-$':'$')+Math.abs(r).toLocaleString('en-US'); };
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]!=null?v[k]:m);
+const r2=x=>Math.round(x*100)/100;
+function pmt(loan,ratePct,years){ const r=ratePct/100/12,n=years*12; if(loan<=0) return 0; return r===0?loan/n:loan*r/(1-Math.pow(1+r,-n)); }
+function balance(loan,ratePct,years,months){ const r=ratePct/100/12; if(loan<=0) return 0; if(r===0) return loan*(1-months/(years*12));
+  const p=pmt(loan,ratePct,years); return loan*Math.pow(1+r,months)-p*(Math.pow(1+r,months)-1)/r; }
+function pmiPct(ltv){ return ltv>0.90+1e-9?PMI.gt90:ltv>0.85+1e-9?PMI.gt85:ltv>0.80+1e-9?PMI.gt80:0; }
+
+/* Pure model. i={price,n(2–4),rent(others total/mo),type 'fha'|'conv',mine,rate,ccPct,taxPct,ins(/yr),resPct,util,hoa} */
+function model(i){
+  const P=i.price, n=i.n, cc=P*i.ccPct/100, tiM=P*i.taxPct/100/12+i.ins/12+i.hoa;
+  let down,base,loan,mi,limNote=null,ufmip=0;
+  if(i.type==='fha'){
+    const minD=P*FHA.down; down=Math.max(minD,P-LIMITS[n]); base=P-down; ufmip=base*FHA.ufmip; loan=base+ufmip;
+    const ltv=P>0?base/P:0, tb=base<=FHA.baseCut?FHA.lo:FHA.hi; mi=base*(ltv>0.95+1e-9?tb.gt95:tb.le95)/12;
+    if(down>minD+0.5) limNote={k:'lim_fha'};
+  } else {
+    const d1=Math.max(P*(1-OWN_LTV),P-BASELINE[n]), d2=Math.max(P*(1-OWN_HB_LTV[n]),P-LIMITS[n]);
+    down=Math.min(d1,d2); base=P-down; loan=base; mi=loan*pmiPct(P>0?loan/P:0)/100/12;
+    if(d1<=d2){ if(d1>P*(1-OWN_LTV)+0.5) limNote={k:'lim_base'}; }
+    else limNote={k:d2>P*(1-OWN_HB_LTV[n])+0.5?'lim_over':'lim_hb'};
+  }
+  const pi=pmt(loan,i.rate,TERM), piti=pi+tiM+mi;
+  const res=i.rent*i.resPct/100+i.util;
+  const net=piti+res-i.rent;                         /* what you really pay per month */
+  const prin=(loan-balance(loan,i.rate,TERM,12))/12;  /* year-1 average principal per month */
+  const ssNeed=i.type==='fha'&&n>=3, ssAmt=(i.rent+i.mine)*FHA.ssFactor, ssPass=!ssNeed||ssAmt>=piti;
+  return {down,downPct:P>0?down/P*100:0,base,ufmip,loan,mi,pi,tiM,piti,res,net,prin,cash:down+cc,cc,vsRent:i.mine-net,
+    inc:i.rent*RENT_COUNT,ssNeed,ssAmt,ssPass,limNote,limit:LIMITS[n],baseline:BASELINE[n],hbPct:(1-OWN_HB_LTV[n])*100};
+}
+function inputs(t){ return {price:num('price'),n:units,rent:num('rent'),type:t||ltype,mine:num('mine'),rate:num('rate'),ccPct:num('cc'),taxPct:num('tax'),
+  ins:num('ins'),resPct:num('res'),util:num('util'),hoa:num('hoa')}; }
+function calc(){
+  const d=I18N[lang];
+  if(!insTouched) $('ins').value=Math.round(num('price')*INS_PCT/100/100)*100;
+  $('rentS').textContent=units===2?d.l_rent_s1:fill(d.l_rent_sn,{n:units-1});
+  const i=inputs(), m=model(i), o=model(inputs(ltype==='fha'?'conv':'fha'));
+  $('net').textContent=fmt(Math.max(0,m.net)); $('netV').classList.toggle('neg',false);
+  if(m.net<0) $('net').textContent='+'+fmt(-m.net);
+  $('piti').textContent=fmt(m.piti)+d.m_mo; $('rentA').textContent=(i.rent>0?'−':'')+fmt(i.rent); $('resA').textContent='+'+fmt(m.res);
+  $('prin').textContent=fmt(m.prin)+d.m_mo; $('cash').textContent=fmt(m.cash);
+  $('cashS').textContent=fill(d.cash_s,{d:fmt(m.down),p:r2(m.downPct),c:fmt(m.cc)});
+  $('loan').textContent=fmt(m.loan); $('rateA').textContent=i.rate.toFixed(2)+'%'; $('mi').textContent=fmt(m.mi); $('inc').textContent=fmt(m.inc);
+  $('vs').innerHTML=m.net<0?fill(d.vs_pos,{x:fmt(-m.net)}):(m.vsRent>=0?fill(d.vs_less,{x:fmt(m.vsRent),r:fmt(i.mine)}):fill(d.vs_more,{x:fmt(-m.vsRent),r:fmt(i.mine),k:fmt(m.prin)}));
+  $('other').textContent=fill(d.other,{n:ltype==='fha'?d.convN:d.fhaN,c:fmt(o.cash),x:fmt(o.net)});
+  const sn=$('ssNote'); sn.classList.toggle('hide',!m.ssNeed); if(m.ssNeed) sn.innerHTML=fill(m.ssPass?d.ss_ok:d.ss_no,{a:fmt(m.ssAmt),b:fmt(m.piti)});
+  const ln=$('limNote'); ln.classList.toggle('hide',!m.limNote);
+  if(m.limNote) ln.innerHTML=fill(d[m.limNote.k],{u:units,l:fmt(m.limit),d:fmt(m.down),b:fmt(m.baseline),p:r2(m.hbPct)});
+  last={p:fmt(i.price),u:units,r:fmt(i.rent),m:fmt(i.mine),l:ltype==='fha'?d.fhaN:d.convN,rt:i.rate.toFixed(2),piti:fmt(m.piti),res:fmt(m.res),
+    x:fmt(m.net),vs:(m.vsRent>=0?'-':'+')+fmt(Math.abs(m.vsRent))+d.m_mo,k:fmt(m.prin),c:fmt(m.cash),d:fmt(m.down)+' ('+r2(m.downPct)+'%)',inc:fmt(m.inc),
+    ss:m.ssNeed?(m.ssPass?d.pass:d.fail):(ltype==='fha'?d.na:'—')};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+  window.__last=m;
+}
+function setSeg(id,v){ document.querySelectorAll('#'+id+' button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===String(v)?'true':'false')); }
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+['price','rent','mine','rate','cc','tax','res','util','hoa'].forEach(id=>$(id).addEventListener('input',calc));
+$('ins').addEventListener('input',()=>{insTouched=true;calc();});
+$('units').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; const prev=units; units=+b.dataset.v; setSeg('units',units);
+  /* keep rent per other unit the same when unit count changes */
+  if(prev!==units&&prev>1){ const per=num('rent')/(prev-1); $('rent').value=Math.round(per*(units-1)); } calc();});
+$('ltype').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; ltype=b.dataset.v; setSeg('ltype',ltype); calc();});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const v=Object.assign({},last,{n,e,ph});
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing), như T146. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,v))+'&body='+encodeURIComponent(fill(d.body,v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+/* embed mode: kenlamrealty.com iframes this page with ?embed=1 (height via postMessage klToolsHeight), like T190 */
+const EMBED=/[?&]embed=1/.test(location.search);
+if(EMBED){
+  document.documentElement.classList.add('embed');
+  document.addEventListener('click',e=>{ const a=e.target.closest('a[href]'); if(!a) return; const h=a.getAttribute('href');
+    if(h.startsWith('#')||a.target==='_blank'||/^(sms|tel|mailto):/.test(h)) return;
+    if(h.startsWith('/')) a.href='https://tools.kenlamrealty.com'+h; a.target='_top'; },true);
+  let lastH=0; const send=()=>{ const w=document.querySelector('.wrap'); const h=Math.ceil(w.getBoundingClientRect().bottom+window.scrollY+40);
+    if(Math.abs(h-lastH)<4) return; lastH=h; try{ parent.postMessage({klToolsHeight:h},'*'); }catch(e){} };
+  window.addEventListener('load',send); window.addEventListener('resize',send);
+  new ResizeObserver(send).observe(document.body); setInterval(send,1500);
+}
+window.__model=model;
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
