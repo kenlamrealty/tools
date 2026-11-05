@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>What's in Closing Costs · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Buy or sell in Santa Clara or Alameda County: every closing cost line, who usually pays it in your county, an estimate in dollars, explained simply.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t230/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="What's in Closing Costs? · Ken Lam Tools">
+<meta property="og:description" content="Every closing cost line, who pays it in Santa Clara vs Alameda, and what it means, in plain words.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t230/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.embed .kl-back{display:none}
+/* T64 additions (kept) */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl select:focus-visible{outline:none}
+.ctl .chev{color:var(--muted);font-size:13px;pointer-events:none}
+.steps{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.steps h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+footer .src a{overflow-wrap:anywhere}
+/* panel + group list (from T145) */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.mhl{list-style:none;margin:0;padding:0;display:grid;gap:10px}.mhl li{display:grid;gap:2px;border-top:1px solid var(--line);padding-top:10px}.mhl li:first-child{border-top:0;padding-top:0}.mhl a{color:var(--fg);text-decoration:none;font-weight:500}.mhl a b{color:var(--brass);font-weight:600;margin-right:4px}.mhl span{color:var(--muted);font-size:14px}
+.mhl li.here a{color:var(--brass)}
+/* T230 additions */
+.hide{display:none!important}
+.split2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.split2 div{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.split2 .k{font-size:12px;color:var(--muted);letter-spacing:.04em}
+.split2 .v{font-family:var(--display);font-size:28px;line-height:1.1;font-variant-numeric:tabular-nums}
+.ctc{font-size:14px;line-height:1.5;margin:0}
+.ctc b{font-weight:500}
+.grp{display:grid;gap:8px;scroll-margin-top:16px}
+.grp h3{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:8px 0 0;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500;border-bottom:1px solid var(--line);padding-bottom:6px}
+.grp h3 .a{font-size:15px;letter-spacing:0;text-transform:none;color:var(--fg);font-variant-numeric:tabular-nums;white-space:nowrap}
+.item{border:1px solid var(--line);border-radius:12px;background:var(--panel);min-width:0;scroll-margin-top:16px}
+.item[open]{border-color:var(--brass)}
+.item.flash{box-shadow:0 0 0 3px var(--brass-soft)}
+.item summary{list-style:none;cursor:pointer;padding:11px 14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;align-items:baseline}
+.item summary::-webkit-details-marker{display:none}
+.item .nm{font-size:15px;font-weight:500;color:var(--fg)}
+.item .nm::after{content:" +";color:var(--brass);font-weight:400}
+.item[open] .nm::after{content:" −"}
+.item .am{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap;text-align:right}
+.item .am.zero{color:var(--muted);font-weight:400}
+.item .who{grid-column:1/-1;font-size:12.5px;color:var(--muted)}
+.item .who em{font-style:normal;color:var(--brass)}
+.item .bd{padding:0 14px 14px;display:grid;gap:10px;font-size:14.5px;line-height:1.55}
+.item .bd p{margin:0}
+.item .bd .lb{display:block;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);font-weight:500;margin-bottom:2px}
+.item .bd .kid{background:var(--brass-soft);border-radius:10px;padding:9px 12px}
+.item .bd .tip b{color:var(--warn);font-weight:500}
+.item .bd a{color:var(--brass)}
+.expall{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+.est{display:block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:400;text-align:right;margin-top:1px}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">What's in closing costs? (start here)</h1>
+    <p class="sub" data-i="sub">Every line you'll see at closing, who usually pays it in your county, about how much, and what it means. Tap any line to open it.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label><span data-i="l_side">I am</span></label>
+      <div class="seg" role="group">
+        <button type="button" id="sB" aria-pressed="true" data-i="buying">Buying</button>
+        <button type="button" id="sS" aria-pressed="false" data-i="selling">Selling</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="price"><span data-i="l_price">Home price</span></label>
+        <div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" min="0" step="10000" value="1400000"></div>
+      </div>
+      <div class="field">
+        <label for="city"><span data-i="l_city">City</span></label>
+        <div class="ctl"><select id="city"></select><span class="chev">▾</span></div>
+      </div>
+    </div>
+    <div class="row2" id="buyIn">
+      <div class="field">
+        <label for="loan"><span data-i="l_loan">Loan amount </span><small data-i="l_loan_s">(0 = cash)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="loan" type="number" inputmode="numeric" min="0" step="10000" value="1120000"></div>
+      </div>
+      <div class="field">
+        <label for="month"><span data-i="l_month">Closing month</span></label>
+        <div class="ctl"><select id="month"></select><span class="chev">▾</span></div>
+      </div>
+    </div>
+    <div class="row2 hide" id="sellIn">
+      <div class="field">
+        <label for="cl"><span data-i="l_cl">Listing agent</span></label>
+        <div class="ctl"><input id="cl" type="number" inputmode="decimal" min="0" max="10" step="0.25" value="2.5"><span class="post">%</span></div>
+      </div>
+      <div class="field">
+        <label for="cb"><span data-i="l_cb">Buyer's agent </span><small data-i="l_cb_s">(0 if not paying)</small></label>
+        <div class="ctl"><input id="cb" type="number" inputmode="decimal" min="0" max="10" step="0.25" value="2.5"><span class="post">%</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" id="bigK"></div>
+      <div class="v"><span id="big">$0</span> <small id="bigS"></small></div>
+    </div>
+    <div class="split2" id="split2">
+      <div><div class="k" id="s2aK"></div><div class="v" id="s2a">$0</div></div>
+      <div><div class="k" id="s2bK"></div><div class="v" id="s2b">$0</div></div>
+    </div>
+    <p class="ctc" id="ctc"></p>
+    <div class="note hide" id="cityNote"></div>
+    <div class="note hide" id="loanNote"></div>
+    <button type="button" class="expall" id="expAll"></button>
+    <div id="list"></div>
+    <div class="note" data-i="est_note">Every dollar here is an estimate. Your real numbers come from the lender's Loan Estimate and the escrow's estimated settlement statement. Who pays what is custom, not law: the purchase contract decides.</div>
+  </section>
+  <video src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px;margin-top:8px" aria-label="How to use this tool"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t230/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this list to yourself</h2>
+    <p data-i="f_sub">Ken will reply and help you check it against your Loan Estimate or escrow statement. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, text Ken the number below.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol data-i="ns_list"></ol>
+  </section>
+  <p class="myth" data-i="myth"></p>
+
+  <section class="panel" id="ccAll">
+    <h2 data-i="cc_t">Every closing cost &amp; tax tool</h2>
+    <div data-i="cc_list"></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="#" data-todo="library-closing-costs" data-i="ft_lib">Library: closing costs line by line</a> · <a href="#" data-todo="video-kien-thuc-closing-costs" data-i="ft_vid">Kiến Thức Địa Ốc video</a></span>
+    <span data-i="ft_est">General information only. Not tax, legal or lending advice. All amounts are estimates; customs on who pays are negotiable.</span>
+    <span class="src"><span data-i="ft_src">Sources (looked up 05/11/2026):</span>
+      <a href="https://page.fnf.com/rs/393-REY-847/images/CTT_CA-CustomaryPracticesGuide_2026.pdf?version=1" target="_blank" rel="noopener">Chicago Title CA Customary Practices 2026</a> ·
+      <a href="https://page.fnf.com/rs/393-REY-847/images/Who%20Pays%20What%20-%20California%20Transfer%20Tax%20and%20Fees%20%28rev%2001062026%29.pdf" target="_blank" rel="noopener">FNF Who Pays What (rev 01/06/2026)</a> ·
+      <a href="https://www.oldrepublictitle.com/Media/2mckowmc/or1591-northern-southern-califorina-closing-costs-flyer-di-ca.pdf" target="_blank" rel="noopener">Old Republic closing costs 07/2025</a> ·
+      <a href="https://auditor.alamedacountyca.gov/clerk-recorder-real-property-tax/" target="_blank" rel="noopener">Alameda County transfer tax</a> ·
+      <a href="https://www.mountainview.gov/our-city/departments/finance-and-administrative-services/city-tax-information/real-property-transfer-conveyance-tax" target="_blank" rel="noopener">Mountain View transfer tax</a> ·
+      <a href="https://media.oldrepublictitle.com/homeowners-manual/santa-clara/files/basic-html/page42.html" target="_blank" rel="noopener">Old Republic SCC manual (Measure E)</a> ·
+      <a href="https://www.lwvbae.org/league-news/berkeley-measures-pros-cons/" target="_blank" rel="noopener">LWV: Berkeley Measure W</a> ·
+      <a href="https://www.albanyscanner.com/2026/10/16/elections/albany-measure-s-property-transfer-tax-explainer/" target="_blank" rel="noopener">Albany Measure S</a> ·
+      <a href="https://cdnsm5-hosted.civiclive.com/UserFiles/Servers/Server_13659739/File/Government/Departments/City%20Clerk/Elections/2026-11-03%20General%20Municipal%20Election/Measure-GG-FAQ.pdf" target="_blank" rel="noopener">Piedmont Measure GG FAQ</a> ·
+      <a href="https://www.law.cornell.edu/cfr/text/12/1026.37" target="_blank" rel="noopener">12 CFR 1026.37 (Loan Estimate)</a> ·
+      <a href="https://www.govinfo.gov/content/pkg/CFR-2022-title12-vol9/pdf/CFR-2022-title12-vol9-sec1026-19.pdf" target="_blank" rel="noopener">12 CFR 1026.19</a> ·
+      <a href="https://www.law.cornell.edu/cfr/text/12/1024.17" target="_blank" rel="noopener">12 CFR 1024.17 (impound cushion)</a> ·
+      <a href="https://www.stewart.com/content/dam/stewart/Microsites/california/pdfs/Escrow%20Impound%20Schedule_updated.pdf" target="_blank" rel="noopener">Stewart CA impound schedule</a> ·
+      <a href="https://www.jvmlending.com/blog/what-are-the-average-closing-costs-in-california/" target="_blank" rel="noopener">JVM Lending fee ranges (09/2026)</a> ·
+      <a href="https://wfgtitle.com/wp-content/uploads/2024/04/WFG-California-Rate-Book-2.1.2023-Up-to-5-Mil.pdf" target="_blank" rel="noopener">WFG CA title rate book (2/2023)</a> ·
+      <a href="https://www.deeds.com/recorder/california/santa-clara/" target="_blank" rel="noopener">Santa Clara recording fees</a> ·
+      <a href="https://www.insurancejournal.com/magazines/mag-features/2026/07/13/877085.htm" target="_blank" rel="noopener">CA home insurance 2026</a> ·
+      <a href="https://selling-guide.fanniemae.com/sel/b3-4.1-02/interested-party-contributions-ipcs" target="_blank" rel="noopener">Fannie Mae seller credit limits</a>
+    </span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 05/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/*CALC-START*/
+/* ===== RULES & FEES — edit here only (looked up 05/11/2026, from /home/claude/cc/FACTS-A.md + FACTS-B.md) =====
+   WHO PAYS (custom, negotiable) — Chicago Title CA Customary Practices 06/2026; Old Republic 07/2025; FNF "Who Pays What" rev 01/06/2026
+     https://page.fnf.com/rs/393-REY-847/images/CTT_CA-CustomaryPracticesGuide_2026.pdf?version=1
+     https://page.fnf.com/rs/393-REY-847/images/Who%20Pays%20What%20-%20California%20Transfer%20Tax%20and%20Fees%20%28rev%2001062026%29.pdf
+     Santa Clara: escrow fee = seller, owner's policy = seller.  Alameda: escrow fee = buyer, owner's policy = buyer.
+     County DTT = seller in both. City tax = split buyer/seller (Alameda County practice varies — KEN DUYỆT).
+     Lender's policy = buyer (ESTIMATE/custom). HOA transfer, NHD, home warranty, pest: NOT in 2026 guides → contract (CAR RPA) decides.
+   AMOUNTS — same as T03/T21 so the tools agree (all ESTIMATE, KEN DUYỆT):
+     Lender fees conv $1,800 / jumbo $2,200; appraisal $800 / $1,200; credit report $100.
+       Market ranges (JVM Lending 23/09/2026): origination 0.5–1% of loan; underwriting/processing $500–$1,500; appraisal $500–$900;
+       credit $25–$75; escrow $1,000–$2,500; lender's title $400–$800; recording $100–$200; buyer total 2–5% of price.
+       https://www.jvmlending.com/blog/what-are-the-average-closing-costs-in-california/
+     Escrow fee $250 + $2.00/$1,000 (listwithclever, via T03). Buyer misc (tie-in, notary, courier, wire) $450 loan / $250 cash.
+       Seller misc (reconveyance, notary, courier, wire, demand) $250; Alameda seller small escrow fees $300. NHD $100 (T21).
+     Title: WFG California Rate Book eff. 2/1/2023 — HO_RATES (homeowner's owner policy), LOAN_RATES (concurrent loan policy). Old: ask Michelle for current.
+       https://wfgtitle.com/wp-content/uploads/2024/04/WFG-California-Rate-Book-2.1.2023-Up-to-5-Mil.pdf
+     Recording $200 loan / $100 cash. Santa Clara first page $102 + $3/page: https://www.deeds.com/recorder/california/santa-clara/
+     Inspection $600 (T03).
+     County DTT $0.55 per $500 or part (R&T 11911): https://auditor.alamedacountyca.gov/clerk-recorder-real-property-tax/
+     Conforming limit 2026 $1,249,125 (FHFA) → above = jumbo fees.
+   PREPAIDS:
+     Rate 7.24% (Freddie Mac PMMS 29/10/2026, per BRIEF) × 15 days (assumed mid-month) / 365 — ESTIMATE.
+     Insurance 12 months at 0.30% of price/yr (T03 INS_RATE; CA avg $1,413/yr per LendingTree 2026 — may be high) — KEN DUYỆT.
+     Property tax ~1.25%/yr (project rule; SCC TRAs 1.12–1.24%, Oakland ~1.34%). Impound tax months by close month: Stewart CA schedule (10/2018), ESTIMATE
+       https://www.stewart.com/content/dam/stewart/Microsites/california/pdfs/Escrow%20Impound%20Schedule_updated.pdf
+     + 2 months insurance impound (Stewart: "2–3 months"). Cushion max 1/6 of yearly total: 12 CFR 1024.17(c)(1).
+   COMMISSION default 2.5% + 2.5% (sample, as T21). Negotiable; NAR settlement effective 17/08/2024.
+*/
+const CFG={
+  TAX_RATE:0.0125, INS_RATE:0.0030, RATE:7.24, INT_DAYS:15, INS_IMPOUND_MONTHS:2,
+  IMPOUND_TAX_MONTHS:{1:6,2:7,3:2,4:3,5:4,6:5,7:6,8:7,9:8,10:9,11:4,12:5},
+  CONF_LIMIT:1249125,
+  LENDER_FEES:{conv:1800,jumbo:2200}, APPRAISAL:{conv:800,jumbo:1200}, CREDIT:100,
+  ESCROW_BASE:250, ESCROW_PER1000:2.00, ESCROW_PAYER:{SC:'s',AL:'b'},
+  ESCROW_BUYER_MISC:{loan:450,cash:250}, SELLER_MISC:250, ESCROW_SELLER_MISC_AL:300,
+  OWNER_PAYER:{SC:'s',AL:'b'},
+  RECORDING:{loan:200,cash:100}, INSPECTION:600, NHD:100, COUNTY_PER500:0.55,
+  HO_RATES:[[250000,1045],[300000,1155],[400000,1375],[500000,1595],[600000,1716],[700000,1892],[750000,1980],[800000,2046],[900000,2178],[1000000,2310],[1100000,2585],[1200000,2695],[1250000,2750],[1500000,3025],[1750000,3300],[2000000,3575],[2500000,4015],[3000000,4455],[3500000,4952],[4000000,5337],[4700000,5876]],
+  LOAN_RATES:[[250000,597],[300000,653],[400000,777],[600000,1020],[700000,1118],[800000,1216],[900000,1301],[1000000,1371],[1100000,1421],[1200000,1471],[1500000,1621],[1750000,1721],[2000000,1821],[3500000,2521],[4700000,3001]]
+};
+/* ===== City transfer tax — same table as T03/T21 + Emeryville, Albany, Piedmont (FACTS-B §A3, 05/11/2026) =====
+   per1000 applies to the WHOLE price. split = buyer's customary share. extra = San Jose Measure E (tool: seller pays — no printed custom, KEN DUYỆT).
+   Berkeley: $15 ≤$1.7M / $25 above (FNF eff 1/1/2026; acgov page shows $1.6M — KEN DUYỆT). Measure W from 01/01/2027.
+   Emeryville (Measure O, FNF eff 1/1/2026): <$1M $12 · $1M–$2M $15 · >$2M $25.  Albany $15 today (Measure S tiers from 01/01/2027, unofficial result).
+   Piedmont $13 today (Measure GG → $17.50 from 01/07/2027, unofficial result). Oakland Measure FF: foreclosure only, rates unchanged.
+   Measure E $2.3M threshold: title companies (07/2025); city page still says $2M → UNVERIFIED official.
+   change2027: key for the note shown under the result. */
+const CITIES=[
+  {id:'sj', n:'San Jose',      c:'SC', per1000:[[Infinity,3.30]], split:0.5, extra:[[2300000,0.0075],[5000000,0.01],[10000000,0.015]]},
+  {id:'sc', n:'Santa Clara',   c:'SC', per1000:[]},
+  {id:'sv', n:'Sunnyvale',     c:'SC', per1000:[]},
+  {id:'mv', n:'Mountain View', c:'SC', per1000:[[6000000,3.30],[Infinity,15]], split:0.5},
+  {id:'pa', n:'Palo Alto',     c:'SC', per1000:[[Infinity,3.30]], split:0.5},
+  {id:'mp', n:'Milpitas',      c:'SC', per1000:[]},
+  {id:'cu', n:'Cupertino',     c:'SC', per1000:[]},
+  {id:'cb', n:'Campbell',      c:'SC', per1000:[]},
+  {id:'lg', n:'Los Gatos',     c:'SC', per1000:[]},
+  {id:'sa', n:'Saratoga',      c:'SC', per1000:[]},
+  {id:'mh', n:'Morgan Hill',   c:'SC', per1000:[]},
+  {id:'gi', n:'Gilroy',        c:'SC', per1000:[]},
+  {id:'osc',n:'Other Santa Clara County', c:'SC', per1000:[]},
+  {id:'oak',n:'Oakland',       c:'AL', per1000:[[300000,10],[2000000,15],[5000000,17.5],[Infinity,25]], split:0.5},
+  {id:'brk',n:'Berkeley',      c:'AL', per1000:[[1700000,15],[Infinity,25]], split:0.5, change2027:'brk'},
+  {id:'eme',n:'Emeryville',    c:'AL', per1000:[[999999.99,12],[2000000,15],[Infinity,25]], split:0.5},
+  {id:'alb',n:'Albany',        c:'AL', per1000:[[Infinity,15]], split:0.5, change2027:'alb'},
+  {id:'pie',n:'Piedmont',      c:'AL', per1000:[[Infinity,13]], split:0.5, change2027:'pie'},
+  {id:'fre',n:'Fremont',       c:'AL', per1000:[]},
+  {id:'hay',n:'Hayward',       c:'AL', per1000:[[Infinity,8.50]], split:0.5},
+  {id:'sl', n:'San Leandro',   c:'AL', per1000:[[Infinity,11]], split:0.5},
+  {id:'ala',n:'Alameda',       c:'AL', per1000:[[Infinity,12]], split:0.5},
+  {id:'uc', n:'Union City',    c:'AL', per1000:[]},
+  {id:'nw', n:'Newark',        c:'AL', per1000:[]},
+  {id:'pl', n:'Pleasanton',    c:'AL', per1000:[]},
+  {id:'lv', n:'Livermore',     c:'AL', per1000:[]},
+  {id:'du', n:'Dublin',        c:'AL', per1000:[]},
+  {id:'cv', n:'Castro Valley / unincorporated Alameda', c:'AL', per1000:[]}
+];
+function cityTax(city,price){
+  let rate=0;
+  for(const [max,r] of city.per1000){ if(price<=max){ rate=r; break; } }
+  const base=price*rate/1000;
+  let xr=0; if(city.extra) for(const [min,r] of city.extra){ if(price>min) xr=r; }
+  return {base, rate, extra:price*xr, xr, split:city.split||0};
+}
+function interp(tbl,x){
+  if(x<=0) return 0;
+  if(x<=tbl[0][0]) return tbl[0][1];
+  for(let i=1;i<tbl.length;i++){ const [x1,y1]=tbl[i]; if(x<=x1){ const [x0,y0]=tbl[i-1]; return y0+(y1-y0)*(x-x0)/(x1-x0); } }
+  const [xa,ya]=tbl[tbl.length-2],[xb,yb]=tbl[tbl.length-1]; return yb+(yb-ya)*(x-xb)/(xb-xa);
+}
+/* Line items: id (also the #hash), g = group, sides = who sees it ('b' buyer view, 's' seller view). */
+const GROUPS=['lender','title-escrow','gov-fees','prepaids','other'];
+const ITEMS=[
+  {id:'origination',g:'lender',sides:'b'},{id:'points',g:'lender',sides:'b'},{id:'appraisal',g:'lender',sides:'b'},{id:'credit-report',g:'lender',sides:'b'},
+  {id:'escrow-fee',g:'title-escrow',sides:'bs'},{id:'escrow-misc',g:'title-escrow',sides:'bs'},{id:'lenders-title',g:'title-escrow',sides:'b'},{id:'owners-title',g:'title-escrow',sides:'bs'},{id:'recording',g:'title-escrow',sides:'b'},
+  {id:'transfer-tax',g:'gov-fees',sides:'bs'},{id:'city-transfer-tax',g:'gov-fees',sides:'bs'},{id:'measure-e',g:'gov-fees',sides:'bs'},
+  {id:'prepaid-interest',g:'prepaids',sides:'b'},{id:'insurance',g:'prepaids',sides:'b'},{id:'impound',g:'prepaids',sides:'b'},
+  {id:'commission',g:'other',sides:'s'},{id:'inspection',g:'other',sides:'b'},{id:'nhd',g:'other',sides:'bs'},{id:'hoa-fees',g:'other',sides:'bs'},{id:'home-warranty',g:'other',sides:'bs'},{id:'pest',g:'other',sides:'bs'}
+];
+/* Pure calc. inp = {side:'b'|'s', price, cityId, loan, month 1–12, cl, cb}
+   Each line: b = buyer pays, s = seller pays, payer code, na = no dollar estimate (contract decides). */
+function compute(inp){
+  const price=Math.max(0,inp.price||0), side=inp.side==='s'?'s':'b';
+  const city=CITIES.find(c=>c.id===inp.cityId)||CITIES[0], co=city.c;
+  const loan=side==='b'?Math.min(price,Math.max(0,inp.loan||0)):0, hasLoan=loan>0;
+  const jumbo=hasLoan&&loan>CFG.CONF_LIMIT, lt=jumbo?'jumbo':'conv';
+  const month=Math.min(12,Math.max(1,Math.round(inp.month||1)));
+  const L={}; const put=(id,b,s,payer,x)=>{L[id]=Object.assign({b:b||0,s:s||0,payer,show:true},x||{});};
+  put('origination',hasLoan?CFG.LENDER_FEES[lt]:0,0,'b',{show:hasLoan});
+  put('points',0,0,'b',{pt:loan*0.01,show:hasLoan});
+  put('appraisal',hasLoan?CFG.APPRAISAL[lt]:0,0,'b',{show:hasLoan});
+  put('credit-report',hasLoan?CFG.CREDIT:0,0,'b',{show:hasLoan});
+  const escFull=price>0?CFG.ESCROW_BASE+CFG.ESCROW_PER1000*price/1000:0, ep=CFG.ESCROW_PAYER[co];
+  put('escrow-fee',ep==='b'?escFull:0,ep==='s'?escFull:0,ep,{full:escFull,co:true});
+  put('escrow-misc',price>0?CFG.ESCROW_BUYER_MISC[hasLoan?'loan':'cash']:0,price>0?CFG.SELLER_MISC+(co==='AL'?CFG.ESCROW_SELLER_MISC_AL:0):0,'own');
+  put('lenders-title',hasLoan?interp(CFG.LOAN_RATES,loan):0,0,'b',{show:hasLoan});
+  const opol=interp(CFG.HO_RATES,price), op=CFG.OWNER_PAYER[co];
+  put('owners-title',op==='b'?opol:0,op==='s'?opol:0,op,{full:opol,co:true});
+  put('recording',price>0?CFG.RECORDING[hasLoan?'loan':'cash']:0,0,'b');
+  const county=price>0?CFG.COUNTY_PER500*Math.ceil(price/500):0;
+  put('transfer-tax',0,county,'s',{full:county});
+  const ct=cityTax(city,price);
+  put('city-transfer-tax',ct.base*ct.split,ct.base*(1-ct.split),'split',{full:ct.base,rate:ct.rate,show:city.per1000.length>0});
+  put('measure-e',0,ct.extra,'sx',{full:ct.extra,xr:ct.xr,show:!!city.extra});
+  const daily=hasLoan?loan*CFG.RATE/100/365:0;
+  put('prepaid-interest',daily*CFG.INT_DAYS,0,'b',{daily,show:hasLoan});
+  const insY=price*CFG.INS_RATE;
+  put('insurance',insY,0,'b');
+  const tm=CFG.IMPOUND_TAX_MONTHS[month];
+  const imp=hasLoan?price*CFG.TAX_RATE/12*tm+insY/12*CFG.INS_IMPOUND_MONTHS:0;
+  put('impound',imp,0,'b',{tm,show:hasLoan});
+  put('commission',0,price*(Math.max(0,inp.cl||0)+Math.max(0,inp.cb||0))/100,'s');
+  put('inspection',price>0?CFG.INSPECTION:0,0,'b');
+  put('nhd',0,price>0?CFG.NHD:0,'k',{kS:true});
+  put('hoa-fees',0,0,'k',{na:true}); put('home-warranty',0,0,'k',{na:true}); put('pest',0,0,'k',{na:true});
+  const gsum={}; GROUPS.forEach(g=>gsum[g]=0);
+  let total=0, prepaids=0;
+  ITEMS.forEach(it=>{ const l=L[it.id]; l.vis=it.sides.includes(side)&&l.show; if(!l.vis) return; const v=l[side]; gsum[it.g]+=v; total+=v; if(it.g==='prepaids') prepaids+=v; });
+  const down=side==='b'?price-loan:0;
+  return {price,side,city,co,loan,hasLoan,jumbo,month,L,gsum,total,prepaids,fees:total-prepaids,down,cashToClose:down+total,pct:price>0?total/price*100:0};
+}
+if(typeof module!=='undefined'){module.exports={compute,CFG,CITIES};}
+/*CALC-END*/
+const UPDATED='05/11/2026';
+</script>
+<script>
+const LINKS={
+ cc_en:'<ul class="mhl"><li class="here"><a href="/t230/"><b>T230</b> What\'s in closing costs? (start here)</a><span>Every line at closing, who pays it in your county, and what it means. You are here.</span></li><li><a href="/t231/"><b>T231</b> Read your Loan Estimate, line by line</a><span>A sample 3-page Loan Estimate with your numbers. Tap a line to see what it means and the dates that matter.</span></li><li><a href="/t232/"><b>T232</b> Closing Disclosure: read it and check it against your LE</a><span>Your 3-day deadline, which fees may go up and by how much, and what the lender must refund.</span></li><li><a href="/t233/"><b>T233</b> Every tax you face when buying</a><span>Transfer tax, first-year and supplemental property tax, exemptions, and what you may deduct.</span></li><li><a href="/t234/"><b>T234</b> Every tax you face when selling</a><span>Transfer tax, gain tax after the $250K / $500K exclusion, Form 593 and FIRPTA withholding.</span></li><li><a href="/t03/"><b>T03</b> Buyer closing costs</a><span>Total cash to bring to escrow, minus your deposit.</span></li><li><a href="/t21/"><b>T21</b> Seller net proceeds</a><span>Net after payoff, commission and city transfer tax.</span></li><li><a href="/t12/"><b>T12</b> Property tax after you buy</a><span>Supplemental bill(s), regular bill, due dates and a 5-year Prop 13 projection.</span></li><li><a href="/t22/"><b>T22</b> Tax on home sale gain</a><span>Your gain, the $250K / $500K exclusion, federal + CA tax.</span></li><li><a href="/t64/"><b>T64</b> Tax &amp; HOA prorations at closing</a><span>Who owes whom for property tax and HOA on closing day, split by day the California escrow way.</span></li><li><a href="/t63/"><b>T63</b> Pre-closing checklist</a><span>The final 10 days, with wire fraud warnings.</span></li></ul>',
+ cc_vi:'<ul class="mhl"><li class="here"><a href="/t230/"><b>T230</b> Closing costs gồm những gì? (bắt đầu ở đây)</a><span>Từng khoản lúc close, ở county mình ai thường trả, và nó là gì. Bạn đang ở đây.</span></li><li><a href="/t231/"><b>T231</b> Đọc Loan Estimate từng dòng</a><span>Loan Estimate mẫu 3 trang điền số của mình. Bấm từng dòng để hiểu, kèm các mốc ngày phải nhớ.</span></li><li><a href="/t232/"><b>T232</b> Closing Disclosure: đọc và so với Loan Estimate</a><span>Hạn chót 3 ngày, phí nào được tăng và tăng tới đâu, lender phải hoàn lại bao nhiêu.</span></li><li><a href="/t233/"><b>T233</b> Mọi loại thuế khi mua nhà</a><span>Transfer tax, thuế nhà năm đầu và supplemental, exemption, và những gì được khấu trừ.</span></li><li><a href="/t234/"><b>T234</b> Mọi loại thuế khi bán nhà</a><span>Transfer tax, thuế lời sau khi miễn $250K / $500K, Form 593 và FIRPTA giữ lại.</span></li><li><a href="/t03/"><b>T03</b> Closing costs khi mua</a><span>Tổng tiền phải mang tới escrow, đã trừ tiền cọc.</span></li><li><a href="/t21/"><b>T21</b> Bán xong cầm về bao nhiêu</a><span>Trừ nợ, commission, transfer tax theo từng city.</span></li><li><a href="/t12/"><b>T12</b> Thuế nhà sau khi mua</a><span>Bill supplemental, bill thuế thường năm, hạn đóng và thuế 5 năm tới theo Prop 13.</span></li><li><a href="/t22/"><b>T22</b> Thuế lời khi bán nhà</a><span>Lời bao nhiêu, trừ miễn $250K / $500K, thuế federal + CA.</span></li><li><a href="/t64/"><b>T64</b> Thuế &amp; HOA chia ngày close</a><span>Ngày close ai trả ai tiền thuế nhà và HOA, chia theo ngày như escrow ở California.</span></li><li><a href="/t63/"><b>T63</b> Checklist trước ngày close</a><span>10 ngày cuối trước close, có cảnh báo lừa wire.</span></li></ul>'
+};
+/* Each item: [name, kid layer, adult layer, tip layer] */
+const TX={
+en:{
+ 'origination':['Origination / underwriting / processing','The bank is a shop that rents you money. This is the shop\'s charge for doing your paperwork.','The lender\'s own fees: origination, application, underwriting, processing. Buyer pays. It sits in Box A of the Loan Estimate. Common Bay Area ranges: origination 0.5–1% of the loan, underwriting/processing $500–$1,500 (estimates). This tool uses $1,800, or $2,200 for a jumbo loan (estimate).','<b>Shop this one.</b> Get at least 3 Loan Estimates and compare Box A. Box A can\'t go up later (zero tolerance). Ask: "Which fees in Box A can you waive?"'],
+ 'points':['Discount points (optional)','You pay extra today so every month costs less. Like buying a year bus pass instead of paying each ride.','1 point = 1% of the loan. It buys a lower rate. Optional. Buyer pays, though a seller credit can cover it. This list shows $0 because many buyers pay none.','Points only pay off if you keep the loan long enough. Rate not locked yet? Points can still change. Ask for two Loan Estimates side by side: 0 points and 1 point. Run it in <a href="/t38/">T38</a>.'],
+ 'appraisal':['Appraisal','Before the bank lends money for a toy, someone checks what the toy is really worth.','A licensed appraiser says what the home is worth. The lender orders it, the buyer pays, often before closing. Range $500–$900, Bay Area on the high end (estimate). This tool: $800, jumbo $1,200 (estimate).','You can\'t shop for this one (Box B). Ask for a copy of the report. Comes in low? Check your appraisal contingency date right away.'],
+ 'credit-report':['Credit report','The bank peeks at your "report card" for paying bills.','Buyer pays. Usually $25–$75 (estimate); this tool uses $100 to allow for more than one pull (estimate). It is the only fee a lender may charge before you get the Loan Estimate and say you want to go ahead (12 CFR 1026.19(e)(2)).','Any other fee before you have the Loan Estimate is a red flag. Since 05/03/2026 credit bureaus can\'t sell your "trigger lead" to other lenders without your OK, so fewer spam calls after the pull.'],
+ 'escrow-fee':['Escrow fee','Escrow is the friend who holds both kids\' stuff and swaps it only when both are ready.','A neutral company holds the money and papers until everything is done. Who usually pays: <b>Santa Clara County = seller. Alameda County = buyer</b> (Chicago Title 06/2026, FNF 01/2026). Range $1,000–$2,500, about 0.2–0.5% of price (estimate). This tool: $250 + $2 per $1,000 (estimate).','Many people think escrow is split 50/50 in Santa Clara. Not by today\'s custom. The purchase contract decides, so it can be negotiated. Ask the escrow office for a written quote.'],
+ 'escrow-misc':['Escrow small fees (notary, courier, wire, loan tie-in)','Little stamp and delivery charges, like shipping fees when you order online.','Notary, courier, wire, loan tie-in (escrow\'s work for your lender). Sellers also pay reconveyance and the payoff demand. Each side pays its own. This tool: buyer $450 with a loan, $250 cash; seller $250, plus $300 in Alameda County (all estimates).','<b>Wire fraud is real.</b> Never wire using instructions that came by email. Call escrow at a number you looked up yourself. See <a href="/t63/">T63</a>.'],
+ 'lenders-title':["Lender's title policy",'Insurance for the bank, in case someone shows up later and says the house is theirs.',"Required by the lender. Buyer pays, in both counties (custom). Range $400–$800 (estimate). This tool reads a WFG California rate table (2/2023) for your loan amount (estimate).","In California the Loan Estimate often splits owner's and lender's title differently from the title bill (the CFPB formula). Compare the total of both lines, not each one."],
+ 'owners-title':["Owner's title policy",'Same kind of insurance, but it protects you, the new owner.',"Protects the owner if a title problem from the past shows up. Who usually pays: <b>Santa Clara County = seller. Alameda County = buyer</b> (Chicago Title 06/2026). This tool reads the WFG homeowner's rate table (2/2023), e.g. $1M ≈ $2,310 (estimate).","The Loan Estimate labels it \"optional\" because the form must. Ask your agent and escrow before skipping it."],
+ 'recording':['Recording fees','Writing your name in the county\'s big book, so everyone knows the house is yours.','The county recorder charges to record the grant deed and the deed of trust. Buyer pays. Range $100–$200 (estimate). Santa Clara\'s first page totals $102, then $3 per page. This tool: $200 with a loan, $100 cash (estimate).','Recording is in the 10% bucket: on the Closing Disclosure it may rise, but not more than 10% together with other lender-list services. Check in <a href="/t232/">T232</a>.'],
+ 'transfer-tax':['County transfer tax','A small toll the county charges when a house changes hands.','Documentary transfer tax: $1.10 per $1,000 of price ($0.55 per $500, rounded up). In both Santa Clara and Alameda County the <b>seller</b> usually pays (FNF, Old Republic, Chicago Title).','If you\'re buying and see county transfer tax on your side, ask why. It shows in Box E of the Loan Estimate.'],
+ 'city-transfer-tax':['City transfer tax','Some cities add their own toll on top of the county\'s.','Per $1,000 of the whole price: San Jose, Mountain View, Palo Alto $3.30 · Oakland $10–$25 · Berkeley $15/$25 · Emeryville $12/$15/$25 · Albany $15 · Piedmont $13 · Alameda $12 · San Leandro $11 · Hayward $8.50. Most other cities: none. Usually <b>split 50/50</b> buyer/seller (custom in Alameda County varies, ask escrow).','The rate hits the whole price, not just the part above a tier. In Berkeley, $1.70M pays $15 per $1,000; $1.71M pays $25 on everything — about $17,000 more in tax. Price matters right below a tier.'],
+ 'measure-e':['San Jose Measure E','In San Jose, very pricey houses pay an extra, bigger toll.','Extra city tax on the whole price: 0.75% above $2.3M, 1% above $5M, 1.5% above $10M. The $2.3M line comes from title company guides (07/2025); the city\'s page still says $2M, so confirm with escrow. No printed custom on who pays; this tool puts it on the seller.','At $2.3M+ this is $17,250 or more. Write who pays it into the contract. Pricing just under $2.3M can matter.'],
+ 'prepaid-interest':['Prepaid (daily) interest','Rent on the borrowed money for the days left in your closing month.','Loan × rate ÷ 365 × days from funding to month-end. This tool assumes 7.24% and 15 days (estimate). It sits in Box F and has no limit on how much it can change.','It\'s interest you owe anyway, not a junk fee. Closing near month-end makes this line small, but your other costs don\'t change.'],
+ 'insurance':['Homeowner\'s insurance (12 months)','You pay for a whole year of the house\'s safety net before you get the keys.','Lenders usually want the first year paid at closing (custom, estimate). This tool uses 0.30% of price per year (estimate). The California average is about $1,413/yr (LendingTree 2026), so a single-family home may cost less and a condo (HO-6) much less. FAIR Plan rates rose 29.1% on average from 15/10/2026.','This is a placeholder. Get real quotes in the first week. Some Bay Area homes can only get FAIR Plan. Ask the agent about fire zone on the NHD.'],
+ 'impound':['Impound (initial escrow account)','A piggy bank the lender keeps for you so tax and insurance get paid on time.','Box G on the Loan Estimate. The number of months of property tax depends on your closing month ({tm} months if you close in {mon}, per a Stewart Title California schedule), plus about 2 months of insurance. Tax here is ~1.25% of price per year (estimate). The cushion can\'t be more than 1/6 of the yearly bills (12 CFR 1024.17).','It\'s your money, not a fee. It sits in your account at the lender. The impound does <b>not</b> pay the supplemental tax bill that comes after you buy. See <a href="/t12/">T12</a>.'],
+ 'commission':['Real estate commission','Paying the team that helped you sell, like paying a coach.','Usually the biggest selling cost. Fully negotiable. Since the NAR settlement (17/08/2024), what the seller pays the buyer\'s agent is no longer posted on the MLS: the seller may pay it, not pay it, or give the buyer a credit. The 2.5% + 2.5% default is only a sample.','Ask what\'s included: photos, staging, pre-sale inspections. Run your real net in <a href="/t21/">T21</a>.'],
+ 'inspection':['Home inspection','A doctor\'s checkup for the house before you buy it.','Buyer orders and pays, often at the inspection itself, outside escrow. This tool: $600 (estimate).','Paid before closing, but it\'s still real money. Skipping it to win an offer is a big bet. Read the seller\'s reports too.'],
+ 'nhd':['Natural Hazard Disclosure (NHD)','A report that says if the house sits near earthquake faults, floods or fire zones.','The seller must give it. Who pays for the report: the contract decides (not in the 2026 title guides). This tool shows $100 on the seller side, like T21 (estimate).','Read it before insurance quotes: fire or flood zones change the price of insurance.'],
+ 'hoa-fees':['HOA transfer & document fees','If the house belongs to a club, the club charges to hand over its rule book and change the member name.','Condos, townhomes, some PUDs. Transfer fee and document fee from the HOA or its manager. Who pays: set in the purchase contract. No fixed amount here: ask the HOA.','Ask for the HOA documents early and look for special assessments and unpaid dues. Prorated dues: <a href="/t64/">T64</a>.'],
+ 'home-warranty':['Home warranty (optional)','A repair plan for the appliances for the first year.','Optional. Who pays: the contract decides. The lender doesn\'t require it, so it has no limit on the Loan Estimate. No fixed amount here.','Read what\'s not covered before counting on it.'],
+ 'pest':['Termite / pest report & repairs','A bug doctor checks the wood.','A report on termites and wood damage, and sometimes repairs. Who pays: the contract decides. No fixed amount here.','Get the report early. The repair bid often turns into a price or credit negotiation.']
+},
+vi:{
+ 'origination':['Phí origination / underwriting / processing','Ngân hàng giống tiệm cho thuê tiền. Đây là tiền công tiệm làm giấy tờ cho mình.','Phí của chính lender: origination, application, underwriting, processing. Người mua trả. Nằm ở mục A trên Loan Estimate. Ở Bắc Cali thường: origination 0.5–1% tiền vay, underwriting/processing $500–$1,500 (ước tính). Tool dùng $1,800, loan jumbo $2,200 (ước tính).','<b>Khoản này nên shop.</b> Xin ít nhất 3 Loan Estimate rồi so mục A. Mục A không được tăng về sau (zero tolerance). Hỏi thẳng: "Phí nào trong mục A anh bỏ được?"'],
+ 'points':['Discount points (không bắt buộc)','Trả thêm hôm nay để mỗi tháng rẻ hơn. Giống mua vé tháng xe buýt thay vì trả từng lượt.','1 point = 1% tiền vay, mua lãi suất thấp hơn. Không bắt buộc. Người mua trả, seller credit có thể trả giùm. Ở đây để $0 vì nhiều người không mua point.','Point chỉ có lời khi giữ loan đủ lâu. Chưa lock rate thì point còn đổi. Xin 2 Loan Estimate đặt cạnh nhau: 0 point và 1 point. Tính bằng <a href="/t38/">T38</a>.'],
+ 'appraisal':['Appraisal (thẩm định giá)','Trước khi ngân hàng cho mượn tiền mua món đồ, có người tới coi món đồ thật sự đáng bao nhiêu.','Người thẩm định có bằng nói nhà đáng bao nhiêu. Lender đặt, người mua trả, thường trả trước ngày close. Thường $500–$900, Bay Area mắc hơn (ước tính). Tool: $800, jumbo $1,200 (ước tính).','Khoản này không shop được (mục B). Xin bản report. Ra thấp thì coi ngay hạn appraisal contingency.'],
+ 'credit-report':['Credit report','Ngân hàng coi "học bạ" trả nợ của mình.','Người mua trả. Thường $25–$75 (ước tính); tool để $100 vì có khi kéo hơn 1 lần (ước tính). Đây là phí duy nhất lender được thu trước khi mình nhận Loan Estimate và báo muốn đi tiếp (12 CFR 1026.19(e)(2)).','Chưa có Loan Estimate mà đòi phí khác là dấu hiệu xấu. Từ 05/03/2026 credit bureau không được bán "trigger lead" của mình cho lender khác nếu mình không đồng ý, nên kéo credit xong ít bị gọi làm phiền.'],
+ 'escrow-fee':['Phí escrow','Escrow giống người bạn giữ đồ cho hai đứa, đủ cả hai bên mới đổi tay.','Công ty trung gian giữ tiền và giấy tờ tới khi xong hết. Ai thường trả: <b>Santa Clara County = người bán. Alameda County = người mua</b> (Chicago Title 06/2026, FNF 01/2026). Thường $1,000–$2,500, khoảng 0.2–0.5% giá nhà (ước tính). Tool: $250 + $2 mỗi $1,000 (ước tính).','Nhiều người tưởng ở Santa Clara chia đôi escrow. Theo thông lệ bây giờ thì không. Hợp đồng mua bán mới là chỗ quyết, nên thương lượng được. Xin escrow báo giá bằng giấy.'],
+ 'escrow-misc':['Phí lặt vặt escrow (notary, courier, wire, loan tie-in)','Mấy phí con con như tiền tem, tiền ship khi mua đồ online.','Notary, courier, wire, loan tie-in (escrow làm giấy cho lender của mình). Người bán còn trả reconveyance và payoff demand. Bên nào trả phần bên đó. Tool: người mua $450 nếu vay, $250 nếu cash; người bán $250, ở Alameda County thêm $300 (đều ước tính).','<b>Lừa wire là có thật.</b> Đừng bao giờ chuyển tiền theo hướng dẫn gửi qua email. Gọi escrow bằng số mình tự tra. Coi <a href="/t63/">T63</a>.'],
+ 'lenders-title':["Lender's title policy",'Bảo hiểm cho ngân hàng, lỡ sau này có người nhảy ra nói nhà là của họ.','Lender bắt mua. Người mua trả, ở cả 2 county (thông lệ). Thường $400–$800 (ước tính). Tool lấy theo bảng giá WFG California (2/2023) theo số tiền vay (ước tính).',"Ở California, Loan Estimate hay chia owner's và lender's title khác với hóa đơn title (do công thức của CFPB). So tổng 2 dòng, đừng so từng dòng."],
+ 'owners-title':["Owner's title policy",'Cũng loại bảo hiểm đó, nhưng bảo vệ mình, chủ mới.','Bảo vệ chủ nhà nếu lòi ra chuyện giấy tờ nhà từ trước. Ai thường trả: <b>Santa Clara County = người bán. Alameda County = người mua</b> (Chicago Title 06/2026). Tool lấy theo bảng WFG cho chủ nhà (2/2023), ví dụ nhà $1M khoảng $2,310 (ước tính).','Loan Estimate ghi "optional" vì mẫu form bắt ghi vậy. Hỏi agent và escrow trước khi tính bỏ.'],
+ 'recording':['Phí recording','Ghi tên mình vô cuốn sổ lớn của county, ai coi cũng biết nhà là của mình.','County thu tiền ghi grant deed và deed of trust vào sổ. Người mua trả. Thường $100–$200 (ước tính). Santa Clara trang đầu tổng $102, mỗi trang sau $3. Tool: $200 nếu vay, $100 nếu cash (ước tính).','Recording nằm trong nhóm 10%: lên Closing Disclosure được tăng, nhưng cộng với các dịch vụ chọn từ danh sách lender không quá 10%. Kiểm bằng <a href="/t232/">T232</a>.'],
+ 'transfer-tax':['Transfer tax của county','Tiền "qua trạm" county thu khi nhà đổi chủ.','Documentary transfer tax: $1.10 mỗi $1,000 giá nhà ($0.55 mỗi $500, làm tròn lên). Ở cả Santa Clara và Alameda County, <b>người bán</b> thường trả (FNF, Old Republic, Chicago Title).','Đi mua mà thấy transfer tax county nằm bên mình thì hỏi tại sao. Trên Loan Estimate nó nằm ở mục E.'],
+ 'city-transfer-tax':['Transfer tax của city','Vài city thu thêm "trạm" riêng, chồng lên của county.','Tính mỗi $1,000 trên nguyên giá: San Jose, Mountain View, Palo Alto $3.30 · Oakland $10–$25 · Berkeley $15/$25 · Emeryville $12/$15/$25 · Albany $15 · Piedmont $13 · Alameda $12 · San Leandro $11 · Hayward $8.50. Phần lớn city khác: không có. Thường <b>chia đôi</b> người mua/người bán (ở Alameda County mỗi nơi một kiểu, hỏi escrow).','Thuế suất áp cho nguyên giá, không phải chỉ phần vượt mức. Ở Berkeley, $1.70M trả $15 mỗi $1,000; $1.71M trả $25 trên toàn bộ, thuế tăng khoảng $17,000. Ra giá sát dưới mức là có lý do.'],
+ 'measure-e':['Measure E của San Jose','Ở San Jose, nhà mắc lắm thì đóng thêm một "trạm" lớn hơn.','Thuế city thêm, tính trên nguyên giá: trên $2.3M là 0.75%, trên $5M là 1%, trên $10M là 1.5%. Mốc $2.3M lấy theo tài liệu các công ty title (07/2025); trang của city vẫn ghi $2M, nên hỏi escrow cho chắc. Chưa có thông lệ in sẵn ai trả; tool để người bán trả.','Từ $2.3M trở lên là ít nhất $17,250. Ghi rõ ai trả vào hợp đồng. Ra giá sát dưới $2.3M có khi đáng.'],
+ 'prepaid-interest':['Tiền lời trả trước (theo ngày)','Tiền thuê tiền cho mấy ngày còn lại của tháng close.','Tiền vay × lãi suất ÷ 365 × số ngày từ lúc fund tới cuối tháng. Tool giả sử 7.24% và 15 ngày (ước tính). Nằm ở mục F, không có giới hạn thay đổi.','Đây là tiền lời đằng nào cũng trả, không phải phí vô lý. Close gần cuối tháng thì dòng này nhỏ, mấy khoản khác vẫn y vậy.'],
+ 'insurance':['Bảo hiểm nhà (12 tháng)','Trả trước nguyên năm tiền "lưới an toàn" cho căn nhà rồi mới lấy chìa khóa.','Lender thường muốn đóng năm đầu lúc close (thông lệ, ước tính). Tool dùng 0.30% giá nhà mỗi năm (ước tính). Trung bình California khoảng $1,413/năm (LendingTree 2026), nên nhà riêng có thể rẻ hơn, condo (HO-6) rẻ hơn nhiều. FAIR Plan tăng trung bình 29.1% từ 15/10/2026.','Số này chỉ để tạm. Tuần đầu đi xin giá thật. Có nhà ở Bay Area chỉ mua được FAIR Plan. Coi NHD có nằm vùng cháy không.'],
+ 'impound':['Impound (tài khoản escrow ban đầu)','Con heo đất lender giữ giùm, tới hạn thuế và bảo hiểm là có tiền đóng.','Mục G trên Loan Estimate. Số tháng thuế nhà phụ thuộc tháng close ({tm} tháng nếu close tháng {mon}, theo bảng của Stewart Title California), cộng khoảng 2 tháng bảo hiểm. Thuế ở đây ~1.25% giá nhà mỗi năm (ước tính). Phần dư phòng không được quá 1/6 tổng bill một năm (12 CFR 1024.17).','Đây là tiền của mình, không phải phí. Nó nằm trong tài khoản của mình ở lender. Impound <b>không</b> trả bill supplemental tới sau khi mua. Coi <a href="/t12/">T12</a>.'],
+ 'commission':['Commission','Trả công cho đội giúp mình bán, giống trả tiền huấn luyện viên.','Thường là khoản lớn nhất khi bán. Thương lượng được hết. Sau vụ NAR settlement (17/08/2024), phần người bán trả agent bên mua không còn ghi sẵn trên MLS: người bán có thể trả, không trả, hoặc cho người mua credit. Mặc định 2.5% + 2.5% chỉ là số mẫu.','Hỏi gồm những gì: hình, staging, inspection trước khi bán. Tính tiền cầm về thật ở <a href="/t21/">T21</a>.'],
+ 'inspection':['Home inspection','Đưa căn nhà đi khám bác sĩ trước khi mua.','Người mua đặt và trả, thường trả ngay hôm inspection, ngoài escrow. Tool: $600 (ước tính).','Trả trước ngày close nhưng vẫn là tiền thật. Bỏ inspection để thắng offer là đánh cược lớn. Đọc luôn report của người bán.'],
+ 'nhd':['Natural Hazard Disclosure (NHD)','Tờ báo cho biết nhà có gần đường nứt động đất, vùng lụt hay vùng cháy không.','Người bán phải đưa. Ai trả tiền report: hợp đồng quyết (bảng title 2026 không ghi). Tool để $100 bên người bán, giống T21 (ước tính).','Đọc trước khi xin giá bảo hiểm: vùng cháy, vùng lụt làm giá bảo hiểm khác hẳn.'],
+ 'hoa-fees':['Phí HOA transfer & giấy tờ','Nhà nằm trong một "câu lạc bộ" thì câu lạc bộ thu tiền giao cuốn nội quy và đổi tên thành viên.','Condo, townhome, vài PUD. Phí transfer và phí giấy tờ của HOA hoặc công ty quản lý. Ai trả: ghi trong hợp đồng mua bán. Không có số cố định ở đây, hỏi HOA.','Xin giấy tờ HOA sớm, coi có special assessment hay tiền HOA còn nợ không. Chia tiền HOA theo ngày: <a href="/t64/">T64</a>.'],
+ 'home-warranty':['Home warranty (không bắt buộc)','Gói sửa đồ trong nhà cho năm đầu.','Không bắt buộc. Ai trả: hợp đồng quyết. Lender không đòi, nên trên Loan Estimate không có giới hạn. Không có số cố định ở đây.','Đọc phần không bảo hành trước khi trông cậy vào nó.'],
+ 'pest':['Report termite / pest & tiền sửa','Bác sĩ côn trùng tới khám gỗ.','Report về mối mọt, gỗ hư, có khi kèm tiền sửa. Ai trả: hợp đồng quyết. Không có số cố định ở đây.','Lấy report sớm. Giá sửa thường thành chuyện trả giá hoặc xin credit.']
+}};
+const I18N={
+ en:{title:"What's in closing costs? (start here)",sub:'Every line you\'ll see at closing, who usually pays it in your county, about how much, and what it means. Tap any line to open it.',
+  l_side:'I am',buying:'Buying',selling:'Selling',l_price:'Home price',l_city:'City',l_loan:'Loan amount ',l_loan_s:'(0 = cash)',l_month:'Closing month',l_cl:'Listing agent',l_cb:"Buyer's agent ",l_cb_s:'(0 if not paying)',
+  months:['January','February','March','April','May','June','July','August','September','October','November','December'],
+  k_buy:'Your closing costs (estimate)',k_sell:'Your selling costs (estimate)',of_price:'{p}% of price',
+  s_fees:'Fees',s_pre:'Prepaids & impound',s_comm:'Commission',s_other:'Everything else',
+  ctc_buy:'<b>Closing costs ≠ cash to close.</b> Closing costs are the fees plus prepaids (the Loan Estimate\'s "Total Closing Costs"). Cash to close = down payment {d} + closing costs {c} = <b>{t}</b>, then minus your deposit (EMD), seller credits, and plus or minus tax/HOA prorations.',
+  ctc_sell:'<b>Selling costs come out of your sale price.</b> You bring no money unless the costs plus your loan payoff are more than the price. Before your loan payoff you keep about <b>{t}</b>. Real net with payoff: <a href="/t21/">T21</a>.',
+  g:{'lender':'Lender','title-escrow':'Title & escrow','gov-fees':'Taxes & government fees','prepaids':'Prepaids & impound','other':'Other'},
+  kidL:'Explained to a 10-year-old',adultL:'The real version',tipL:'Tip / where people get burned',
+  pay:{b:'Buyer',s:'Seller',split:'Split 50/50 buyer / seller',own:'Each side pays its own',sx:'Seller (tool default, no set custom)',k:'Set by the contract'},
+  who:'Usually paid by: ',inCo:{SC:' in Santa Clara County',AL:' in Alameda County'},
+  other_side:' · {a} on the {w} side',w_b:'buyer\'s',w_s:'seller\'s',na:'by contract',ask:'ask',
+  sub_points:'1 point on your loan = {a}',sub_int:'{n} days × {a}/day at {r}% (estimate)',sub_ins:'12 months at 0.30% of price (estimate)',sub_imp:'{tm} mo tax + 2 mo insurance · close in {mon}',sub_rate:'{r} per $1,000 · total {a}',sub_county:'$1.10 per $1,000 · total {a}',sub_me:'{r}% of price',sub_me0:'$0 at this price (starts above $2.3M)',sub_comm:'{a}% + {b}% of price',sub_nhd:'tool assumes seller',
+  est:'estimate',exp_all:'Open every line',exp_none:'Close every line',
+  cash_note:'Cash purchase: no lender fees, no lender\'s title, no impound. Insurance is still smart from day one.',
+  jumbo_note:'Your loan is above the 2026 conforming limit ($1,249,125), so it\'s a jumbo loan. Jumbo lender fees and appraisal are usually higher (estimate used).',
+  n27:{brk:'<b>Berkeley:</b> today\'s rate is used ($15 up to $1.7M, $25 above). From 01/01/2027, Measure W changes it to about 1.5% / 2.5% / 3% / 3.5% by price tier. Confirm the 2027 tiers with escrow.',alb:'<b>Albany:</b> today\'s 1.5% is used. Measure S (passed 11/2026, not yet certified) changes it from 01/01/2027 to tiers of 1% to 3% by price, reset each year.',pie:'<b>Piedmont:</b> today\'s $13 per $1,000 is used. Measure GG (passed 11/2026, not yet certified) raises it to $17.50 from 01/07/2027.'},
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch video',
+  f_title:'Email this list to yourself',f_sub:'Ken will reply and help you check it against your Loan Estimate or escrow statement. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, text Ken the number below.",f_or:'Or text:',f_copy:'Copy',
+  est_note:'Every dollar here is an estimate. Your real numbers come from the lender\'s Loan Estimate and the escrow\'s estimated settlement statement. Who pays what is custom, not law: the purchase contract decides.',
+  ns_t:'Next steps',
+  ns_list:'<li>Buying: your full cash to bring, with deposit and loan type, in <a href="/t03/">T03</a>. Then read your Loan Estimate line by line in <a href="/t231/">T231</a>.</li><li>Selling: what you take home after the loan payoff in <a href="/t21/">T21</a>; tax on your gain in <a href="/t22/">T22</a>.</li><li>Tax and HOA split on closing day: <a href="/t64/">T64</a>. Property tax after you buy: <a href="/t12/">T12</a>. Over 55 and moving? <a href="/t25/">T25 Prop 19</a>.</li><li>Rates today: <a href="/t30/">T30</a>. Should you buy points: <a href="/t38/">T38</a>. The last 10 days before closing: <a href="/t63/">T63</a>.</li><li>A word you don\'t know? <a href="/t190/#closing-costs">T190 dictionary</a>.</li>',
+  myth:'<b>Many people get this wrong:</b> "closing costs are the money I bring to escrow." No. Cash to close = total closing costs + down payment − deposit − seller credits ± adjustments such as tax and HOA prorations. It\'s a separate table on the Loan Estimate ("Calculating Cash to Close", 12 CFR 1026.37(h)). And seller credits have limits: on a conventional loan 3%, 6% or 9% depending on your down payment, never more than your real closing costs, never as cash back (<a href="https://selling-guide.fanniemae.com/sel/b3-4.1-02/interested-party-contributions-ipcs" target="_blank" rel="noopener">Fannie Mae</a>).',
+  cc_t:'Every closing cost &amp; tax tool',
+  ft_read:'Read more:',ft_lib:'Library: closing costs line by line',ft_vid:'Kiến Thức Địa Ốc video',
+  ft_est:'General information only. Not tax, legal or lending advice. All amounts are estimates; customs on who pays are negotiable.',
+  ft_src:'Sources (looked up 05/11/2026):',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',back:'← All tools',
+  side_b:'Buying',side_s:'Selling',
+  sms:'Hi Ken, I used T230 ({side}): {city}, price {p}{loan}. Estimated closing costs {t}. Can you check it?',
+  sms_loan:', loan {l}',
+  subj:'Closing costs list — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\n{side} · {city} ({co})\nPrice: {p}\n{extra}\n\nEstimated closing costs: {t} ({pct}% of price)\n{ctc}\n\nLine by line (your side):\n{list}\n\nEstimates only. Not tax, legal or lending advice.\nSent from tool T230 tools.kenlamrealty.com/t230/'},
+ vi:{title:'Closing costs gồm những gì? (bắt đầu ở đây)',sub:'Từng khoản sẽ gặp lúc close, ở county mình ai thường trả, khoảng bao nhiêu, và nó là gì. Bấm vô dòng nào cũng mở ra coi được.',
+  l_side:'Tôi đang',buying:'Mua',selling:'Bán',l_price:'Giá nhà',l_city:'Thành phố',l_loan:'Số tiền vay ',l_loan_s:'(0 = mua cash)',l_month:'Tháng close',l_cl:'Agent bên bán',l_cb:'Agent bên mua ',l_cb_s:'(0 nếu không trả)',
+  months:['tháng 1','tháng 2','tháng 3','tháng 4','tháng 5','tháng 6','tháng 7','tháng 8','tháng 9','tháng 10','tháng 11','tháng 12'],
+  k_buy:'Closing costs của bạn (ước tính)',k_sell:'Chi phí bán của bạn (ước tính)',of_price:'{p}% giá nhà',
+  s_fees:'Các loại phí',s_pre:'Prepaids & impound',s_comm:'Commission',s_other:'Mọi thứ khác',
+  ctc_buy:'<b>Closing costs khác cash to close.</b> Closing costs là các loại phí cộng prepaids ("Total Closing Costs" trên Loan Estimate). Cash to close = tiền down {d} + closing costs {c} = <b>{t}</b>, rồi trừ tiền cọc (EMD), trừ seller credit, cộng hoặc trừ tiền chia thuế/HOA theo ngày.',
+  ctc_sell:'<b>Chi phí bán trừ thẳng vô tiền bán.</b> Mình không phải mang tiền tới, trừ khi chi phí cộng nợ còn lại nhiều hơn giá bán. Trước khi trả nợ nhà, mình giữ khoảng <b>{t}</b>. Tính tiền cầm về thật (có trừ nợ): <a href="/t21/">T21</a>.',
+  g:{'lender':'Lender','title-escrow':'Title & escrow','gov-fees':'Thuế & phí nhà nước','prepaids':'Prepaids & impound','other':'Khác'},
+  kidL:'Nói cho con nít 10 tuổi hiểu',adultL:'Nói thật cho người lớn',tipL:'Mẹo / chỗ hay bị hớ',
+  pay:{b:'Người mua',s:'Người bán',split:'Chia đôi người mua / người bán',own:'Bên nào trả phần bên đó',sx:'Người bán (tool tự để, chưa có thông lệ)',k:'Hợp đồng quyết'},
+  who:'Ai thường trả: ',inCo:{SC:' ở Santa Clara County',AL:' ở Alameda County'},
+  other_side:' · {a} bên {w} trả',w_b:'người mua',w_s:'người bán',na:'theo hợp đồng',ask:'hỏi',
+  sub_points:'1 point trên loan của bạn = {a}',sub_int:'{n} ngày × {a}/ngày, lãi {r}% (ước tính)',sub_ins:'12 tháng, 0.30% giá nhà (ước tính)',sub_imp:'{tm} tháng thuế + 2 tháng bảo hiểm · close {mon}',sub_rate:'{r} mỗi $1,000 · tổng {a}',sub_county:'$1.10 mỗi $1,000 · tổng {a}',sub_me:'{r}% giá nhà',sub_me0:'$0 ở giá này (bắt đầu từ trên $2.3M)',sub_comm:'{a}% + {b}% giá nhà',sub_nhd:'tool để người bán trả',
+  est:'ước tính',exp_all:'Mở hết các dòng',exp_none:'Đóng hết các dòng',
+  cash_note:'Mua cash: không có phí lender, không có lender\'s title, không có impound. Vẫn nên mua bảo hiểm nhà từ ngày đầu.',
+  jumbo_note:'Tiền vay cao hơn mức conforming 2026 ($1,249,125) nên là loan jumbo. Phí lender và appraisal của jumbo thường cao hơn (đã dùng số ước tính).',
+  n27:{brk:'<b>Berkeley:</b> tool dùng mức đang áp dụng ($15 tới $1.7M, $25 trên đó). Từ 01/01/2027, Measure W đổi thành khoảng 1.5% / 2.5% / 3% / 3.5% theo bậc giá. Hỏi escrow mốc 2027 cho chắc.',alb:'<b>Albany:</b> tool dùng mức 1.5% đang áp dụng. Measure S (đậu 11/2026, chưa chứng nhận chính thức) đổi từ 01/01/2027 thành các bậc 1% tới 3% theo giá, mỗi năm tính lại.',pie:'<b>Piedmont:</b> tool dùng mức $13 mỗi $1,000 đang áp dụng. Measure GG (đậu 11/2026, chưa chứng nhận chính thức) tăng lên $17.50 từ 01/07/2027.'},
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video',
+  f_title:'Gửi danh sách này về email',f_sub:'Ken nhận được sẽ trả lời và giúp so với Loan Estimate hoặc giấy escrow. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số dưới đây nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  est_note:'Mọi con số ở đây là ước tính. Số thật nằm trong Loan Estimate của lender và estimated settlement statement của escrow. Ai trả gì là thông lệ, không phải luật: hợp đồng mua bán mới quyết.',
+  ns_t:'Bước tiếp theo',
+  ns_list:'<li>Đi mua: tổng tiền phải mang tới, có trừ tiền cọc và chọn loại loan, ở <a href="/t03/">T03</a>. Rồi đọc Loan Estimate từng dòng ở <a href="/t231/">T231</a>.</li><li>Đi bán: trả nợ xong cầm về bao nhiêu ở <a href="/t21/">T21</a>; thuế tiền lời ở <a href="/t22/">T22</a>.</li><li>Chia thuế và HOA ngày close: <a href="/t64/">T64</a>. Thuế nhà sau khi mua: <a href="/t12/">T12</a>. Trên 55 tuổi đổi nhà? <a href="/t25/">T25 Prop 19</a>.</li><li>Lãi suất hôm nay: <a href="/t30/">T30</a>. Có nên mua points: <a href="/t38/">T38</a>. 10 ngày cuối trước close: <a href="/t63/">T63</a>.</li><li>Gặp chữ lạ? <a href="/t190/#closing-costs">T190 từ điển</a>.</li>',
+  myth:'<b>Nhiều người hiểu sai:</b> "closing costs là số tiền mình mang tới escrow." Không phải. Cash to close = tổng closing costs + tiền down − tiền cọc − seller credit ± các khoản điều chỉnh như chia thuế, HOA. Trên Loan Estimate nó là một bảng riêng ("Calculating Cash to Close", 12 CFR 1026.37(h)). Seller credit cũng có giới hạn: loan conventional được 3%, 6% hoặc 9% tùy tiền down, không quá closing costs thật, không lấy ra tiền mặt được (<a href="https://selling-guide.fanniemae.com/sel/b3-4.1-02/interested-party-contributions-ipcs" target="_blank" rel="noopener">Fannie Mae</a>).',
+  cc_t:'Mọi tool Closing &amp; Thuế',
+  ft_read:'Đọc thêm:',ft_lib:'Library: closing costs từng dòng',ft_vid:'Video Kiến Thức Địa Ốc',
+  ft_est:'Thông tin chung, không phải tư vấn thuế, luật hay cho vay. Mọi số là ước tính; thông lệ ai trả gì đều thương lượng được.',
+  ft_src:'Nguồn (tra 05/11/2026):',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',back:'← Tất cả tools',
+  side_b:'Mua',side_s:'Bán',
+  sms:'Chào Ken, tôi vừa dùng T230 ({side}): {city}, giá {p}{loan}. Closing costs ước tính {t}. Ken coi giùm được không?',
+  sms_loan:', vay {l}',
+  subj:'Danh sách closing costs — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\n{side} · {city} ({co})\nGiá: {p}\n{extra}\n\nClosing costs ước tính: {t} ({pct}% giá nhà)\n{ctc}\n\nTừng khoản (phần của bạn):\n{list}\n\nChỉ là ước tính. Không phải tư vấn thuế, luật hay cho vay.\nGửi từ tool T230 tools.kenlamrealty.com/t230/'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+try{ if(new URLSearchParams(location.search).get('embed')==='1') document.documentElement.classList.add('embed'); }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const fill=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+const strip=s=>String(s).replace(/<[^>]+>/g,'');
+let side='b', openSet={}, last={}, lastR=null;
+(function(){ const m=new Date().getMonth()+2; $('month').dataset.def=String(m>12?m-12:m); })();
+
+function buildCity(){
+  const v=$('city').value||'sj';
+  $('city').innerHTML='<optgroup label="Santa Clara County">'+CITIES.filter(c=>c.c==='SC').map(c=>'<option value="'+c.id+'">'+c.n+'</option>').join('')+'</optgroup>'
+   +'<optgroup label="Alameda County">'+CITIES.filter(c=>c.c==='AL').map(c=>'<option value="'+c.id+'">'+c.n+'</option>').join('')+'</optgroup>';
+  $('city').value=v;
+}
+function buildMonth(){
+  const d=I18N[lang], v=$('month').value||$('month').dataset.def;
+  $('month').innerHTML=d.months.map((m,i)=>'<option value="'+(i+1)+'">'+m.charAt(0).toUpperCase()+m.slice(1)+'</option>').join('');
+  $('month').value=v;
+}
+function buildList(){
+  const d=I18N[lang], T=TX[lang];
+  $('list').innerHTML=GROUPS.map(g=>'<div class="grp" id="'+g+'"><h3><span>'+d.g[g]+'</span><span class="a" id="gs-'+g+'">$0</span></h3>'
+    +ITEMS.filter(it=>it.g===g).map(it=>{const t=T[it.id];
+      return '<details class="item" id="'+it.id+'"'+(openSet[it.id]?' open':'')+'><summary><span class="nm">'+t[0]+'</span><span class="am" id="am-'+it.id+'">$0</span><span class="who" id="who-'+it.id+'"></span></summary>'
+       +'<div class="bd"><p class="kid"><span class="lb">'+d.kidL+'</span>'+t[1]+'</p><p><span class="lb">'+d.adultL+'</span><span id="ad-'+it.id+'">'+t[2]+'</span></p><p class="tip"><span class="lb">'+d.tipL+'</span>'+t[3]+'</p></div></details>';}).join('')
+    +'</div>').join('');
+}
+function calc(){
+  const d=I18N[lang];
+  const r=compute({side,price:num('price'),cityId:$('city').value,loan:num('loan'),month:+$('month').value,cl:num('cl'),cb:num('cb')});
+  lastR=r;
+  $('buyIn').classList.toggle('hide',side!=='b'); $('sellIn').classList.toggle('hide',side!=='s');
+  $('bigK').textContent=side==='b'?d.k_buy:d.k_sell;
+  $('big').textContent=fmt(r.total); $('bigS').textContent=fill(d.of_price,{p:r.pct.toFixed(1)});
+  if(side==='b'){ $('s2aK').textContent=d.s_fees; $('s2a').textContent=fmt(r.fees); $('s2bK').textContent=d.s_pre; $('s2b').textContent=fmt(r.prepaids);
+    $('ctc').innerHTML=fill(d.ctc_buy,{d:fmt(r.down),c:fmt(r.total),t:fmt(r.cashToClose)}); }
+  else { const cm=r.L['commission'].s; $('s2aK').textContent=d.s_comm; $('s2a').textContent=fmt(cm); $('s2bK').textContent=d.s_other; $('s2b').textContent=fmt(r.total-cm);
+    $('ctc').innerHTML=fill(d.ctc_sell,{t:fmt(r.price-r.total)}); }
+  const cn=r.city.change2027?d.n27[r.city.change2027]:''; $('cityNote').innerHTML=cn; $('cityNote').classList.toggle('hide',!cn);
+  const ln=side==='b'?(!r.hasLoan&&r.price>0?d.cash_note:(r.jumbo?d.jumbo_note:'')):''; $('loanNote').innerHTML=ln; $('loanNote').classList.toggle('hide',!ln);
+  const mon=d.months[r.month-1], lines=[];
+  ITEMS.forEach(it=>{
+    const l=r.L[it.id], el=$(it.id); el.classList.toggle('hide',!l.vis); if(!l.vis) return;
+    const mine=l[side], other=side==='b'?l.s:l.b;
+    const am=$('am-'+it.id);
+    am.innerHTML=l.na?d.na:(fmt(mine)+(mine>0?'<span class="est">'+d.est+'</span>':''));
+    am.classList.toggle('zero',l.na||mine<0.5);
+    let who=d.who+'<em>'+d.pay[l.payer]+(l.co?d.inCo[r.co]:'')+'</em>';
+    if(!l.na&&mine<0.5&&other>=0.5) who+=fill(d.other_side,{a:fmt(other),w:side==='b'?d.w_s:d.w_b});
+    let sub='';
+    if(it.id==='points') sub=fill(d.sub_points,{a:fmt(l.pt)});
+    if(it.id==='prepaid-interest') sub=fill(d.sub_int,{n:CFG.INT_DAYS,a:'$'+l.daily.toFixed(2),r:CFG.RATE});
+    if(it.id==='insurance') sub=d.sub_ins;
+    if(it.id==='impound') sub=fill(d.sub_imp,{tm:l.tm,mon});
+    if(it.id==='city-transfer-tax') sub=fill(d.sub_rate,{r:'$'+l.rate.toFixed(2),a:fmt(l.full)});
+    if(it.id==='transfer-tax') sub=fill(d.sub_county,{a:fmt(l.full)});
+    if(it.id==='measure-e') sub=l.xr>0?fill(d.sub_me,{r:(l.xr*100).toFixed(2)}):d.sub_me0;
+    if(it.id==='commission') sub=fill(d.sub_comm,{a:num('cl'),b:num('cb')});
+    if(it.id==='nhd'&&side==='s') sub=d.sub_nhd;
+    $('who-'+it.id).innerHTML=who+(sub?' · '+sub:'');
+    if(it.id==='impound') $('ad-impound').innerHTML=fill(TX[lang]['impound'][2],{tm:l.tm,mon});
+    lines.push('- '+strip(TX[lang][it.id][0])+': '+(l.na?d.na:fmt(mine)));
+  });
+  GROUPS.forEach(g=>{ const vis=ITEMS.some(it=>it.g===g&&r.L[it.id].vis); $(g).classList.toggle('hide',!vis); $('gs-'+g).textContent=fmt(r.gsum[g]); });
+  $('expAll').textContent=ITEMS.some(it=>r.L[it.id].vis&&!openSet[it.id])?d.exp_all:d.exp_none;
+  const sideT=side==='b'?d.side_b:d.side_s;
+  const extra=side==='b'?(d.l_loan.trim()+': '+fmt(r.loan)+' · '+d.l_month+': '+mon):(d.l_cl+' '+num('cl')+'% · '+d.l_cb.trim()+' '+num('cb')+'%');
+  last={side:sideT,city:r.city.n,co:r.co==='SC'?'Santa Clara County':'Alameda County',p:fmt(r.price),t:fmt(r.total),pct:r.pct.toFixed(1),extra,
+    ctc:strip(side==='b'?fill(d.ctc_buy,{d:fmt(r.down),c:fmt(r.total),t:fmt(r.cashToClose)}):fill(d.ctc_sell,{t:fmt(r.price-r.total)})),list:lines.join('\n'),
+    loan:side==='b'?fill(d.sms_loan,{l:fmt(r.loan)}):''};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('ccAll').querySelector('[data-i="cc_list"]').innerHTML=LINKS['cc_'+lang];
+  $('langBtn').textContent=d.lang; $('klBack').textContent=d.back; document.documentElement.lang=lang;
+  buildMonth(); buildList(); calc();
+}
+function setSide(s){ side=s; $('sB').setAttribute('aria-pressed',String(s==='b')); $('sS').setAttribute('aria-pressed',String(s==='s')); calc(); }
+function goHash(){
+  const id=decodeURIComponent((location.hash||'').slice(1)); if(!id) return;
+  let target=null;
+  const it=ITEMS.find(x=>x.id===id);
+  if(it){ if(!it.sides.includes(side)) setSide(it.sides.includes('b')?'b':'s');
+    if(lastR&&!lastR.L[id].vis&&side==='b'&&it.g!=='gov-fees'){ /* hidden for cash buyer: show with a loan */ }
+    openSet[id]=1; target=$(id); if(target) target.open=true; }
+  else if(GROUPS.includes(id)){ const items=ITEMS.filter(x=>x.g===id);
+    if(!items.some(x=>x.sides.includes(side))) setSide(items[0].sides.includes('b')?'b':'s');
+    items.forEach(x=>{openSet[x.id]=1; const e=$(x.id); if(e) e.open=true;}); target=$(id); }
+  if(!target) return;
+  target.classList.add('flash'); setTimeout(()=>target.classList.remove('flash'),1600);
+  requestAnimationFrame(()=>target.scrollIntoView({block:'start',behavior:'auto'}));
+}
+$('list').addEventListener('toggle',e=>{ const el=e.target; if(!el.classList||!el.classList.contains('item')) return; if(el.open) openSet[el.id]=1; else delete openSet[el.id];
+  const d=I18N[lang]; $('expAll').textContent=ITEMS.some(it=>lastR&&lastR.L[it.id].vis&&!openSet[it.id])?d.exp_all:d.exp_none; },true);
+$('expAll').onclick=()=>{ const vis=ITEMS.filter(it=>lastR.L[it.id].vis), anyClosed=vis.some(it=>!openSet[it.id]);
+  vis.forEach(it=>{ if(anyClosed) openSet[it.id]=1; else delete openSet[it.id]; const e=$(it.id); if(e) e.open=anyClosed; }); calc(); };
+['price','city','loan','month','cl','cb'].forEach(id=>{$(id).addEventListener('input',calc);$(id).addEventListener('change',calc);});
+$('sB').onclick=()=>setSide('b'); $('sS').onclick=()=>setSide('s');
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], o=Object.assign({},last,{n:$('fname').value.trim()||'—',e:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'});
+  /* LEAD → FUB: email to ken@kenlamrealty.com (FUB lead email parsing), same as other tools. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,o))+'&body='+encodeURIComponent(fill(d.body,o));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+window.addEventListener('hashchange',goHash);
+buildCity(); applyLang(); goHash();
+</script>
+</body>
+</html>

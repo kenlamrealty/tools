@@ -1,0 +1,793 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Every Tax When Buying · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+
+</style>
+<meta name="description" content="Every tax a home buyer in Santa Clara or Alameda County faces: transfer tax at closing, first-year property tax and supplemental bill, Prop 13, homeowners' exemption, mortgage interest, SALT cap 2026, PMI, gifts. Explained simply.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t233/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Every Tax When Buying · Ken Lam Tools">
+<meta property="og:description" content="Transfer tax, property tax, supplemental bill, mortgage interest and SALT 2026. Every tax a Bay Area buyer pays, in dollars, explained like you're 10.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t233/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T64 additions */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl select:focus-visible{outline:none}
+.ctl .chev{color:var(--muted);font-size:13px;pointer-events:none}
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.line .n{flex:1 1 auto}
+.line.grp{padding-top:14px}
+.line.grp .n{font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.line .a.pos{color:var(--ok)}
+.line .a.neg{color:var(--warn)}
+.who2{font-size:15px;margin:6px 0 0}
+.cal{display:flex;flex-wrap:wrap;gap:8px}
+.cal a{font-size:13px;color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:var(--bg)}
+.cal a:hover{border-color:var(--brass)}
+.steps{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.steps h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+footer .src a{overflow-wrap:anywhere}
+/* T233/T234 additions */
+.embed .kl-back{display:none}
+.ctl.chk{padding:12px;gap:10px;cursor:pointer}
+.ctl.chk input{flex:0 0 auto;width:20px;height:20px;accent-color:var(--brass);padding:0}
+.ctl.chk span{font-size:15px}
+.bigs{display:grid;gap:14px}
+.bigs .total{border-bottom:1px solid var(--line);padding-bottom:14px}
+.bigs .total:last-child{border-bottom:0;padding-bottom:0}
+.bigs .total .v{font-size:50px}
+.bigs .total .s{font-size:13px;color:var(--muted);margin-top:6px}
+.bigs .total .s b{color:var(--fg);font-weight:500}
+.items{display:grid;gap:10px}
+.items h2,.mh h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.items .hint{font-size:13px;color:var(--muted);margin:-4px 0 2px}
+details.tx{border:1px solid var(--line);border-radius:12px;background:var(--panel);scroll-margin-top:12px}
+details.tx summary{list-style:none;cursor:pointer;padding:13px 16px;display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+details.tx summary::-webkit-details-marker{display:none}
+details.tx summary .nm{font-size:15px;font-weight:500;min-width:0}
+details.tx summary .nm small{display:block;font-weight:400;font-size:12px;color:var(--muted)}
+details.tx summary .am{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap;color:var(--fg)}
+details.tx summary .am.z{color:var(--muted);font-weight:400;font-size:13px}
+details.tx summary::after{content:'+';color:var(--brass);font-size:18px;line-height:1;margin-left:2px}
+details.tx[open] summary::after{content:'\2212'}
+details.tx .body{padding:0 16px 14px;display:grid;gap:10px;font-size:14.5px;line-height:1.5}
+details.tx .lay{border-left:2px solid var(--line);padding-left:12px}
+details.tx .lay b.k{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--brass);font-weight:600;margin-bottom:2px}
+details.tx .lay.kid{border-color:var(--brass)}
+details.tx .lay a{color:var(--brass)}
+details.tx .lnk{font-size:13px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+details.tx .lnk a{color:var(--brass);text-decoration:none}
+details.tx .lnk button{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:3px 10px;border-radius:999px;cursor:pointer}
+details.tx.flash{border-color:var(--brass);box-shadow:0 0 0 2px var(--brass-soft)}
+.grp-h{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:8px 0 0}
+.mh{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.mhl{list-style:none;margin:0;padding:0;display:grid;gap:10px}.mhl li{display:grid;gap:2px;border-top:1px solid var(--line);padding-top:10px}.mhl li:first-child{border-top:0;padding-top:0}.mhl a{color:var(--fg);text-decoration:none;font-weight:500}.mhl a b{color:var(--brass);font-weight:600;margin-right:4px}.mhl span{color:var(--muted);font-size:14px}
+
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+
+<script>try{ if(new URLSearchParams(location.search).get('embed')==='1') document.documentElement.classList.add('embed'); }catch(e){}</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Every tax you face when buying</h1>
+    <p class="sub" data-i="sub">At closing, the first year, and on your tax return. Each one in dollars, then explained so a 10-year-old gets it.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="row2">
+      <div class="field">
+        <label for="city"><span data-i="l_city">City</span></label>
+        <div class="ctl"><select id="city"></select><span class="chev">▾</span></div>
+      </div>
+      <div class="field">
+        <label for="month"><span data-i="l_month">Closing month</span></label>
+        <div class="ctl"><select id="month"></select><span class="chev">▾</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="price"><span data-i="l_price">Purchase price</span></label>
+        <div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" min="0" step="10000" value="1500000"></div>
+      </div>
+      <div class="field">
+        <label for="loan"><span data-i="l_loan">Loan amount </span><small data-i="l_loan_s">(0 = cash)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="loan" type="number" inputmode="numeric" min="0" step="10000" value="1200000"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label><span data-i="l_st">You file taxes as</span></label>
+        <div class="seg" role="group">
+          <button type="button" id="stS" aria-pressed="false" data-i="st_s">Single</button>
+          <button type="button" id="stM" aria-pressed="true" data-i="st_m">Married, joint</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="inc"><span data-i="l_inc">Household income </span><small data-i="l_inc_s">(optional, /yr)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="inc" type="number" inputmode="numeric" min="0" step="5000" placeholder="200000"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="bigs">
+      <div class="total">
+        <div class="k" data-i="k_close">Tax you pay at closing</div>
+        <div class="v"><span id="bClose">$0</span></div>
+        <div class="s" id="sClose"></div>
+      </div>
+      <div class="total">
+        <div class="k" data-i="k_prop">Property tax, first 12 months</div>
+        <div class="v"><span id="bProp">$0</span> <small data-i="per_yr">/yr</small></div>
+        <div class="s" id="sProp"></div>
+      </div>
+      <div class="total">
+        <div class="k" data-i="k_fed">Federal income tax you may save</div>
+        <div class="v"><span id="bFed">$0</span> <small data-i="per_yr">/yr</small></div>
+        <div class="s" id="sFed"></div>
+      </div>
+    </div>
+    <div class="note" id="xNote"></div>
+  </section>
+
+  <section class="items" aria-label="Every tax">
+    <h2 data-i="it_t">Every tax, one by one</h2>
+    <p class="hint" data-i="it_h">Tap a line. Three layers: for a kid, the real version, and where people get burned.</p>
+    <div id="items"></div>
+  </section>
+
+  <video src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px;margin-top:8px" aria-label="How to use this tool"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t233/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch the video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this tax list to yourself</h2>
+    <p data-i="f_sub">Ken will reply and help you check the real tax rate for the address. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, text Ken the number below.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol data-i="ns_list"></ol>
+  </section>
+  <p class="myth" data-i="myth"></p>
+
+  <section class="mh">
+    <h2 data-i="mh_t">Every closing &amp; tax tool</h2>
+    <div data-i="mh_list"></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="#" data-todo="library" data-i="ft_lib">Library: taxes when buying</a> · <a href="#" data-todo="video" data-i="ft_vid">Kiến Thức Địa Ốc video</a></span>
+    <span data-i="ft_est">General information, not tax, legal or lending advice. Every number is an estimate. Your real numbers come from your escrow statement, your tax bill and your CPA.</span>
+    <span class="src"><span data-i="ft_src">Sources (checked 05/11/2026):</span>
+      <a href="https://auditor.alamedacountyca.gov/clerk-recorder-real-property-tax/" target="_blank" rel="noopener">Alameda County Clerk-Recorder transfer tax</a> ·
+      <a href="https://page.fnf.com/rs/393-REY-847/images/Who%20Pays%20What%20-%20California%20Transfer%20Tax%20and%20Fees%20%28rev%2001062026%29.pdf" target="_blank" rel="noopener">FNF Who Pays What (rev 01/06/2026)</a> ·
+      <a href="https://media.oldrepublictitle.com/homeowners-manual/santa-clara/files/basic-html/page42.html" target="_blank" rel="noopener">Old Republic SCC manual (Measure E)</a> ·
+      <a href="https://www.mountainview.gov/our-city/departments/finance-and-administrative-services/city-tax-information/real-property-transfer-conveyance-tax" target="_blank" rel="noopener">Mountain View transfer tax</a> ·
+      <a href="https://www.lwvbae.org/league-news/berkeley-measures-pros-cons/" target="_blank" rel="noopener">LWV: Berkeley Measure W</a> ·
+      <a href="https://www.nbcbayarea.com/news/local/alameda-county-november-2026-election-results/4162298/" target="_blank" rel="noopener">NBC Bay Area: 11/2026 results (unofficial)</a> ·
+      <a href="https://www.sccassessor.org/apps/static/SupplementalFAQ.htm" target="_blank" rel="noopener">SCC Assessor: supplemental FAQ</a> ·
+      <a href="https://www.sccassessor.org/tax-savings/exemptions/homeowners" target="_blank" rel="noopener">SCC Assessor: homeowners' exemption</a> ·
+      <a href="https://www.jvmlending.com/blog/alameda-county-property-tax-your-complete-guide/" target="_blank" rel="noopener">JVM: Alameda County tax rates &amp; due dates</a> ·
+      <a href="https://www.hayward-ca.gov/sites/default/files/documents/FS-Hayward-CFD-No-1-Admin-Report-2025-26-Eden-Shores.pdf" target="_blank" rel="noopener">Hayward CFD No. 1 report</a> ·
+      <a href="https://www.boe.ca.gov/pdf/pub801.pdf" target="_blank" rel="noopener">BOE Pub 801 (Prop 19)</a> ·
+      <a href="https://www.irs.gov/publications/p936" target="_blank" rel="noopener">IRS Pub 936</a> ·
+      <a href="https://www.irs.gov/publications/p505" target="_blank" rel="noopener">IRS Pub 505 (2026)</a> ·
+      <a href="https://www.irs.gov/pub/irs-dft/f1040sa--dft.pdf" target="_blank" rel="noopener">Schedule A 2026 draft</a> ·
+      <a href="https://www.irs.gov/newsroom/working-families-tax-cuts-individuals-and-workers" target="_blank" rel="noopener">IRS: 2026 standard deduction</a> ·
+      <a href="https://www.irs.gov/pub/irs-drop/rp-25-32.pdf" target="_blank" rel="noopener">Rev. Proc. 2025-32</a> ·
+      <a href="https://www.ftb.ca.gov/about-ftb/newsroom/tax-news/2026/10.html" target="_blank" rel="noopener">FTB Tax News 10/2026 (2026 brackets)</a> ·
+      <a href="https://www.ftb.ca.gov/file/personal/deductions/index.html" target="_blank" rel="noopener">FTB deductions</a> ·
+      <a href="https://www.ftb.ca.gov/about-ftb/data-reports-plans/Summary-of-Federal-Income-Tax-Changes/index.html" target="_blank" rel="noopener">FTB summary of federal changes</a>
+    </span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 05/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/*CALC-START*/
+/* ===== RULES — every law/fee number lives here. Checked 05/11/2026 (FACTS-B / FACTS-A). =====
+   TRANSFER TAX
+   - County DTT $0.55 per $500 (=$1.10/$1,000), rounded up per $500. R&T 11911.
+     https://auditor.alamedacountyca.gov/clerk-recorder-real-property-tax/ (05/11/2026)
+     Who pays: SELLER in both Santa Clara & Alameda (custom, ESTIMATE) — FNF Who Pays What rev 01/06/2026.
+   - City tax ($/1,000 on the WHOLE price, rounded up per $500). Custom: buyer/seller split 50/50 (ESTIMATE; Alameda cities: KEN DUYỆT).
+     San Jose $3.30 + Measure E (seller by default — UNVERIFIED custom, KEN DUYỆT): >$2.3M 0.75% · >$5M 1% · >$10M 1.5% (FNF; Old Republic p.42).
+     Mountain View ≤$6M $3.30, >$6M $15 (Measure G). Palo Alto $3.30.
+     Oakland $10/$15/$17.50/$25 (≤$300K/≤$2M/≤$5M/>). Berkeley ≤$1.7M $15, >$1.7M $25 (today).
+     Emeryville <$1M $12 · $1M–$2M $15 · >$2M $25 (FNF "effective 1/1/2026"). Alameda $12. Albany $15. Hayward $8.50. Piedmont $13. San Leandro $11.
+     Coming (UNOFFICIAL election results 03/11/2026 / passed 2024): Berkeley Measure W from 01/01/2027 (1.5% / 2.5% from $1.6M / 3% / 3.5%, thresholds indexed);
+     Albany Measure S from 01/01/2027 (1%–3% by percentile, $ thresholds UNVERIFIED); Piedmont Measure GG $17.50 from 01/07/2027.
+     → Tool uses TODAY's rates and shows a note. Change here when official.
+   PROPERTY TAX
+   - 1% + voter bonds by tax rate area. RATE 1.25% = ESTIMATE (SCC 2025-26 ~1.12–1.24%; Oakland 2024-25 ~1.34% + parcel taxes). JVM Lending (secondary).
+   - Prop 13: max +2%/yr (BOE LTA 2026/002, factor 1.02).
+   - Supplemental: from 1st of month after change of ownership; (new − old value) × rate × months left/12; close Jan 1–May 31 → 2 bills. Impound does NOT pay it.
+     https://www.sccassessor.org/apps/static/SupplementalFAQ.htm  (seller value unknown → example uses 50% of price, like T12)
+   - Installments: 1st due Nov 1, late after 5 PM Dec 10 (+10%); 2nd due Feb 1, late after 5 PM Apr 10 (+10% + $10); weekend → next business day
+     (Apr 10, 2027 = Saturday → Apr 12, 2027). R&T 2617/2618/2619; JVM citing ACTTC.
+   - Homeowners' exemption −$7,000 assessed value. File by 5 PM Feb 15 for 100%; Feb 16–Dec 10 = 80%. https://www.sccassessor.org/tax-savings/exemptions/homeowners
+   FEDERAL (tax year 2026)
+   - Mortgage interest: acquisition debt limit $750,000 ($375K MFS), permanent (OBBBA). Pub 936. CA: $1,000,000 (FTB).
+   - PMI/MIP deductible again from 2026; phase-out 10% per $1,000 AGI over $100,000 → none above $109,000. Pub 505 (2026).
+   - SALT cap 2026 $40,400 ($20,200 MFS); reduced by 30% of MAGI over $505,000, floor $10,000. Pub 505 (2026), Sch. A 2026 draft.
+   - Standard deduction 2026 $16,100 single / $32,200 MFJ. irs.gov newsroom.
+   - Federal brackets 2026 (same table as T22, confirmed in FACTS-B §E).
+   - Interest rate for the example: 7.24% 30-yr fixed = Freddie Mac PMMS 29/10/2026 average (ASSUMPTION, not a quote). KEN DUYỆT.
+   - CA 2026 brackets for estimating CA income tax inside SALT: FTB Tax News 10/2026; CA std $5,900 / $11,800.
+   GIFTS: annual exclusion $19,000 per giver per receiver; lifetime $15,000,000 (Rev. Proc. 2025-32). CA has no gift tax (FTB summary).
+   PROP 19: 55+ / severely disabled / disaster: move base value up to 3 times, anywhere in CA, buy within 2 years; ≤100% / 105% / 110%; BOE-19-B within 3 years. BOE Pub 801.
+   NOT USED (UNVERIFIED): MCC status 2026 in SCC/Alameda; "no CA foreign buyer tax" (no official confirmation).
+*/
+const R={
+  COUNTY_PER500:0.55, CITY_SPLIT_BUYER:0.5,
+  TAX_RATE:1.25, INFL:1.02, HOX:7000, AV_EXAMPLE:0.5,
+  INST:{i1:{due:[11,1],late:[12,10]},i2:{due:[2,1],late:[4,10]}},
+  MI_LIMIT:750000, CA_MI_LIMIT:1000000, RATE:7.24, TERM:30,
+  PMI_PH:[100000,109000],
+  SALT:{cap:40400,floor:10000,mag:505000,cut:0.30},
+  STD:{s:16100,m:32200},
+  FED:{ s:[[12400,.10],[50400,.12],[105700,.22],[201775,.24],[256225,.32],[640600,.35],[Infinity,.37]],
+        m:[[24800,.10],[100800,.12],[211400,.22],[403550,.24],[512450,.32],[768700,.35],[Infinity,.37]] },
+  CA:{ s:[[11456,.01],[27157,.02],[42861,.04],[59498,.06],[75197,.08],[384109,.093],[460927,.103],[768213,.113],[Infinity,.123]],
+       m:[[22912,.01],[54314,.02],[85722,.04],[118996,.06],[150394,.08],[768218,.093],[921854,.103],[1536426,.113],[Infinity,.123]] },
+  CA_STD:{s:5900,m:11800}, BHST:{rate:.01,over:1000000},
+  GIFT:19000, GIFT_LIFE:15000000,
+  INC_DEFAULT:{s:150000,m:200000}
+};
+const CITIES=[
+  {id:'sj', n:'San Jose',      c:'SC', per1000:[[Infinity,3.30]], extra:[[2300000,0.0075],[5000000,0.01],[10000000,0.015]]},
+  {id:'sc', n:'Santa Clara',   c:'SC', per1000:[]},
+  {id:'sv', n:'Sunnyvale',     c:'SC', per1000:[]},
+  {id:'mv', n:'Mountain View', c:'SC', per1000:[[6000000,3.30],[Infinity,15]]},
+  {id:'pa', n:'Palo Alto',     c:'SC', per1000:[[Infinity,3.30]]},
+  {id:'mp', n:'Milpitas',      c:'SC', per1000:[]},
+  {id:'cu', n:'Cupertino',     c:'SC', per1000:[]},
+  {id:'cb', n:'Campbell',      c:'SC', per1000:[]},
+  {id:'lg', n:'Los Gatos',     c:'SC', per1000:[]},
+  {id:'sa', n:'Saratoga',      c:'SC', per1000:[]},
+  {id:'mh', n:'Morgan Hill',   c:'SC', per1000:[]},
+  {id:'gi', n:'Gilroy',        c:'SC', per1000:[]},
+  {id:'osc',n:'Other Santa Clara County', c:'SC', per1000:[]},
+  {id:'oak',n:'Oakland',       c:'AL', per1000:[[300000,10],[2000000,15],[5000000,17.5],[Infinity,25]]},
+  {id:'brk',n:'Berkeley',      c:'AL', per1000:[[1700000,15],[Infinity,25]], soon:'brk'},
+  {id:'emy',n:'Emeryville',    c:'AL', per1000:[[999999.99,12],[2000000,15],[Infinity,25]]},
+  {id:'alb',n:'Albany',        c:'AL', per1000:[[Infinity,15]], soon:'alb'},
+  {id:'pie',n:'Piedmont',      c:'AL', per1000:[[Infinity,13]], soon:'pie'},
+  {id:'fre',n:'Fremont',       c:'AL', per1000:[]},
+  {id:'hay',n:'Hayward',       c:'AL', per1000:[[Infinity,8.50]]},
+  {id:'sl', n:'San Leandro',   c:'AL', per1000:[[Infinity,11]]},
+  {id:'ala',n:'Alameda',       c:'AL', per1000:[[Infinity,12]]},
+  {id:'uc', n:'Union City',    c:'AL', per1000:[]},
+  {id:'nw', n:'Newark',        c:'AL', per1000:[]},
+  {id:'pl', n:'Pleasanton',    c:'AL', per1000:[]},
+  {id:'lv', n:'Livermore',     c:'AL', per1000:[]},
+  {id:'du', n:'Dublin',        c:'AL', per1000:[]},
+  {id:'cv', n:'Castro Valley / unincorporated Alameda', c:'AL', per1000:[]}
+];
+/* when the next rate takes effect (yyyymm) — note only */
+const SOON={brk:202701, alb:202701, pie:202707};
+function prog(tbl,x){ let t=0,lo=0; for(const [hi,r] of tbl){ if(x<=lo) break; t+=(Math.min(x,hi)-lo)*r; lo=hi; } return t; }
+function marg(tbl,x){ for(const [hi,r] of tbl){ if(x<=hi) return r; } return tbl[tbl.length-1][1]; }
+function cityTax(city,price){
+  let rate=0; for(const [max,r] of city.per1000){ if(price<=max){ rate=r; break; } }
+  const units=Math.ceil(price/500);
+  const base=units*500*rate/1000;
+  let xr=0; if(city.extra) for(const [min,r] of city.extra){ if(price>min) xr=r; }
+  return {rate, base, xr, extra:price*xr};
+}
+function countyTax(price){ return price>100?R.COUNTY_PER500*Math.ceil(price/500):0; }
+/* weekend → next Monday (holidays not handled) */
+function shiftWk(y,m,d){ const t=new Date(Date.UTC(y,m-1,d)), w=t.getUTCDay(); const add=w===6?2:(w===0?1:0); const u=new Date(t.getTime()+add*864e5); return [u.getUTCFullYear(),u.getUTCMonth()+1,u.getUTCDate()]; }
+/* regular installments whose late date is after the close month: next 2 */
+function nextInst(y,m){
+  const out=[]; for(let Y=y-1;Y<=y+2;Y++){
+    out.push({inst:1,fy:Y,due:[Y,11,1],late:shiftWk(Y,12,10)});
+    out.push({inst:2,fy:Y-1,due:[Y,2,1],late:shiftWk(Y,4,10)});
+  }
+  const key=y*100+m;
+  return out.filter(x=>x.late[0]*100+x.late[1]>=key).sort((a,b)=>(a.late[0]*1e4+a.late[1]*100+a.late[2])-(b.late[0]*1e4+b.late[1]*100+b.late[2])).slice(0,2);
+}
+/* supplemental bills, same logic as T12, seller value = example */
+function supp(P,y,m,r,av0){
+  const E=m===12?1:m+1, av1=av0*R.INFL, bills=[];
+  if(m>=7){ const left=m===12?6:19-E; bills.push({months:left,amt:Math.max(0,(P-av0)*r*left/12)}); }
+  else if(m===6){ bills.push({months:12,amt:Math.max(0,(P-av1)*r)}); }
+  else { const left=7-E; bills.push({months:left,amt:Math.max(0,(P-av0)*r*left/12)}); bills.push({months:12,amt:Math.max(0,(P-av1)*r)}); }
+  return bills;
+}
+/* interest paid in the first 12 payments */
+function yr1Interest(L,ratePct,years){
+  if(L<=0) return 0; const i=ratePct/100/12, n=years*12, pmt=L*i/(1-Math.pow(1+i,-n));
+  let b=L,s=0; for(let k=0;k<12;k++){ const it=b*i; s+=it; b-=pmt-it; } return s;
+}
+/* inp: {cityId, price, loan, st:'s'|'m', inc (null=default), y, m} */
+function computeBuy(inp){
+  const P=Math.max(0,inp.price||0), L=Math.max(0,Math.min(inp.loan||0,P*1.0)), st=inp.st==='s'?'s':'m';
+  const city=CITIES.find(c=>c.id===inp.cityId)||CITIES[0];
+  const incGiven=inp.inc!=null&&inp.inc>0, inc=incGiven?inp.inc:R.INC_DEFAULT[st];
+  /* transfer tax */
+  const county=countyTax(P), ct=cityTax(city,P);
+  const buyerCity=ct.base*R.CITY_SPLIT_BUYER, sellerCity=ct.base-buyerCity;
+  const atClose=buyerCity;                         /* county + Measure E: seller by custom */
+  const soon=city.soon && (inp.y*100+inp.m)>=SOON[city.soon] ? city.soon : (city.soon||null);
+  /* property tax */
+  const r=R.TAX_RATE/100, hoxAmt=R.HOX*r;
+  const yearTax=Math.max(0,P*r-hoxAmt);
+  const bills=supp(P,inp.y,inp.m,r,P*R.AV_EXAMPLE), suppSum=bills.reduce((s,b)=>s+b.amt,0);
+  const inst=nextInst(inp.y,inp.m);
+  /* federal deduction */
+  const int1=yr1Interest(L,R.RATE,R.TERM);
+  const miShare=L>R.MI_LIMIT?R.MI_LIMIT/L:1;
+  const intDed=int1*miShare;
+  const caTI=Math.max(0,inc-R.CA_STD[st]);
+  const caTax=prog(R.CA[st],caTI)+R.BHST.rate*Math.max(0,caTI-R.BHST.over);
+  const saltRaw=caTax+yearTax;
+  const cap=Math.max(R.SALT.floor,R.SALT.cap-R.SALT.cut*Math.max(0,inc-R.SALT.mag));
+  const salt=Math.min(saltRaw,cap);
+  const itemized=intDed+salt, std=R.STD[st];
+  const itemize=itemized>std;
+  const fedSave=itemize? prog(R.FED[st],Math.max(0,inc-std))-prog(R.FED[st],Math.max(0,inc-itemized)) : 0;
+  const fedRate=marg(R.FED[st],Math.max(0,inc-std));
+  const ltv=P>0?L/P:0;
+  const pmiPart=inc<=R.PMI_PH[0]?1:(inc>R.PMI_PH[1]?0:Math.max(0,1-0.1*Math.ceil((inc-R.PMI_PH[0])/1000)));
+  const caMiShare=L>R.CA_MI_LIMIT?R.CA_MI_LIMIT/L:1;
+  return {P,L,st,city,inc,incGiven,county,ct,buyerCity,sellerCity,atClose,soon,rate:R.TAX_RATE,hoxAmt,yearTax,bills,suppSum,inst,
+    int1,miShare,intDed,caTax,saltRaw,cap,salt,itemized,std,itemize,fedSave,fedRate,ltv,pmiPart,caMiShare};
+}
+if(typeof module!=='undefined'){module.exports={computeBuy,R,CITIES};}
+/*CALC-END*/
+</script>
+<script>
+const MON_EN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const rt=r=>Number.isInteger(r)?String(r):r.toFixed(2);
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const fill=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+const pad=n=>String(n).padStart(2,'0');
+let lang='en'; try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const dt=(a)=>lang==='vi'?pad(a[2])+'/'+pad(a[1])+'/'+a[0]:MON_EN[a[1]-1]+' '+a[2]+', '+a[0];
+const pct=x=>(Math.round(x*100)/100).toString()+'%';
+
+const TOOLS={
+ en:[['t230','What’s in closing costs? (start here)','Every line, who pays it in your county, and the total.'],['t231','Read your Loan Estimate, line by line','A sample 3-page LE filled in, every line explained.'],['t232','Closing Disclosure vs Loan Estimate','Deadlines and the 3 tolerance buckets: is the lender over?'],['t233','Every tax you face when buying','Transfer tax, property tax, supplemental bill, interest deduction.'],['t234','Every tax you face when selling','Transfer tax, capital gains after $250K/$500K, Form 593, FIRPTA.'],['t03','Buyer closing costs','How much cash to bring to escrow.'],['t21','Seller net proceeds','How much you walk away with.'],['t12','Property tax after buying','Supplemental bill and due dates.'],['t22','Capital gains tax on a home sale','Federal + California, Section 121.'],['t64','Tax & HOA prorations at closing','Who owes whom, by the day.']],
+ vi:[['t230','Closing costs gồm những gì? (bắt đầu ở đây)','Từng khoản, ai trả ở county của mình, và tổng.'],['t231','Đọc Loan Estimate từng dòng','Bản LE 3 trang mẫu điền số, giải thích từng dòng.'],['t232','Closing Disclosure so với Loan Estimate','Hạn chót và 3 nhóm tolerance: lender có tính lố không.'],['t233','Mọi loại thuế khi mua nhà','Transfer tax, thuế nhà, supplemental bill, khấu trừ lãi vay.'],['t234','Mọi loại thuế khi bán nhà','Transfer tax, thuế lời sau $250K/$500K, Form 593, FIRPTA.'],['t03','Closing costs người mua','Phải mang bao nhiêu tiền tới escrow.'],['t21','Bán nhà cầm về bao nhiêu','Tiền cầm về sau mọi chi phí.'],['t12','Thuế nhà sau khi mua','Supplemental bill và hạn đóng.'],['t22','Thuế lời khi bán nhà','Federal + California, Section 121.'],['t64','Chia thuế &amp; HOA ngày close','Ai trả ai, tính theo ngày.']]
+};
+const I18N={
+ en:{title:'Every tax you face when buying',sub:'At closing, the first year, and on your tax return. Each one in dollars, then explained so a 10-year-old gets it.',
+  l_city:'City',l_month:'Closing month',l_price:'Purchase price',l_loan:'Loan amount ',l_loan_s:'(0 = cash)',l_st:'You file taxes as',st_s:'Single',st_m:'Married, joint',
+  l_inc:'Household income ',l_inc_s:'(optional, /yr)',per_yr:'/yr',
+  k_close:'Tax you pay at closing',k_prop:'Property tax, first 12 months',k_fed:'Federal income tax you may save',
+  s_close_city:'Your half of the {c} city transfer tax ({r}/$1,000). The seller usually pays the county tax ({ct}).',
+  s_close_none:'{c} has no city transfer tax, and the seller usually pays the county tax ({ct}). Buyers here usually pay $0 transfer tax.',
+  s_prop:'≈ {mo}/mo at {r} (estimate), after the homeowners’ exemption. Arrives as: your share of the seller’s bill in escrow + {n} supplemental bill(s) + your regular bill. Next deadlines: {ins}.',
+  s_fed_yes:'Itemizing ({it}) beats the standard deduction ({std}) by {d}. Year-1 interest {i} at {rate}% (assumed rate) + SALT {salt}.',
+  s_fed_no:'Itemizing ({it}) does not beat the standard deduction ({std}), so the interest deduction saves you $0 on the federal return.',
+  s_fed_cash:'Cash purchase: no mortgage interest to deduct.',
+  s_inc_def:' Income blank → we assumed {v}.',
+  n_soon_brk:'Berkeley: rates shown are today’s. Measure W raises them from Jan 1, 2027 (1.5% under $1.6M, 2.5% from $1.6M, 3% from $1.9M, 3.5% over $3M; thresholds adjust yearly). Closing in 2027? Ask escrow for the real number.',
+  n_soon_alb:'Albany: rate shown is today’s 1.5%. Measure S (passed Nov 3, 2026, unofficial) moves to 1%–3% tiers by price from Jan 1, 2027. The 2027 dollar tiers are not published yet.',
+  n_soon_pie:'Piedmont: rate shown is today’s $13/$1,000. Measure GG (passed Nov 3, 2026, unofficial) raises it to $17.50 from Jul 1, 2027.',
+  n_sj_e:'San Jose over $2.3M: Measure E adds {r} on the whole price ({a}). Custom is the seller pays it, but it is negotiable — read your contract.',
+  it_t:'Every tax, one by one',it_h:'Tap a line. Three layers: for a kid, the real version, and where people get burned.',
+  L_kid:'Like you’re 10',L_adult:'The real version',L_tip:'Tips & traps',dict:'Dictionary',copy:'Copy link',copied:'Copied',
+  g1:'At closing',g2:'After you move in: property tax',g3:'Your income tax return',g4:'Family &amp; special cases',
+  zero:'$0',info:'info',check:'check bill',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch the video',
+  f_title:'Email this tax list to yourself',f_sub:'Ken will reply and help you check the real tax rate for the address. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, text Ken the number below.",f_or:'Or text:',f_copy:'Copy',
+  ns_t:'Next steps',
+  ns_list:'<li>All buyer closing costs, not just taxes: <a href="/t03/">T03</a>. Start-here list: <a href="/t230/">T230</a>.</li><li>Supplemental bill and due dates for your exact close date and seller’s value: <a href="/t12/">T12</a>.</li><li>Tax split with the seller on closing day: <a href="/t64/">T64</a>. Before closing checklist: <a href="/t63/">T63</a>.</li><li>Rates today: <a href="/t30/">T30</a>. Are points worth it: <a href="/t38/">T38</a>.</li><li>Age 55+ and selling a home too: <a href="/t25/">T25 Prop 19</a>. Selling side: <a href="/t234/">T234</a>.</li><li>Words you don’t know: <a href="/t190/#property-tax-ca">T190 dictionary</a>.</li>',
+  myth:'<b>Many people get this wrong:</b> “Prop 13 means my tax is 1%.” It is 1% plus voter-approved bonds (about 1.12%–1.34% here), plus flat parcel taxes and Mello-Roos, plus a supplemental bill after you buy that your impound account does not pay. Sources: <a href="https://www.sccassessor.org/apps/static/SupplementalFAQ.htm" target="_blank" rel="noopener">SCC Assessor</a>, <a href="https://www.jvmlending.com/blog/alameda-county-property-tax-your-complete-guide/" target="_blank" rel="noopener">county tax rate books via JVM</a>.',
+  mh_t:'Every closing &amp; tax tool',
+  ft_read:'Read more:',ft_lib:'Library: taxes when buying',ft_vid:'Kiến Thức Địa Ốc video',
+  ft_est:'General information, not tax, legal or lending advice. Every number is an estimate. Your real numbers come from your escrow statement, your tax bill and your CPA.',
+  ft_src:'Sources (checked 05/11/2026):',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I ran the buyer tax tool: {city}, price {p}, loan {l}, closing {mo}. Tax at closing {c}, property tax yr 1 about {pt}, federal savings about {f}/yr. Can you check it?',
+  subj:'Every tax when buying — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nCity: {city}\nPrice: {p}\nLoan: {l}\nFiling: {st}\nIncome used: {inc}\nClosing month: {mo}\n\nTax at closing (my share of transfer tax): {c}\nProperty tax first 12 months: {pt}\nSupplemental (example): {sp}\nNext installments: {ins}\nFederal savings from itemizing: {f}/yr\n\nSent from tool T233 tools.kenlamrealty.com'},
+ vi:{title:'Mọi loại thuế khi mua nhà',sub:'Lúc close, năm đầu, và lúc khai thuế. Mỗi khoản ra số tiền, rồi giải thích dễ tới mức con nít 10 tuổi cũng hiểu.',
+  l_city:'Thành phố',l_month:'Tháng close',l_price:'Giá mua',l_loan:'Tiền vay ',l_loan_s:'(0 = trả cash)',l_st:'Khai thuế kiểu',st_s:'Độc thân',st_m:'Vợ chồng khai chung',
+  l_inc:'Thu nhập cả nhà ',l_inc_s:'(không bắt buộc, /năm)',per_yr:'/năm',
+  k_close:'Thuế phải trả lúc close',k_prop:'Thuế nhà 12 tháng đầu',k_fed:'Thuế federal có thể bớt',
+  s_close_city:'Nửa phần city transfer tax của {c} ({r}/$1,000). Thuế county ({ct}) thường người bán trả.',
+  s_close_none:'{c} không có city transfer tax, còn thuế county ({ct}) thường người bán trả. Người mua ở đây thường trả $0 transfer tax.',
+  s_prop:'≈ {mo}/tháng, tính {r} (ước tính), đã trừ homeowners’ exemption. Tới theo 3 đường: phần chia với người bán trong escrow + {n} supplemental bill + bill thường của mình. Hạn kế tiếp: {ins}.',
+  s_fed_yes:'Khai itemized ({it}) cao hơn standard deduction ({std}) được {d}. Lãi năm đầu {i} với {rate}% (lãi giả định) + SALT {salt}.',
+  s_fed_no:'Khai itemized ({it}) không hơn standard deduction ({std}), nên khấu trừ lãi vay không bớt đồng nào thuế federal.',
+  s_fed_cash:'Mua cash: không có lãi vay để trừ.',
+  s_inc_def:' Chưa nhập thu nhập → tạm tính {v}.',
+  n_soon_brk:'Berkeley: số đang tính là rate hiện nay. Measure W tăng rate từ 01/01/2027 (1.5% dưới $1.6M, 2.5% từ $1.6M, 3% từ $1.9M, 3.5% trên $3M; ngưỡng chỉnh mỗi năm). Close năm 2027 thì hỏi escrow số thật.',
+  n_soon_alb:'Albany: số đang tính là 1.5% hiện nay. Measure S (thắng 03/11/2026, chưa chính thức) đổi sang bậc 1%–3% theo giá từ 01/01/2027. Ngưỡng tiền 2027 chưa công bố.',
+  n_soon_pie:'Piedmont: số đang tính là $13/$1,000 hiện nay. Measure GG (thắng 03/11/2026, chưa chính thức) tăng lên $17.50 từ 01/07/2027.',
+  n_sj_e:'San Jose trên $2.3M: Measure E thêm {r} trên toàn bộ giá ({a}). Thông lệ người bán trả, nhưng thương lượng được — coi kỹ hợp đồng.',
+  it_t:'Từng loại thuế, từng khoản',it_h:'Bấm vào từng dòng. 3 lớp: nói cho con nít, nói thật cho người lớn, và chỗ hay bị hớ.',
+  L_kid:'Nói cho con nít hiểu',L_adult:'Nói thật cho người lớn',L_tip:'Mẹo &amp; chỗ hay bị hớ',dict:'Từ điển',copy:'Copy link',copied:'Đã copy',
+  g1:'Lúc close',g2:'Sau khi dọn vào: thuế nhà',g3:'Lúc khai thuế thu nhập',g4:'Gia đình &amp; trường hợp riêng',
+  zero:'$0',info:'thông tin',check:'coi bill',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video',
+  f_title:'Gửi danh sách thuế này về email',f_sub:'Ken nhận được sẽ trả lời và giúp coi tax rate thật của địa chỉ đó. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số dưới đây nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ns_t:'Bước tiếp theo',
+  ns_list:'<li>Mọi closing cost bên mua, không chỉ thuế: <a href="/t03/">T03</a>. Danh sách bắt đầu: <a href="/t230/">T230</a>.</li><li>Supplemental bill và hạn đóng theo đúng ngày close và giá trị của người bán: <a href="/t12/">T12</a>.</li><li>Chia thuế với người bán ngày close: <a href="/t64/">T64</a>. Checklist trước close: <a href="/t63/">T63</a>.</li><li>Lãi suất hôm nay: <a href="/t30/">T30</a>. Có nên mua points: <a href="/t38/">T38</a>.</li><li>55 tuổi trở lên và có bán nhà cũ: <a href="/t25/">T25 Prop 19</a>. Phía bán: <a href="/t234/">T234</a>.</li><li>Chữ nào không hiểu: <a href="/t190/#property-tax-ca">T190 từ điển</a>.</li>',
+  myth:'<b>Nhiều người hiểu sai:</b> “Có Prop 13 nên thuế nhà chỉ 1%.” Thật ra là 1% cộng nợ bond dân bầu (khoảng 1.12%–1.34% ở đây), cộng parcel tax và Mello-Roos tính theo căn, cộng thêm supplemental bill sau khi mua mà impound account không trả giùm. Nguồn: <a href="https://www.sccassessor.org/apps/static/SupplementalFAQ.htm" target="_blank" rel="noopener">SCC Assessor</a>, <a href="https://www.jvmlending.com/blog/alameda-county-property-tax-your-complete-guide/" target="_blank" rel="noopener">bảng tax rate county qua JVM</a>.',
+  mh_t:'Mọi tool Closing &amp; Thuế',
+  ft_read:'Đọc thêm:',ft_lib:'Library: thuế khi mua nhà',ft_vid:'Video Kiến Thức Địa Ốc',
+  ft_est:'Thông tin chung, không phải tư vấn thuế, luật hay cho vay. Mọi số là ước tính. Số thật nằm trong giấy escrow, tax bill và CPA của bạn.',
+  ft_src:'Nguồn (tra ngày 05/11/2026):',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa dùng tool thuế khi mua: {city}, giá {p}, vay {l}, close {mo}. Thuế lúc close {c}, thuế nhà năm đầu khoảng {pt}, bớt thuế federal khoảng {f}/năm. Ken coi giùm được không?',
+  subj:'Mọi loại thuế khi mua nhà — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nThành phố: {city}\nGiá mua: {p}\nTiền vay: {l}\nKhai thuế: {st}\nThu nhập dùng để tính: {inc}\nTháng close: {mo}\n\nThuế lúc close (phần transfer tax của tôi): {c}\nThuế nhà 12 tháng đầu: {pt}\nSupplemental (ví dụ): {sp}\nKỳ đóng kế tiếp: {ins}\nBớt thuế federal nhờ itemize: {f}/năm\n\nGửi từ tool T233 tools.kenlamrealty.com'}
+};
+
+/* ===== items: 3 ELI10 layers each. x = computed result, f = formatted strings ===== */
+function itemsFor(L,x,f){
+  const en=L==='en';
+  const A=[];
+  /* 1 transfer tax */
+  A.push({id:'transfer-tax',g:1,term:'transfer-tax',amt:x.atClose,
+   n:en?'Transfer tax (your share)':'Transfer tax (phần người mua)',
+   s:en?(x.ct.rate?f.cityN+' $'+rt(x.ct.rate)+'/$1,000 split in half · county $1.10/$1,000 seller':'county $1.10/$1,000, seller pays by custom'):(x.ct.rate?f.cityN+' $'+rt(x.ct.rate)+'/$1,000 chia đôi · county $1.10/$1,000 người bán':'county $1.10/$1,000, thông lệ người bán trả'),
+   k:en?'When a house changes owners, the county and some cities charge a small “ticket” fee to write the new owner’s name in their book. Like a stamp on a movie ticket.':'Khi căn nhà đổi chủ, county và vài thành phố thu một khoản “phí đóng dấu” để ghi tên chủ mới vào sổ. Giống như đóng mộc lên vé xem phim.',
+   a:en?'County tax is $1.10 per $1,000 of price ('+f.county+' here). Custom in both Santa Clara and Alameda: the seller pays it. City tax: '+(x.ct.rate?f.cityN+' charges $'+rt(x.ct.rate)+' per $1,000 on the whole price ('+f.cityAll+'), and custom is buyer and seller split it: you pay about '+f.atClose+'.':f.cityN+' has none.')+' Who pays is custom, not law. Your contract decides.':'Thuế county là $1.10 trên mỗi $1,000 giá nhà (ở đây '+f.county+'). Thông lệ ở cả Santa Clara và Alameda: người bán trả. Thuế city: '+(x.ct.rate?f.cityN+' thu $'+rt(x.ct.rate)+' trên mỗi $1,000, tính trên toàn bộ giá ('+f.cityAll+'), thông lệ chia đôi: mình trả khoảng '+f.atClose+'.':f.cityN+' không có.')+' Ai trả là thông lệ, không phải luật. Hợp đồng quyết.',
+   t:en?'It shows on your Loan Estimate in section E and cannot go up on the Closing Disclosure (zero tolerance). In a hot market some sellers ask the buyer to pay all of it — that is a real price increase, count it. San Jose over $2.3M and Berkeley over $1.7M jump on the whole price, so $1 over the line costs thousands.':'Nó nằm ở mục E trên Loan Estimate và không được tăng lên trên Closing Disclosure (zero tolerance). Lúc thị trường nóng, có người bán đòi người mua trả hết — vậy là tăng giá thật, phải cộng vô. San Jose trên $2.3M và Berkeley trên $1.7M nhảy bậc trên toàn bộ giá, lố $1 là tốn cả ngàn.'});
+  /* 2 property tax */
+  A.push({id:'property-tax',g:2,term:'property-tax-ca',amt:x.yearTax,
+   n:en?'Property tax (yearly)':'Thuế nhà (mỗi năm)',s:en?'1% + voter bonds ≈ '+pct(x.rate)+' estimate':'1% + bond dân bầu ≈ '+pct(x.rate)+' ước tính',
+   k:en?'Everyone who owns a house chips in money each year for schools, roads and firefighters. The bigger the price you paid, the bigger your share.':'Ai có nhà cũng góp tiền mỗi năm để lo trường học, đường xá, cứu hỏa. Mua giá càng cao thì phần góp càng lớn.',
+   a:en?'California charges 1% of your assessed value (your price) plus bonds the voters approved for your area. In Santa Clara most areas land around 1.12%–1.24%; Oakland is about 1.34% before flat parcel taxes. We use '+pct(x.rate)+' as an estimate: about '+f.yearTax+' a year, paid in 2 installments. 1st: due Nov 1, late after Dec 10. 2nd: due Feb 1, late after Apr 10 (+10%). Your next two: '+f.instEn+'.':'California tính 1% trên giá trị tính thuế (giá mình mua) cộng các khoản bond dân trong vùng đã bầu. Santa Clara phần lớn khoảng 1.12%–1.24%; Oakland khoảng 1.34% chưa kể parcel tax. Tool dùng '+pct(x.rate)+' (ước tính): khoảng '+f.yearTax+' mỗi năm, đóng 2 kỳ. Kỳ 1: tới hạn 01/11, trễ sau 10/12. Kỳ 2: tới hạn 01/02, trễ sau 10/04 (+10%). Hai kỳ kế của bạn: '+f.instVi+'.',
+   t:en?'Ask for the seller’s last tax bill before you write the offer. It shows your exact rate and every flat charge. Rule of thumb ~1.25% is safe for Santa Clara, low for Oakland. Late after 5 PM on the deadline costs 10%. If the deadline is a weekend, you get until the next business day (Apr 10, 2027 is a Saturday → Apr 12).':'Xin bill thuế năm rồi của người bán trước khi viết offer. Trên đó có đúng rate và mọi khoản thu cố định. Tính ~1.25% thì an toàn cho Santa Clara, nhưng thấp cho Oakland. Trễ sau 5 giờ chiều ngày hạn là phạt 10%. Hạn rơi cuối tuần thì được tới ngày làm việc kế (10/04/2027 là thứ Bảy → 12/04).'});
+  /* 3 supplemental */
+  A.push({id:'supplemental',g:2,term:'supplemental-tax-bill',amt:x.suppSum,
+   n:en?'Supplemental tax bill':'Supplemental tax bill',s:en?x.bills.length+' bill(s) · example if seller’s value = half the price':x.bills.length+' bill · ví dụ nếu giá trị của người bán = nửa giá',
+   k:en?'The old owner was paying a small “old price” tax. You bought at a new, bigger price. The county sends you a catch-up bill for the difference.':'Chủ cũ đóng thuế theo “giá cũ” thấp. Mình mua giá mới cao hơn. County gửi một bill bù phần chênh lệch cho mình.',
+   a:en?'Starts the 1st of the month after you close. Amount = (your price − seller’s assessed value) × rate × months left in the tax year ÷ 12. Close Jan–May → 2 bills; other months → 1. You close in '+f.monEn+', so '+x.bills.length+' bill(s). Example: '+f.supp+' total if the seller’s value was half your price. Mailed a few months after closing, up to about 9 months.':'Bắt đầu từ ngày 1 tháng sau ngày close. Số tiền = (giá mình mua − giá trị tính thuế của người bán) × rate × số tháng còn lại trong năm thuế ÷ 12. Close tháng 1–5 → 2 bill; tháng khác → 1 bill. Bạn close tháng '+f.monVi+', nên có '+x.bills.length+' bill. Ví dụ: tổng '+f.supp+' nếu giá trị của người bán bằng nửa giá mình mua. Thư tới vài tháng sau close, có khi tới 9 tháng.',
+   t:en?'Your impound account does NOT pay this bill. It comes to you. Save for it from day one. Put in the seller’s real value in <a href="/t12/">T12</a> for an exact number.':'Impound account KHÔNG trả bill này. Nó gửi thẳng cho mình. Để dành từ ngày đầu. Nhập đúng giá trị của người bán ở <a href="/t12/">T12</a> để ra số chính xác.'});
+  /* 4 prop 13 */
+  A.push({id:'prop-13',g:2,term:'prop-13',amt:null,tag:en?'max +2%/yr':'tối đa +2%/năm',
+   n:'Prop 13',s:en?'your value can rise at most 2% a year':'giá trị tính thuế tăng tối đa 2%/năm',
+   k:en?'Once you buy, your tax “price tag” is frozen and can only grow a tiny bit each year, even if the house gets way more valuable.':'Mua rồi thì “giá tính thuế” gần như bị khóa, mỗi năm chỉ được tăng chút xíu, dù nhà lên giá bao nhiêu.',
+   a:en?'Your assessed value starts at your price and can go up at most 2% a year (2026–27 factor: 1.02). New bonds can still move the rate. It resets to market when the home sells or changes ownership (with some exceptions such as Prop 19).':'Giá trị tính thuế bắt đầu bằng giá mua và mỗi năm tăng tối đa 2% (hệ số 2026–27: 1.02). Bond mới vẫn có thể làm rate thay đổi. Khi bán hoặc đổi chủ thì tính lại theo giá thị trường (trừ vài trường hợp như Prop 19).',
+   t:en?'This is why neighbors pay wildly different tax on the same street. Don’t budget from the seller’s bill — budget from your price.':'Vì vậy hàng xóm cùng đường đóng thuế chênh nhau rất xa. Đừng lấy bill của người bán làm ngân sách — tính theo giá mình mua.'});
+  /* 5 HOX */
+  A.push({id:'homeowners-exemption',g:2,term:'homeowners-exemption',amt:-x.hoxAmt,
+   n:en?'Homeowners’ exemption (file it!)':'Homeowners’ exemption (nhớ nộp!)',s:en?'−$7,000 of value if you live there':'−$7,000 giá trị nếu mình ở',
+   k:en?'If you live in the house yourself, the county gives you a small coupon off your tax. But you have to hand in the coupon form.':'Nếu mình ở trong nhà đó, county cho một phiếu giảm giá nhỏ trên tiền thuế. Nhưng phải nộp tờ phiếu đó.',
+   a:en?'Takes $7,000 off your assessed value: about '+f.hox+' a year at '+pct(x.rate)+'. The Assessor mails new owners the form. File by 5 PM Feb 15 for the full amount; Feb 16 – Dec 10 gets 80%. You must live there as your main home.':'Trừ $7,000 khỏi giá trị tính thuế: khoảng '+f.hox+' mỗi năm với rate '+pct(x.rate)+'. Assessor tự gửi form cho chủ mới. Nộp trước 5 giờ chiều 15/02 thì được đủ; 16/02 – 10/12 được 80%. Phải ở làm nhà chính.',
+   t:en?'Small money, but it’s free and it repeats every year. Many new owners toss the envelope. Rental or 2nd home: you don’t qualify.':'Tiền ít nhưng miễn phí và năm nào cũng được. Nhiều chủ mới vứt luôn phong bì. Nhà cho thuê hay nhà thứ 2: không được.'});
+  /* 6 Mello-Roos */
+  A.push({id:'mello-roos',g:2,term:'mello-roos',amt:null,tag:en?'check bill':'coi bill',
+   n:en?'Mello-Roos, parcel taxes &amp; assessments':'Mello-Roos, parcel tax &amp; assessment',s:en?'flat $ per home, on top of the %':'số tiền cố định mỗi căn, cộng thêm ngoài %',
+   k:en?'Some neighborhoods borrowed money to build new parks, roads or schools. Every house there pays back a fixed slice each year.':'Vài khu đã vay tiền xây công viên, đường, trường mới. Mỗi căn trong khu trả lại một phần cố định mỗi năm.',
+   a:en?'These are fixed dollars per parcel, not a %. Example: Hayward Eden Shores CFD No. 1 billed $1,182.32 (Zone A) for 2025–26, rising up to 2% a year, ending after 2037–38. Fremont and Dublin have many CFDs; Oakland, Berkeley, Piedmont and Albany stack several flat parcel taxes.':'Đây là số tiền cố định mỗi căn, không phải %. Ví dụ: Hayward Eden Shores CFD No. 1 thu $1,182.32 (Zone A) năm 2025–26, tăng tối đa 2%/năm, hết sau năm 2037–38. Fremont và Dublin có nhiều CFD; Oakland, Berkeley, Piedmont, Albany có nhiều parcel tax cố định chồng lên nhau.',
+   t:en?'Look at “direct charges / special assessments” on the seller’s tax bill and the NHD report. Ask: how much, how fast does it rise, what year does it end?':'Coi dòng “direct charges / special assessments” trên bill thuế của người bán và trong NHD report. Hỏi: bao nhiêu, tăng nhanh cỡ nào, tới năm nào thì hết?'});
+  /* 7 mortgage interest */
+  A.push({id:'mortgage-interest',g:3,term:'interest-rate',amt:x.L>0?x.intDed:0,
+   n:en?'Mortgage interest deduction':'Khấu trừ lãi vay (mortgage interest)',s:x.L>0?(en?'year-1 interest '+f.int1+(x.miShare<1?' · '+Math.round(x.miShare*100)+'% counts ($750K limit)':''):'lãi năm đầu '+f.int1+(x.miShare<1?' · tính '+Math.round(x.miShare*100)+'% (giới hạn $750K)':'')):(en?'cash: none':'cash: không có'),
+   k:en?'The government says: “If you borrowed to buy your home, we’ll let you subtract the interest from the money we tax you on.” But only if your pile of deductions is bigger than the free one everyone gets.':'Nhà nước nói: “Vay tiền mua nhà ở thì cho trừ tiền lời ra khỏi phần bị đánh thuế.” Nhưng chỉ có lợi khi tổng các khoản trừ lớn hơn phần trừ sẵn mà ai cũng được.',
+   a:en?'Federal: interest on up to $750,000 of loan for a home bought after Dec 15, 2017 (permanent now). Over that, only a share counts. California: up to $1,000,000. Year 1 at '+R.RATE+'% (an assumed rate, not a quote): '+f.int1+' interest, '+f.intDed+' deductible federally. It only helps if mortgage interest + SALT ('+f.salt+') + other items beat the 2026 standard deduction ('+f.std+'). Here: '+(x.itemize?'yes, saves about '+f.fed+'/yr.':'no, $0 federal savings.'):'Federal: trừ lãi trên tối đa $750,000 tiền vay cho nhà mua sau 15/12/2017 (giờ là vĩnh viễn). Vay hơn thì chỉ tính một phần. California: tới $1,000,000. Năm đầu với lãi '+R.RATE+'% (lãi giả định, không phải báo giá): tiền lời '+f.int1+', được trừ federal '+f.intDed+'. Chỉ có lợi khi lãi vay + SALT ('+f.salt+') + khoản khác lớn hơn standard deduction 2026 ('+f.std+'). Ở đây: '+(x.itemize?'có, bớt khoảng '+f.fed+'/năm.':'không, bớt $0 thuế federal.'),
+   t:en?'Lenders love to say “you’ll get it back in taxes.” Check the math first: many couples with a smaller loan still take the standard deduction. Interest is biggest in year 1 and shrinks every year. MCC credit: we could not confirm a program open in 2026 in these counties — ask your lender.':'Lender hay nói “được trả lại bằng thuế”. Tính trước đã: nhiều cặp vợ chồng vay ít vẫn lấy standard deduction. Tiền lời lớn nhất năm đầu rồi nhỏ dần. MCC: chưa xác nhận được chương trình nào đang mở năm 2026 ở 2 county này — hỏi lender.'});
+  /* 8 points */
+  A.push({id:'points',g:3,term:'discount-points',amt:null,tag:en?'info':'thông tin',
+   n:en?'Points (discount points)':'Points (discount points)',s:en?'deductible in the year you pay, if rules are met':'được trừ năm trả nếu đủ điều kiện',
+   k:en?'You pay the bank extra money now so your interest is lower for years. Like paying for a season pass up front.':'Trả ngân hàng thêm một khoản bây giờ để lãi thấp hơn nhiều năm. Giống mua vé cả mùa trả trước.',
+   a:en?'1 point = 1% of the loan. On a loan to buy or build your main home, points can usually be deducted all in the year you pay them if the IRS tests are met. On a refinance or 2nd home they are spread over the life of the loan (Pub 936).':'1 point = 1% tiền vay. Loan mua hoặc xây nhà ở chính thì thường trừ hết trong năm trả nếu đủ các test của IRS. Refinance hay nhà thứ 2 thì chia đều theo đời loan (Pub 936).',
+   t:en?'A deduction only helps if you itemize. Points paid by the seller as a credit can still count for you. Is buying points worth it at all? <a href="/t38/">T38</a>.':'Khoản trừ chỉ có lợi khi itemize. Points do người bán trả bằng credit vẫn có thể tính cho mình. Có nên mua points không: <a href="/t38/">T38</a>.'});
+  /* 9 PMI */
+  const pmiTxtEn=x.L<=0||x.ltv<=0.8?'Your loan is 80% of price or less, so you likely have no PMI.':(x.pmiPart>=1?'Loan over 80% → likely PMI/MIP. With income '+f.inc+' you could deduct all of it.':(x.pmiPart>0?'Loan over 80% → likely PMI/MIP. With income '+f.inc+' only '+Math.round(x.pmiPart*100)+'% is deductible.':'Loan over 80% → likely PMI/MIP. With income '+f.inc+' (over $109,000) it is not deductible.'));
+  const pmiTxtVi=x.L<=0||x.ltv<=0.8?'Tiền vay ≤ 80% giá nên chắc không có PMI.':(x.pmiPart>=1?'Vay trên 80% → thường có PMI/MIP. Thu nhập '+f.inc+' thì trừ được hết.':(x.pmiPart>0?'Vay trên 80% → thường có PMI/MIP. Thu nhập '+f.inc+' thì chỉ trừ được '+Math.round(x.pmiPart*100)+'%.':'Vay trên 80% → thường có PMI/MIP. Thu nhập '+f.inc+' (trên $109,000) thì không trừ được.'));
+  A.push({id:'pmi',g:3,term:'pmi',amt:null,tag:x.ltv>0.8?(en?'loan >80%':'vay >80%'):(en?'info':'thông tin'),
+   n:en?'PMI / MIP deduction (new for 2026)':'Khấu trừ PMI / MIP (mới từ 2026)',s:en?'phases out above $100K income':'mất dần khi thu nhập trên $100K',
+   k:en?'If you put down less than 20%, the bank makes you buy insurance that protects the bank. Starting 2026 you can subtract it again, but only if your income is small enough.':'Đặt cọc dưới 20% thì ngân hàng bắt mua bảo hiểm để bảo vệ ngân hàng. Từ 2026 lại được trừ khoản này, nhưng chỉ khi thu nhập không cao.',
+   a:(en?'From tax year 2026, mortgage insurance is deductible again, permanently, treated like interest. It phases out: 10% less for each $1,000 of AGI over $100,000, gone above $109,000 ($54,500 married filing separately). Not indexed. ':'Từ năm thuế 2026, bảo hiểm vay được trừ lại, vĩnh viễn, tính như tiền lời. Mất dần: mỗi $1,000 AGI trên $100,000 mất 10%, hết hẳn khi trên $109,000 ($54,500 nếu vợ chồng khai riêng). Không chỉnh theo lạm phát. ')+(en?pmiTxtEn:pmiTxtVi),
+   t:en?'In the Bay Area most buyers earn above $109K, so this one rarely helps. California does not follow the federal change on mortgage insurance.':'Ở Bay Area đa số người mua có thu nhập trên $109K, nên khoản này ít khi giúp. California không theo thay đổi federal về bảo hiểm vay.'});
+  /* 10 SALT */
+  A.push({id:'salt',g:3,term:'property-tax-ca',amt:x.salt,
+   n:en?'SALT cap (state + property tax)':'SALT cap (thuế tiểu bang + thuế nhà)',s:en?'2026 cap '+f.cap+' for you':'trần 2026 của bạn '+f.cap,
+   k:en?'You can subtract the state tax and house tax you paid — but only up to a ceiling. Anything above the ceiling doesn’t count.':'Được trừ tiền thuế tiểu bang và thuế nhà đã đóng — nhưng chỉ tới một cái trần. Vượt trần thì không tính.',
+   a:en?'2026 cap: $40,400 ($20,200 married filing separately). It shrinks by 30% of income above $505,000, down to a $10,000 floor (reached near $606,333). It rises 1% a year through 2029, then drops back to $10,000 in 2030. Your estimate: CA income tax '+f.caTax+' + property tax '+f.yearTax+' = '+f.saltRaw+'; cap '+f.cap+'; counted '+f.salt+'.':'Trần 2026: $40,400 ($20,200 nếu vợ chồng khai riêng). Thu nhập trên $505,000 thì trần giảm 30% phần vượt, xuống tối thiểu $10,000 (khoảng $606,333 là chạm sàn). Tăng 1%/năm tới 2029, tới 2030 quay về $10,000. Ước tính của bạn: thuế thu nhập CA '+f.caTax+' + thuế nhà '+f.yearTax+' = '+f.saltRaw+'; trần '+f.cap+'; được tính '+f.salt+'.',
+   t:en?'Same cap for single and married filing jointly — couples don’t get double. The supplemental bill counts as property tax in the year you pay it. High earners in the 37% bracket also face a new 2/37 limit on itemized deductions from 2026.':'Độc thân và vợ chồng khai chung cùng 1 trần — vợ chồng không được gấp đôi. Supplemental bill tính là thuế nhà của năm mình đóng. Người ở bậc 37% còn bị giới hạn mới “2/37” trên itemized từ 2026.'});
+  /* 11 gift */
+  A.push({id:'gift',g:4,term:'gift-letter',amt:0,
+   n:en?'Gift from parents for the down payment':'Cha mẹ cho tiền down payment',s:en?'buyer pays $0 tax · $19,000 per giver per person':'người mua không đóng thuế · $19,000 mỗi người cho/mỗi người nhận',
+   k:en?'Mom and Dad give you money for the house. You don’t pay tax for getting a present. If the present is really big, Mom and Dad fill out a form, but almost never pay anything.':'Ba mẹ cho tiền mua nhà. Mình nhận quà thì không đóng thuế. Quà lớn quá thì ba mẹ điền một tờ form, nhưng gần như không ai phải trả tiền.',
+   a:en?'2026: each giver can give $19,000 per person with no paperwork (both parents to you and your spouse = $76,000). Above that, the GIVER files Form 709 and it comes off their $15,000,000 lifetime exemption. No one pays gift tax unless lifetime gifts pass $15M. California has no gift tax.':'2026: mỗi người cho được $19,000 cho mỗi người nhận mà không cần giấy tờ (ba + mẹ cho bạn và vợ/chồng = $76,000). Hơn vậy thì NGƯỜI CHO khai Form 709, trừ vào mức miễn trọn đời $15,000,000. Không ai đóng gift tax trừ khi tổng quà cả đời vượt $15M. California không có gift tax.',
+   t:en?'The lender will ask for a gift letter and a paper trail (bank statements showing the money moving). That’s a loan rule, not a tax bill. Move the money early and in one clean transfer.':'Lender sẽ đòi gift letter và dấu vết tiền (bank statement thấy tiền chuyển qua). Đó là luật cho vay, không phải bill thuế. Chuyển tiền sớm, một lần cho gọn.'});
+  /* 12 Prop 19 */
+  A.push({id:'prop-19',g:4,term:'prop-19',amt:null,tag:en?'55+':'55+',
+   n:en?'Prop 19: 55+ moving your low tax base':'Prop 19: 55 tuổi trở lên mang thuế thấp theo',s:en?'only if you sold your old CA home':'chỉ khi đã/sẽ bán nhà cũ ở CA',
+   k:en?'If Grandma sells her old house and buys a new one, she can bring her small old tax with her, like moving a toy from one box to a new box.':'Bà bán nhà cũ mua nhà mới thì được mang tiền thuế thấp cũ theo, như dời món đồ chơi từ hộp cũ qua hộp mới.',
+   a:en?'Age 55+, severely disabled, or disaster victims can move their old assessed value to a new home anywhere in California, up to 3 times. Buy within 2 years of selling. New home ≤100% of the old price (if bought first), ≤105% within year 1, ≤110% within year 2 keeps the old base; above that, the difference is added. File BOE-19-B within 3 years.':'Từ 55 tuổi, khuyết tật nặng, hoặc bị thiên tai thì được mang giá trị tính thuế cũ qua nhà mới ở bất kỳ county nào ở California, tối đa 3 lần. Mua trong vòng 2 năm. Nhà mới ≤100% giá nhà cũ (nếu mua trước), ≤105% trong năm 1, ≤110% trong năm 2 thì giữ nguyên base cũ; vượt thì cộng phần chênh. Nộp form BOE-19-B trong 3 năm.',
+   t:en?'This can cut thousands a year. Run your numbers in <a href="/t25/">T25</a> before choosing a price.':'Có thể bớt cả ngàn mỗi năm. Tính ở <a href="/t25/">T25</a> trước khi chọn giá.'});
+  /* 13 foreign */
+  A.push({id:'foreign-buyer',g:4,term:'firpta',amt:null,tag:en?'check':'hỏi lại',
+   n:en?'Buying from overseas':'Người mua ở nước ngoài',s:en?'the weight comes when you sell':'gánh nặng tới lúc bán',
+   k:en?'Some countries charge foreigners extra to buy a house. Here, the big surprise usually comes later, when you sell.':'Vài nước bắt người nước ngoài trả thêm tiền khi mua nhà. Ở đây, chuyện bất ngờ thường tới sau, lúc bán.',
+   a:en?'We did not find a California or county tax aimed at foreign buyers, but we could not confirm that from an official source — ask escrow and a CPA. What we can confirm: when a foreign owner sells, the buyer must withhold FIRPTA (usually 15%) and California withholding may apply. See <a href="/t234/#firpta">T234</a>.':'Tụi mình không thấy thuế riêng của California hay county đánh lên người mua nước ngoài, nhưng chưa xác nhận được từ nguồn chính thức — hỏi escrow và CPA. Điều chắc chắn: khi chủ ở nước ngoài bán, người mua phải giữ lại FIRPTA (thường 15%) và có thể bị California giữ thêm. Coi <a href="/t234/#firpta">T234</a>.',
+   t:en?'Get an ITIN or SSN sorted before closing, and keep every closing paper — you need them to prove your basis years later.':'Lo ITIN hay SSN trước khi close, và giữ hết giấy tờ close — nhiều năm sau cần để chứng minh giá gốc.'});
+  return A;
+}
+
+let st='m', last={}, openSet={};
+function months(){
+  const out=[]; for(let i=0;i<15;i++){ const y=2026+Math.floor((10+i)/12), m=((10+i)%12)+1; out.push([y,m]); } return out;
+}
+function fillSelects(){
+  const cs=$('city'), cv=cs.value||'sj';
+  cs.innerHTML='<optgroup label="Santa Clara County">'+CITIES.filter(c=>c.c==='SC').map(c=>'<option value="'+c.id+'">'+c.n+'</option>').join('')+'</optgroup>'
+   +'<optgroup label="Alameda County">'+CITIES.filter(c=>c.c==='AL').map(c=>'<option value="'+c.id+'">'+c.n+'</option>').join('')+'</optgroup>';
+  cs.value=cv;
+  const ms=$('month'), mv=ms.value||'2026-12';
+  ms.innerHTML=months().map(([y,m])=>'<option value="'+y+'-'+pad(m)+'">'+(lang==='vi'?'Tháng '+m+'/'+y:MON_EN[m-1]+' '+y)+'</option>').join('');
+  ms.value=mv;
+}
+function calc(){
+  const d=I18N[lang], [y,m]=$('month').value.split('-').map(Number);
+  const incRaw=num('inc');
+  const x=computeBuy({cityId:$('city').value,price:num('price'),loan:num('loan'),st,inc:incRaw>0?incRaw:null,y,m});
+  const city=x.city;
+  const f={cityN:city.n,county:fmt(x.county),cityAll:fmt(x.ct.base),atClose:fmt(x.atClose),yearTax:fmt(x.yearTax),supp:fmt(x.suppSum),hox:fmt(x.hoxAmt),
+    int1:fmt(x.int1),intDed:fmt(x.intDed),salt:fmt(x.salt),saltRaw:fmt(x.saltRaw),cap:fmt(x.cap),caTax:fmt(x.caTax),std:fmt(x.std),fed:fmt(x.fedSave),inc:fmt(x.inc),
+    monEn:MON_EN[m-1],monVi:String(m),
+    instEn:x.inst.map(i=>(i.inst===1?'1st':'2nd')+' installment late after '+(MON_EN[i.late[1]-1]+' '+i.late[2]+', '+i.late[0])).join('; '),
+    instVi:x.inst.map(i=>'kỳ '+i.inst+' trễ sau '+pad(i.late[2])+'/'+pad(i.late[1])+'/'+i.late[0]).join('; ')};
+  /* big numbers */
+  $('bClose').textContent=fmt(x.atClose);
+  $('sClose').innerHTML=x.ct.rate?fill(d.s_close_city,{c:city.n,r:'$'+rt(x.ct.rate),ct:fmt(x.county)}):fill(d.s_close_none,{c:city.n,ct:fmt(x.county)});
+  $('bProp').textContent=fmt(x.yearTax);
+  $('sProp').innerHTML=fill(d.s_prop,{mo:fmt(x.yearTax/12),r:pct(x.rate),n:x.bills.length,ins:lang==='vi'?f.instVi:f.instEn});
+  $('bFed').textContent=fmt(x.fedSave);
+  let sf = x.L<=0? d.s_fed_cash : (x.itemize? fill(d.s_fed_yes,{it:fmt(x.itemized),std:fmt(x.std),d:fmt(x.itemized-x.std),i:fmt(x.intDed),rate:R.RATE,salt:fmt(x.salt)}) : fill(d.s_fed_no,{it:fmt(x.itemized),std:fmt(x.std)}));
+  if(!x.incGiven) sf+=fill(d.s_inc_def,{v:fmt(x.inc)});
+  $('sFed').innerHTML=sf;
+  const notes=[]; if(city.soon) notes.push(d['n_soon_'+city.soon]); if(x.ct.xr>0) notes.push(fill(d.n_sj_e,{r:(x.ct.xr*100)+'%',a:fmt(x.ct.extra)}));
+  $('xNote').innerHTML=notes.join('<br><br>'); $('xNote').classList.toggle('hide',!notes.length);
+  /* items */
+  const items=itemsFor(lang,x,f);
+  let h='',g=0;
+  for(const it of items){
+    if(it.g!==g){ g=it.g; h+='<p class="grp-h">'+d['g'+g]+'</p>'; }
+    const amt = it.amt==null ? '<span class="am z">'+it.tag+'</span>' : (Math.abs(it.amt)<0.5?'<span class="am">$0</span>':'<span class="am">'+fmt(it.amt)+'</span>');
+    h+='<details class="tx" id="'+it.id+'"'+(openSet[it.id]?' open':'')+'><summary><span class="nm">'+it.n+'<small>'+it.s+'</small></span>'+amt+'</summary><div class="body">'
+      +'<div class="lay kid"><b class="k">'+d.L_kid+'</b>'+it.k+'</div>'
+      +'<div class="lay"><b class="k">'+d.L_adult+'</b>'+it.a+'</div>'
+      +'<div class="lay"><b class="k">'+d.L_tip+'</b>'+it.t+'</div>'
+      +'<div class="lnk"><a href="/t190/#'+it.term+'">'+d.dict+' →</a><button type="button" data-copy="'+it.id+'">'+d.copy+'</button></div></div></details>';
+  }
+  $('items').innerHTML=h;
+  const monLbl=$('month').selectedOptions[0]?$('month').selectedOptions[0].textContent:'';
+  last={city:city.n,p:fmt(x.P),l:fmt(x.L),st:st==='m'?d.st_m:d.st_s,inc:fmt(x.inc),mo:monLbl,c:fmt(x.atClose),pt:fmt(x.yearTax),sp:fmt(x.suppSum),
+    ins:lang==='vi'?f.instVi:f.instEn,f:fmt(x.fedSave)};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+}
+function goHash(){
+  const id=decodeURIComponent((location.hash||'').slice(1)); if(!id) return;
+  const el=document.getElementById(id); if(!el||el.tagName!=='DETAILS') return;
+  openSet[id]=1; el.open=true; el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'),1600);
+  requestAnimationFrame(()=>el.scrollIntoView({block:'start',behavior:'auto'}));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  document.querySelector('[data-i="mh_list"]').innerHTML='<ul class="mhl">'+TOOLS[lang].map(t=>'<li><a href="/'+t[0]+'/"><b>'+t[0].toUpperCase()+'</b> '+t[1]+'</a><span>'+t[2]+'</span></li>').join('')+'</ul>';
+  fillSelects(); calc();
+}
+$('items').addEventListener('toggle',e=>{const el=e.target; if(!el.classList||!el.classList.contains('tx')) return; if(el.open) openSet[el.id]=1; else delete openSet[el.id];},true);
+$('items').addEventListener('click',async e=>{const b=e.target.closest&&e.target.closest('button[data-copy]'); if(!b) return;
+  const id=b.getAttribute('data-copy'), url=location.origin+location.pathname+'#'+id;
+  try{history.replaceState(null,'','#'+id);}catch(_){} try{await navigator.clipboard.writeText(url);}catch(_){} b.textContent=I18N[lang].copied;});
+['city','month','price','loan','inc'].forEach(id=>{$(id).addEventListener('input',calc);$(id).addEventListener('change',calc);});
+$('stS').onclick=()=>{st='s';$('stS').setAttribute('aria-pressed','true');$('stM').setAttribute('aria-pressed','false');calc();};
+$('stM').onclick=()=>{st='m';$('stM').setAttribute('aria-pressed','true');$('stS').setAttribute('aria-pressed','false');calc();};
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], o=Object.assign({},last,{n:$('fname').value.trim()||'—',e:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'});
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing), giống T64. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,o))+'&body='+encodeURIComponent(fill(d.body,o));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+window.addEventListener('hashchange',goHash);
+applyLang();
+goHash();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+try{if(/[?&]embed=1/.test(location.search))a.style.display='none';}catch(e){}
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
