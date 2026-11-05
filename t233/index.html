@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vết Xấu Bao Lâu Mất</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T37 thêm (không đổi class cũ) ---- */
+.score{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.score b{font-family:var(--display);font-weight:400;font-size:40px;line-height:1;font-variant-numeric:tabular-nums;color:var(--fg)}
+.score span{font-size:13px;color:var(--muted)}
+.rng{width:100%;margin:4px 0 0;accent-color:var(--brass);height:28px;cursor:pointer}
+.ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.total .pay{margin-top:10px;font-size:15px;color:var(--muted)}
+.total .pay b{color:var(--fg);font-size:22px;font-weight:500;font-variant-numeric:tabular-nums}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45;background:var(--brass-soft)}
+.status b{font-weight:500}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.tbl th{font-size:12px;font-weight:500;color:var(--muted);text-align:right;padding:6px 0;border-bottom:1px solid var(--line)}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl td{padding:9px 0;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.tbl td small{color:var(--muted);font-size:11px;display:block;white-space:normal}
+.tbl tr.me td{color:var(--brass);font-weight:600}
+.tbl tr.me td small{color:var(--brass);font-weight:400}
+.tbl td.x{color:var(--warn)}
+.tbl tr.me td.x{color:var(--brass)}
+.tblk{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.tlw{display:grid;gap:12px}
+.tlw h2,.next h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-r{display:flex;align-items:center;gap:10px}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.gcal{font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.task .why a{color:var(--brass)}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+</style>
+<meta name="description" content="Pick a bad mark and its date: see when it drops off your credit report and the earliest date for Conventional, FHA, VA and USDA loans.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t233/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="How Long Bad Credit Stays & When You Can Buy · Ken Lam Tools">
+<meta property="og:description" content="Pick a bad mark and its date: see when it drops off your credit report and the earliest date for Conventional, FHA, VA and USDA loans.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t233/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.embed .kl-back{display:none}
+/* ---- nhóm credit T23x thêm (không đổi class cũ) ---- */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl select:focus-visible{outline:none}
+.ctl .chev{color:var(--muted);font-size:14px;pointer-events:none}
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.row3 .ctl{padding:0 8px}.row3 .ctl input{font-size:19px;padding:11px 2px;text-align:center}
+.hint{font-size:12px;color:var(--muted);line-height:1.45}
+.hide{display:none!important}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap;line-height:1.5}
+.pill.ok{background:rgba(79,122,90,.14);color:var(--ok)}
+.pill.near{background:var(--brass-soft);color:var(--brass)}
+.pill.no{background:rgba(154,91,46,.13);color:var(--warn)}
+.pill.chk{border:1px solid var(--line);color:var(--muted)}
+.estl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:500}
+.lr{display:grid;gap:4px;padding:12px 0;border-bottom:1px solid var(--line)}
+.lr:first-child{border-top:1px solid var(--line)}
+.lr .h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.lr .h b{font-weight:500;font-size:15px;min-width:0}
+.lr .h .d{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap;text-align:right}
+.lr .t{font-size:13px;color:var(--muted);line-height:1.5}
+.lr .t a{color:var(--brass)}
+.lr .e{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.lr .e b{color:var(--fg);font-weight:500}
+.lr.me .h b{color:var(--brass)}
+.who2{display:grid;gap:8px;border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--panel)}
+.who2 h3{font-family:var(--display);font-weight:400;font-size:21px;margin:0;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.who2 h3 small{font-family:var(--body);font-size:12px;color:var(--muted)}
+.row3 label{font-size:11px;color:var(--muted);text-align:center;display:block;margin-bottom:4px}
+.mid{border-color:var(--brass)!important;background:var(--brass-soft)!important}
+.wrap>*,.result>*{min-width:0}
+.lr .h{flex-wrap:wrap}
+.lr .h .d{white-space:normal;display:flex;flex-wrap:wrap;gap:4px 8px;justify-content:flex-end;align-items:baseline}
+
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">How long does it stay? When can I get a mortgage?</h1>
+    <p class="sub" data-i="sub">Pick the bad mark and the date. See when it drops off your credit report and the earliest date each loan type may look at you again.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="ev"><span data-i="l_ev">What happened?</span></label>
+      <div class="ctl"><select id="ev"></select><span class="chev">▾</span></div>
+    </div>
+    <div class="field">
+      <label for="d1"><span id="l_d1">Date</span></label>
+      <div class="ctl"><input id="d1" type="date"></div>
+      <span class="hint" id="h_d1"></span>
+    </div>
+    <div class="field" id="f_d2">
+      <label for="d2"><span id="l_d2">Discharge date</span></label>
+      <div class="ctl"><input id="d2" type="date"></div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_ext">Documented extenuating circumstances?</span> <small data-i="l_ext_s">(lender decides if yours count)</small></label>
+      <div class="seg" id="ext"><button type="button" aria-pressed="true" data-v="0" data-i="no">No</button><button type="button" aria-pressed="false" data-v="1" data-i="yes">Yes</button></div>
+    </div>
+    <div class="field" id="f_paid">
+      <label><span data-i="l_paid">Is the medical bill paid?</span></label>
+      <div class="seg" id="paid"><button type="button" aria-pressed="true" data-v="0" data-i="no">No</button><button type="button" aria-pressed="false" data-v="1" data-i="yes">Yes</button></div>
+    </div>
+    <div class="field" id="f_amt">
+      <label for="amt"><span data-i="l_amt">Amount of the medical collection</span></label>
+      <div class="ctl"><span class="pre">$</span><input id="amt" type="number" inputmode="numeric" min="0" step="50" value="1200"></div>
+    </div>
+    <div class="field" id="f_clean">
+      <label><span data-i="l_clean">Were you current (no lates) in the 12 months before the short sale?</span></label>
+      <div class="seg" id="clean"><button type="button" aria-pressed="true" data-v="0" data-i="no">No</button><button type="button" aria-pressed="false" data-v="1" data-i="yes">Yes</button></div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_off">Drops off your credit report</div>
+      <div class="v" id="offV">—</div>
+      <div class="pay"><span id="offS"></span></div>
+    </div>
+    <div class="status" id="status"></div>
+    <div>
+      <div class="tblk" data-i="t_title">Earliest date to apply, by loan type</div>
+      <div id="waits"></div>
+    </div>
+    <div class="note" id="evNote"></div>
+    <div class="note" id="medNote"></div>
+    <div class="note" data-i="est_note">Conventional dates follow the Fannie Mae Selling Guide. FHA, VA and USDA dates come from a lender quick-reference, not the HUD/VA/USDA handbooks, so they are marked estimate. FHA counts from the case number date, VA from credit approval. Lenders and mortgage insurers can ask for more time.</div>
+  </section>
+
+  <p class="myth" data-i="myth"><b>Common myth:</b> "Once I pay a collection, it comes off my report." Paying does not erase an accurate entry. It stays for the full 7 years, just marked paid. Only wrong or unverifiable items get removed. (Paid medical collections are the exception: the bureaus drop those.)</p>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">Pull all 3 reports free at <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">annualcreditreport.com</a> and check the dates on each bad mark.</li>
+      <li data-i="nx2">Date or amount wrong? Write a dispute with <a href="/t234/">T234</a>. The bureau has 30 days to answer.</li>
+      <li data-i="nx3">Rebuild while you wait: follow the plan in <a href="/t238/">T238</a>, keep utilization low with <a href="/t231/">T231</a>.</li>
+      <li data-i="nx4">Close to the date? See which loans your score fits in <a href="/t235/">T235</a> and what the score costs you in <a href="/t37/">T37</a>.</li>
+    </ol>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video guide"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t233/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this result to yourself</h2>
+    <p data-i="f_sub">Ken gets a copy and can connect you with a lender for a free soft-pull review. No spam.</p>
+    <div class="field"><label for="fname" data-i="f_name">Name</label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone" data-i="f_phone">Phone (optional)</label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#credit-score" target="_blank" rel="noopener" data-i="ft_lib">Library</a> · <a href="https://kenlamrealty.com/library#video-credit" target="_blank" rel="noopener" data-i="ft_vid">Video</a> · <a href="/t230/" data-i="ft_hub">All credit tools (T230)</a></span>
+    <span data-i="ft_disc">For information only.</span>
+    <span class="src"><span data-i="ft_src">Sources</span> (05/11/2026):
+      <a href="https://www.govinfo.gov/content/pkg/USCODE-2024-title15/html/USCODE-2024-title15-chap41-subchapIII-sec1681c.htm" target="_blank" rel="noopener">FCRA 15 USC 1681c</a> ·
+      <a href="https://www.consumerfinance.gov/ask-cfpb/how-long-do-negative-information-remain-on-my-credit-report-en-323/" target="_blank" rel="noopener">CFPB: how long negatives stay</a> ·
+      <a href="https://www.cacb.uscourts.gov/credit-report-and-court-records" target="_blank" rel="noopener">US Bankruptcy Court C.D. Cal.</a> ·
+      <a href="https://selling-guide.fanniemae.com/sel/b3-5.3-07/significant-derogatory-credit-events-waiting-periods-and-re-establishing-credit" target="_blank" rel="noopener">Fannie Mae B3-5.3-07</a> ·
+      <a href="https://selling-guide.fanniemae.com/sel/b3-5.3-03/previous-mortgage-payment-history" target="_blank" rel="noopener">Fannie Mae B3-5.3-03</a> ·
+      <a href="https://www.uhmgo.com/contentimages/706405964/UHM_Waiting_Periods_for_Significant_Credit_Events.pdf" target="_blank" rel="noopener">Lender waiting-period quick ref (09/23/2026)</a> ·
+      <a href="https://www.rd.usda.gov/sites/default/files/RD-SFH-3555CHAPTER10.pdf" target="_blank" rel="noopener">USDA HB-1-3555 ch.10</a> ·
+      <a href="https://investor.equifax.com/news-events/press-releases/detail/1286/equifax-experian-and-transunion-remove-medical-collections" target="_blank" rel="noopener">Equifax/Experian/TransUnion medical debt</a> ·
+      <a href="https://oag.ca.gov/news/press-releases/california-it-remains-illegal-medical-debt-appear-credit-reports-attorney" target="_blank" rel="noopener">CA Attorney General: SB 1061</a> ·
+      <a href="https://www.goodwinlaw.com/en/insights/blogs/2025/11/cfpb-issues-rule-that-fcra-preempts-state-measures-barring-medical-debt" target="_blank" rel="noopener">CFPB preemption rule (summary)</a> ·
+      <a href="https://www.experian.com/blogs/ask-experian/how-long-do-hard-inquiries-stay-on-your-credit-report/" target="_blank" rel="noopener">Experian: hard inquiries</a></span>
+    <span class="who">Ken Lam Realty · Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 05/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+
+</div>
+
+<script>
+/* ===== RULES T233 — sửa ở đây (nguồn: /home/claude/credit/FACTS.md, tra 05/11/2026) =====
+   Report (FCRA 15 USC 1681c, govinfo; CFPB en-323 rev. 2026-09-02):
+     late & phần lớn vết xấu 7 năm (1681c(a)(5)); collection/charge-off 7 năm tính từ 180 ngày sau ngày bắt đầu trễ (1681c(a)(4),(c));
+     bankruptcy tối đa 10 năm từ order for relief (1681c(a)(1)); Ch13 bureau thường gỡ 7 năm từ ngày nộp (cacb.uscourts.gov);
+     foreclosure/short sale/deed-in-lieu 7 năm (luật) — cách bureau tính ngày từng mục: ESTIMATE.
+     Hard inquiry nằm tối đa 2 năm, FICO chỉ tính 12 tháng (Experian).
+   Medical: bureau tự gỡ paid (07/01/2022), unpaid chỉ hiện sau 1 năm, <$500 không báo (04/11/2023) — Equifax IR.
+     CA SB 1061 (hiệu lực 01/01/2025): medical debt không được lên credit report ở CA; AG Bonta 11/13/2025: vẫn bất hợp pháp ở CA.
+     CFPB 10/20/2025 interpretive rule: FCRA preempt luật bang (không ràng buộc, tòa quyết). CFPB medical rule 01/2025 bị tòa E.D. Tex. vacate ~07/2025.
+   Waiting periods (tháng). conv = Fannie Mae B3-5.3-07 (VERIFIED) + B3-5.3-03 mortgage late 60+ trong 12 tháng (VERIFIED).
+     fha/va/usda = bảng lender quick-ref UHM 09/23/2026 → ESTIMATE (est:1), trừ USDA late 30+ rent/mortgage 12 tháng (HB-1-3555 ch.10, VERIFIED).
+     FHA late = FHA Manual UW Job Aid (lender, 07/24/2025) → ESTIMATE.
+   m = tháng chờ, x = tháng chờ nếu có extenuating, xhi = cận trên (VA 12–23), from = 'd1'|'d2', none = nguồn không có thời gian chờ cố định,
+   ok0 = 0 tháng nếu "không trễ 12 tháng trước short sale". */
+const RULES={
+  off:{ late:{y:7}, coll:{d:180,y:7}, bk:{y:10}, bk13:{y:7}, prop:{y:7,est:1}, inq:{y:2}, inqFico:{m:12}, medShow:{m:12}, medMin:500 },
+  ev:{
+    late_mtg:{off:'late', d1:'d_late', w:{conv:{m:12,from:'d1',n:'w_conv_late'}, fha:{m:12,from:'d1',est:1,n:'w_fha_late'}, va:{none:1,n:'w_none'}, usda:{m:12,from:'d1',n:'w_usda_late'}}},
+    late_card:{off:'late', d1:'d_late', w:{conv:{none:1,n:'w_aus'}, fha:{m:12,from:'d1',est:1,n:'w_fha_rev'}, va:{none:1,n:'w_none'}, usda:{none:1,n:'w_aus'}}},
+    coll:{off:'coll', d1:'d_dlq', w:{conv:{none:1,n:'w_aus'}, fha:{none:1,n:'w_aus'}, va:{none:1,n:'w_aus'}, usda:{none:1,n:'w_aus'}}},
+    co:{off:'coll', d1:'d_dlq', w:{conv:{none:1,n:'w_aus'}, fha:{none:1,n:'w_aus'}, va:{none:1,n:'w_aus'}, usda:{none:1,n:'w_aus'}}},
+    med:{off:'coll', d1:'d_dlq', med:1, w:{conv:{none:1,n:'w_aus'}, fha:{none:1,n:'w_aus'}, va:{none:1,n:'w_aus'}, usda:{none:1,n:'w_aus'}}},
+    bk7:{off:'bk', d1:'d_file', d2:'d_dis', w:{conv:{m:48,x:24,from:'d2'}, fha:{m:24,x:12,from:'d2',est:1,n:'w_fha_bk7'}, va:{m:24,x:12,xhi:23,from:'d2',est:1}, usda:{m:36,from:'d2',est:1}}},
+    bk13d:{off:'bk13', d1:'d_file', d2:'d_dis13', w:{conv:{m:24,from:'d2'}, fha:{m:24,from:'d2',est:1,n:'w_fha_13d'}, va:{none:1,est:1,n:'w_va_13d'}, usda:{m:12,from:'d2',est:1,n:'w_usda_13d'}}},
+    bk13x:{off:'bk13', d1:'d_file', d2:'d_dism', w:{conv:{m:48,x:24,from:'d2'}, fha:{none:1,n:'w_nosrc'}, va:{none:1,n:'w_nosrc'}, usda:{none:1,n:'w_nosrc'}}},
+    bk13p:{off:'bk13', d1:'d_file', w:{conv:{none:1,n:'w_conv_13p'}, fha:{m:12,from:'d1',est:1,n:'w_13p'}, va:{m:12,from:'d1',est:1,n:'w_13p'}, usda:{m:12,from:'d1',est:1,n:'w_13p'}}},
+    fc:{off:'prop', d1:'d_fc', w:{conv:{m:84,x:36,from:'d1',n:'w_conv_fc'}, fha:{m:36,x:12,from:'d1',est:1}, va:{m:24,x:12,xhi:23,from:'d1',est:1}, usda:{m:36,from:'d1',est:1}}},
+    ss:{off:'prop', d1:'d_ss', clean:1, w:{conv:{m:48,x:24,from:'d1'}, fha:{m:36,ok0:1,from:'d1',est:1,n:'w_fha_ss'}, va:{ok0:1,from:'d1',est:1,n:'w_va_ss'}, usda:{m:36,ok0:1,from:'d1',est:1}}},
+    dil:{off:'prop', d1:'d_dil', w:{conv:{m:48,x:24,from:'d1'}, fha:{m:36,from:'d1',est:1}, va:{m:24,from:'d1',est:1}, usda:{m:36,from:'d1',est:1}}},
+    inq:{off:'inq', d1:'d_inq', w:{conv:{none:1,n:'w_inq'}, fha:{none:1,n:'w_inq'}, va:{none:1,n:'w_inq'}, usda:{none:1,n:'w_inq'}}}
+  },
+  progs:['conv','fha','va','usda']
+};
+const UPDATED='05/11/2026';
+/* ===== Phần chung nhóm credit (giống T37) ===== */
+const COMMON={
+ vi:{b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video',
+  f_title:'Gửi kết quả này về email',f_sub:'Ken nhận được bản copy, có thể giới thiệu lender coi hồ sơ bằng soft pull miễn phí. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  nx_title:'Bước tiếp theo',ft_read:'Đọc thêm:',ft_lib:'Bài Library: điểm tín dụng và vay nhà',ft_vid:'Video Kiến Thức Địa Ốc',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  ft_disc:'Thông tin tham khảo, không phải tư vấn pháp lý, tài chính hay cam kết cho vay. Điểm thật do FICO/VantageScore và 3 bureau tính.'},
+ en:{b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch video',
+  f_title:'Email this result to yourself',f_sub:'Ken gets a copy and can connect you with a lender for a free soft-pull review. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  nx_title:'Next steps',ft_read:'Read more:',ft_lib:'Library: credit scores and your mortgage',ft_vid:'Real estate basics video',
+  ft_src:'Sources',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  ft_disc:'For information only. Not legal or financial advice and not a commitment to lend. Your real scores are calculated by FICO/VantageScore and the 3 bureaus.'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:NaN};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let last={};
+/* ===== T233 ===== */
+const EVS=['late_mtg','late_card','coll','co','med','bk7','bk13d','bk13x','bk13p','fc','ss','dil','inq'];
+const I18N={
+ vi:{title:'Vết xấu bao lâu mới mất? Bao lâu mua nhà lại được?',sub:'Chọn loại vết xấu và ngày xảy ra. Thấy liền ngày nó rơi khỏi credit report, và ngày sớm nhất từng loại loan chịu xét hồ sơ lại.',
+  l_ev:'Chuyện gì xảy ra?',l_ext:'Có giấy tờ hoàn cảnh đặc biệt (extenuating circumstances) không?',l_ext_s:'(lender quyết có tính hay không)',no:'Không',yes:'Có',
+  l_clean:'12 tháng trước short sale, có trả đúng hạn hết không (không trễ)?',l_paid:'Bill medical đã trả chưa?',l_amt:'Số tiền medical collection',
+  e_late_mtg:'Trễ tiền nhà (mortgage) 30/60/90 ngày',e_late_card:'Trễ thẻ / car loan / khoản khác',e_coll:'Collection',e_co:'Charge-off',e_med:'Medical debt (nợ bệnh viện)',
+  e_bk7:'Bankruptcy Chapter 7',e_bk13d:'Chapter 13 — đã discharge',e_bk13x:'Chapter 13 — bị dismiss',e_bk13p:'Chapter 13 — đang trả theo plan',
+  e_fc:'Foreclosure (nhà bị siết)',e_ss:'Short sale',e_dil:'Deed-in-lieu',e_inq:'Hard inquiry',
+  d_late:'Ngày bị báo trễ',d_dlq:'Ngày bắt đầu trễ lần đầu (date of first delinquency)',d_file:'Ngày nộp hồ sơ bankruptcy (filing)',d_dis:'Ngày discharge',d_dis13:'Ngày discharge',d_dism:'Ngày dismiss',
+  d_fc:'Ngày foreclosure xong (completion)',d_ss:'Ngày short sale close',d_dil:'Ngày ký deed-in-lieu',d_inq:'Ngày lender kéo credit',
+  h_dlq:'Coi trên report, mục "date of first delinquency". Không phải ngày nợ bị bán cho công ty collection.',h_any:'Coi ngày này trên credit report hoặc giấy tòa/escrow.',
+  r_off:'Rơi khỏi credit report',offS_left:'Còn {t} nữa',offS_gone:'Đã qua ngày này — nếu còn trên report thì dispute được',offS_none:'Nhập ngày để tính',
+  t_title:'Ngày sớm nhất nộp hồ sơ vay, theo loại loan',p_conv:'Conventional (Fannie Mae)',p_fha:'FHA',p_va:'VA',p_usda:'USDA',est:'ước tính',
+  st_best:'Sớm nhất: <b>{p}</b> từ <b>{d}</b>{x}.',st_past:'Đã qua thời gian chờ của <b>{p}</b> từ <b>{d}</b>{x}. Giờ lender coi điểm, DTI và cả hồ sơ.',st_now:'<b>{p}</b> không đòi thời gian chờ cố định cho mục này{x}. Lender vẫn coi cả hồ sơ.',st_wait:'Nhập ngày để thấy ngày sớm nhất.',st_x:' (nếu lender chấp nhận hoàn cảnh đặc biệt)',st_est:' — ước tính',
+  ready:'Đã tới',left:'còn {t}',wait_m:'chờ {m} tháng',wait_x:'có hoàn cảnh đặc biệt: {m} tháng',from_d1:'tính từ ngày ở trên',from_d2:'tính từ ngày discharge/dismiss',
+  w_none:'Nguồn không ghi thời gian chờ cố định. Lender coi cả hồ sơ.',w_aus:'Không có thời gian chờ cố định. Hệ thống AUS và lender coi cả hồ sơ, điểm, DTI.',
+  w_conv_late:'Bất kỳ lần trễ 60 ngày trở lên của mortgage trong 12 tháng trước report là loan không đủ điều kiện. Trễ 30 ngày: không có luật chờ cố định.',
+  w_fha_late:'Có lần trễ 30 ngày tiền nhà/installment trong 12 tháng thì TOTAL Accept bị đẩy xuống manual underwriting.',
+  w_fha_rev:'Thẻ trễ 90 ngày trong 12 tháng thì bị đẩy xuống manual underwriting. Trễ ít hơn: không có luật chờ cố định.',
+  w_usda_late:'1 lần trễ tiền nhà/tiền thuê 30+ ngày trong 12 tháng là "significant derogatory" → cần credit exception (Refer/manual).',
+  w_fha_bk7:'Có hoàn cảnh đặc biệt: 12 tháng, manual underwriting.',w_fha_13d:'Có thể ngắn hơn nếu manual underwriting và đủ điều kiện.',
+  w_va_13d:'Nguồn không ghi thời gian chờ riêng sau discharge. Hỏi lender.',w_usda_13d:'Plan phải xong ít nhất 1 năm trước ngày nộp hồ sơ.',
+  w_nosrc:'Chưa có số chắc chắn cho loại loan này. Hỏi lender.',w_conv_13p:'Thường chưa được khi chưa discharge.',
+  w_13p:'Cần ít nhất 12 tháng trả plan đúng hạn + tòa/trustee đồng ý (FHA: manual). Tính từ ngày nộp.',
+  w_conv_fc:'Hoàn cảnh đặc biệt 3 năm: tối đa 90% LTV, chỉ mua nhà ở chính.',
+  w_fha_ss:'0 tháng nếu không trễ trong 12 tháng trước short sale và không phải "strategic". Còn không: 3 năm.',
+  w_va_ss:'0 tháng nếu không trễ trong 12 tháng trước short sale. Còn không: nguồn không ghi, hỏi lender.',
+  w_inq:'Không có thời gian chờ. Mỗi hard inquiry thường trừ dưới 5 điểm.',
+  n_late:'Trễ hạn nằm trên report 7 năm tính từ ngày trễ. Càng cũ càng ít ảnh hưởng.',
+  n_coll:'Collection và charge-off nằm 7 năm, nhưng đồng hồ bắt đầu chạy 180 ngày sau ngày trễ lần đầu, tức khoảng 7 năm rưỡi. Nợ bị bán qua công ty khác không làm đồng hồ chạy lại.',
+  n_bk:'Luật cho phép bankruptcy nằm tối đa 10 năm tính từ ngày nộp (order for relief).',
+  n_bk13:'Chapter 13: luật cho tối đa 10 năm, nhưng bureau thường gỡ sau 7 năm tính từ ngày nộp.',
+  n_prop:'Foreclosure, short sale, deed-in-lieu là mục xấu 7 năm theo luật. Bureau tính ngày bắt đầu từng mục hơi khác nhau, nên ngày ở đây là ước tính.',
+  n_inq:'Hard inquiry nằm 2 năm, nhưng FICO chỉ tính 12 tháng đầu. Sau ngày {d} là FICO không tính nữa.',
+  n_exc:'Luật 7 năm không áp dụng khi xin vay từ $150,000 trở lên (1681c(b)). Vay nhà thường trên mức này, nên lender có thể thấy mục cũ hơn trên một số report.',
+  med_ca:'<b>Luật California:</b> SB 1061 (hiệu lực 01/01/2025) nói medical debt không được lên credit report ở California. Văn phòng Attorney General CA (11/13/2025) nói vẫn bất hợp pháp ở CA.<br><b>Cơ quan liên bang:</b> CFPB (10/20/2025) cho rằng luật liên bang FCRA đè luật bang. Ý kiến này không ràng buộc, tòa sẽ quyết. Rule medical debt của CFPB năm 2025 đã bị tòa hủy.<br><b>Chính sách riêng của 3 bureau:</b> {b}',
+  med_b_paid:'medical collection đã trả thì bị gỡ.',med_b_small:'medical collection dưới $500 thì không báo.',med_b_new:'medical chưa trả chỉ hiện sau 1 năm — tức từ khoảng {d}.',med_b_big:'medical chưa trả từ $500 trở lên có thể hiện sau 1 năm.',
+  med_off:'Theo luật CA: không được lên report',med_offS:'Nếu thấy trên report, dispute với bureau và báo AG California. Ngày rơi tối đa theo luật liên bang: {d}.',
+  myth:'<b>Nhiều người hiểu sai:</b> "Trả collection xong là nó mất khỏi report." Không. Trả rồi thì mục đó ghi "paid", nhưng vẫn nằm đủ 7 năm nếu thông tin đúng. Chỉ thông tin sai hoặc không xác minh được mới bị gỡ. (Medical collection đã trả là ngoại lệ: bureau tự gỡ.)',
+  nx1:'Lấy cả 3 report miễn phí ở <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">annualcreditreport.com</a>, coi kỹ ngày của từng vết xấu.',
+  nx2:'Ngày hay số tiền sai? Viết thư dispute bằng <a href="/t234/">T234</a>. Bureau có 30 ngày để trả lời.',
+  nx3:'Trong lúc chờ thì xây lại credit: theo kế hoạch ở <a href="/t238/">T238</a>, giữ utilization thấp với <a href="/t231/">T231</a>.',
+  nx4:'Gần tới ngày? Coi điểm mình vay được loại nào ở <a href="/t235/">T235</a> và điểm làm mình trả thêm bao nhiêu ở <a href="/t37/">T37</a>.',
+  est_note:'Ngày conventional theo Fannie Mae Selling Guide. Ngày FHA, VA, USDA lấy từ bảng tóm tắt của lender, không phải sổ tay HUD/VA/USDA, nên ghi "ước tính". FHA tính tới ngày có case number, VA tính tới ngày duyệt credit. Lender và công ty mortgage insurance có thể đòi lâu hơn (MI có khi 4–7 năm, ước tính).',
+  ft_hub:'Mọi tool điểm tín dụng (T230)',
+  yr:'{n} năm',mo:'{n} tháng',dy:'{n} ngày',
+  sms:'Chào Ken, tôi xem tool T233: {ev}, ngày {d1}. Rơi khỏi report: {off}. Sớm nhất vay: {best}. Nhờ Ken coi giùm.',
+  subj:'Vết xấu credit và ngày vay lại — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nLoại: {ev}\nNgày: {d1}\nNgày 2: {d2}\nHoàn cảnh đặc biệt: {ext}\n\nRơi khỏi report: {off}\n\n{rows}\n\nThông tin tham khảo. FHA/VA/USDA là ước tính.\nGửi từ tool T233 tools.kenlamrealty.com'},
+ en:{title:'How long does it stay? When can I get a mortgage?',sub:'Pick the bad mark and the date. See when it drops off your credit report and the earliest date each loan type may look at you again.',
+  l_ev:'What happened?',l_ext:'Documented extenuating circumstances?',l_ext_s:'(lender decides if yours count)',no:'No',yes:'Yes',
+  l_clean:'Were you current (no late payments) in the 12 months before the short sale?',l_paid:'Is the medical bill paid?',l_amt:'Amount of the medical collection',
+  e_late_mtg:'Late mortgage payment (30/60/90 days)',e_late_card:'Late card / car loan / other',e_coll:'Collection',e_co:'Charge-off',e_med:'Medical debt',
+  e_bk7:'Chapter 7 bankruptcy',e_bk13d:'Chapter 13 — discharged',e_bk13x:'Chapter 13 — dismissed',e_bk13p:'Chapter 13 — still in the plan',
+  e_fc:'Foreclosure',e_ss:'Short sale',e_dil:'Deed-in-lieu',e_inq:'Hard inquiry',
+  d_late:'Date reported late',d_dlq:'Date of first delinquency',d_file:'Bankruptcy filing date',d_dis:'Discharge date',d_dis13:'Discharge date',d_dism:'Dismissal date',
+  d_fc:'Foreclosure completion date',d_ss:'Short sale closing date',d_dil:'Deed-in-lieu date',d_inq:'Date the lender pulled credit',
+  h_dlq:'Look for "date of first delinquency" on your report. Not the date the debt was sold to a collector.',h_any:'Find this date on your credit report or court/escrow papers.',
+  r_off:'Drops off your credit report',offS_left:'{t} to go',offS_gone:'That date has passed — if it is still on your report, you can dispute it',offS_none:'Enter the date',
+  t_title:'Earliest date to apply, by loan type',p_conv:'Conventional (Fannie Mae)',p_fha:'FHA',p_va:'VA',p_usda:'USDA',est:'estimate',
+  st_best:'Soonest: <b>{p}</b> from <b>{d}</b>{x}.',st_past:'The <b>{p}</b> waiting period ended <b>{d}</b>{x}. Now it comes down to score, DTI and the whole file.',st_now:'<b>{p}</b> has no fixed waiting period for this{x}. The lender still reviews the whole file.',st_wait:'Enter the date to see the soonest date.',st_x:' (if the lender accepts extenuating circumstances)',st_est:' — estimate',
+  ready:'Reached',left:'{t} to go',wait_m:'{m}-month wait',wait_x:'with extenuating: {m} months',from_d1:'from the date above',from_d2:'from the discharge/dismissal date',
+  w_none:'Source gives no fixed waiting period. The lender reviews the whole file.',w_aus:'No fixed waiting period. The AUS and lender look at the whole file, score and DTI.',
+  w_conv_late:'Any 60-day-or-worse mortgage late in the 12 months before the credit report makes the loan ineligible. 30-day late: no fixed wait.',
+  w_fha_late:'A 30-day mortgage/installment late in the last 12 months downgrades a TOTAL Accept to manual underwriting.',
+  w_fha_rev:'A 90-day revolving late in the last 12 months downgrades to manual underwriting. Smaller lates: no fixed wait.',
+  w_usda_late:'One rent/mortgage payment 30+ days late in the last 12 months is a significant derogatory → needs a credit exception (Refer/manual).',
+  w_fha_bk7:'With extenuating circumstances: 12 months, manual underwriting.',w_fha_13d:'Can be shorter with manual underwriting if requirements are met.',
+  w_va_13d:'Source states no separate wait after discharge. Ask the lender.',w_usda_13d:'Plan must be completed at least 1 year before you apply.',
+  w_nosrc:'No confirmed number for this loan type. Ask the lender.',w_conv_13p:'Generally not eligible before discharge.',
+  w_13p:'Needs at least 12 months of on-time plan payments + court/trustee approval (FHA: manual). Counted from filing.',
+  w_conv_fc:'3-year extenuating option: max 90% LTV, primary-home purchase only.',
+  w_fha_ss:'0 months if no lates in the 12 months before the short sale and it was not strategic. Otherwise 3 years.',
+  w_va_ss:'0 months if no lates in the 12 months before the short sale. Otherwise the source gives no number; ask the lender.',
+  w_inq:'No waiting period. One hard inquiry usually costs under 5 points.',
+  n_late:'Late payments stay 7 years from the late date. The older they get, the less they weigh.',
+  n_coll:'Collections and charge-offs stay 7 years, but the clock starts 180 days after the first delinquency, so about 7.5 years. A debt being sold to another collector does not restart it.',
+  n_bk:'The law lets a bankruptcy stay up to 10 years from the filing date (order for relief).',
+  n_bk13:'Chapter 13: the legal max is 10 years, but the bureaus typically remove it 7 years from filing.',
+  n_prop:'Foreclosure, short sale and deed-in-lieu are 7-year adverse items under the law. The bureaus pick the start date a bit differently, so this date is an estimate.',
+  n_inq:'A hard inquiry stays 2 years, but FICO only counts the first 12 months. After {d}, FICO ignores it.',
+  n_exc:'The 7-year limit does not apply when you apply for credit of $150,000 or more (1681c(b)). Mortgages usually are, so a lender may see older items on some reports.',
+  med_ca:'<b>California law:</b> SB 1061 (effective 01/01/2025) says medical debt may not appear on credit reports in California. The CA Attorney General (11/13/2025) says it is still illegal in CA.<br><b>Federal agency:</b> the CFPB (10/20/2025) says federal FCRA overrides state bans. That view is non-binding; courts decide. The CFPB\'s own 2025 medical-debt rule was struck down in court.<br><b>The 3 bureaus\' own policy:</b> {b}',
+  med_b_paid:'paid medical collections are removed.',med_b_small:'medical collections under $500 are not reported.',med_b_new:'unpaid medical debt appears only after 1 year — about {d}.',med_b_big:'unpaid medical debt of $500+ can appear after 1 year.',
+  med_off:'Under CA law: should not appear',med_offS:'If you see it, dispute with the bureau and report it to the CA Attorney General. Federal max drop-off date: {d}.',
+  myth:'<b>Common myth:</b> "Once I pay a collection, it comes off my report." Paying does not erase an accurate entry. It shows "paid" but stays the full 7 years. Only wrong or unverifiable items get removed. (Paid medical collections are the exception: the bureaus drop those.)',
+  nx1:'Pull all 3 reports free at <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">annualcreditreport.com</a> and check the dates on each bad mark.',
+  nx2:'Date or amount wrong? Write a dispute with <a href="/t234/">T234</a>. The bureau has 30 days to answer.',
+  nx3:'Rebuild while you wait: follow the plan in <a href="/t238/">T238</a>, keep utilization low with <a href="/t231/">T231</a>.',
+  nx4:'Close to the date? See which loans your score fits in <a href="/t235/">T235</a> and what your score costs you in <a href="/t37/">T37</a>.',
+  est_note:'Conventional dates follow the Fannie Mae Selling Guide. FHA, VA and USDA dates come from a lender quick-reference, not the HUD/VA/USDA handbooks, so they are marked estimate. FHA counts to the case number date, VA to credit approval. Lenders and mortgage insurers can ask for more time (MI sometimes 4–7 years, estimate).',
+  ft_hub:'All credit tools (T230)',
+  yr:'{n} yr',mo:'{n} mo',dy:'{n} days',
+  sms:'Hi Ken, I used tool T233: {ev} on {d1}. Drops off report: {off}. Soonest loan: {best}. Can you take a look?',
+  subj:'Credit event and when I can buy — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nEvent: {ev}\nDate: {d1}\nDate 2: {d2}\nExtenuating: {ext}\n\nDrops off report: {off}\n\n{rows}\n\nFor information only. FHA/VA/USDA are estimates.\nSent from tool T233 tools.kenlamrealty.com'}
+};
+/* --- ngày: hàm thuần --- */
+const pd=s=>{ if(!s) return null; const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s); return m?new Date(+m[1],+m[2]-1,+m[3]):null; };
+function addMonths(d,n){ const y=d.getFullYear(), m=d.getMonth()+n, t=new Date(y,m,1), last=new Date(t.getFullYear(),t.getMonth()+1,0).getDate(); return new Date(t.getFullYear(),t.getMonth(),Math.min(d.getDate(),last)); }
+const addDays=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+const p2=n=>String(n).padStart(2,'0');
+const dstr=d=>d?p2(d.getMonth()+1)+'/'+p2(d.getDate())+'/'+d.getFullYear():'—';
+const dvi=d=>d?p2(d.getDate())+'/'+p2(d.getMonth()+1)+'/'+d.getFullYear():'—';
+const showD=d=>lang==='vi'?dvi(d):dstr(d);
+const today=()=>{const t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate());};
+function offDate(ev,d1){ const o=RULES.off[RULES.ev[ev].off]; if(!d1) return null; let d=d1; if(o.d) d=addDays(d,o.d); return addMonths(d,o.y*12); }
+function waitDate(w,d1,d2,ext,clean){
+  if(w.none) return {none:1};
+  const base=w.from==='d2'?d2:d1; if(!base) return {need:1};
+  let m=w.m; let usedX=0;
+  if(w.ok0&&clean){ m=0; } else if(ext&&w.x!=null){ m=w.x; usedX=1; }
+  if(m==null) return {none:1,nosrc:1};
+  return {date:addMonths(base,m),m,usedX};
+}
+function span(a,b){ /* a<=b → [y,m,d] */ let y=b.getFullYear()-a.getFullYear(), m=b.getMonth()-a.getMonth(), d=b.getDate()-a.getDate();
+  if(d<0){ m--; d+=new Date(b.getFullYear(),b.getMonth(),0).getDate(); } if(m<0){ y--; m+=12; } return [y,m,d]; }
+function spanTxt(a,b){ const D=I18N[lang], [y,m,d]=span(a,b), out=[]; if(y) out.push(D.yr.replace('{n}',y)); if(m) out.push(D.mo.replace('{n}',m)); if(!y&&!m) out.push(D.dy.replace('{n}',d)); return out.join(' '); }
+
+let ext=0, clean=0, paid=0;
+function segInit(id,set){ $(id).addEventListener('click',e=>{const b=e.target.closest('button[data-v]'); if(!b) return; $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); set(+b.getAttribute('data-v')); calc();}); }
+segInit('ext',v=>ext=v); segInit('clean',v=>clean=v); segInit('paid',v=>paid=v);
+function onLang(){ const D=I18N[lang], v=$('ev').value||'bk7'; $('ev').innerHTML=EVS.map(k=>'<option value="'+k+'">'+esc(D['e_'+k])+'</option>').join(''); $('ev').value=v; }
+['ev','d1','d2','amt'].forEach(id=>{ $(id).addEventListener('input',calc); $(id).addEventListener('change',calc); });
+(function(){ const t=today(); const iso=d=>d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate()); $('d1').value=iso(addMonths(t,-30)); $('d2').value=iso(addMonths(t,-26)); })();
+
+function calc(){
+  const D=I18N[lang], ev=$('ev').value, R=RULES.ev[ev], d1=pd($('d1').value), d2=R.d2?pd($('d2').value):null, t=today();
+  $('l_d1').textContent=D[R.d1]; $('h_d1').textContent=R.off==='coll'?D.h_dlq:D.h_any;
+  $('f_d2').classList.toggle('hide',!R.d2); if(R.d2) $('l_d2').textContent=D[R.d2];
+  $('f_clean').classList.toggle('hide',!R.clean); $('f_paid').classList.toggle('hide',!R.med); $('f_amt').classList.toggle('hide',!R.med||paid===1);
+  const hasX=RULES.progs.some(p=>R.w[p].x!=null); $('ext').parentElement.classList.toggle('hide',!hasX);
+  /* rơi khỏi report */
+  const off=offDate(ev,d1), o=RULES.off[R.off];
+  let offTxt;
+  if(R.med){ $('offV').textContent=D.med_off; $('offV').style.fontSize='34px'; $('offS').textContent=off?D.med_offS.replace('{d}',showD(off)):D.offS_none; offTxt=D.med_off; }
+  else { $('offV').style.fontSize=''; $('offV').textContent=off?showD(off)+(o.est?' *':''):'—';
+    $('offS').textContent=!off?D.offS_none:(off<=t?D.offS_gone:D.offS_left.replace('{t}',spanTxt(t,off))); offTxt=off?showD(off):'—'; }
+  /* ghi chú */
+  const nk={late:'n_late',coll:'n_coll',bk:'n_bk',bk13:'n_bk13',prop:'n_prop',inq:'n_inq'}[R.off];
+  let note=D[nk]; if(R.off==='inq') note=note.replace('{d}',d1?showD(addMonths(d1,RULES.off.inqFico.m)):'—');
+  if(R.off!=='inq') note+=' '+D.n_exc; $('evNote').textContent=note;
+  if(R.med){ const amt=num('amt'); let b;
+    if(paid) b=D.med_b_paid; else if(isFinite(amt)&&amt<RULES.off.medMin) b=D.med_b_small; else b=d1&&addMonths(d1,RULES.off.medShow.m)>t?D.med_b_new.replace('{d}',showD(addMonths(d1,RULES.off.medShow.m))):D.med_b_big;
+    $('medNote').innerHTML=D.med_ca.replace('{b}',esc(b)); $('medNote').classList.remove('hide'); }
+  else $('medNote').classList.add('hide');
+  /* bảng loan */
+  let h='', rows=[], best=null, anyNone=null;
+  RULES.progs.forEach(p=>{ const w=R.w[p], r=waitDate(w,d1,d2,ext,clean), estL=w.est?' <span class="estl">'+esc(D.est)+'</span>':'';
+    let dTxt, pill, sub=[];
+    if(r.none){ dTxt=''; pill='<span class="pill chk">'+(r.nosrc?'?':'—')+'</span>'; if(!anyNone&&['w_aus','w_none','w_inq'].includes(w.n)) anyNone={p,w}; }
+    else if(r.need){ dTxt='—'; pill=''; }
+    else { const ok=r.date<=t; dTxt=showD(r.date); pill='<span class="pill '+(ok?'ok':'near')+'">'+esc(ok?D.ready:D.left.replace('{t}',spanTxt(t,r.date)))+'</span>';
+      sub.push(D.wait_m.replace('{m}',r.m)+(r.usedX?'':(w.x!=null?' · '+D.wait_x.replace('{m}',w.x+(w.xhi?'–'+w.xhi:'')):''))+' · '+(w.from==='d2'?D.from_d2:D.from_d1));
+      if(!best||r.date<best.r.date) best={p,r,w}; }
+    if(w.n) sub.push(D[w.n]);
+    h+='<div class="lr"><div class="h"><b>'+esc(D['p_'+p])+estL+'</b><span class="d">'+dTxt+(dTxt?' ':'')+pill+'</span></div>'+sub.map(s=>'<div class="t">'+esc(s)+'</div>').join('')+'</div>';
+    rows.push(D['p_'+p]+(w.est?' ('+D.est+')':'')+': '+(r.none?(w.n?D[w.n]:'—'):r.need?'—':showD(r.date)+' ('+D.wait_m.replace('{m}',r.m)+')'));
+  });
+  $('waits').innerHTML=h;
+  let st, bestTxt='—';
+  if(best){ st=D[best.r.date<=t?'st_past':'st_best'].replace('{p}',esc(D['p_'+best.p])).replace('{d}',showD(best.r.date)).replace('{x}',(best.r.usedX?D.st_x:'')+(best.w.est?D.st_est:'')); bestTxt=D['p_'+best.p]+' '+showD(best.r.date); }
+  else if(anyNone){ st=D.st_now.replace('{p}',esc(D['p_'+anyNone.p])).replace('{x}',anyNone.w.est?D.st_est:''); bestTxt=D['p_'+anyNone.p]; }
+  else st=D.st_wait;
+  if(best&&anyNone&&best.r.date>t){ st+=' '+D.st_now.replace('{p}',esc(D['p_'+anyNone.p])).replace('{x}',anyNone.w.est?D.st_est:''); }
+  $('status').innerHTML=st;
+  last={ev:D['e_'+ev],d1:showD(d1),d2:R.d2?showD(d2):'—',ext:ext?D.yes:D.no,off:offTxt,best:bestTxt,rows:rows.join('\n')};
+  setSms();
+}
+/* ===== Phần chung: ngôn ngữ, email, sms, embed ===== */
+I18N.vi=Object.assign({},COMMON.vi,I18N.vi); I18N.en=Object.assign({},COMMON.en,I18N.en);
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; if(typeof onLang==='function') onLang(); calc();
+}
+function setSms(){ const s=I18N[lang].sms.replace(/\{(\w+)\}/g,(m,k)=>last[k]??m); $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s); }
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing), hoặc thay bằng fetch() tới FUB webhook khi có endpoint. Không gửi dữ liệu đi đâu khác. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+try{ if(new URLSearchParams(location.search).get('embed')==='1') document.documentElement.classList.add('embed'); }catch(e){}
+applyLang();
+
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
