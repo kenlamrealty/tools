@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Buying With Unpermitted Work · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<style>
+/* ---- Thêm cho T92 (không đổi class cũ) ---- */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl.sel::after{content:"";width:8px;height:8px;border:solid var(--muted);border-width:0 1.5px 1.5px 0;transform:rotate(45deg) translateY(-3px);flex:none}
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.checks label{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:8px 13px;font-size:14px;color:var(--muted);cursor:pointer;user-select:none}
+.checks input{accent-color:var(--brass);margin:0}
+.checks label:has(input:checked){background:var(--brass-soft);color:var(--fg);border-color:var(--brass)}
+.tg{display:grid;gap:8px}
+.tg label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;align-items:start;font-size:14px;color:var(--fg);cursor:pointer;line-height:1.4}
+.tg input{accent-color:var(--brass);width:18px;height:18px;margin:1px 0 0}
+.tg small{display:block;color:var(--muted);font-size:12px}
+.total .v .of{font-size:30px;color:var(--muted)}
+.total .cnt2{margin-top:8px;font-size:14px;color:var(--muted)}
+.total .cnt2 b{color:var(--fg);font-weight:500}
+.pjs{display:grid;border-top:1px solid var(--line)}
+.pj{padding:14px 0;border-bottom:1px solid var(--line);display:grid;gap:6px}
+.pj-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.pj-h b{font-weight:500;font-size:16px;min-width:0}
+.st{font-size:11px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;border-radius:999px;padding:3px 9px;border:1px solid var(--line);color:var(--muted)}
+.st.y{border-color:var(--brass);background:var(--brass-soft);color:var(--warn)}
+.st.d{border-style:dashed;color:var(--fg)}
+.pj .why{font-size:14px;color:var(--fg);margin:0;line-height:1.45}
+.pj dl{margin:2px 0 0;display:grid;grid-template-columns:minmax(0,7.5em) minmax(0,1fr);gap:4px 10px;font-size:13px}
+.pj dt{color:var(--muted)}
+.pj dd{margin:0;min-width:0}
+.pj dd a{color:var(--brass);text-decoration:none}
+.pj dd small{color:var(--muted)}
+.next-steps{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.next-steps h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.next-steps ol,.next-steps ul{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.next-steps a{color:var(--brass)}
+.myth{font-size:14px;line-height:1.5;border-left:2px solid var(--brass);padding:2px 0 2px 12px;margin:0}
+.myth b{font-weight:500}
+.srcs a{word-break:break-word}
+.ck{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.empty{font-size:14px;color:var(--muted);padding:12px 0}
+</style>
+<style>
+/* ---- Thêm cho nhóm Permit T283 (không đổi class cũ) ---- */
+.seg.wrap3{flex-wrap:wrap}
+.seg.wrap3 button{flex:1 1 30%;min-width:0;font-size:14px;padding:10px 6px}
+.est{font-size:11px;letter-spacing:.08em;text-transform:uppercase;border:1px dashed var(--brass);color:var(--warn);border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:middle;font-family:var(--body);white-space:nowrap}
+.flags{display:grid;gap:0;border-top:1px solid var(--line)}
+.flag{padding:12px 0;border-bottom:1px solid var(--line);display:grid;gap:4px;font-size:14px;line-height:1.45}
+.flag b{font-weight:500;font-size:15px}
+.flag .lv{font-size:11px;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:2px 8px;border:1px solid var(--line);color:var(--muted);margin-left:6px;white-space:nowrap}
+.flag .lv.h{border-color:var(--warn);color:var(--warn);background:var(--brass-soft)}
+.flag .lv.m{border-color:var(--brass);color:var(--brass)}
+.flag a{color:var(--brass)}
+.big2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.big2>div{border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.big2 .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.big2 .v{font-family:var(--display);font-size:28px;line-height:1.15;font-variant-numeric:tabular-nums;word-break:break-word}
+.big2 .s{font-size:12px;color:var(--muted)}
+@media (max-width:380px){.big2{grid-template-columns:1fr}}
+.total .v.rng{font-size:44px}
+@media (max-width:420px){.total .v.rng{font-size:36px}}
+.hide{display:none!important}
+html.embed .kl-back{display:none}
+.row2>.ctl,.row2>.field,.pair .ctl{min-width:0}
+.row2 .ctl input,.pair .ctl input{width:0}
+</style>
+<meta name="description" content="Pick the unpermitted part, its size, price, your plan and loan type. See an estimated cost to legalize, value at risk, lender and title flags, and a credit to ask for.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t283/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Buying With Unpermitted Work · Ken Lam Tools">
+<meta property="og:description" content="Estimated cost to legalize, value at risk, lender and title flags, and a credit to ask for.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t283/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Buying with unpermitted work: cost and risk</h1>
+    <p class="sub" data-i="sub">Tell us what part has no permit and what you plan to do. See a cost range, the value at risk, the lender and title flags, and a credit to ask for.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="type"><span data-i="l_type">Unpermitted part</span></label>
+      <div class="ctl sel"><select id="type">
+        <option value="garage" data-i="ty_garage">Garage conversion</option>
+        <option value="addition" data-i="ty_addition">Room addition</option>
+        <option value="adu" data-i="ty_adu">ADU / in-law unit</option>
+        <option value="remodel" data-i="ty_remodel">Kitchen / bath remodel</option>
+        <option value="deck" data-i="ty_deck">Deck / patio cover</option>
+        <option value="mep" data-i="ty_mep">Electrical / plumbing / water heater</option>
+      </select></div>
+    </div>
+    <div class="field" id="fSqft">
+      <label for="psq"><span data-i="l_psq">Size of that part</span></label>
+      <div class="ctl"><input id="psq" type="number" inputmode="numeric" min="0" value="400"><span class="post">sqft</span></div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_home">Home price and total size</span> <small data-i="l_home_s">(MLS)</small></label>
+      <div class="row2">
+        <div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" min="0" value="1400000" aria-label="Price"></div>
+        <div class="ctl"><input id="hsq" type="number" inputmode="numeric" min="0" value="1800" aria-label="Home sqft"><span class="post">sqft</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_plan">Your plan</span></label>
+      <div class="seg" id="plan" role="group">
+        <button type="button" data-v="keep" aria-pressed="false" data-i="pl_keep">Keep as is</button>
+        <button type="button" data-v="legal" aria-pressed="true" data-i="pl_legal">Legalize</button>
+        <button type="button" data-v="remove" aria-pressed="false" data-i="pl_remove">Remove</button>
+      </div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_loan">How you pay</span></label>
+      <div class="seg" id="loan" role="group">
+        <button type="button" data-v="cash" aria-pressed="false" data-i="ln_cash">Cash</button>
+        <button type="button" data-v="conv" aria-pressed="true" data-i="ln_conv">Conventional</button>
+        <button type="button" data-v="fha" aria-pressed="false">FHA / VA</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k"><span id="rK" data-i="r_k_legal">Cost to legalize</span> <span class="est">estimate</span></div>
+      <div class="v rng" id="cost">$0</div>
+      <div class="cnt2" id="costNote"></div>
+    </div>
+    <div class="lines" id="parts"></div>
+    <div class="big2">
+      <div><div class="k" data-i="r_val">Value at risk</div><div class="v" id="val">$0</div><div class="s" id="valS"></div></div>
+      <div><div class="k" data-i="r_cred">Credit to ask for</div><div class="v" id="cred">$0</div><div class="s" id="credS"></div></div>
+    </div>
+    <div class="ck" data-i="r_flags">Flags to know</div>
+    <div class="flags" id="flags"></div>
+    <div class="note" data-i="r_legal">Ranges are estimates, not quotes. Get an as-built quote from a designer and a contractor, and ask the city about fees, before you remove your contingencies.</div>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" aria-label="Video" onerror="this.remove()"></video>
+
+  <section class="next next-steps">
+    <h2 data-i="ns_h">Next steps</h2>
+    <ol>
+      <li data-i="ns1">Not sure it's unpermitted yet? Score it first: <a href="/t282/">T282 Is part of this home unpermitted?</a></li>
+      <li data-i="ns2">Pull the permit history on the city portal: <a href="/t281/">T281 Look up permits by city</a>.</li>
+      <li data-i="ns3">Ask the seller in writing before your contingency runs out: <a href="/t287/">T287 Questions to ask the seller</a>.</li>
+      <li data-i="ns4">Going to legalize? The steps, papers and city penalties: <a href="/t284/">T284 Legalizing unpermitted work</a>.</li>
+    </ol>
+    <p class="myth"><b data-i="my_k">Many people get this wrong:</b> <span data-i="my_v">"Legalizing only costs the permit fee." No. You pay for as-built plans, opening walls so the inspector can see, and fixing whatever doesn't meet today's code. For an ADU that adds up to $20K–$200K+. The permit fee is the small part.</span></p>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t283/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email these numbers to yourself</h2>
+    <p data-i="f_sub">The cost range, value at risk and flags go in the email. Ken replies if you have a question. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#permit-nha" target="_blank" rel="noopener" data-i="ft_lib">Unpermitted work and buying a home</a> · <a href="https://kenlamrealty.com/library#video-permit" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span data-i="ft_est">General info, not legal or lending advice. Costs marked "estimate" are not quotes. Rules and fees change by city. Ask the city permit center, your lender and your title officer.</span>
+    <span class="srcs"><span data-i="ft_src">Sources:</span>
+      <a href="https://static1.squarespace.com/static/5f2c2d67c58236227115e0de/t/6407e6c72f24ef162d554560/1678239439683/Unpermitted-ADU-Guidelines-Casita-Coalition-First-Edition-03072023-final-accessible.pdf" target="_blank" rel="noopener">Casita Coalition, unpermitted ADU guide (2023)</a> ·
+      <a href="https://selling-guide.fanniemae.com/1032992541" target="_blank" rel="noopener">Fannie Mae Selling Guide B4-1.3-05</a> ·
+      <a href="https://appraisersforum.com/forums/threads/fha-unpermitted-addition.211497/post-2671605" target="_blank" rel="noopener">FHA 4000.1 GLA note (forum quote)</a> ·
+      <a href="https://kern.ticortitle.com/TicorTemplate/media/Ticor-Template/PDF/CLTA_-_ALTA_Homeowner-s_Policies.pdf" target="_blank" rel="noopener">CLTA/ALTA Homeowner's Policy</a> ·
+      <a href="https://california.public.law/codes/government_code_section_66332" target="_blank" rel="noopener">Gov. Code §66332 (AB 2533)</a> ·
+      <a href="https://sanjoseca.gov/home/showpublisheddocument/25891/637051048758670000" target="_blank" rel="noopener">San Jose Bulletin #202</a> ·
+      <a href="https://journal.firsttuesday.us/?p=56076" target="_blank" rel="noopener">TDS and permits</a>
+      · <span data-i="ft_chk">Checked 05/11/2026.</span></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 05/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số liệu — sửa ở đây (tra 05/11/2026) =====
+   ADU: Casita Coalition (2023) legalize ADU tổng $20,000–$200,000+; plans $5K–$30K; permit & phí $5K–$20K; thi công $10K–$170K. [ESTIMATE]
+     https://static1.squarespace.com/static/5f2c2d67c58236227115e0de/t/6407e6c72f24ef162d554560/1678239439683/Unpermitted-ADU-Guidelines-Casita-Coalition-First-Edition-03072023-final-accessible.pdf
+   Remodel bếp/bath + điện/ống: as-built $1,500–$5,000; mở tường + vá $1,000–$5,000/khu vực (FACTS F53, ESTIMATE, KEN DUYỆT).
+     Phí permit remodel/MEP = khung ước tính T92/T90 (bath 800–3,000, kitchen 1,000–4,000; WH 150–500, panel 300–800, repipe 400–900). KEN DUYỆT.
+   Garage, addition, deck, chi phí "sửa theo code" của remodel/MEP, và mọi chi phí DỠ BỎ = ƯỚC TÍNH CỦA KEN LAM TOOLS, không có nguồn. KEN DUYỆT.
+   Fannie Mae B4-1.3-05: addition không permit → appraiser phải nhận xét chất lượng, hình thức, ảnh hưởng giá trị; không cấm vay tự động.
+     https://selling-guide.fanniemae.com/1032992541
+   FHA 4000.1 (trích dẫn diễn đàn, UNVERIFIED): addition/garage conversion tính vào GLA nếu cùng chất lượng nhà chính; không thì dòng riêng.
+   Thực tế appraiser thường cho thấp/không cho phần không permit; lender có thể đòi sửa nếu ảnh hưởng an toàn (FHA MPR) [ESTIMATE].
+   Title — CLTA/ALTA Homeowner's Policy covered risk 15 (bị buộc sửa/gỡ vì vi phạm building permit của chủ CŨ):
+     deductible = min(1% policy, $5,000); tối đa $25,000. Policy standard thường loại trừ. — Ticor PDF ở footer.
+   AB 2533 / Gov. Code §66332: ADU/JADU xây trước 01/01/2020 không bị từ chối permit chỉ vì thiếu permit/không đúng building standards,
+     trừ khi substandard (H&S §17920.3); không impact fee; không phạt chủ vì unit không permit.
+   San Jose Bulletin #202: citation $1,000 cho work không permit; tự xin legalize có thể tránh citation; vẫn trả đủ phí + sửa theo code.
+*/
+/*PURE-START*/
+const COST={ /* [thấp, cao] USD — xem nguồn ở trên. src: 'casita' | 'f53' | 'ken' */
+  adu:     {legal:[['plans',5000,30000,'casita'],['fees',5000,20000,'casita'],['work',10000,170000,'casita']],remove:[5000,40000],gla:'sep',plus:true,total:[20000,200000]} /* tổng Casita: $20K–$200K+ (không cộng dồn từng dòng) */,
+  garage:  {legal:[['plans',3000,10000,'ken'],['fees',3000,10000,'ken'],['work',10000,60000,'ken']],remove:[5000,25000],gla:'yes'},
+  addition:{legal:[['plans',5000,20000,'ken'],['fees',4000,15000,'ken'],['work',10000,100000,'ken']],remove:[10000,60000],gla:'yes'},
+  remodel: {legal:[['asbuilt',1500,5000,'f53'],['open',1000,5000,'f53'],['fees',800,4000,'t92'],['fix',2000,15000,'ken']],remove:null,gla:'no'},
+  deck:    {legal:[['plans',1000,3000,'ken'],['fees',500,2000,'ken'],['work',1000,10000,'ken']],remove:[1000,8000],gla:'no'},
+  mep:     {legal:[['open',1000,5000,'f53'],['fees',150,900,'t92'],['fix',500,5000,'ken']],remove:null,gla:'no'}
+};
+const TITLE={pct:0.01,dedCap:5000,max:25000}; /* CLTA/ALTA Homeowner's covered risk 15 */
+const ROUND=500;
+const r500=n=>Math.round(n/ROUND)*ROUND;
+function t283(x){
+  const C=COST[x.type]||COST.addition;
+  const plan=(x.plan==='remove'&&!C.remove)?'legal':x.plan;
+  const lines=C.legal.map(([k,lo,hi,src])=>({k,lo,hi,src}));
+  const legal=C.total?C.total.slice():[lines.reduce((a,l)=>a+l.lo,0),lines.reduce((a,l)=>a+l.hi,0)];
+  const remove=C.remove?C.remove.slice():null;
+  const shown=plan==='remove'?remove:legal;
+  const ppsf=(+x.hsq>0)?(+x.price||0)/(+x.hsq):0;
+  const valRisk=C.gla==='no'?0:Math.round((+x.psq||0)*ppsf);
+  /* credit gợi ý: remove → khoảng chi phí dỡ; còn lại → từ mức thấp tới giữa khoảng legalize (ESTIMATE) */
+  const base=plan==='remove'?remove:legal;
+  const credit=[r500(base[0]),r500((base[0]+base[1])/2)];
+  const ded=Math.min(TITLE.pct*(+x.price||0),TITLE.dedCap);
+  return {plan,planForced:plan!==x.plan,lines,legal,remove,shown,ppsf,valRisk,gla:C.gla,plus:!!C.plus&&plan!=='remove',credit,titleDed:Math.round(ded),titleMax:TITLE.max};
+}
+/*PURE-END*/
+
+const I18N={
+ en:{title:'Buying with unpermitted work: cost and risk',sub:'Tell us what part has no permit and what you plan to do. See a cost range, the value at risk, the lender and title flags, and a credit to ask for.',
+  l_type:'Unpermitted part',ty_garage:'Garage conversion',ty_addition:'Room addition',ty_adu:'ADU / in-law unit',ty_remodel:'Kitchen / bath remodel',ty_deck:'Deck / patio cover',ty_mep:'Electrical / plumbing / water heater',
+  l_psq:'Size of that part',l_home:'Home price and total size',l_home_s:'(MLS)',l_plan:'Your plan',pl_keep:'Keep as is',pl_legal:'Legalize',pl_remove:'Remove',l_loan:'How you pay',ln_cash:'Cash',ln_conv:'Conventional',
+  r_k_legal:'Cost to legalize',r_k_remove:'Cost to remove',r_k_keep:'Cost if you legalize later',
+  cn_keep:"You pay nothing now. But the next buyer will ask the same questions, and you'll have to disclose it on the TDS.",
+  cn_legal:'As-built plans, city fees, opening walls and fixing to code.',
+  cn_remove:'Tear-out and putting it back the way the permits show. Removal may need its own demolition permit.',
+  cn_forced:"You can't really remove this kind of work, so the tool shows the cost to legalize.",
+  ln_plans:'Plans (architect / engineer)',ln_fees:'Permit and city fees',ln_work:'Construction to bring it to code',ln_asbuilt:'As-built plans',ln_open:'Opening walls for the inspector + patching',ln_fix:'Fixes the inspector asks for',
+  src_casita:'Casita Coalition',src_f53:'estimate',src_t92:'estimate (T92 range)',src_ken:'our estimate',
+  r_val:'Value at risk',r_cred:'Credit to ask for',
+  vs_gla:'{sq} sqft × ${ppsf}/sqft. The appraiser may count it lower, or not at all.',vs_sep:'{sq} sqft × ${ppsf}/sqft. An ADU is usually its own line in the appraisal, and may get little or no value without a permit.',
+  vs_no:'Not living area. The risk is condition and repair, not square feet.',vs_nosq:'Enter the home size to see this.',
+  cs:'Start near the higher number. The market decides; this is a starting point, not a promise.',
+  r_flags:'Flags to know',
+  fl_lender_h:'Lender',fl_cash:"No lender, no lender appraisal. You carry the whole risk. Still get a home inspection.",
+  fl_conv:'Fannie Mae makes the appraiser comment on an unpermitted addition: its quality, how it looks, and how it affects value. It isn\'t an automatic no, but a low appraisal means more cash from you.',
+  fl_fha:'FHA: an addition or garage conversion counts as living area only if it matches the main house in design and quality (forum quote of HUD 4000.1, not verified). Safety items may have to be fixed before closing (estimate). VA: ask your lender.',
+  fl_ins_h:'Insurance',fl_ins:'Some insurers push back on claims tied to work that wasn\'t built to code. Tell your agent about it before you bind the policy. (estimate)',
+  fl_title_h:'Title policy',fl_title:"An owner's CLTA/ALTA Homeowner's Policy may help a little: if the city forces you to fix or remove work a past owner built without a permit, it can pay up to <b>${max}</b> after a <b>${ded}</b> deductible. A standard policy usually doesn't cover this. Ask your title officer which one you get.",
+  fl_sell_h:'When you sell',fl_sell:'The TDS asks about additions or changes made without permits. Once you know, you have to say so. Sell within 18 months and the SPQ makes you list permits too.',
+  fl_adu_h:'ADU built before 2020',fl_adu:'AB 2533 (Gov. Code §66332): the city can\'t deny a permit just because the ADU was built without one, unless it is unsafe (substandard). No impact fees, and no penalty for the unpermitted unit. Ask the seller the build year.',
+  fl_city_h:'City penalty',fl_city:'San Jose can issue a $1,000 citation for work without a permit; coming in on your own can avoid it. Other cities charge extra fees. Check the city in T284.',
+  lv_h:'high',lv_m:'medium',lv_l:'low',
+  r_legal:"Ranges are estimates, not quotes. Get an as-built quote from a designer and a contractor, and ask the city about fees, before you remove your contingencies.",
+  ns_h:'Next steps',
+  ns1:'Not sure it\'s unpermitted yet? Score it first: <a href="/t282/">T282 Is part of this home unpermitted?</a>',
+  ns2:'Pull the permit history on the city portal: <a href="/t281/">T281 Look up permits by city</a>.',
+  ns3:'Ask the seller in writing before your contingency runs out: <a href="/t287/">T287 Questions to ask the seller</a>.',
+  ns4:'Going to legalize? The steps, papers and city penalties: <a href="/t284/">T284 Legalizing unpermitted work</a>.',
+  my_k:'Many people get this wrong:',my_v:'"Legalizing only costs the permit fee." No. You pay for as-built plans, opening walls so the inspector can see, and fixing whatever doesn\'t meet today\'s code. For an ADU that adds up to $20K–$200K+. The permit fee is the small part.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email these numbers to yourself',f_sub:'The cost range, value at risk and flags go in the email. Ken replies if you have a question. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'Unpermitted work and buying a home',ft_vid:'3-min video',
+  ft_est:'General info, not legal or lending advice. Costs marked "estimate" are not quotes. Rules and fees change by city. Ask the city permit center, your lender and your title officer.',
+  ft_src:'Sources:',ft_chk:'Checked 05/11/2026.',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',est:'estimate',
+  sms:'Hi Ken, I priced unpermitted work on tools.kenlamrealty.com: {type}, {psq} sqft, plan: {plan}. Estimate {cost}, credit to ask {cred}. Can we talk?',
+  subj:'Unpermitted work — {type} — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nPart: {type}, {psq} sqft\nHome: {price}, {hsq} sqft\nPlan: {plan} · Pay: {loan}\n\n{costK} (estimate): {cost}\n{rows}\nValue at risk: {val}\nCredit to ask for (estimate): {cred}\nTitle (Homeowner\'s Policy, if it applies): up to {tmax} after {tded} deductible\n\nEstimates only, not quotes.\nSent from tool T283 tools.kenlamrealty.com'},
+ vi:{title:'Mua nhà có phần không permit: tốn gì, rủi ro gì',sub:'Cho biết phần nào không có permit và mình tính làm gì. Tool ra khoảng chi phí, phần giá trị có thể mất, cờ lender và title, và số credit nên xin.',
+  l_type:'Phần không permit',ty_garage:'Garage biến thành phòng',ty_addition:'Phòng cơi nới',ty_adu:'ADU / in-law',ty_remodel:'Sửa bếp / phòng tắm',ty_deck:'Deck / mái che patio',ty_mep:'Điện / ống nước / máy nước nóng',
+  l_psq:'Diện tích phần đó',l_home:'Giá nhà và tổng diện tích',l_home_s:'(MLS)',l_plan:'Mình tính sao',pl_keep:'Để nguyên',pl_legal:'Hợp thức hóa',pl_remove:'Dỡ bỏ',l_loan:'Trả bằng gì',ln_cash:'Cash',ln_conv:'Conventional',
+  r_k_legal:'Chi phí hợp thức hóa',r_k_remove:'Chi phí dỡ bỏ',r_k_keep:'Nếu sau này hợp thức hóa',
+  cn_keep:'Bây giờ chưa tốn. Nhưng người mua sau sẽ hỏi y chang, và mình phải khai trên TDS.',
+  cn_legal:'Bản vẽ as-built, phí city, mở tường và sửa cho đúng code.',
+  cn_remove:'Đập bỏ và trả lại như hồ sơ permit. Dỡ bỏ có thể phải xin permit phá dỡ riêng.',
+  cn_forced:'Loại việc này không dỡ được, nên tool tính chi phí hợp thức hóa.',
+  ln_plans:'Bản vẽ (architect / engineer)',ln_fees:'Phí permit và phí city',ln_work:'Thi công cho đúng code',ln_asbuilt:'Bản vẽ as-built',ln_open:'Mở tường cho inspector + vá lại',ln_fix:'Sửa theo yêu cầu inspector',
+  src_casita:'Casita Coalition',src_f53:'ước tính',src_t92:'ước tính (khung T92)',src_ken:'ước tính của mình',
+  r_val:'Giá trị có thể mất',r_cred:'Credit nên xin',
+  vs_gla:'{sq} sqft × ${ppsf}/sqft. Appraiser có thể tính thấp hơn, hoặc không tính.',vs_sep:'{sq} sqft × ${ppsf}/sqft. ADU thường là dòng riêng trong appraisal, không permit thì có khi được tính rất ít hoặc không.',
+  vs_no:'Không phải diện tích ở. Rủi ro nằm ở tình trạng và tiền sửa, không phải sqft.',vs_nosq:'Nhập tổng diện tích nhà để thấy số này.',
+  cs:'Mở lời gần số cao. Thị trường quyết định; đây là điểm bắt đầu, không phải lời hứa.',
+  r_flags:'Cờ cần biết',
+  fl_lender_h:'Lender',fl_cash:'Không có lender, không có appraisal của lender. Mình gánh hết rủi ro. Vẫn nên làm home inspection.',
+  fl_conv:'Fannie Mae bắt appraiser nhận xét phần cơi nới không permit: chất lượng, hình thức, và ảnh hưởng tới giá trị. Không phải tự động từ chối, nhưng appraisal thấp thì mình phải bỏ thêm tiền.',
+  fl_fha:'FHA: phần cơi nới hay garage biến phòng chỉ tính vào diện tích ở nếu cùng thiết kế, chất lượng với nhà chính (trích HUD 4000.1 từ diễn đàn, chưa kiểm). Chỗ ảnh hưởng an toàn có thể phải sửa trước khi close (ước tính). VA: hỏi lender.',
+  fl_ins_h:'Bảo hiểm',fl_ins:'Có hãng bảo hiểm làm khó khi claim dính tới phần làm không đúng code. Nói với agent bảo hiểm trước khi mua policy. (ước tính)',
+  fl_title_h:'Title policy',fl_title:'Owner\'s policy loại CLTA/ALTA Homeowner\'s có thể giúp một phần: nếu city buộc sửa hay gỡ phần chủ CŨ làm không permit, policy có thể trả tối đa <b>${max}</b> sau khi trừ deductible <b>${ded}</b>. Policy standard thường không lo phần này. Hỏi title officer mình được loại nào.',
+  fl_sell_h:'Khi bán lại',fl_sell:'TDS hỏi về phần cơi nới hay thay đổi không permit. Biết rồi là phải khai. Bán trong 18 tháng thì SPQ còn bắt liệt kê permit.',
+  fl_adu_h:'ADU xây trước 2020',fl_adu:'AB 2533 (Gov. Code §66332): city không được từ chối permit chỉ vì ADU xây không permit, trừ khi nguy hiểm (substandard). Không impact fee, không phạt vì unit không permit. Hỏi seller năm xây.',
+  fl_city_h:'Phạt của city',fl_city:'San Jose có thể phạt citation $1,000 cho việc làm không permit; tự đi xin trước có thể tránh được. City khác tính thêm phí. Coi city của mình ở T284.',
+  lv_h:'cao',lv_m:'vừa',lv_l:'thấp',
+  r_legal:'Các khoảng tiền là ước tính, không phải báo giá. Xin báo giá as-built từ designer và contractor, hỏi city về phí, trước khi bỏ contingency.',
+  ns_h:'Bước tiếp theo',
+  ns1:'Chưa chắc có xây chui? Chấm điểm trước: <a href="/t282/">T282 Nhà này có phần xây chui không?</a>',
+  ns2:'Tra lịch sử permit trên portal của city: <a href="/t281/">T281 Tra permit theo city</a>.',
+  ns3:'Hỏi seller bằng văn bản trước khi hết contingency: <a href="/t287/">T287 Câu hỏi gửi seller</a>.',
+  ns4:'Tính hợp thức hóa? Các bước, giấy tờ và phạt của city: <a href="/t284/">T284 Hợp thức hóa phần xây chui</a>.',
+  my_k:'Nhiều người hiểu sai:',my_v:'"Hợp thức hóa chỉ tốn tiền permit." Sai. Mình trả tiền bản vẽ as-built, mở tường cho inspector coi, và sửa những gì không đúng code hiện hành. ADU cộng lại $20K–$200K+. Phí permit là phần nhỏ.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi mấy con số này về email',f_sub:'Khoảng chi phí, giá trị có thể mất và các cờ sẽ nằm trong email. Có thắc mắc Ken trả lời. Không spam.',f_name:'Tên',f_phone:'Điện thoại (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số dưới đây và nhắn Ken.',f_or:'Hoặc nhắn:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Phần xây chui và chuyện mua nhà',ft_vid:'Video 3 phút',
+  ft_est:'Thông tin tham khảo, không phải tư vấn pháp lý hay vay. Chi phí ghi "ước tính" không phải báo giá. Luật và phí từng city khác nhau. Hỏi permit center của city, lender và title officer.',
+  ft_src:'Nguồn:',ft_chk:'Tra ngày 05/11/2026.',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',est:'ước tính',
+  sms:'Chào Ken, tôi vừa tính phần không permit trên tools.kenlamrealty.com: {type}, {psq} sqft, tính {plan}. Ước tính {cost}, credit nên xin {cred}. Cho tôi hỏi thêm.',
+  subj:'Phần không permit — {type} — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nPhần: {type}, {psq} sqft\nNhà: {price}, {hsq} sqft\nTính: {plan} · Trả: {loan}\n\n{costK} (ước tính): {cost}\n{rows}\nGiá trị có thể mất: {val}\nCredit nên xin (ước tính): {cred}\nTitle (Homeowner\'s Policy, nếu áp dụng): tối đa {tmax} sau deductible {tded}\n\nChỉ là ước tính, không phải báo giá.\nGửi từ tool T283 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const nf=n=>Math.round(n).toLocaleString('en-US');
+const kf=n=>n>=1000?'$'+(Math.round(n/100)/10).toLocaleString('en-US')+'K':fmt(n);
+let plan='legal', loan='conv', last={};
+(function(){ try{ const p=new URLSearchParams(location.search);
+  const t=(p.get('type')||'').toLowerCase(); if(COST[t]) $('type').value=t;
+  ['psq','price','hsq'].forEach(id=>{const v=p.get(id); if(v!=null&&v!==''&&!isNaN(+v)) $(id).value=v;});
+  const pl=p.get('plan'); if(['keep','legal','remove'].includes(pl)) plan=pl;
+  const ln=p.get('loan'); if(['cash','conv','fha'].includes(ln)) loan=ln; }catch(e){} })();
+
+function seg(id,v){ document.querySelectorAll('#'+id+' button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v)); }
+function calc(){
+  const d=I18N[lang], type=$('type').value;
+  const x={type,psq:$('psq').value,price:$('price').value,hsq:$('hsq').value,plan,loan};
+  const R=t283(x);
+  const gla=R.gla!=='no';
+  $('fSqft').classList.toggle('hide',!gla);
+  const kKey=R.plan==='remove'?'r_k_remove':R.plan==='keep'?'r_k_keep':'r_k_legal';
+  $('rK').textContent=d[kKey];
+  const costTxt=fmt(R.shown[0])+'–'+fmt(R.shown[1])+(R.plus?'+':'');
+  $('cost').textContent=costTxt;
+  $('costNote').textContent=R.planForced?d.cn_forced:d['cn_'+R.plan];
+  $('parts').innerHTML=R.plan==='remove'?'':R.lines.map(l=>'<div class="line"><span class="n">'+d['ln_'+l.k]+' <small>('+d['src_'+l.src]+')</small></span><span class="a">'+fmt(l.lo)+'–'+fmt(l.hi)+'</span></div>').join('');
+  let vs='';
+  if(!gla){ $('val').textContent='$0'; vs=d.vs_no; }
+  else if(!R.ppsf){ $('val').textContent='—'; vs=d.vs_nosq; }
+  else { $('val').textContent=(R.valRisk?'≤ ':'')+fmt(R.valRisk); vs=d[R.gla==='sep'?'vs_sep':'vs_gla'].replace('{sq}',nf(+x.psq||0)).replace('{ppsf}',nf(R.ppsf)); }
+  $('valS').textContent=vs;
+  $('cred').textContent=kf(R.credit[0])+'–'+kf(R.credit[1]);
+  $('credS').innerHTML=d.cs+' <span class="est">'+d.est+'</span>';
+  const F=[];
+  const lh=loan==='cash'?'l':'h';
+  F.push(['fl_lender_h',loan==='cash'?d.fl_cash:loan==='fha'?d.fl_fha:d.fl_conv,loan==='cash'?'l':(gla?'h':'m')]);
+  if(type==='adu') F.push(['fl_adu_h',d.fl_adu,'m']);
+  F.push(['fl_title_h',d.fl_title.replace('{max}',nf(R.titleMax)).replace('{ded}',nf(R.titleDed)),'m']);
+  F.push(['fl_ins_h',d.fl_ins,gla?'m':'l']);
+  F.push(['fl_sell_h',d.fl_sell,R.plan==='keep'?'h':'m']);
+  F.push(['fl_city_h',d.fl_city,'m']);
+  $('flags').innerHTML=F.map(f=>'<div class="flag"><div><b>'+d[f[0]]+'</b><span class="lv '+f[2]+'">'+d['lv_'+f[2]]+'</span></div><div>'+f[1]+'</div></div>').join('');
+  const tn=$('type').options[$('type').selectedIndex].text;
+  const pn={keep:d.pl_keep,legal:d.pl_legal,remove:d.pl_remove}[R.plan];
+  const lnName={cash:d.ln_cash,conv:d.ln_conv,fha:'FHA / VA'}[loan];
+  last={type:tn,psq:gla?nf(+x.psq||0):'—',price:fmt(+x.price||0),hsq:nf(+x.hsq||0),plan:pn,loan:lnName,costK:d[kKey],cost:costTxt,
+    rows:R.plan==='remove'?'':R.lines.map(l=>'- '+d['ln_'+l.k]+': '+fmt(l.lo)+'–'+fmt(l.hi)).join('\n'),
+    val:$('val').textContent,cred:$('cred').textContent,tmax:fmt(R.titleMax),tded:fmt(R.titleDed)};
+  const s=d.sms.replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s);
+  klSend();
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  document.querySelectorAll('.total .est').forEach(el=>el.textContent=d.est);
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+const EMBED=/[?&]embed=1/.test(location.search);
+let klSend=()=>{};
+if(EMBED){ document.documentElement.classList.add('embed'); let lastH=0;
+  klSend=()=>{ const w=document.querySelector('.wrap'); const h=Math.ceil(w.getBoundingClientRect().bottom+window.scrollY+40); if(Math.abs(h-lastH)<4) return; lastH=h; try{ parent.postMessage({klToolsHeight:h},'*'); }catch(e){} };
+  window.addEventListener('resize',()=>klSend());
+  document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('a[href]'); if(!a) return; const h=a.getAttribute('href'); if(h.startsWith('#')||a.target==='_blank'||/^(sms|mailto|tel):/.test(h)) return; if(h.startsWith('/')) a.href='https://tools.kenlamrealty.com'+h; a.target='_top'; },true); }
+['type','psq','price','hsq'].forEach(id=>{$(id).addEventListener('input',calc);$(id).addEventListener('change',calc);});
+document.querySelectorAll('#plan button').forEach(b=>b.onclick=()=>{plan=b.dataset.v; seg('plan',plan); calc();});
+document.querySelectorAll('#loan button').forEach(b=>b.onclick=()=>{loan=b.dataset.v; seg('loan',loan); calc();});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus(); klSend();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false; klSend();
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+seg('plan',plan); seg('loan',loan);
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+try{if(/[?&]embed=1/.test(location.search))a.style.display='none';}catch(e){}
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
