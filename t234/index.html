@@ -371,7 +371,7 @@ const I18N={
   n_brt:'Break-even rate',n_brt_s:'Highest rate before cash flow turns negative',n_worst:'Worst box',n_worst_s:'Rent −10% and rate +1.5%',
   k_grid:'Monthly cash flow: rent × rate',g_corner:'Rate ↓ / Rent →',lg_g:'$100+/mo',lg_y:'$0 to $99',lg_r:'You pay out of pocket',
   k_vac:'Monthly cash flow: vacancy',th_vac:'Vacancy',th_cf:'Cash flow / mo',th_lost:'Rent lost / yr',
-  v_cur:'(yours)',brt_none:'None — negative even at 0%',brt_over:'Above 20%',
+  v_cur:'(yours)',brt_none:'None — negative even at 0%',brt_over:'Above 20%',beo_over:'even 100% full is not enough',
   ber_below:'{x} below today',ber_above:'{x} above today',
   neg:'<b>Today you pay {x}/mo out of pocket.</b> Rent needs to reach about {r}/mo to break even.',
   m_loan:'Loan',m_pi:'Mortgage (P&amp;I)',m_mo:'/mo',m_yr:'/yr',
@@ -400,7 +400,7 @@ const I18N={
   n_brt:'Lãi hòa vốn',n_brt_s:'Lãi cao nhất trước khi cash flow bị âm',n_worst:'Ô tệ nhất',n_worst_s:'Tiền thuê −10% và lãi +1.5%',
   k_grid:'Tiền dư mỗi tháng: tiền thuê × lãi',g_corner:'Lãi ↓ / Thuê →',lg_g:'Từ $100/tháng',lg_y:'$0 tới $99',lg_r:'Phải bù tiền túi',
   k_vac:'Tiền dư mỗi tháng: thời gian trống',th_vac:'Trống',th_cf:'Tiền dư / tháng',th_lost:'Mất / năm',
-  v_cur:'(của mình)',brt_none:'Không có — 0% vẫn âm',brt_over:'Trên 20%',
+  v_cur:'(của mình)',brt_none:'Không có — 0% vẫn âm',brt_over:'Trên 20%',beo_over:'thuê kín 100% vẫn chưa đủ',
   ber_below:'thấp hơn hiện tại {x}',ber_above:'cao hơn hiện tại {x}',
   neg:'<b>Hôm nay mỗi tháng mình bù {x}.</b> Tiền thuê phải lên khoảng {r}/tháng mới huề.',
   m_loan:'Loan',m_pi:'Tiền nhà (P&amp;I)',m_mo:'/tháng',m_yr:'/năm',
@@ -427,7 +427,7 @@ try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
 try{ if(new URLSearchParams(location.search).get('embed')==='1') document.documentElement.classList.add('embed'); }catch(e){}
 
 const $=id=>document.getElementById(id);
-const fmt=n=>(n<0?'-$':'$')+Math.abs(Math.round(n)).toLocaleString('en-US');
+const fmt=n=>{ if(!isFinite(n)) return '—'; const r=Math.round(n); return (r<0?'-$':'$')+Math.abs(r).toLocaleString('en-US'); };
 const pct=(x,dp=1)=>isFinite(x)?(x*100).toFixed(dp)+'%':'—';
 const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
 const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]!=null?v[k]:m);
@@ -465,7 +465,8 @@ function calc(){
   /* chip: how much cushion between today's rent and break-even */
   const cushion=i.rentM>0?(i.rentM-m.ber)/i.rentM:NaN;
   setChip('cBer',isFinite(cushion)?(cushion>=0.10?'g':cushion>=0?'y':'r'):'');
-  $('beo').textContent=pct(m.beo,0);
+  const beoOver=isFinite(m.beo)&&m.beo>1, beoTxt=beoOver?pct(m.beo,0)+' ('+d.beo_over+')':pct(m.beo,0);
+  $('beo').innerHTML=pct(m.beo,0)+(beoOver?'<small style="display:block;white-space:normal;font-size:12px;font-weight:500;color:var(--warn);max-width:9em;margin-left:auto">'+d.beo_over+'</small>':'');
   setChip('cBeo',isFinite(m.beo)?(m.beo<=0.85?'g':m.beo<=0.95?'y':'r'):'');
   $('brt').textContent=isNaN(m.brt)?d.brt_none:(m.brt===Infinity?d.brt_over:m.brt.toFixed(2)+'%');
   $('worst').textContent=fmt(m.worst); $('worst').style.color=m.worst<0?'var(--warn)':'';
@@ -478,7 +479,7 @@ function calc(){
   const neg=m.cfM<0; $('negNote').classList.toggle('hide',!neg);
   if(neg) $('negNote').innerHTML=fill(d.neg,{x:fmt(-m.cfM),r:fmt(m.ber)});
   $('loan').textContent=fmt(m.loan); $('pi').textContent=fmt(m.piM); $('noi').textContent=fmt(m.noi); $('dscr').textContent=isFinite(m.dscr)?m.dscr.toFixed(2):'—';
-  last={p:fmt(i.price),r:fmt(i.rentM),ox:fmt(i.opex),d:i.downPct,rt:i.rate,tm:i.term,v:i.vac,cf:fmt(m.cfM),ber:fmt(m.ber),beo:pct(m.beo,0),
+  last={p:fmt(i.price),r:fmt(i.rentM),ox:fmt(i.opex),d:i.downPct,rt:i.rate,tm:i.term,v:i.vac,cf:fmt(m.cfM),ber:fmt(m.ber),beo:beoTxt,
     brt:$('brt').textContent,w:fmt(m.worst),
     grid:m.grid.map((row,ri)=>sgn(RATE_STEPS[ri])+': '+row.map(fmt).join(' / ')).join('\n'),
     vac:m.vac.map(x=>fmt(x.cf)).join(' / ')};
