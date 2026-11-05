@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How Many Square Feet Is This Home, Really? · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<style>
+/* ---- Thêm cho T92 (không đổi class cũ) ---- */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl.sel::after{content:"";width:8px;height:8px;border:solid var(--muted);border-width:0 1.5px 1.5px 0;transform:rotate(45deg) translateY(-3px);flex:none}
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.checks label{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:8px 13px;font-size:14px;color:var(--muted);cursor:pointer;user-select:none}
+.checks input{accent-color:var(--brass);margin:0}
+.checks label:has(input:checked){background:var(--brass-soft);color:var(--fg);border-color:var(--brass)}
+.tg{display:grid;gap:8px}
+.tg label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;align-items:start;font-size:14px;color:var(--fg);cursor:pointer;line-height:1.4}
+.tg input{accent-color:var(--brass);width:18px;height:18px;margin:1px 0 0}
+.tg small{display:block;color:var(--muted);font-size:12px}
+.total .v .of{font-size:30px;color:var(--muted)}
+.total .cnt2{margin-top:8px;font-size:14px;color:var(--muted)}
+.total .cnt2 b{color:var(--fg);font-weight:500}
+.pjs{display:grid;border-top:1px solid var(--line)}
+.pj{padding:14px 0;border-bottom:1px solid var(--line);display:grid;gap:6px}
+.pj-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.pj-h b{font-weight:500;font-size:16px;min-width:0}
+.st{font-size:11px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;border-radius:999px;padding:3px 9px;border:1px solid var(--line);color:var(--muted)}
+.st.y{border-color:var(--brass);background:var(--brass-soft);color:var(--warn)}
+.st.d{border-style:dashed;color:var(--fg)}
+.pj .why{font-size:14px;color:var(--fg);margin:0;line-height:1.45}
+.pj dl{margin:2px 0 0;display:grid;grid-template-columns:minmax(0,7.5em) minmax(0,1fr);gap:4px 10px;font-size:13px}
+.pj dt{color:var(--muted)}
+.pj dd{margin:0;min-width:0}
+.pj dd a{color:var(--brass);text-decoration:none}
+.pj dd small{color:var(--muted)}
+.next-steps{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.next-steps h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.next-steps ol,.next-steps ul{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.next-steps a{color:var(--brass)}
+.myth{font-size:14px;line-height:1.5;border-left:2px solid var(--brass);padding:2px 0 2px 12px;margin:0}
+.myth b{font-weight:500}
+.srcs a{word-break:break-word}
+.ck{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.empty{font-size:14px;color:var(--muted);padding:12px 0}
+</style>
+<style>
+/* ---- Thêm cho T282/T290 (không đổi class cũ) ---- */
+.ctl input[type=text]{font-size:20px}
+.pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.pair .ctl input{font-size:18px}
+.pair .tag{font-size:12px;color:var(--muted)}
+.meter{height:10px;border-radius:999px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--brass);transition:width .2s}
+.meter.hi i{background:var(--warn)}
+.lvl{display:inline-block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:3px 10px;border:1px solid var(--line);margin-left:8px;vertical-align:middle;font-family:var(--body)}
+.lvl.l{color:var(--ok);border-color:var(--ok)}
+.lvl.m{color:var(--brass);border-color:var(--brass);background:var(--brass-soft)}
+.lvl.h{color:var(--warn);border-color:var(--warn);background:var(--brass-soft)}
+.gapbox{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.gapbox>div{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.gapbox .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.gapbox .v{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
+.gapbox .v small{font-family:var(--body);font-size:13px;color:var(--muted)}
+.line .a.pts{color:var(--warn)}
+.line .a.z{color:var(--muted)}
+.todo{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.todo a{color:var(--brass)}
+html.embed .kl-back{display:none}
+.row2>.ctl,.row2>.field,.pair .ctl{min-width:0}
+.row2 .ctl input,.pair .ctl input{width:0}
+</style>
+<meta name="description" content="County, MLS, Zillow and the owner all give different square feet. Type the numbers you have, see which one to trust, why they differ and how to get an accurate measurement.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t290/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="How Many Square Feet Is This Home, Really? · Ken Lam Tools">
+<meta property="og:description" content="Which square footage number to trust, why sources disagree, and how to get it measured right.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t290/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+<style>
+/* ---- Thêm cho T290 (không đổi class cũ) ---- */
+.srcin{display:grid;gap:8px}
+.srcin .r{display:grid;grid-template-columns:minmax(0,1fr) 9.5em;gap:10px;align-items:center}
+.srcin .r .nm{font-size:14px;line-height:1.3}
+.srcin .r .nm small{display:block;color:var(--muted);font-size:12px}
+.srcin .ctl input{font-size:18px;width:0;padding:10px 6px}
+.srcs-out{display:grid;border-top:1px solid var(--line)}
+.so{padding:11px 0;border-bottom:1px solid var(--line);display:grid;gap:5px}
+.so-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:15px}
+.so-h b{font-weight:500;min-width:0}
+.so-h .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.so-h .a small{color:var(--muted);font-weight:400}
+.so.best .so-h b::after{content:"★";color:var(--brass);margin-left:6px}
+.tr{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.tr .m{flex:1;height:6px;border-radius:999px;background:var(--line);overflow:hidden}
+.tr .m i{display:block;height:100%;background:var(--brass)}
+.so p{margin:0;font-size:13px;color:var(--muted);line-height:1.45}
+.dz{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:center}
+.dz .ctl input{font-size:17px;width:0;padding:10px 6px}
+.dz .x{color:var(--muted);font-size:14px}
+.rules{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.rules li{display:grid;grid-template-columns:26px minmax(0,1fr);gap:8px;font-size:15px;line-height:1.45}
+.rules li i{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:600}
+.rules li i.y{background:var(--brass-soft);color:var(--ok);border:1px solid var(--ok)}
+.rules li i.n{background:var(--brass-soft);color:var(--warn);border:1px solid var(--warn)}
+.rules li small{display:block;color:var(--muted);font-size:13px}
+.big2{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
+.big2 small{font-family:var(--body);font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">How many square feet is this home, really?</h1>
+    <p class="sub" data-i="sub">County says one number, the MLS another, the owner a third. Type the numbers you have. See which one to trust, why they differ, and how to get the right one.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label><span data-i="l_src">Numbers you've seen</span> <small data-i="l_src_s">(fill only what you have)</small></label>
+      <div class="srcin" id="srcin"></div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_price">Price</span> <small data-i="l_price_s">(optional, to see what the gap is worth)</small></label>
+      <div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" min="0" value="1400000" aria-label="Price"></div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_has">Does the home have any of these?</span> <small data-i="l_has_s">(tap all that apply)</small></label>
+      <div class="checks" id="feats"></div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_k">Number to trust most right now</div>
+      <div class="v"><span id="best">0</span> <small>sqft</small><span class="lvl" id="lvl">—</span></div>
+      <div class="cnt2" id="bestFrom"></div>
+    </div>
+    <div class="gapbox">
+      <div><div class="k" data-i="g_gap">Biggest gap</div><div class="v" id="gapN">0 <small>sqft</small></div></div>
+      <div><div class="k" data-i="g_usd">Gap × $/sqft</div><div class="v" id="gapUsd">$0</div></div>
+    </div>
+    <div class="note" id="gapNote"></div>
+    <div class="ck" data-i="r_src">Each source, ranked by trust</div>
+    <div class="srcs-out" id="srcOut"></div>
+    <div class="note" data-i="r_est">Trust scores are our rule of thumb from how each number is made, not an official rating. Only a measurement to a standard (ANSI) tells you the real number.</div>
+  </section>
+
+  <section class="next-steps">
+    <h2 data-i="why_h">Why the numbers don't match</h2>
+    <ul id="whyList"></ul>
+  </section>
+
+  <section class="next-steps">
+    <h2 data-i="todo_h">How to get the most accurate number</h2>
+    <ol class="todo" id="todo"></ol>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" aria-label="Video" onerror="this.remove()"></video>
+
+  <section class="next-steps">
+    <h2 data-i="ansi_h">What counts, what doesn't</h2>
+    <p class="myth" style="border:0;padding:0" data-i="ansi_p">The standard appraisers use (ANSI Z765) works like wrapping a tape around the outside of the house. Then you take out what isn't real living space.</p>
+    <ul class="rules" id="rules"></ul>
+  </section>
+
+  <section class="next-steps">
+    <h2 data-i="dz_h">Rough check with a tape measure</h2>
+    <p style="margin:0;font-size:14px;color:var(--muted)" data-i="dz_p">Measure the outside walls of each box-shaped part of the house, in feet. Skip the garage and porch. Two-story? Add a row for the upper floor.</p>
+    <div id="dzRows" style="display:grid;gap:8px"></div>
+    <button class="btn" type="button" id="dzAdd" data-i="dz_add">+ Add a part</button>
+    <div class="line" style="border-bottom:0"><span class="n" data-i="dz_tot">Your rough total</span><span class="big2" id="dzTot">0 <small>sqft</small></span></div>
+    <div class="note" id="dzNote"></div>
+  </section>
+
+  <section class="next-steps">
+    <p class="myth"><b data-i="my_k">Many people get this wrong:</b> <span data-i="my_v">"The county number is official, so it's the right one." No. The assessor keeps it for taxes, and it can be decades old. It often misses an addition, or still counts a room that was changed. Official doesn't mean measured.</span></p>
+    <p class="myth"><b data-i="my2_k">One more:</b> <span data-i="my2_v">A bigger number isn't a win for the seller. If an appraiser measures 150 sqft less, the appraisal can come in low, and someone has to cover the gap in cash.</span></p>
+  </section>
+
+    <p class="myth"><b data-i="my3_k">"Approximate" doesn't cover everything:</b> <span data-i="my3_v">In a California case (Furla v. Jon Douglas Co., 1998) the listing said about 5,500 sqft and the home was well under. The court let the buyer's claim go on: a gap over 20% isn't minor, even with an "approximate" label.</span></p>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t290/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this check to yourself</h2>
+    <p data-i="f_sub">The numbers, which one to trust and the steps go in the email. Ken replies if you have a question. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#sqft" target="_blank" rel="noopener" data-i="ft_lib">Square footage: who measures, who's right</a> · <a href="https://kenlamrealty.com/library#video-sqft" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a> · <a href="/t282/" data-i="ft_t282">Gap too big? Check for unpermitted work (T282)</a></span>
+    <span data-i="ft_est">General info, not legal or appraisal advice. Trust scores, $/sqft math and measuring costs are estimates. Always verify sqft yourself before you buy.</span>
+    <span class="srcs" id="srcLinks"><span data-i="ft_src">Sources:</span> <a href="https://singlefamily.fanniemae.com/media/30266/display" target="_blank" rel="noopener">Fannie Mae, measuring guidelines (ANSI Z765)</a> · <a href="https://www.sccassessor.org/DocLib/628182map_Characteristic_form_current.pdf" target="_blank" rel="noopener">Santa Clara Assessor, property characteristics form</a> · <a href="https://aspawebq.acgov.org/assessor/resources/records.htm" target="_blank" rel="noopener">Alameda Assessor records</a> · <a href="https://support.redfin.com/hc/en-us/articles/360001454531-Public-Records" target="_blank" rel="noopener">Redfin, public records</a> · <a href="https://www.leagle.com/decision/199898776calrptr2d9111867" target="_blank" rel="noopener">Furla v. Jon Douglas Co. (1998)</a> · <span data-i="ft_chk">Checked 05/11/2026.</span></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 05/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== SỬA 1 CHỖ: nguồn số sqft + điểm tin cậy (ước tính của mình, không phải chuẩn ngành) ===== */
+const SOURCES=[
+  {k:'meas', trust:95, def:''},      // đo theo ANSI Z765 / appraisal gần đây
+  {k:'plans',trust:80, def:''},      // bản vẽ đã duyệt permit / builder
+  {k:'cty',  trust:65, def:1450},    // county assessor
+  {k:'mls',  trust:55, def:1620},    // MLS lần bán trước
+  {k:'zil',  trust:40, def:1450},    // Zillow / Redfin
+  {k:'own',  trust:30, def:1800}     // chủ nhà nói
+];
+const FEATS=['garage','addition','patio','basement','attic','adu','condo','old'];
+const GAP_FLAG=0.05;   // chênh >5% thì cảnh báo
+/* ============================================================================================ */
+const I18N={
+en:{
+  title:'How many square feet is this home, really?',
+  sub:'County says one number, the MLS another, the owner a third. Type the numbers you have. See which one to trust, why they differ, and how to get the right one.',
+  l_src:'Numbers you\u2019ve seen',l_src_s:'(fill only what you have)',
+  l_price:'Price',l_price_s:'(optional, to see what the gap is worth)',
+  l_has:'Does the home have any of these?',l_has_s:'(tap all that apply)',
+  s_meas:'Measured / appraisal',s_meas_s:'measured to ANSI, or a recent appraisal',
+  s_plans:'Permit plans / builder',s_plans_s:'approved drawings, new-build brochure',
+  s_cty:'County assessor',s_cty_s:'tax records, title company profile',
+  s_mls:'MLS (last sale)',s_mls_s:'what the listing said',
+  s_zil:'Zillow / Redfin',s_zil_s:'website estimate page',
+  s_own:'Owner says',s_own_s:'what the seller or landlord told you',
+  ex_meas:'Someone walked the house with a tape or laser and followed a standard. Best number you can get.',
+  ex_plans:'Good if the drawings match what was built. Changes after the permit won\u2019t show.',
+  ex_cty:'Kept for taxes, not for buyers. Often from when the house was new. Can miss additions or still count something removed.',
+  ex_mls:'Whatever the listing agent typed in. Could be county, an old appraisal, or the owner. Ask for the source.',
+  ex_zil:'Copied from county or MLS, and owners can edit it. Not a measurement.',
+  ex_own:'Often includes garage, enclosed patio or a converted room. Honest, but usually the biggest.',
+  f_garage:'Garage turned into a room',f_addition:'Room added on',f_patio:'Enclosed patio / sunroom',f_basement:'Basement',f_attic:'Finished attic / loft',f_adu:'ADU or back unit',f_condo:'It\u2019s a condo / townhouse',f_old:'Built before 1980',
+  r_k:'Number to trust most right now',
+  from:'from: {s}',none:'Type at least one number above.',
+  lv_h:'High trust',lv_m:'Medium trust',lv_l:'Low trust',
+  g_gap:'Biggest gap',g_usd:'Gap \u00d7 $/sqft (on paper)',
+  gap_ok:'The numbers are within {pct}% of each other. Small gaps like this are normal: rounding, inside vs outside walls.',
+  gap_big:'The numbers are {pct}% apart: {n} sqft. At {pps}/sqft that looks like {usd} on paper. An appraiser adjusts less than that (land isn\u2019t sqft), but it\u2019s enough to change the appraisal. Find out why before you sign.',
+  gap_one:'Only one number so far. Add another source to compare.',
+  r_src:'Each source, ranked by trust',
+  r_est:'Trust scores are our rule of thumb from how each number is made, not an official rating. Only a measurement to a standard (ANSI) tells you the real number.',
+  tr:'trust',
+  why_h:'Why the numbers don\u2019t match',
+  w_base:'Each source measures a different thing. County may measure outside walls; an owner may count from inside; a builder may count the garage.',
+  w_garage:'<b>Converted garage:</b> the owner counts it, county usually doesn\u2019t. If there\u2019s no permit, an appraiser may not count it either.',
+  w_addition:'<b>Added room:</b> county only adds it if it found out (permit or field check). No permit, often not on record.',
+  w_patio:'<b>Enclosed patio / sunroom:</b> counts only if it\u2019s finished and heated like the rest of the house. Many aren\u2019t.',
+  w_basement:'<b>Basement:</b> under ANSI, a floor with any part below ground goes on a separate line. It doesn\u2019t go into the main number.',
+  w_attic:'<b>Attic / loft:</b> only the part with ceiling at least 7 ft counts. Under a sloped roof, a lot of it drops out.',
+  w_adu:'<b>ADU:</b> a separate unit is listed on its own line, not added to the main house.',
+  w_condo:'<b>Condo:</b> apartment-style condos are measured from the inside walls, so they come out smaller than an outside measure. Townhouses are measured like houses.',
+  w_old:'<b>Older home:</b> county data may be from the original build. Every change since may be missing.',
+  w_mlshi:'<b>MLS higher than county</b> by {n} sqft. Ask the agent where the MLS number came from.',
+  w_ownhi:'<b>Owner\u2019s number is highest</b>. Ask what rooms they counted. Garage? Patio? Back unit?',
+  todo_h:'How to get the most accurate number',
+  td1:'<b>Get the county number.</b> Easiest: ask a title company for a free property profile. Or order it from the assessor: Santa Clara sells \u201cProperty Characteristics\u201d by form ($5 + $5 fee per parcel); Alameda at the office, (510) 272-3787. It\u2019s a starting point, not the answer.',
+  td2:'<b>Ask the listing agent: \u201cWhere did this sqft come from?\u201d</b> County? Old appraisal? The owner? If nobody measured, you\u2019ll know.',
+  td3:'<b>Look up the permits</b> for every room that isn\u2019t in the county number. No permit = may not count for the appraisal. <a href="/t281/">Look up permits (T281)</a>.',
+  td4:'<b>Get it measured if it matters.</b> A measurer or appraiser using ANSI Z765 is the most accurate. Rough cost {cost} (estimate). Do it inside your inspection period.',
+  td5:'<b>Buying with a loan?</b> Since April 2022, Fannie Mae requires appraisers to measure houses to ANSI. That\u2019s the number the bank will use.',
+  td_gap:'<b>Gap over 5%?</b> Run the unpermitted-work check: <a href="/t282/">T282</a>.',
+  ansi_h:'What counts, what doesn\u2019t',
+  ansi_p:'The standard appraisers use (ANSI Z765) works like wrapping a tape around the outside of the house. Then you take out what isn\u2019t real living space.',
+  dz_h:'Rough check with a tape measure',
+  dz_p:'Measure the outside walls of each box-shaped part of the house, in feet. Skip the garage and porch. Two-story? Add a row for the upper floor.',
+  dz_add:'+ Add a part',dz_tot:'Your rough total',dz_l:'Length',dz_w:'Width',
+  dz_cmp:'Your tape says {n} sqft, {d} vs the number to trust. Within 3% is about as close as a home tape gets.',
+  dz_none:'Fill in length and width to see a total.',
+  my_k:'Many people get this wrong:',
+  my_v:'\u201cThe county number is official, so it\u2019s the right one.\u201d No. The assessor keeps it for taxes, and it can be decades old. It often misses an addition, or still counts a room that was changed. Official doesn\u2019t mean measured.',
+  my3_k:'\u201cApproximate\u201d doesn\u2019t cover everything:',my3_v:'In a California case (Furla v. Jon Douglas Co., 1998) the listing said about 5,500 sqft and the home was well under. The court let the buyer\u2019s claim go on: a gap over 20% isn\u2019t minor, even with an \u201capproximate\u201d label.',
+  my2_k:'One more:',
+  my2_v:'A bigger number isn\u2019t a win for the seller. If an appraiser measures 150 sqft less, the appraisal can come in low, and someone has to cover the gap in cash.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this check to yourself',f_sub:'The numbers, which one to trust and the steps go in the email. Ken replies if you have a question. No spam.',
+  f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',f_ok:'Email opened. Hit Send and you\u2019re done. If it didn\u2019t open, copy the number below and text Ken.',f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'Square footage: who measures, who\u2019s right',ft_vid:'3-min video',ft_t282:'Gap too big? Check for unpermitted work (T282)',
+  ft_est:'General info, not legal or appraisal advice. Trust scores, $/sqft math and measuring costs are estimates. Always verify sqft yourself before you buy.',
+  ft_src:'Sources:',ft_chk:'Checked 05/11/2026.',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I ran the sqft check on tools.kenlamrealty.com. Best number: {best} sqft ({from}). Sources range {lo}\u2013{hi} sqft. Can we talk?',
+  subj:'Sqft check \u2014 {best} sqft \u2014 {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nNumber to trust most: {best} sqft ({from})\nBiggest gap: {gap} sqft ({pct}%) \u2248 {usd}\n\nSources:\n{rows}\n\nNext steps:\n{todo}\n\nEstimate only. Sent from tool T290 tools.kenlamrealty.com'
+},
+vi:{
+  title:'Nhà này thật ra bao nhiêu square feet?',
+  sub:'County ghi 1 số, MLS ghi số khác, chủ nhà nói số khác nữa. Nhập mấy số anh chị có. Tool chỉ số nào đáng tin, vì sao lệch, và cách biết số đúng.',
+  l_src:'Mấy số anh chị đã thấy',l_src_s:'(có số nào nhập số đó)',
+  l_price:'Giá nhà',l_price_s:'(không bắt buộc, để biết số chênh đáng bao nhiêu tiền)',
+  l_has:'Nhà có mấy cái này không?',l_has_s:'(bấm hết cái nào có)',
+  s_meas:'Đo thật / appraisal',s_meas_s:'đo theo chuẩn ANSI, hoặc appraisal mới',
+  s_plans:'Bản vẽ permit / builder',s_plans_s:'bản vẽ được duyệt, tờ quảng cáo nhà mới',
+  s_cty:'County (assessor)',s_cty_s:'hồ sơ thuế, profile của title',
+  s_mls:'MLS (lần bán trước)',s_mls_s:'số ghi trên listing',
+  s_zil:'Zillow / Redfin',s_zil_s:'trang web ước tính',
+  s_own:'Chủ nhà nói',s_own_s:'người bán hoặc chủ cho thuê nói',
+  ex_meas:'Có người cầm thước hoặc máy laser đo, theo đúng chuẩn. Số tốt nhất anh chị có được.',
+  ex_plans:'Tốt nếu bản vẽ khớp với cái xây ra. Sửa đổi sau permit thì không có.',
+  ex_cty:'County giữ để tính thuế, không phải cho người mua. Thường là số từ hồi nhà mới xây. Hay thiếu phần cơi nới, hoặc còn tính phần đã sửa.',
+  ex_mls:'Agent gõ gì thì là vậy. Có thể lấy từ county, appraisal cũ, hoặc chủ nhà nói. Hỏi agent nguồn ở đâu.',
+  ex_zil:'Chép lại từ county hoặc MLS, chủ nhà còn tự sửa được. Không phải số đo.',
+  ex_own:'Hay tính luôn garage, patio đóng kín, phòng cơi nới. Thật lòng, nhưng thường là số lớn nhất.',
+  f_garage:'Garage làm thành phòng',f_addition:'Có cơi nới thêm phòng',f_patio:'Patio đóng kín / sunroom',f_basement:'Có basement (tầng hầm)',f_attic:'Attic / gác làm phòng',f_adu:'Có ADU / nhà sau',f_condo:'Condo / townhouse',f_old:'Xây trước 1980',
+  r_k:'Số nên tin nhất lúc này',
+  from:'lấy từ: {s}',none:'Nhập ít nhất 1 số ở trên.',
+  lv_h:'Tin được',lv_m:'Tin vừa',lv_l:'Tin ít',
+  g_gap:'Chênh nhiều nhất',g_usd:'Chênh × giá/sqft (trên giấy)',
+  gap_ok:'Các số lệch nhau trong {pct}%. Lệch nhỏ vậy là bình thường: làm tròn, đo trong tường hay ngoài tường.',
+  gap_big:'Các số lệch nhau {pct}%: {n} sqft. Nhân với {pps}/sqft thì trên giấy cỡ {usd}. Appraiser chỉnh ít hơn vậy (giá đất không nằm trong sqft), nhưng đủ làm appraisal lệch. Tìm ra lý do trước khi ký.',
+  gap_one:'Mới có 1 số. Nhập thêm 1 nguồn nữa để so.',
+  r_src:'Từng nguồn, xếp theo độ tin',
+  r_est:'Điểm tin cậy là cách mình tự chấm dựa trên cách mỗi số được làm ra, không phải xếp hạng chính thức. Chỉ đo theo chuẩn (ANSI) mới ra số thật.',
+  tr:'độ tin',
+  why_h:'Vì sao các số không khớp',
+  w_base:'Mỗi nguồn đo một kiểu. County có thể đo ngoài tường; chủ nhà đo trong tường; builder có khi tính luôn garage.',
+  w_garage:'<b>Garage làm phòng:</b> chủ nhà tính vô, county thường không. Không có permit thì appraiser cũng có thể không tính.',
+  w_addition:'<b>Cơi nới phòng:</b> county chỉ cộng vô khi biết (có permit hoặc đi kiểm). Không permit thì hay không có trong hồ sơ.',
+  w_patio:'<b>Patio đóng kín / sunroom:</b> chỉ tính khi làm hoàn thiện và có sưởi như trong nhà. Nhiều cái không đủ.',
+  w_basement:'<b>Basement:</b> tầng nào nằm dưới mặt đất (dù một phần) thì ANSI ghi riêng. Không cộng vô số chính.',
+  w_attic:'<b>Attic / gác:</b> chỉ phần trần cao từ 7 ft trở lên mới tính. Dưới mái dốc là rớt ra nhiều.',
+  w_adu:'<b>ADU:</b> nhà phụ ghi riêng 1 dòng, không cộng vô nhà chính.',
+  w_condo:'<b>Condo:</b> condo kiểu căn hộ đo từ tường trong, nên ra nhỏ hơn đo ngoài. Townhouse thì đo như nhà.',
+  w_old:'<b>Nhà cũ:</b> số của county có khi từ hồi mới xây. Sửa gì sau đó có thể không có.',
+  w_mlshi:'<b>MLS cao hơn county</b> {n} sqft. Hỏi agent số MLS lấy từ đâu.',
+  w_ownhi:'<b>Số chủ nhà nói là lớn nhất</b>. Hỏi họ tính những phòng nào. Garage? Patio? Nhà sau?',
+  todo_h:'Làm sao biết chính xác nhất',
+  td1:'<b>Lấy số county.</b> Dễ nhất: xin title company cái property profile, miễn phí. Hoặc xin assessor: Santa Clara bán tờ \u201cProperty Characteristics\u201d qua form ($5 + $5 phí mỗi căn); Alameda hỏi tại văn phòng, (510) 272-3787. Đó là điểm bắt đầu, chưa phải đáp án.',
+  td2:'<b>Hỏi listing agent: \u201cSqft này lấy từ đâu?\u201d</b> County? Appraisal cũ? Chủ nhà nói? Chưa ai đo thì mình biết liền.',
+  td3:'<b>Tra permit</b> cho mọi phòng không có trong số county. Không permit = appraisal có thể không tính. <a href="/t281/">Tra permit (T281)</a>.',
+  td4:'<b>Quan trọng thì thuê người đo.</b> Người đo hoặc appraiser theo ANSI Z765 là chính xác nhất. Khoảng {cost} (ước tính). Làm trong thời gian inspection.',
+  td5:'<b>Mua bằng loan?</b> Từ tháng 4/2022, Fannie Mae bắt appraiser đo nhà theo ANSI. Ngân hàng dùng số đó.',
+  td_gap:'<b>Lệch quá 5%?</b> Kiểm thử phần xây chui: <a href="/t282/">T282</a>.',
+  ansi_h:'Cái gì tính, cái gì không',
+  ansi_p:'Chuẩn mà appraiser dùng (ANSI Z765) giống như lấy thước quấn quanh tường ngoài căn nhà. Rồi trừ ra mấy chỗ không phải chỗ ở thật.',
+  dz_h:'Tự đo thô bằng thước',
+  dz_p:'Đo tường ngoài của từng khối vuông của nhà, tính bằng feet. Bỏ garage, bỏ hiên. Nhà 2 tầng? Thêm 1 dòng cho tầng trên.',
+  dz_add:'+ Thêm 1 khối',dz_tot:'Tổng anh chị đo',dz_l:'Dài',dz_w:'Rộng',
+  dz_cmp:'Thước của anh chị ra {n} sqft, {d} so với số nên tin. Lệch trong 3% là cỡ chính xác nhất của thước ở nhà.',
+  dz_none:'Nhập dài và rộng để ra tổng.',
+  my_k:'Điều nhiều người hiểu sai:',
+  my_v:'\u201cSố county là số chính thức, chắc đúng.\u201d Không. County giữ số đó để tính thuế, có khi mấy chục năm chưa đổi. Hay thiếu phần cơi nới, hoặc còn tính phòng đã sửa. Chính thức không có nghĩa là đã đo.',
+  my3_k:'Ghi \u201capproximate\u201d chưa chắc thoát:',my3_v:'Có vụ ở Cali (Furla v. Jon Douglas Co., 1998): listing ghi khoảng 5,500 sqft, nhà thật nhỏ hơn nhiều. Tòa cho người mua kiện tiếp: lệch hơn 20% không phải chuyện nhỏ, dù có chữ \u201capproximate\u201d.',
+  my2_k:'Thêm 1 điều:',
+  my2_v:'Ghi số lớn chưa chắc có lợi cho người bán. Appraiser đo ra thiếu 150 sqft là appraisal có thể thấp, và phải có người bù tiền mặt.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi kết quả này vô email',f_sub:'Mấy con số, số nên tin và các bước làm sẽ nằm trong email. Có câu hỏi thì Ken trả lời. Không spam.',
+  f_name:'Tên',f_phone:'Điện thoại (không bắt buộc)',f_send:'Gửi',f_ok:'Email đã mở. Bấm Send là xong. Không mở được thì copy số dưới và nhắn Ken.',f_or:'Hoặc nhắn tin:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Square feet: ai đo, ai đúng',ft_vid:'Video 3 phút',ft_t282:'Lệch nhiều quá? Kiểm phần xây chui (T282)',
+  ft_est:'Thông tin chung, không phải tư vấn luật hay thẩm định. Điểm tin cậy, phép tính $/sqft và giá đo là ước tính. Luôn tự kiểm sqft trước khi mua.',
+  ft_src:'Nguồn:',ft_chk:'Tra ngày 05/11/2026.',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa kiểm sqft trên tools.kenlamrealty.com. Số nên tin: {best} sqft ({from}). Các nguồn từ {lo} tới {hi} sqft. Cho tôi hỏi thêm.',
+  subj:'Kiểm sqft \u2014 {best} sqft \u2014 {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nSố nên tin nhất: {best} sqft ({from})\nChênh nhiều nhất: {gap} sqft ({pct}%) \u2248 {usd}\n\nCác nguồn:\n{rows}\n\nViệc nên làm:\n{todo}\n\nChỉ là ước tính. Gửi từ tool T290 tools.kenlamrealty.com'
+}};
+/* Quy tắc đo ANSI Z765-2021 theo Fannie Mae "Standardizing Property Measuring Guidelines" (06/2025) + ANSI Fact Sheet (03/2022). Garage loại trừ: nguồn phụ (opendoor). Tra 05/11/2026. */
+const RULES=[{"y": 1, "en": "Measure from the outside face of the outside walls.", "en_s": "Apartment-style condos are the exception: measured from the inside walls.", "vi": "Đo từ mặt ngoài của tường ngoài.", "vi_s": "Riêng condo kiểu căn hộ thì đo từ tường trong."}, {"y": 1, "en": "Only finished, livable space that sits above ground.", "en_s": "", "vi": "Chỉ tính phần hoàn thiện, ở được, nằm trên mặt đất.", "vi_s": ""}, {"y": 1, "en": "Ceiling at least 7 ft.", "en_s": "Sloped ceiling: at least half the room must be 7 ft+, and any part under 5 ft drops out.", "vi": "Trần cao từ 7 ft trở lên.", "vi_s": "Trần dốc: ít nhất nửa phòng phải từ 7 ft, chỗ nào thấp hơn 5 ft thì bỏ."}, {"y": 1, "en": "Stairs count on the floor they go down from.", "en_s": "", "vi": "Cầu thang tính cho tầng mà mình đi xuống từ đó.", "vi_s": ""}, {"y": 0, "en": "Garage, porch, open patio.", "en_s": "Even a nice garage is not living area.", "vi": "Garage, hiên, patio để trống.", "vi_s": "Garage đẹp cỡ nào cũng không phải chỗ ở."}, {"y": 0, "en": "Open space to the floor below, like a 2-story foyer.", "en_s": "", "vi": "Chỗ trống thông xuống tầng dưới, như sảnh cao 2 tầng.", "vi_s": ""}, {"y": 0, "en": "Any floor partly below ground.", "en_s": "The whole floor goes on a separate below-grade line.", "vi": "Tầng nào có một phần nằm dưới mặt đất.", "vi_s": "Cả tầng đó ghi riêng (below-grade), không cộng vô số chính."}, {"y": 0, "en": "Finished rooms you can only reach through unfinished space.", "en_s": "Listed separately.", "vi": "Phòng hoàn thiện mà phải đi qua chỗ chưa hoàn thiện mới tới.", "vi_s": "Ghi riêng."}, {"y": 0, "en": "ADU or back unit.", "en_s": "Measured the same way, reported on its own line.", "vi": "ADU / nhà sau.", "vi_s": "Đo cùng cách, ghi riêng 1 dòng."}];
+const MEASURE_COST='$150–$500'; /* ước tính, số toàn quốc (opendoor) — chưa có số riêng Bay Area */
+
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const nf=n=>Math.round(n).toLocaleString('en-US');
+const usd=n=>'$'+nf(n);
+let feats=['garage'], last={};
+const vals={}; SOURCES.forEach(s=>vals[s.k]=s.def===''?'':String(s.def));
+let dz=[{l:'50',w:'30'},{l:'',w:''}];
+(function(){ try{ const p=new URLSearchParams(location.search);
+  SOURCES.forEach(s=>{const v=p.get(s.k); if(v!=null&&!isNaN(+v)) vals[s.k]=v;});
+  const pr=p.get('price'); if(pr!=null&&!isNaN(+pr)) $('price').value=pr;
+  const f=(p.get('has')||'').split(/[,\s]+/).filter(k=>FEATS.includes(k)); if(p.has('has')) feats=f; }catch(e){} })();
+
+function buildInputs(){
+  const d=I18N[lang], S=$('srcin'); S.innerHTML='';
+  SOURCES.forEach(s=>S.insertAdjacentHTML('beforeend','<div class="r"><div class="nm">'+d['s_'+s.k]+'<small>'+d['s_'+s.k+'_s']+'</small></div><div class="ctl"><input type="number" inputmode="numeric" min="0" data-k="'+s.k+'" placeholder="—" aria-label="'+d['s_'+s.k]+'"><span class="post">sqft</span></div></div>'));
+  S.querySelectorAll('input').forEach(i=>{ i.value=vals[i.dataset.k]; i.addEventListener('input',()=>{vals[i.dataset.k]=i.value; calc();}); });
+  const F=$('feats'); F.innerHTML='';
+  FEATS.forEach(k=>F.insertAdjacentHTML('beforeend','<label><input type="checkbox" value="'+k+'"'+(feats.includes(k)?' checked':'')+'><span>'+d['f_'+k]+'</span></label>'));
+  $('rules').innerHTML=RULES.map(r=>'<li><i class="'+(r.y?'y':'n')+'">'+(r.y?'✓':'✕')+'</i><span>'+r[lang]+(r[lang+'_s']?'<small>'+r[lang+'_s']+'</small>':'')+'</span></li>').join('');
+  buildDz();
+}
+function buildDz(){
+  const d=I18N[lang], R=$('dzRows'); R.innerHTML='';
+  dz.forEach((r,i)=>R.insertAdjacentHTML('beforeend','<div class="dz"><div class="ctl"><input type="number" inputmode="decimal" min="0" data-i="'+i+'" data-f="l" placeholder="'+d.dz_l+'" aria-label="'+d.dz_l+'"><span class="post">ft</span></div><div class="ctl"><input type="number" inputmode="decimal" min="0" data-i="'+i+'" data-f="w" placeholder="'+d.dz_w+'" aria-label="'+d.dz_w+'"><span class="post">ft</span></div><span class="x" id="dzr'+i+'"></span></div>'));
+  R.querySelectorAll('input').forEach(i=>{ i.value=dz[+i.dataset.i][i.dataset.f]; i.addEventListener('input',()=>{dz[+i.dataset.i][i.dataset.f]=i.value; calc();}); });
+}
+function calc(){
+  const d=I18N[lang];
+  const have=SOURCES.filter(s=>+vals[s.k]>0).map(s=>({...s,v:+vals[s.k]}));
+  const price=+$('price').value||0;
+  let best=null;
+  have.forEach(s=>{ if(!best||s.trust>best.trust) best=s; });
+  const L=$('lvl');
+  if(!best){ $('best').textContent='—'; L.textContent='—'; L.className='lvl'; $('bestFrom').textContent=d.none; }
+  else{ $('best').textContent=nf(best.v); const lv=best.trust>=80?'h':best.trust>=55?'m':'l'; L.textContent=d['lv_'+lv]; L.className='lvl '+(lv==='h'?'l':lv==='m'?'m':'h'); $('bestFrom').textContent=d.from.replace('{s}',d['s_'+best.k]); }
+  const vs=have.map(s=>s.v), lo=vs.length?Math.min(...vs):0, hi=vs.length?Math.max(...vs):0, gap=hi-lo;
+  const pct=lo>0?Math.round(gap/lo*1000)/10:0;
+  const ref=best?best.v:0, pps=price>0&&ref>0?price/ref:0;
+  $('gapN').innerHTML=nf(gap)+' <small>sqft</small>';
+  $('gapUsd').textContent=pps?usd(gap*pps):'—';
+  const N=$('gapNote');
+  if(have.length<2){ N.innerHTML=d.gap_one; }
+  else if(pct/100>GAP_FLAG){ N.innerHTML=d.gap_big.replace('{pct}',pct.toLocaleString('en-US')).replace('{n}',nf(gap)).replace('{usd}',pps?usd(gap*pps):'—').replace('{pps}',pps?usd(pps):'—'); }
+  else { N.innerHTML=d.gap_ok.replace('{pct}',Math.max(pct,0).toLocaleString('en-US')); }
+  const sorted=[...have].sort((a,b)=>b.trust-a.trust);
+  $('srcOut').innerHTML=sorted.length?sorted.map(s=>{
+    const df=best&&s!==best?s.v-best.v:0;
+    const dtxt=df?' <small>('+(df>0?'+':'')+nf(df)+')</small>':'';
+    return '<div class="so'+(s===best?' best':'')+'"><div class="so-h"><b>'+d['s_'+s.k]+'</b><span class="a">'+nf(s.v)+' sqft'+dtxt+'</span></div><div class="tr"><span>'+d.tr+'</span><span class="m"><i style="width:'+s.trust+'%"></i></span><span>'+s.trust+'/100</span></div><p>'+d['ex_'+s.k]+'</p></div>';
+  }).join(''):'<div class="empty">'+d.none+'</div>';
+  // vì sao lệch
+  const W=[d.w_base];
+  const m=+vals.mls, c=+vals.cty, o=+vals.own;
+  if(m>0&&c>0&&m-c>0&&(m-c)/c>GAP_FLAG) W.push(d.w_mlshi.replace('{n}',nf(m-c)));
+  if(o>0&&o===hi&&have.length>1&&gap>0) W.push(d.w_ownhi);
+  FEATS.filter(k=>feats.includes(k)).forEach(k=>W.push(d['w_'+k]));
+  $('whyList').innerHTML=W.map(t=>'<li>'+t+'</li>').join('');
+  const T=[d.td1,d.td2,d.td3,d.td4.replace('{cost}',MEASURE_COST),d.td5];
+  if(pct/100>GAP_FLAG&&have.length>1) T.splice(3,0,d.td_gap);
+  $('todo').innerHTML=T.map(t=>'<li>'+t+'</li>').join('');
+  // tự đo
+  let tot=0; dz.forEach((r,i)=>{ const a=(+r.l||0)*(+r.w||0); tot+=a; const el=$('dzr'+i); if(el) el.textContent=a?nf(a):''; });
+  $('dzTot').innerHTML=nf(tot)+' <small>sqft</small>';
+  $('dzNote').innerHTML=tot&&ref?d.dz_cmp.replace('{n}',nf(tot)).replace('{d}',((tot-ref)>=0?'+':'')+nf(tot-ref)+' sqft ('+((tot-ref)/ref*100>=0?'+':'')+(Math.round((tot-ref)/ref*1000)/10).toLocaleString('en-US')+'%)'):d.dz_none;
+  const strip=s=>s.replace(/<[^>]+>/g,'');
+  last={best:best?nf(best.v):'—',from:best?d['s_'+best.k]:'—',lo:nf(lo),hi:nf(hi),gap:nf(gap),pct:pct,usd:pps?usd(gap*pps):'—',
+    rows:sorted.map(s=>'- '+d['s_'+s.k]+': '+nf(s.v)+' sqft ('+d.tr+' '+s.trust+'/100)').join('\n'),
+    todo:T.map((t,i)=>(i+1)+'. '+strip(t)).join('\n')};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(d.sms.replace(/\{(\w+)\}/g,(mm,k)=>last[k]??mm));
+  klSend();
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; buildInputs(); calc();
+}
+const EMBED=/[?&]embed=1/.test(location.search);
+let klSend=()=>{};
+if(EMBED){ document.documentElement.classList.add('embed'); let lastH=0;
+  klSend=()=>{ const w=document.querySelector('.wrap'); const h=Math.ceil(w.getBoundingClientRect().bottom+window.scrollY+40); if(Math.abs(h-lastH)<4) return; lastH=h; try{ parent.postMessage({klToolsHeight:h},'*'); }catch(e){} };
+  window.addEventListener('resize',()=>klSend());
+  document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('a[href]'); if(!a) return; const h=a.getAttribute('href'); if(h.startsWith('#')||a.target==='_blank'||/^(sms|mailto|tel):/.test(h)) return; if(h.startsWith('/')) a.href='https://tools.kenlamrealty.com'+h; a.target='_top'; },true); }
+$('feats').addEventListener('change',e=>{ if(e.target.type!=='checkbox') return; const k=e.target.value;
+  if(e.target.checked){ if(!feats.includes(k)) feats.push(k);} else feats=feats.filter(x=>x!==k); calc(); });
+$('price').addEventListener('input',calc);
+$('dzAdd').onclick=()=>{ if(dz.length<8){ dz.push({l:'',w:''}); buildDz(); calc(); } };
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus(); klSend();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false; klSend();
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+try{if(/[?&]embed=1/.test(location.search))a.style.display='none';}catch(e){}
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
