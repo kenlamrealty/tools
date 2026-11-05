@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>1031 Checklist Có Ngày</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+/* ---- T227 thêm (không đổi class cũ) ---- */
+.task .dt{grid-column:2;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:13px;color:var(--muted)}
+.task .dt b{color:var(--fg);font-weight:500;font-variant-numeric:tabular-nums}
+.task .dt .hard{color:var(--warn);font-weight:500}
+.task .dt .soft{font-style:italic}
+.task .dt .gcal{padding:3px 9px;font-size:12px}
+.next-k{font-size:14px;color:var(--muted)}
+.next-k b{color:var(--fg);font-weight:500}
+.icsrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.icsrow .btn{padding:10px 14px;font-size:14px}
+.dd.hide{display:none}
+</style>
+<meta name="description" content="1031 exchange checklist with your real dates: QI before closing, day 45, day 180 (or the tax due date), Form 8824 and FTB 3840. Tick each step, add to Google Calendar or download .ics.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t227/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="1031 Checklist with Real Dates · Ken Lam Tools">
+<meta property="og:description" content="Every 1031 step with your real dates: QI before closing, day 45, day 180 or the tax due date. Tick, add to Google Calendar, download .ics.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t227/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Your 1031 checklist, A to Z, with real dates</h1>
+    <p class="sub" data-i="sub">Enter your closing date. Every step gets a date, from picking a QI before you list to Form 8824 at tax time. Tick as you go.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label><span data-i="l_mode">Kind of exchange</span></label>
+      <div class="seg" role="group">
+        <button type="button" id="mDel" aria-pressed="true" data-i="m_del">Sell first (delayed)</button>
+        <button type="button" id="mRev" aria-pressed="false" data-i="m_rev">Buy first (reverse)</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="close"><span data-i="l_close" id="lClose">Old property closes on</span></label>
+        <div class="ctl"><input id="close" type="date"></div>
+      </div>
+      <div class="field" id="fList">
+        <label for="list"><span data-i="l_list">MLS list date </span><small data-i="l_list_s">(optional)</small></label>
+        <div class="ctl"><input id="list" type="date"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_out">New property outside California?</span></label>
+      <div class="seg" role="group">
+        <button type="button" id="oNo" aria-pressed="true" data-i="o_no">No</button>
+        <button type="button" id="oYes" aria-pressed="false" data-i="o_yes">Yes</button>
+        <button type="button" id="oMaybe" aria-pressed="false" data-i="o_maybe">Not sure</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">Days to your next hard deadline</div>
+      <div class="v"><span id="big">0</span> <small data-i="r_unit">days</small></div>
+    </div>
+    <div class="next-k" id="nextK"></div>
+    <div class="status" id="status"></div>
+    <div class="note" data-i="est_note">General info, not tax or legal advice. Calendar days count, weekends and holidays included. Confirm every date with your QI and CPA before you sign.</div>
+  </section>
+
+  <section class="dl" aria-label="Deadlines">
+    <h2 data-i="dl_title">The dates that cannot move</h2>
+    <div class="dd hide" id="cBiz">
+      <div class="hd"><span class="t" data-i="b5_t">5 business days · sign the QEAA</span><span class="left" id="dBizL"></span></div>
+      <div class="date" id="dBiz"></div>
+      <p data-i="b5_p">Written agreement with the Exchange Accommodation Titleholder (EAT) within 5 business days after it takes title.</p>
+    </div>
+    <div class="dd">
+      <div class="hd"><span class="t" id="d45T"></span><span class="left" id="d45L"></span></div>
+      <div class="date" id="d45"></div>
+      <p id="d45P"></p>
+    </div>
+    <div class="dd">
+      <div class="hd"><span class="t" id="d180T"></span><span class="left" id="d180L"></span></div>
+      <div class="date" id="d180"></div>
+      <p id="d180P"></p>
+    </div>
+    <div class="dd hide" id="cTax">
+      <div class="hd"><span class="t" data-i="tx_t">Tax return due · file an extension</span><span class="left" id="dTxL"></span></div>
+      <div class="date" id="dTx"></div>
+      <p data-i="tx_p">Federal and California extension filed by this date keeps your full 180 days.</p>
+    </div>
+  </section>
+
+  <section class="tlw" aria-label="Checklist">
+    <div class="top"><h2 data-i="ck_title">Checklist</h2><span class="cnt"><span id="ckDone">0</span>/<span id="ckAll">0</span> <span data-i="ck_tasks">done</span></span></div>
+    <div class="bar" aria-hidden="true"><i class="b1" id="ckBar"></i></div>
+    <div id="tl"></div>
+    <div class="icsrow">
+      <button type="button" class="btn" id="icsBtn" data-i="b_ics">Download all dates (.ics)</button>
+      <button type="button" class="reset" id="ckReset" data-i="ck_reset">Clear checkmarks</button>
+    </div>
+  </section>
+
+  <p class="myth" data-i="myth"><b>Common mistake:</b> "I'll find a QI after the sale closes. I have 45 days." No. The QI and the exchange agreement must be in place before closing. If sale money lands in your account, even for a day, the 1031 can be gone.</p>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">Run the numbers first: gain, boot and tax in <a href="/t27/">T27</a>.</li>
+      <li data-i="nx2">Picking a QI? Use the safety checklist in <a href="/t226/">T226</a>.</li>
+      <li data-i="nx3">Before day 45, test your list against the 3-property / 200% / 95% rules in <a href="/t221/">T221</a>.</li>
+      <li data-i="nx4">Check which closing costs can come out of exchange money in <a href="/t223/">T223</a>.</li>
+    </ol>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video guide"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t227/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this 1031 timeline to yourself</h2>
+    <p data-i="f_sub">Ken will reply with the dates and a few Qualified Intermediaries and CPAs investors here use. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#1031-exchange" target="_blank" rel="noopener" data-i="ft_lib">1031 exchange, step by step</a> · <a href="https://kenlamrealty.com/library#video-1031" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a> · <a href="/t229/" data-i="ft_t229">1031 glossary (T229)</a></span>
+    <span data-i="ft_est">General info only. Not tax or legal advice. Ask a CPA and a Qualified Intermediary before you sign. Suggested dates (in italics) are planning targets, not law.</span>
+    <span class="src"><span data-i="ft_src">Sources</span> (04/11/2026):
+      <a href="https://www.law.cornell.edu/cfr/text/26/1.1031(k)-1" target="_blank" rel="noopener">Treas. Reg. §1.1031(k)-1</a> ·
+      <a href="https://www.law.cornell.edu/uscode/text/26/1031" target="_blank" rel="noopener">26 USC §1031</a> ·
+      <a href="https://www.irs.gov/instructions/i8824" target="_blank" rel="noopener">Form 8824 Instructions</a> ·
+      <a href="https://www.irs.gov/pub/irs-drop/rp-00-37.pdf" target="_blank" rel="noopener">Rev. Proc. 2000-37</a> ·
+      <a href="https://www.irs.gov/pub/irs-irbs/irb04-33.pdf" target="_blank" rel="noopener">Rev. Proc. 2004-51</a> ·
+      <a href="https://www.irs.gov/pub/irs-drop/rp-18-58.pdf" target="_blank" rel="noopener">Rev. Proc. 2018-58</a> ·
+      <a href="https://www.ftb.ca.gov/forms/2025/2025-3840-instructions.html" target="_blank" rel="noopener">FTB 3840</a> ·
+      <a href="https://www.ftb.ca.gov/forms/2026/2026-593-instructions.html" target="_blank" rel="noopener">FTB 593</a></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Luật & số liệu — sửa ở đây khi luật đổi (tra 04/11/2026, nguồn: /home/claude/1031/FACTS.md) =====
+   ID_DAYS 45 / EXCH_DAYS 180: Treas. Reg. §1.1031(k)-1(b)(2) https://www.law.cornell.edu/cfr/text/26/1.1031(k)-1
+     Exchange period hết vào ngày SỚM HƠN: ngày 180 hoặc hạn nộp tờ khai (kể cả extension) của năm bán. Nhiều nhà bán → ngày bán sớm nhất tính.
+     Cách tính ngày y chang T27: ngày close + N ngày lịch (giờ địa phương).
+   TAX_DUE: 15/4 năm sau, rơi thứ Bảy/CN thì dời thứ Hai — y chang T27. KHÔNG tính lễ DC Emancipation Day (KEN DUYỆT).
+     Chỉ đúng cho cá nhân (Form 1040 / CA 540). Partnership / S-corp hạn khác — KEN DUYỆT.
+   Không gia hạn, trừ thiên tai có thông báo IRS (Rev. Proc. 2018-58 §17) https://www.irs.gov/pub/irs-drop/rp-18-58.pdf
+   Reverse (Rev. Proc. 2000-37): QEAA trong REV_BIZ=5 ngày làm việc sau khi EAT đứng tên; identify nhà cũ trong 45 ngày; xong trong 180 ngày.
+     Ngày làm việc ở đây = bỏ thứ Bảy/CN, CHƯA bỏ lễ liên bang (KEN DUYỆT). Rev. Proc. 2004-51: không được sở hữu nhà mới trong 180 ngày trước khi giao EAT.
+     Luật "sớm hơn hạn tờ khai" cho reverse: không có trong FACTS → không áp, ghi hỏi QI (KEN DUYỆT).
+   Form 8824 nộp với tờ khai năm bán nhà cũ (Form 8824 Instr.). FTB 3840: đổi nhà CA lấy nhà ngoài CA, nộp mỗi năm. FTB 593: 1031 hợp lệ miễn withholding lúc close (exchange certification).
+   Phí reverse $3,000–$10,000+: ƯỚC TÍNH (FACTS §9), KEN DUYỆT.
+   Ngày "gợi ý" (soft) = mốc kế hoạch, không phải luật: QI/CPA/pre-approval trước ngày lên MLS (mặc định close − 30 nếu không nhập), báo escrow close − 7, ký exchange agreement close − 1. */
+const ID_DAYS=45, EXCH_DAYS=180, REV_BIZ=5, LIST_DEFAULT_BEFORE=30, ESC_BEFORE=7, AGR_BEFORE=1, REV_PREP_BEFORE=14, REV_FEE='$3,000–$10,000+';
+const UPDATED='04/11/2026';
+const LS_KEY='t227_steps';
+
+/* Mỗi bước: id, phase, date(ctx) → Date|null, hard (luật) hay soft (gợi ý), show(ctx) */
+const STEPS={
+ del:[
+  {id:'qi',ph:'pre',d:c=>c.L,soft:1},
+  {id:'cpa',ph:'pre',d:c=>c.L,soft:1},
+  {id:'pa',ph:'pre',d:c=>c.L,soft:1},
+  {id:'esc',ph:'pre',d:c=>c.add(c.C,-ESC_BEFORE),soft:1},
+  {id:'agr',ph:'pre',d:c=>c.add(c.C,-AGR_BEFORE),soft:1},
+  {id:'close',ph:'cl0',d:c=>c.C,hard:1},
+  {id:'shop',ph:'id',d:null},
+  {id:'rule',ph:'id',d:null},
+  {id:'list',ph:'id',d:c=>c.d45,hard:1},
+  {id:'costs',ph:'buy',d:null},
+  {id:'title',ph:'buy',d:null},
+  {id:'ext',ph:'buy',d:c=>c.tx,hard:1,show:c=>c.early},
+  {id:'buy',ph:'buy',d:c=>c.d180,hard:1},
+  {id:'f8824',ph:'tax',d:c=>c.tx,hard:1},
+  {id:'f3840',ph:'tax',d:c=>c.tx,hard:1,show:c=>c.out!=='no'},
+  {id:'keep',ph:'tax',d:null}
+ ],
+ rev:[
+  {id:'rqi',ph:'pre',d:c=>c.add(c.C,-REV_PREP_BEFORE),soft:1},
+  {id:'rlend',ph:'pre',d:c=>c.add(c.C,-REV_PREP_BEFORE),soft:1},
+  {id:'rown',ph:'pre',d:null},
+  {id:'rpark',ph:'cl0',d:c=>c.C,hard:1},
+  {id:'rqeaa',ph:'cl0',d:c=>c.biz,hard:1},
+  {id:'rid',ph:'id',d:c=>c.d45,hard:1},
+  {id:'rlist',ph:'id',d:null},
+  {id:'rsell',ph:'buy',d:c=>c.d180,hard:1},
+  {id:'f8824r',ph:'tax',d:null},
+  {id:'f3840',ph:'tax',d:null,show:c=>c.out!=='no'},
+  {id:'keep',ph:'tax',d:null}
+ ]
+};
+
+const I18N={
+ vi:{title:'Checklist 1031 từ A tới Z, có ngày thật',sub:'Nhập ngày close. Mỗi bước có ngày riêng, từ chọn QI trước khi lên MLS tới Form 8824 mùa thuế. Làm xong bước nào tick bước đó.',
+  l_mode:'Kiểu đổi',m_del:'Bán trước (delayed)',m_rev:'Mua trước (reverse)',
+  l_close:'Ngày close căn cũ',l_close_r:'Ngày EAT đứng tên căn mới',l_list:'Ngày lên MLS ',l_list_s:'(không bắt buộc)',
+  l_out:'Căn mới ở ngoài California?',o_no:'Không',o_yes:'Có',o_maybe:'Chưa biết',
+  r_total:'Còn bao nhiêu ngày tới hạn chót kế tiếp',r_unit:'ngày',
+  nk:'Kế tiếp: <b>{t}</b> · {d}',nk_none:'Các hạn chót đã qua hết. Coi lại phần mùa thuế.',
+  st_ok:'<b>Ngày 180 tới trước hạn nộp thuế.</b> Bạn có đủ 180 ngày. Vẫn nên hỏi CPA có cần extension không.',
+  st_warn:'<b>Cẩn thận:</b> close cuối năm nên hạn nộp thuế {tax} tới TRƯỚC ngày 180 ({d180}). Luật lấy ngày nào tới trước. Muốn đủ 180 ngày thì phải file extension (federal + California) trước {tax}. Không file thì hạn chót là {tax}.',
+  st_rev:'<b>Reverse:</b> EAT giữ căn mới tối đa 180 ngày. Bán căn cũ xong trong thời gian đó. Hỏi QI hạn tờ khai có cắt ngắn 180 ngày trong trường hợp của bạn không.',
+  est_note:'Thông tin chung, không phải tư vấn thuế hay luật. Tính ngày lịch, thứ Bảy Chủ Nhật lễ vẫn tính. Hỏi QI và CPA từng ngày trước khi ký.',
+  dl_title:'Mấy ngày này không dời được',
+  b5_t:'5 ngày làm việc · ký QEAA',b5_p:'Ký giấy với Exchange Accommodation Titleholder (EAT) trong 5 ngày làm việc sau khi EAT đứng tên.',
+  d45_t:'Ngày 45 · identify bằng giấy',d45_p:'Danh sách nhà thay thế, có ký tên, gửi QI trước nửa đêm. Muốn đổi ý thì cũng phải bằng giấy, trước ngày này.',
+  d45_tr:'Ngày 45 · identify căn cũ',d45_pr:'Ghi rõ căn cũ nào sẽ bán, bằng giấy, trong 45 ngày sau khi EAT đứng tên căn mới.',
+  d180_t:'Ngày 180 · close căn mới',d180_tr:'Ngày 180 · bán xong căn cũ',
+  d180_ok:'Close căn mới trước nửa đêm ngày này. Tính ngày lịch, không dời vì cuối tuần.',
+  d180_warn:'Chỉ đúng nếu đã file extension trước {tax}. Không file thì hạn là {tax}.',
+  d180_pr:'Căn cũ phải bán xong, và EAT giao căn mới cho bạn, trong vòng 180 ngày.',
+  tx_t:'Hạn nộp thuế · file extension',tx_p:'File extension federal và California trước ngày này thì mới giữ được đủ 180 ngày.',
+  left:'còn {n} ngày',today:'hôm nay',past:'đã qua {n} ngày',gcal:'+ Google Calendar',hard:'hạn luật',soft:'gợi ý',
+  ck_title:'Checklist',ck_tasks:'xong',ck_reset:'Xoá dấu tick',b_ics:'Tải hết ngày về lịch (.ics)',
+  ph_pre:'Trước khi close',ph_cl0:'Ngày 0',ph_id:'Ngày 0–45: chọn nhà',ph_buy:'Tới ngày 180',ph_tax:'Mùa thuế',
+  t_qi:['Chọn Qualified Intermediary (QI) trước khi lên MLS','Agent, CPA, luật sư của bạn trong 2 năm qua không làm QI được, người nhà cũng không. Xem T226 để hỏi QI cho đúng.'],
+  t_cpa:['Gặp CPA: basis, khấu hao đã trừ, có nên giữ lại tiền mặt không','Số basis quyết định tiền lời. Tiền mặt giữ lại là boot, đóng thuế phần đó. Tính thử ở T27.'],
+  t_pa:['Có pre-approval cho loan căn mới','45 ngày đi nhanh lắm. Loan nhà đầu tư thường duyệt lâu hơn loan nhà ở.'],
+  t_esc:['Báo escrow đây là 1031, tiền bán chuyển thẳng cho QI','Escrow cần tên QI và giấy assignment. Ký Form 593 phần exchange để khỏi bị giữ 3⅓% thuế California lúc close.'],
+  t_agr:['Ký exchange agreement với QI TRƯỚC ngày close','Ký sau ngày close là trễ. Tiền vô tay mình hay vô account của mình, dù 1 ngày, là coi như đã nhận tiền (constructive receipt).'],
+  t_close:['Close căn cũ. Ngày 0 bắt đầu đếm','Lấy settlement statement cuối. Kiểm tra số tiền QI nhận đúng với giấy escrow.'],
+  t_shop:['Đi coi nhà, viết offer','Đừng đợi tới ngày 40 mới coi. Có căn ưng thì vô contract sớm, vẫn identify thêm căn dự phòng.'],
+  t_rule:['Chọn quy tắc identify: 3 căn, 200%, hay 95%','Đa số xài quy tắc 3 căn: tối đa 3 căn, giá nào cũng được. Thử danh sách ở T221.'],
+  t_list:['Gửi QI danh sách nhà có ký tên, trước nửa đêm ngày 45','Phải bằng giấy, ký tên, ghi rõ địa chỉ. Nói miệng với agent không tính. Căn đã close trước ngày 45 thì coi như đã identify.'],
+  t_costs:['Kiểm khoản nào trên closing statement trả bằng tiền 1031 được','Commission, escrow, title thường OK. Phí loan, tiền thuê chia, deposit thường thành boot. Xem T223.'],
+  t_title:['Đứng tên căn mới đúng người đã bán','Phải cùng 1 taxpayer. Bán tên vợ chồng mà mua tên LLC mới là dễ hỏng. Hỏi QI trước khi đổi tên.'],
+  t_ext:['File extension thuế (federal + California) trước hạn nộp','Close cuối năm thì hạn nộp thuế tới trước ngày 180. Không file extension là mất mấy tuần cuối.'],
+  t_buy:['Close căn mới trước nửa đêm hạn chót','Hạn chót = ngày 180, hoặc hạn nộp thuế nếu không có extension. Không gia hạn, trừ thiên tai có thông báo của IRS.'],
+  t_f8824:['Khai Form 8824 với tờ khai năm bán','CPA làm, nhưng cần đủ giấy escrow 2 căn và giấy QI. Có extension thì hạn theo extension.'],
+  t_f3840:['Căn mới ngoài California? Nộp FTB 3840 mỗi năm','California theo dõi tiền lời gốc ở CA. Sau này bán căn ngoài tiểu bang, CA vẫn đòi thuế phần đó. Không nộp là FTB có thể tính thuế cộng phạt. Xem T225.'],
+  t_keep:['Cất hết giấy: exchange agreement, thư identify, 2 settlement statement','Bán căn mới sau này, basis cũ đi theo. Mất giấy là CPA khó tính lại.'],
+  t_rqi:['Chọn QI làm reverse, hỏi phí','Reverse đắt và phức tạp hơn nhiều: phí ước tính '+REV_FEE+', cộng LLC, luật sư, lender, title.'],
+  t_rlend:['Hỏi lender trước: EAT sẽ đứng tên căn mới','Không phải lender nào cũng cho vay khi EAT giữ title. Hỏi sớm, đừng để tới tuần close.'],
+  t_rown:['Kiểm tra: 180 ngày trước đó bạn không sở hữu căn mới','Rev. Proc. 2004-51: nếu bạn đã có căn mới trong 180 ngày trước khi giao EAT thì không được safe harbor.'],
+  t_rpark:['EAT đứng tên căn mới. Ngày 0 bắt đầu đếm','Căn mới "đậu" ở EAT. Bạn chưa đứng tên.'],
+  t_rqeaa:['Ký QEAA trong 5 ngày làm việc','Giấy Qualified Exchange Accommodation Agreement với EAT. Ngày làm việc ở đây chưa trừ ngày lễ, hỏi QI.'],
+  t_rid:['Identify căn cũ sẽ bán, bằng giấy, trước ngày 45','Ghi rõ căn nào. Có thể ghi vài căn theo luật identify.'],
+  t_rlist:['Lên MLS căn cũ, đi escrow','Tính ngược từ ngày 180: cần thời gian coi nhà, offer, escrow 30 ngày. Lên MLS sớm.'],
+  t_rsell:['Bán xong căn cũ, EAT giao căn mới cho bạn, trước ngày 180','2 căn cộng lại không được "đậu" ở EAT quá 180 ngày.'],
+  t_f8824r:['Khai Form 8824 với tờ khai năm bán căn cũ','CPA cần giấy EAT, QEAA, và settlement statement 2 căn.'],
+  myth:'<b>Nhiều người hiểu sai:</b> "Bán xong rồi kiếm QI cũng được, còn 45 ngày mà." Không. QI và exchange agreement phải có TRƯỚC ngày close. Tiền bán mà vô account của mình, dù 1 ngày, là có thể mất 1031.',
+  nx_title:'Bước tiếp theo',
+  nx1:'Tính số trước: tiền lời, boot, thuế ở <a href="/t27/">T27</a>.',
+  nx2:'Đang chọn QI? Dùng checklist an toàn ở <a href="/t226/">T226</a>.',
+  nx3:'Trước ngày 45, thử danh sách nhà theo luật 3 căn / 200% / 95% ở <a href="/t221/">T221</a>.',
+  nx4:'Coi khoản closing cost nào trả bằng tiền 1031 được ở <a href="/t223/">T223</a>.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi lịch 1031 này về email',f_sub:'Ken nhận được sẽ gửi lại ngày chót và vài Qualified Intermediary, CPA mà nhà đầu tư ở đây hay xài. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'1031 exchange từng bước',ft_vid:'Video 3 phút',ft_t229:'Từ điển 1031 (T229)',
+  ft_est:'Thông tin chung. Không phải tư vấn thuế hay luật. Hỏi CPA và Qualified Intermediary trước khi ký. Ngày "gợi ý" (chữ nghiêng) là mốc kế hoạch, không phải luật.',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  cal_pre:'1031: ',cal_d:'{w} — Checklist 1031, tools.kenlamrealty.com/t227/ . Hỏi QI/CPA.',
+  sms:'Chào Ken, tôi xem checklist 1031 trên tools.kenlamrealty.com: {m}, ngày {c}. Ngày 45 là {d45}, hạn chót {d180}. Cho tôi hỏi thêm.',
+  mode_del:'bán trước',mode_rev:'reverse',
+  subj:'Lịch 1031 — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nKiểu: {m}\nNgày bắt đầu: {c}\nCăn mới ngoài CA: {o}\n\n{lines}\n{w}\n\nThông tin chung, không phải tư vấn thuế.\nGửi từ tool T227 tools.kenlamrealty.com'},
+ en:{title:'Your 1031 checklist, A to Z, with real dates',sub:'Enter your closing date. Every step gets a date, from picking a QI before you list to Form 8824 at tax time. Tick as you go.',
+  l_mode:'Kind of exchange',m_del:'Sell first (delayed)',m_rev:'Buy first (reverse)',
+  l_close:'Old property closes on',l_close_r:'Date the EAT takes title to the new one',l_list:'MLS list date ',l_list_s:'(optional)',
+  l_out:'New property outside California?',o_no:'No',o_yes:'Yes',o_maybe:'Not sure',
+  r_total:'Days to your next hard deadline',r_unit:'days',
+  nk:'Next: <b>{t}</b> · {d}',nk_none:'All hard deadlines have passed. Check the tax-time steps.',
+  st_ok:'<b>Day 180 comes before your tax due date.</b> You get the full 180 days. Still ask your CPA about an extension.',
+  st_warn:'<b>Watch out:</b> a late-year closing means your tax return is due {tax}, BEFORE day 180 ({d180}). The rule takes whichever comes first. To keep the full 180 days, file an extension (federal and California) by {tax}. No extension, and your deadline is {tax}.',
+  st_rev:'<b>Reverse:</b> the EAT can hold the new property up to 180 days. Sell the old one inside that window. Ask your QI whether the tax due date cuts it short in your case.',
+  est_note:'General info, not tax or legal advice. Calendar days count, weekends and holidays included. Confirm every date with your QI and CPA before you sign.',
+  dl_title:'The dates that cannot move',
+  b5_t:'5 business days · sign the QEAA',b5_p:'Written agreement with the Exchange Accommodation Titleholder (EAT) within 5 business days after it takes title.',
+  d45_t:'Day 45 · identify in writing',d45_p:'Signed list of replacement properties delivered to your QI by midnight. Changing your mind also has to be in writing, before this date.',
+  d45_tr:'Day 45 · identify the old property',d45_pr:'Name in writing which old property you will sell, within 45 days after the EAT takes title.',
+  d180_t:'Day 180 · close the new property',d180_tr:'Day 180 · finish selling the old one',
+  d180_ok:'Close the new property by midnight on this date. Calendar days, no weekend extension.',
+  d180_warn:'Only if you file an extension by {tax}. Without one, your deadline is {tax}.',
+  d180_pr:'The old property must be sold, and the EAT must hand you the new one, within 180 days.',
+  tx_t:'Tax return due · file an extension',tx_p:'Federal and California extension filed by this date keeps your full 180 days.',
+  left:'{n} days left',today:'today',past:'{n} days ago',gcal:'+ Google Calendar',hard:'legal deadline',soft:'suggested',
+  ck_title:'Checklist',ck_tasks:'done',ck_reset:'Clear checkmarks',b_ics:'Download all dates (.ics)',
+  ph_pre:'Before closing',ph_cl0:'Day 0',ph_id:'Day 0–45: pick properties',ph_buy:'By day 180',ph_tax:'Tax time',
+  t_qi:['Pick a Qualified Intermediary (QI) before you list','Your agent, CPA or attorney from the last 2 years can\'t be your QI. Neither can family. Use T226 to vet one.'],
+  t_cpa:['See a CPA: basis, depreciation taken, whether to keep any cash out','Basis decides your gain. Cash you keep is boot and gets taxed. Try the numbers in T27.'],
+  t_pa:['Get pre-approved for the new loan','45 days goes fast. Investor loans often take longer than home loans.'],
+  t_esc:['Tell escrow it is a 1031, and wire proceeds straight to the QI','Escrow needs the QI name and the assignment. Sign the exchange part of Form 593 so California doesn\'t withhold 3⅓% at closing.'],
+  t_agr:['Sign the exchange agreement with the QI BEFORE closing','Signing after closing is too late. Money in your hands or account, even for a day, counts as received (constructive receipt).'],
+  t_close:['Old property closes. Day 0 starts the clock','Get the final settlement statement. Check that the QI received what escrow shows.'],
+  t_shop:['Tour properties, write offers','Don\'t wait until day 40. Get into contract early, and still name backups.'],
+  t_rule:['Choose an ID rule: 3-property, 200%, or 95%','Most people use the 3-property rule: up to 3, any price. Test your list in T221.'],
+  t_list:['Send the QI a signed list by midnight on day 45','In writing, signed, with clear addresses. Telling your agent doesn\'t count. A property that closes before day 45 counts as identified.'],
+  t_costs:['Check which closing-statement items can be paid with 1031 money','Commission, escrow and title are usually OK. Loan fees, prorated rent and deposits often become boot. See T223.'],
+  t_title:['Take title in the same name that sold','It must be the same taxpayer. Selling as a couple and buying in a new LLC is a common way to break it. Ask the QI first.'],
+  t_ext:['File a tax extension (federal + California) by the due date','A late-year closing puts the tax due date before day 180. No extension means losing the last few weeks.'],
+  t_buy:['Close the new property by midnight on your deadline','Deadline = day 180, or the tax due date if you have no extension. No extensions except IRS-announced disasters.'],
+  t_f8824:['Report it on Form 8824 with that year\'s return','Your CPA files it but needs both escrow statements and the QI paperwork. With an extension, it follows the extension.'],
+  t_f3840:['New property outside California? File FTB 3840 every year','California tracks the gain built here. When you later sell out of state, CA still taxes that part. Skip it and FTB can assess tax plus penalties. See T225.'],
+  t_keep:['Keep everything: exchange agreement, ID letter, both settlement statements','Your old basis carries into the new property. Lose the papers and your CPA can\'t rebuild it easily.'],
+  t_rqi:['Pick a QI that does reverse exchanges, ask the fee','Reverse is far more complex: fee roughly '+REV_FEE+' (estimate), plus LLC, legal, lender and title costs.'],
+  t_rlend:['Ask your lender early: an EAT will hold title','Not every lender will lend when an EAT holds title. Ask now, not in closing week.'],
+  t_rown:['Check: you did not own the new property in the prior 180 days','Rev. Proc. 2004-51: if you owned it within 180 days before giving it to the EAT, no safe harbor.'],
+  t_rpark:['The EAT takes title to the new property. Day 0 starts','The new property is "parked" with the EAT. It is not in your name yet.'],
+  t_rqeaa:['Sign the QEAA within 5 business days','Qualified Exchange Accommodation Agreement with the EAT. Holidays are not removed here, so ask your QI.'],
+  t_rid:['Identify the old property you will sell, in writing, by day 45','Name it clearly. You may name more than one under the ID rules.'],
+  t_rlist:['List the old property, open escrow','Count back from day 180: showings, offers and a 30-day escrow. List early.'],
+  t_rsell:['Sell the old one and have the EAT transfer the new one by day 180','Combined, the properties can\'t be parked with the EAT more than 180 days.'],
+  t_f8824r:['Report it on Form 8824 with the return for the year the old one sells','Your CPA needs the EAT papers, the QEAA and both settlement statements.'],
+  myth:'<b>Common mistake:</b> "I\'ll find a QI after the sale closes. I have 45 days." No. The QI and the exchange agreement must be in place before closing. If sale money lands in your account, even for a day, the 1031 can be gone.',
+  nx_title:'Next steps',
+  nx1:'Run the numbers first: gain, boot and tax in <a href="/t27/">T27</a>.',
+  nx2:'Picking a QI? Use the safety checklist in <a href="/t226/">T226</a>.',
+  nx3:'Before day 45, test your list against the 3-property / 200% / 95% rules in <a href="/t221/">T221</a>.',
+  nx4:'Check which closing costs can come out of exchange money in <a href="/t223/">T223</a>.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this 1031 timeline to yourself',f_sub:'Ken will reply with the dates and a few Qualified Intermediaries and CPAs investors here use. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'1031 exchange, step by step',ft_vid:'3-min video',ft_t229:'1031 glossary (T229)',
+  ft_est:'General info only. Not tax or legal advice. Ask a CPA and a Qualified Intermediary before you sign. Suggested dates (in italics) are planning targets, not law.',
+  ft_src:'Sources',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  cal_pre:'1031: ',cal_d:'{w} — 1031 checklist, tools.kenlamrealty.com/t227/ . Ask your QI/CPA.',
+  sms:'Hi Ken, I used the 1031 checklist on tools.kenlamrealty.com: {m}, date {c}. Day 45 is {d45}, final deadline {d180}. I have a question.',
+  mode_del:'sell first',mode_rev:'reverse',
+  subj:'1031 timeline — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nType: {m}\nStart date: {c}\nNew property outside CA: {o}\n\n{lines}\n{w}\n\nGeneral info, not tax advice.\nSent from tool T227 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* ---- Ngày (y chang T27) ---- */
+const pad=n=>String(n).padStart(2,'0');
+const parseD=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||''); return m?new Date(+m[1],+m[2]-1,+m[3]):null;};
+const addDays=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+const ymd=d=>d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const fd=d=>lang==='vi'?pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear():d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+const daysBetween=(a,b)=>Math.round((Date.UTC(b.getFullYear(),b.getMonth(),b.getDate())-Date.UTC(a.getFullYear(),a.getMonth(),a.getDate()))/864e5);
+function taxDue(closeD){ let d=new Date(closeD.getFullYear()+1,3,15); while(d.getDay()===0||d.getDay()===6) d=addDays(d,1); return d; }
+function deadlines(closeD){ const d45=addDays(closeD,ID_DAYS), d180=addDays(closeD,EXCH_DAYS), tx=taxDue(closeD); return {d45,d180,tx,early:tx<d180}; }
+function addBiz(d,n){ let x=d; while(n>0){ x=addDays(x,1); if(x.getDay()!==0&&x.getDay()!==6) n--; } return x; }
+function gcal(text,d,details){ return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(text)+'&dates='+ymd(d)+'/'+ymd(addDays(d,1))+'&details='+encodeURIComponent(details); }
+const todayD=()=>{const t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate());};
+
+let mode='del', out='no', done={}, open={}, ctx=null, rows=[];
+try{ done=JSON.parse(localStorage.getItem(LS_KEY)||'{}')||{}; }catch(e){ done={}; }
+const saveDone=()=>{ try{ localStorage.setItem(LS_KEY,JSON.stringify(done)); }catch(e){} };
+function leftTxt(d,target){ const n=daysBetween(todayD(),target); return n>0?d.left.replace('{n}',n):n===0?d.today:d.past.replace('{n}',-n); }
+
+function buildCtx(){
+  let C=parseD($('close').value); if(!C) C=todayD();
+  const dl=deadlines(C);
+  let L=parseD($('list').value); const Lset=!!L; if(!L||L>C) L=addDays(C,-LIST_DEFAULT_BEFORE);
+  return {C,L,Lset,d45:dl.d45,d180:dl.d180,tx:dl.tx,early:mode==='del'&&dl.early,biz:addBiz(C,REV_BIZ),out,add:addDays};
+}
+
+function calc(){
+  const d=I18N[lang]; ctx=buildCtx(); const c=ctx;
+  $('lClose').textContent=mode==='rev'?d.l_close_r:d.l_close;
+  $('fList').style.display=mode==='rev'?'none':'';
+  /* cards */
+  $('cBiz').classList.toggle('hide',mode!=='rev');
+  $('dBiz').textContent=fd(c.biz); $('dBizL').textContent=leftTxt(d,c.biz);
+  $('d45T').textContent=mode==='rev'?d.d45_tr:d.d45_t; $('d45P').textContent=mode==='rev'?d.d45_pr:d.d45_p;
+  $('d45').textContent=fd(c.d45); $('d45L').textContent=leftTxt(d,c.d45);
+  $('d180T').textContent=mode==='rev'?d.d180_tr:d.d180_t;
+  $('d180').textContent=fd(c.d180); $('d180L').textContent=leftTxt(d,c.d180);
+  $('d180P').innerHTML=mode==='rev'?d.d180_pr:(c.early?d.d180_warn.replace(/\{tax\}/g,fd(c.tx)):d.d180_ok);
+  $('cTax').classList.toggle('hide',!c.early);
+  $('dTx').textContent=fd(c.tx); $('dTxL').textContent=leftTxt(d,c.tx);
+  /* status */
+  if(mode==='rev'){ $('status').className='status ok'; $('status').innerHTML=d.st_rev; }
+  else if(c.early){ $('status').className='status warn'; $('status').innerHTML=d.st_warn.replace(/\{tax\}/g,fd(c.tx)).replace('{d180}',fd(c.d180)); }
+  else { $('status').className='status ok'; $('status').innerHTML=d.st_ok; }
+  /* rows */
+  rows=STEPS[mode].filter(s=>!s.show||s.show(c)).map(s=>({s,date:s.d?s.d(c):null,tx:d['t_'+s.id]}));
+  /* next hard deadline */
+  const t0=todayD(); const nxt=rows.filter(r=>r.s.hard&&r.date&&r.date>=t0).sort((a,b)=>a.date-b.date)[0];
+  if(nxt){ $('big').textContent=daysBetween(t0,nxt.date); $('nextK').innerHTML=d.nk.replace('{t}',esc(nxt.tx[0])).replace('{d}',fd(nxt.date)); }
+  else { $('big').textContent='0'; $('nextK').innerHTML=d.nk_none; }
+  const fin=mode==='del'&&c.early?c.tx:c.d180;
+  const o=d['o_'+(out==='yes'?'yes':out==='maybe'?'maybe':'no')];
+  last={m:mode==='rev'?d.mode_rev:d.mode_del,c:fd(c.C),d45:fd(c.d45),d180:fd(fin),o,
+    lines:rows.filter(r=>r.date).map(r=>fd(r.date)+' — '+r.tx[0]+(r.s.soft?' ('+d.soft+')':'')).join('\n'),
+    w:(mode==='del'&&c.early)?d.st_warn.replace(/\{tax\}/g,fd(c.tx)).replace('{d180}',fd(c.d180)).replace(/<[^>]+>/g,''):''};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(d.sms.replace(/\{(\w+)\}/g,(m,k)=>last[k]??m));
+  renderTasks();
+}
+let last={};
+function renderTasks(){
+  const d=I18N[lang]; let html='', x=0, all=0; const phs=['pre','cl0','id','buy','tax'];
+  phs.forEach(p=>{
+    const ts=rows.filter(r=>r.s.ph===p); if(!ts.length) return;
+    const nd=ts.filter(r=>done[mode+'_'+r.s.id]).length; x+=nd; all+=ts.length;
+    html+='<div class="phase"><div class="ph-h"><h3>'+esc(d['ph_'+p])+'</h3><span class="ph-n">'+nd+'/'+ts.length+'</span></div>';
+    ts.forEach(r=>{ const k=mode+'_'+r.s.id, [txt,why]=r.tx, ok=!!done[k], op=!!open[k];
+      let dt='';
+      if(r.date){ dt='<div class="dt"><b>'+esc(fd(r.date))+'</b><span class="'+(r.s.soft?'soft':'hard')+'">'+esc(r.s.soft?d.soft:d.hard)+'</span><span>'+esc(leftTxt(d,r.date))+'</span>'
+        +'<a class="gcal" target="_blank" rel="noopener" href="'+esc(gcal(d.cal_pre+txt,r.date,d.cal_d.replace('{w}',why)))+'">'+esc(d.gcal)+'</a></div>'; }
+      html+='<div class="task'+(ok?' done':'')+'"><input type="checkbox" data-k="'+k+'" aria-label="'+esc(txt)+'"'+(ok?' checked':'')+'>'
+        +'<button type="button" class="tt" data-w="'+k+'" aria-expanded="'+op+'">'+esc(txt)+'</button>'+dt
+        +'<div class="why"'+(op?'':' hidden')+'>'+esc(why)+'</div></div>'; });
+    html+='</div>';
+  });
+  $('tl').innerHTML=html; $('ckDone').textContent=x; $('ckAll').textContent=all; $('ckBar').style.width=(all?x/all*100:0)+'%';
+}
+$('tl').addEventListener('change',e=>{ const k=e.target.getAttribute&&e.target.getAttribute('data-k'); if(!k) return; if(e.target.checked) done[k]=1; else delete done[k]; saveDone(); renderTasks(); });
+$('tl').addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('button[data-w]'); if(!b) return; const k=b.getAttribute('data-w'); open[k]=!open[k]; const w=b.parentNode.querySelector('.why'); if(w) w.hidden=!open[k]; b.setAttribute('aria-expanded',open[k]?'true':'false'); });
+$('ckReset').onclick=()=>{ Object.keys(done).forEach(k=>{ if(k.indexOf(mode+'_')===0) delete done[k]; }); saveDone(); renderTasks(); };
+
+/* .ics: mọi bước có ngày; hạn luật có nhắc trước 7 ngày và 1 ngày */
+const icsEsc=s=>String(s).replace(/\\/g,'\\\\').replace(/[,;]/g,m=>'\\'+m).replace(/\n/g,'\\n');
+function icsFold(l){ const out=[]; while(l.length>70){ out.push(l.slice(0,70)); l=' '+l.slice(70); } out.push(l); return out.join('\r\n'); }
+$('icsBtn').onclick=()=>{
+  const d=I18N[lang]; const n=new Date();
+  const stamp=n.getUTCFullYear()+pad(n.getUTCMonth()+1)+pad(n.getUTCDate())+'T'+pad(n.getUTCHours())+pad(n.getUTCMinutes())+pad(n.getUTCSeconds())+'Z';
+  const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Ken Lam Realty//T227//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+  rows.filter(r=>r.date).forEach(r=>{
+    L.push('BEGIN:VEVENT','UID:t227-'+mode+'-'+r.s.id+'-'+ymd(r.date)+'@kenlamrealty.com','DTSTAMP:'+stamp,
+      'DTSTART;VALUE=DATE:'+ymd(r.date),'DTEND;VALUE=DATE:'+ymd(addDays(r.date,1)),
+      icsFold('SUMMARY:'+icsEsc(d.cal_pre+r.tx[0])),icsFold('DESCRIPTION:'+icsEsc(d.cal_d.replace('{w}',r.tx[1]))));
+    if(r.s.hard){ ['-P7D','-P1D'].forEach(t=>L.push('BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(d.cal_pre+r.tx[0]).slice(0,60),'TRIGGER:'+t,'END:VALARM')); }
+    L.push('END:VEVENT');
+  });
+  L.push('END:VCALENDAR');
+  const blob=new Blob([L.join('\r\n')+'\r\n'],{type:'text/calendar'}); const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='1031-checklist-'+iso(ctx.C)+'.ics'; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+};
+
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+function seg(ids,cur){ ids.forEach(([id,v])=>$(id).setAttribute('aria-pressed',v===cur?'true':'false')); }
+(function(){ if(!$('close').value) $('close').value=iso(todayD()); })();
+['close','list'].forEach(id=>{ $(id).addEventListener('input',calc); $(id).addEventListener('change',calc); });
+const MODES=[['mDel','del'],['mRev','rev']], OUTS=[['oNo','no'],['oYes','yes'],['oMaybe','maybe']];
+MODES.forEach(([id,v])=>$(id).onclick=()=>{mode=v;seg(MODES,mode);calc();});
+OUTS.forEach(([id,v])=>$(id).onclick=()=>{out=v;seg(OUTS,out);calc();});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing), giống T27. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+try{if(/[?&]embed=1/.test(location.search))a.style.display='none';}catch(e){}
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

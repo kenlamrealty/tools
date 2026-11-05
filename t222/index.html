@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>1031 hay Bán Đóng Thuế</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+
+/* ---- T222 thêm ---- */
+.chart{display:grid;gap:12px}
+.chart h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.cb{display:grid;gap:5px;min-width:0}
+.cb .hd{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:14px}
+.cb .hd b{font-weight:500;min-width:0}
+.cb .hd span{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.cb .tr{height:14px;border-radius:999px;background:var(--line);overflow:hidden}
+.cb .tr i{display:block;height:100%;border-radius:999px;background:var(--brass);transition:width .2s}
+.cb.p1 .tr i{background:#CBB7A3}.cb.p3 .tr i{background:var(--ok)}.cb.p4 .tr i{background:#A9B7A0}
+.cb small{font-size:12px;color:var(--muted);line-height:1.4}
+.cb.best .hd span{color:var(--ok)}
+.ctl input[type=number].sm{font-size:20px}
+</style>
+<meta name="description" content="1031 exchange or sell and pay tax? Compare 4 paths over 10–20 years with 2026 federal capital gains, 25% depreciation recapture, NIIT 3.8% and California tax.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t222/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="1031 vs sell and pay tax · Ken Lam Tools">
+<meta property="og:description" content="Compare 4 paths over 10–20 years: sell now, 1031, 1031 until step-up, DST.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t222/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+html.embed .kl-back{display:none}
+html.embed body{padding-top:8px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">1031 or sell and pay the tax? See it over 10–20 years</h1>
+    <p class="sub" data-i="sub">Enter your rental. See the tax if you sell today, layer by layer, and what each of 4 paths leaves you years from now.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="row2">
+      <div class="field">
+        <label for="sale"><span data-i="l_sale">Sale price </span><small data-i="l_sale_s">(after commission, escrow)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="sale" type="number" inputmode="numeric" min="0" step="10000" value="1500000"></div>
+      </div>
+      <div class="field">
+        <label for="basis"><span data-i="l_basis">Adjusted basis </span><small data-i="l_basis_s">(price + improvements − depreciation)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="basis" type="number" inputmode="numeric" min="0" step="10000" value="600000"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="dep"><span data-i="l_dep">Depreciation taken </span><small data-i="l_dep_s">(all years)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="dep" type="number" inputmode="numeric" min="0" step="5000" value="180000"></div>
+      </div>
+      <div class="field">
+        <label for="inc"><span data-i="l_inc">Other taxable income </span><small data-i="l_inc_s">(per year, after deductions)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="inc" type="number" inputmode="numeric" min="0" step="5000" value="150000"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_st">Filing status</span></label>
+      <div class="seg" role="group">
+        <button type="button" id="sS" aria-pressed="false" data-i="st_s">Single</button>
+        <button type="button" id="sM" aria-pressed="true" data-i="st_m">Married, joint</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="yrs"><span data-i="l_yrs">Years you keep investing</span></label>
+        <div class="ctl"><input id="yrs" type="number" inputmode="numeric" min="1" max="30" step="1" value="15"><span class="post" data-i="u_yr">yrs</span></div>
+      </div>
+      <div class="field">
+        <label for="gr"><span data-i="l_gr">Price growth </span><small data-i="l_gr_s">(per year, guess)</small></label>
+        <div class="ctl"><input id="gr" type="number" inputmode="decimal" min="-5" max="12" step="0.5" value="4"><span class="post">%</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" id="bigK"></div>
+      <div class="v"><span id="big">$0</span></div>
+    </div>
+    <div class="status" id="status"></div>
+
+    <div class="chart" aria-label="Chart">
+      <h2 id="chH"></h2>
+      <div class="cb p1" id="cA"><div class="hd"><b data-i="pA">1 · Sell now, pay tax, reinvest the rest</b><span id="vA"></span></div><div class="tr"><i id="wA"></i></div><small id="sA"></small></div>
+      <div class="cb p2" id="cB"><div class="hd"><b data-i="pB">2 · 1031 now, sell later</b><span id="vB"></span></div><div class="tr"><i id="wB"></i></div><small id="sB"></small></div>
+      <div class="cb p3" id="cC"><div class="hd"><b data-i="pC">3 · 1031 and keep it for the heirs (step-up)</b><span id="vC"></span></div><div class="tr"><i id="wC"></i></div><small data-i="sC">Heirs get basis = value at death (§1014). Deferred gain is wiped out. Value shown before any estate tax.</small></div>
+      <div class="cb p4" id="cD"><div class="hd"><b data-i="pD">4 · 1031 into a DST, sell later</b><span id="vD"></span></div><div class="tr"><i id="wD"></i></div><small id="sD"></small></div>
+    </div>
+
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_gain">Gain if you sell today</b> <small data-i="n_gain_s">sale price − adjusted basis</small></span><span class="a" id="oGain">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_u">Depreciation part (unrecaptured §1250)</b> <small id="oUs"></small></span><span class="a" id="oT1">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_l">Rest × federal 0/15/20%</b> <small id="oLs"></small></span><span class="a" id="oT2">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_niit">NIIT 3.8%</b> <small id="oNs"></small></span><span class="a" id="oT3">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_ca">California</b> <small id="oCs"></small></span><span class="a" id="oT4">$0</span></div>
+      <div class="line sum"><span class="n"><b data-i="n_tt">Tax if you sell today</b> <small id="oTts"></small></span><span class="a" id="oTt">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_left">Cash left to reinvest (path 1)</b></span><span class="a" id="oLeft">$0</span></div>
+    </div>
+    <div class="note" data-i="est_note">Estimate only, not tax advice. Same growth for every path. Rent, loans, new depreciation and fees other than the DST load are left out. Ask a CPA and a QI before you sign.</div>
+  </section>
+
+  <p class="myth" data-i="myth"><b>Common mistake:</b> "1031 means no tax." It means tax later. Sell the new property for cash and the old gain comes due, and the depreciation part is still taxed up to 25%. Only path 3, holding until death, erases it.</p>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next step</h2>
+    <ol>
+      <li data-i="nx1">Not sure the property even qualifies? Check it first: <a href="/t220/">T220</a>.</li>
+      <li data-i="nx2">Going with 1031? Run the boot and the 45/180-day dates: <a href="/t27/">T27</a>, then the identification rules: <a href="/t221/">T221</a>.</li>
+      <li data-i="nx3">Thinking DST or "no more landlord"? Compare the exchange types: <a href="/t228/">T228</a>.</li>
+      <li data-i="nx4">Buying outside California? CA still follows the gain: <a href="/t225/">T225</a>.</li>
+    </ol>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video guide"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t222/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this comparison to yourself</h2>
+    <p data-i="f_sub">Ken will reply with a few CPAs and QIs investors here use. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#1031-exchange" target="_blank" rel="noopener" data-i="ft_lib">1031 exchange, step by step (Library)</a> · <a href="https://kenlamrealty.com/library#video-1031" target="_blank" rel="noopener" data-i="ft_vid">Kiến Thức Địa Ốc video</a></span>
+    <span data-i="ft_est">General information, not tax or legal advice. Ask a CPA and a Qualified Intermediary before you sign. Federal 2026 brackets; California uses the 2025 schedule (latest published).</span>
+    <span class="src"><span data-i="ft_src">Sources</span> (04/11/2026):
+      <a href="https://www.irs.gov/pub/irs-drop/rp-25-32.pdf" target="_blank" rel="noopener">Rev. Proc. 2025-32</a> ·
+      <a href="https://kpmg.com/us/en/taxnewsflash/news/2025/10/tnf-rev-proc-2025-32-inflation-adjustments-for-2026-individual-taxpayers.html" target="_blank" rel="noopener">KPMG 2026 brackets</a> ·
+      <a href="https://www.irs.gov/taxtopics/tc409" target="_blank" rel="noopener">IRS Topic 409</a> ·
+      <a href="https://www.irs.gov/newsroom/questions-and-answers-on-the-net-investment-income-tax" target="_blank" rel="noopener">IRS NIIT</a> ·
+      <a href="https://www.ftb.ca.gov/forms/2025/2025-540-tax-rate-schedules.pdf" target="_blank" rel="noopener">FTB 2025 rate schedules</a> ·
+      <a href="https://www.ftb.ca.gov/forms/2026/2026-540-es-instructions.html" target="_blank" rel="noopener">FTB 540-ES 2026</a> ·
+      <a href="https://www.law.cornell.edu/uscode/text/26/1014" target="_blank" rel="noopener">26 USC §1014</a> ·
+      <a href="https://www.irs.gov/pub/irs-drop/rr-04-86.pdf" target="_blank" rel="noopener">Rev. Rul. 2004-86</a></span>
+    <span class="who">Ken Lam Realty · Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== TAX TABLES — sửa 1 chỗ ở đây khi luật/số đổi (tra 04/11/2026) =====
+   FED_ORD 2026 (10–37%): Rev. Proc. 2025-32 via KPMG summary
+     https://kpmg.com/us/en/taxnewsflash/news/2025/10/tnf-rev-proc-2025-32-inflation-adjustments-for-2026-individual-taxpayers.html
+     (37% line also in FACTS; lower brackets taken from the same KPMG page — KEN DUYỆT). Only Single + MFJ are built in.
+   LTCG 2026 0/15/20% (taxable income): Rev. Proc. 2025-32 §4.03 https://www.irs.gov/pub/irs-drop/rp-25-32.pdf
+   REC_CAP 25% unrecaptured §1250 gain: IRS Topic 409 https://www.irs.gov/taxtopics/tc409
+   NIIT 3.8% over MAGI $200k single / $250k MFJ, not indexed: https://www.irs.gov/newsroom/questions-and-answers-on-the-net-investment-income-tax
+   CA brackets = 2025 schedules X/Y (2026 schedule not published/loaded yet — label "2025"): https://www.ftb.ca.gov/forms/2025/2025-540-tax-rate-schedules.pdf
+     CA taxes all gains as ordinary income: https://www.ftb.ca.gov/file/personal/income-types/capital-gains-and-losses.html
+     + 1% Behavioral Health Services Tax over $1,000,000 (2026 confirmed): https://www.ftb.ca.gov/forms/2026/2026-540-es-instructions.html
+   S121 $250k / $500k MFJ, depreciation part not excludable: IRS Pub 523 https://www.irs.gov/publications/p523
+   Simplifications: "other income" = taxable income after deductions, used for both federal and CA; MAGI ≈ other income + gain.
+   ---------------------------------------------------------------------------------------------------------------
+   WORKED EXAMPLE (verified by hand in Python 04/11/2026):
+     MFJ, other taxable income O = $150,000, gain G = $900,000 of which depreciation U = $180,000, rest L = $720,000.
+     1) §1250 layer sits on top of O at ordinary rates capped 25%:
+        150,000–211,400 × 22% = 13,508 ; 211,400–330,000 × 24% = 28,464  → 41,972
+     2) LTCG layer stacks on top of O+U (330,000 → 1,050,000):
+        330,000–613,700 × 15% = 42,555 ; 613,700–1,050,000 × 20% = 87,260 → 129,815
+     3) NIIT: 3.8% × min(900,000, 1,050,000 − 250,000) = 30,400
+     4) CA (2025 Y): tax(1,050,000) − tax(150,000) = 95,182.27 − 6,827.28 = 88,354.99, + 1% × 50,000 BHST = 88,855
+     Total = 41,972 + 129,815 + 30,400 + 88,855 = $291,042
+   =============================================================================================================== */
+const TAX={
+  FED_YEAR:2026,
+  FED_ORD:{
+    single:[[12400,.10],[50400,.12],[105700,.22],[201775,.24],[256225,.32],[640600,.35],[Infinity,.37]],
+    mfj:[[24800,.10],[100800,.12],[211400,.22],[403550,.24],[512450,.32],[768700,.35],[Infinity,.37]]},
+  LTCG:{single:[49450,545500], mfj:[98900,613700]},   /* 0% up to [0], 15% up to [1], 20% above */
+  REC_CAP:0.25,
+  NIIT_RATE:0.038, NIIT_TH:{single:200000, mfj:250000},
+  CA_YEAR:2025,
+  CA:{
+    single:[[11079,.01],[26264,.02],[41452,.04],[57542,.06],[72724,.08],[371479,.093],[445771,.103],[742953,.113],[Infinity,.123]],
+    mfj:[[22158,.01],[52528,.02],[82904,.04],[115084,.06],[145448,.08],[742958,.093],[891542,.103],[1485906,.113],[Infinity,.123]]},
+  CA_BHST:{rate:0.01, over:1000000},
+  S121:{single:250000, mfj:500000}
+};
+/* tax on the slice [a,b) of a bracket table, each rate capped at cap */
+function slice(br,a,b,cap){ let t=0,lo=0; for(const [hi,r] of br){ const x=Math.max(0,Math.min(b,hi)-Math.max(a,lo)); t+=x*Math.min(r,cap); lo=hi; } return t; }
+function ltcgSlice(st,a,b){ const [t0,t1]=TAX.LTCG[st], s=(lo,hi)=>Math.max(0,Math.min(b,hi)-Math.max(a,lo)); return s(t0,t1)*.15+s(t1,Infinity)*.20; }
+function caTax(st,x){ x=Math.max(0,x); return slice(TAX.CA[st],0,x,1)+TAX.CA_BHST.rate*Math.max(0,x-TAX.CA_BHST.over); }
+/* layer-by-layer tax on a gain: O other taxable income, U depreciation part (unrecaptured §1250), L rest (LTCG) */
+function gainTax(st,O,U,L){
+  O=Math.max(0,O); U=Math.max(0,U); L=Math.max(0,L);
+  const t1250=slice(TAX.FED_ORD[st],O,O+U,TAX.REC_CAP);
+  const tL=ltcgSlice(st,O+U,O+U+L);
+  const reg=slice(TAX.FED_ORD[st],O,O+U+L,1);          /* never more than regular tax on the same slice */
+  const fed=Math.min(t1250+tL,reg), G=U+L;
+  const niit=TAX.NIIT_RATE*Math.min(G,Math.max(0,O+G-TAX.NIIT_TH[st]));
+  const ca=caTax(st,O+G)-caTax(st,O);
+  return {t1250:fed<t1250+tL?t1250*fed/(t1250+tL||1):t1250, tL:fed<t1250+tL?tL*fed/(t1250+tL||1):tL, fed, niit, ca, total:fed+niit+ca};
+}
+
+/* DST_LOAD 14%: midpoint of 10–18% total upfront load — ESTIMATE (FNRP https://fnrpusa.com/?p=6687). KEN DUYỆT. */
+const DST_LOAD=0.14;
+const UPDATED='04/11/2026';
+
+/* ---- 4 paths — pure function ----
+   Same growth g for every path; equity only (no loans, no rent, no new depreciation).
+   1 Sell now: pay gainTax today, reinvest the rest, sell after N yrs (that later gain is all LTCG, basis = amount reinvested).
+   2 1031: whole price keeps growing, carryover basis, sell after N yrs (old depreciation still the 25% layer).
+   3 1031 until death: value after N yrs, no income tax (§1014 step-up).
+   4 DST: price × (1 − DST_LOAD) grows, carryover basis, sell after N yrs. */
+function paths(i){
+  const st=i.st, P=Math.max(0,i.sale), B0=Math.max(0,i.basis), dep=Math.max(0,i.dep), O=Math.max(0,i.inc);
+  const N=Math.min(30,Math.max(1,Math.round(i.yrs)||1)), g=i.gr/100, f=Math.pow(1+g,N);
+  const split=G=>{ G=Math.max(0,G); const U=Math.min(dep,G); return [U,G-U]; };
+  const G0=Math.max(0,P-B0), [U0,L0]=split(G0), now=gainTax(st,O,U0,L0);
+  const inv=P-now.total, VA=inv*f, tA=gainTax(st,O,0,Math.max(0,VA-inv)).total, A=VA-tA;
+  const VB=P*f, [UB,LB]=split(VB-B0), tB=gainTax(st,O,UB,LB).total, B=VB-tB;
+  const C=VB;
+  const VD=P*(1-DST_LOAD)*f, [UD,LD]=split(VD-B0), tD=gainTax(st,O,UD,LD).total, D=VD-tD;
+  return {N,G0,U0,L0,now,inv,VA,tA,A,VB,tB,B,C,VD,tD,D};
+}
+
+const I18N={
+ vi:{title:'Đổi 1031 hay bán đóng thuế? So 10–20 năm',sub:'Nhập căn cho thuê của bạn. Ra liền thuế nếu bán hôm nay, từng lớp, và 4 đường đi còn lại bao nhiêu tiền sau nhiều năm.',
+  l_sale:'Giá bán ',l_sale_s:'(đã trừ commission, escrow)',l_basis:'Adjusted basis ',l_basis_s:'(giá mua + sửa lớn − depreciation)',
+  l_dep:'Depreciation đã khấu ',l_dep_s:'(cộng hết các năm)',l_inc:'Thu nhập chịu thuế khác ',l_inc_s:'(mỗi năm, sau khấu trừ)',
+  l_st:'Khai thuế',st_s:'Độc thân',st_m:'Vợ chồng khai chung',l_yrs:'Số năm còn đầu tư',u_yr:'năm',l_gr:'Nhà tăng giá ',l_gr_s:'(mỗi năm, đoán)',
+  k_more:'1031 còn dư hơn bán đóng thuế sau {n} năm',k_less:'Bán đóng thuế còn dư hơn 1031 sau {n} năm',k_none:'Không có tiền lời để so',
+  st_win:'<b>1031 hơn {x}</b> nếu tới năm thứ {n} bạn bán lấy tiền mặt. Giữ tới lúc mất (đường 3) thì con cái nhận {c}, thuế lợi tức bằng 0.',
+  st_lose:'<b>Bán đóng thuế hơn {x}</b> với mấy con số này. Thường xảy ra khi tiền lời nhỏ hoặc nhà tăng giá chậm. Hỏi CPA trước khi quyết.',
+  st_none:'<b>Không có tiền lời.</b> Bán giá thấp hơn basis thì 1031 không giúp gì, còn làm mất khoản lỗ được trừ.',
+  ch:'Còn lại sau {n} năm, đã trừ thuế',
+  sA:'Đóng {t} thuế hôm nay, còn {inv} đem đi đầu tư. Năm {n}: {v}, thuế lúc bán {t2}.',
+  sB:'Cả {p} tiếp tục lớn. Năm {n}: {v}, bán ra đóng {t2} (gồm cả thuế cũ được hoãn).',
+  sC:'Con cái nhận basis = giá lúc mất (§1014). Tiền lời được hoãn bị xoá. Chưa tính estate tax.',
+  sD:'Phí DST ước tính {l}% ăn trước, còn {p} đầu tư. Năm {n}: {v}, thuế lúc bán {t2}. Kẹt tiền, không tự quản lý.',
+  pA:'1 · Bán bây giờ, đóng thuế, đầu tư phần còn lại',pB:'2 · Đổi 1031 bây giờ, sau này bán',pC:'3 · Đổi 1031, giữ tới lúc mất (step-up)',pD:'4 · Đổi 1031 vào DST, sau này bán',
+  n_gain:'Tiền lời nếu bán hôm nay',n_gain_s:'giá bán − adjusted basis',n_u:'Phần depreciation (unrecaptured §1250)',
+  us:'{u} theo thuế thường, tối đa 25%',ls:'{l}, chồng lên trên thu nhập khác',ns:'trên phần MAGI vượt {th}',cs:'thuế như thu nhập thường, bảng {y}',
+  n_l:'Phần còn lại × liên bang 0/15/20%',n_niit:'NIIT 3.8%',n_ca:'California',n_tt:'Thuế nếu bán hôm nay',tts:'= {p}% tiền lời',n_left:'Tiền còn lại để đầu tư (đường 1)',
+  est_note:'Chỉ là ước tính, không phải tư vấn thuế. Mọi đường cùng mức tăng giá. Không tính tiền thuê, loan, depreciation mới, và phí khác ngoài phí DST. Hỏi CPA và QI trước khi ký.',
+  myth:'<b>Nhiều người hiểu sai:</b> "1031 là khỏi đóng thuế." Không. 1031 là đóng sau. Bán căn mới lấy tiền mặt là tiền lời cũ tới hạn, phần depreciation vẫn bị tới 25%. Chỉ có đường 3, giữ tới lúc mất, mới xoá được.',
+  nx_title:'Bước tiếp theo',
+  nx1:'Chưa chắc nhà mình đổi 1031 được không? Kiểm trước: <a href="/t220/">T220</a>.',
+  nx2:'Chọn 1031? Tính boot và ngày 45/180: <a href="/t27/">T27</a>, rồi luật chọn nhà 45 ngày: <a href="/t221/">T221</a>.',
+  nx3:'Muốn DST hay "khỏi làm landlord"? So các loại 1031: <a href="/t228/">T228</a>.',
+  nx4:'Mua ngoài California? CA vẫn theo phần lời: <a href="/t225/">T225</a>.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi bảng so sánh này về email',f_sub:'Ken nhận được sẽ gửi lại vài CPA và QI mà nhà đầu tư ở đây hay xài. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'1031 exchange từng bước (Library)',ft_vid:'Video Kiến Thức Địa Ốc',
+  ft_est:'Thông tin chung, không phải tư vấn thuế hay luật. Hỏi CPA và Qualified Intermediary trước khi ký. Liên bang theo bảng 2026; California theo bảng 2025 (bảng mới nhất đã công bố).',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi xem tool T222 (1031 hay bán đóng thuế): bán {s}, basis {b}. Thuế nếu bán hôm nay ước tính {t}. Sau {n} năm 1031 hơn {d}. Cho tôi hỏi thêm.',
+  subj:'So sánh 1031 vs bán đóng thuế — {nm}',
+  body:'Tên: {nm}\nEmail: {em}\nPhone: {ph}\n\nGiá bán: {s}\nAdjusted basis: {b}\nDepreciation: {dp}\nThu nhập khác: {o}\nKhai thuế: {st}\nSố năm: {n}\nTăng giá: {g}%/năm\n\nTiền lời hôm nay: {gn}\nThuế phần depreciation: {t1}\nThuế liên bang 0/15/20%: {t2}\nNIIT: {t3}\nCalifornia: {t4}\nTổng thuế nếu bán hôm nay: {t}\n\nSau {n} năm, đã trừ thuế:\n1 Bán đóng thuế: {A}\n2 1031 rồi bán: {B}\n3 1031 giữ tới lúc mất: {C}\n4 DST rồi bán: {D}\n\nƯớc tính, không phải tư vấn thuế.\nGửi từ tool T222 tools.kenlamrealty.com'},
+ en:{title:'1031 or sell and pay the tax? See it over 10–20 years',sub:'Enter your rental. See the tax if you sell today, layer by layer, and what each of 4 paths leaves you years from now.',
+  l_sale:'Sale price ',l_sale_s:'(after commission, escrow)',l_basis:'Adjusted basis ',l_basis_s:'(price + improvements − depreciation)',
+  l_dep:'Depreciation taken ',l_dep_s:'(all years)',l_inc:'Other taxable income ',l_inc_s:'(per year, after deductions)',
+  l_st:'Filing status',st_s:'Single',st_m:'Married, joint',l_yrs:'Years you keep investing',u_yr:'yrs',l_gr:'Price growth ',l_gr_s:'(per year, guess)',
+  k_more:'More money with 1031 after {n} years',k_less:'More money selling now, after {n} years',k_none:'No gain to compare',
+  st_win:'<b>1031 wins by {x}</b> if you sell for cash in year {n}. Hold until death (path 3) and your heirs get {c} with zero income tax.',
+  st_lose:'<b>Selling now wins by {x}</b> with these numbers. That happens when the gain is small or growth is slow. Ask a CPA before you decide.',
+  st_none:'<b>No gain.</b> Selling below basis, a 1031 does not help and it would cost you the deductible loss.',
+  ch:'What you keep after {n} years, after tax',
+  sA:'Pay {t} tax today, invest the {inv} left. Year {n}: {v}, tax at sale {t2}.',
+  sB:'All {p} keeps growing. Year {n}: {v}, tax at sale {t2} (includes the old deferred tax).',
+  sC:'Heirs get basis = value at death (§1014). Deferred gain is wiped out. Value shown before any estate tax.',
+  sD:'Estimated DST load {l}% comes off the top, {p} invested. Year {n}: {v}, tax at sale {t2}. Money is locked up, no control.',
+  pA:'1 · Sell now, pay tax, reinvest the rest',pB:'2 · 1031 now, sell later',pC:'3 · 1031 and keep it for the heirs (step-up)',pD:'4 · 1031 into a DST, sell later',
+  n_gain:'Gain if you sell today',n_gain_s:'sale price − adjusted basis',n_u:'Depreciation part (unrecaptured §1250)',
+  us:'{u} at ordinary rates, capped at 25%',ls:'{l}, stacked on top of other income',ns:'on MAGI over {th}',cs:'taxed as ordinary income, {y} schedule',
+  n_l:'Rest × federal 0/15/20%',n_niit:'NIIT 3.8%',n_ca:'California',n_tt:'Tax if you sell today',tts:'= {p}% of the gain',n_left:'Cash left to reinvest (path 1)',
+  est_note:'Estimate only, not tax advice. Same growth for every path. Rent, loans, new depreciation and fees other than the DST load are left out. Ask a CPA and a QI before you sign.',
+  myth:'<b>Common mistake:</b> "1031 means no tax." It means tax later. Sell the new property for cash and the old gain comes due, and the depreciation part is still taxed up to 25%. Only path 3, holding until death, erases it.',
+  nx_title:'Next step',
+  nx1:'Not sure the property even qualifies? Check it first: <a href="/t220/">T220</a>.',
+  nx2:'Going with 1031? Run the boot and the 45/180-day dates: <a href="/t27/">T27</a>, then the identification rules: <a href="/t221/">T221</a>.',
+  nx3:'Thinking DST or "no more landlord"? Compare the exchange types: <a href="/t228/">T228</a>.',
+  nx4:'Buying outside California? CA still follows the gain: <a href="/t225/">T225</a>.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this comparison to yourself',f_sub:'Ken will reply with a few CPAs and QIs investors here use. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'1031 exchange, step by step (Library)',ft_vid:'Kiến Thức Địa Ốc video',
+  ft_est:'General information, not tax or legal advice. Ask a CPA and a Qualified Intermediary before you sign. Federal 2026 brackets; California uses the 2025 schedule (latest published).',
+  ft_src:'Sources',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I used tool T222 (1031 vs sell): selling {s}, basis {b}. Tax if I sell today about {t}. After {n} years 1031 is ahead by {d}. I have a question.',
+  subj:'1031 vs sell and pay tax — {nm}',
+  body:'Name: {nm}\nEmail: {em}\nPhone: {ph}\n\nSale price: {s}\nAdjusted basis: {b}\nDepreciation: {dp}\nOther income: {o}\nFiling: {st}\nYears: {n}\nGrowth: {g}%/yr\n\nGain today: {gn}\nDepreciation layer tax: {t1}\nFederal 0/15/20%: {t2}\nNIIT: {t3}\nCalifornia: {t4}\nTotal tax if sold today: {t}\n\nAfter {n} years, after tax:\n1 Sell now: {A}\n2 1031 then sell: {B}\n3 1031 until death: {C}\n4 DST then sell: {D}\n\nEstimate, not tax advice.\nSent from tool T222 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const short=n=>{const a=Math.abs(n),s=n<0?'−':''; return a>=1e6?s+'$'+(a/1e6).toFixed(a>=1e7?1:2)+'M':a>=1e3?s+'$'+Math.round(a/1e3)+'K':fmt(n);};
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const T=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+let st='mfj', last={};
+
+function calc(){
+  const d=I18N[lang];
+  const r=paths({st,sale:num('sale'),basis:num('basis'),dep:num('dep'),inc:num('inc'),yrs:num('yrs'),gr:num('gr')});
+  const diff=r.B-r.A, n=r.N;
+  if(r.G0<=0){ $('bigK').textContent=d.k_none; $('big').textContent='$0'; $('status').className='status warn'; $('status').innerHTML=d.st_none; }
+  else{ $('bigK').textContent=T(diff>=0?d.k_more:d.k_less,{n}); $('big').textContent=fmt(Math.abs(diff));
+    $('status').className='status '+(diff>=0?'ok':'warn'); $('status').innerHTML=T(diff>=0?d.st_win:d.st_lose,{x:fmt(Math.abs(diff)),n,c:fmt(r.C)}); }
+  $('chH').textContent=T(d.ch,{n});
+  const vals={A:r.A,B:r.B,C:r.C,D:r.D}, mx=Math.max(1,...Object.values(vals)), best=Object.keys(vals).reduce((a,b)=>vals[b]>vals[a]?b:a);
+  for(const k in vals){ $('v'+k).textContent=fmt(vals[k]); $('w'+k).style.width=Math.max(0,vals[k]/mx*100)+'%'; $('c'+k).classList.toggle('best',k===best); }
+  $('sA').textContent=T(d.sA,{t:fmt(r.now.total),inv:fmt(r.inv),n,v:fmt(r.VA),t2:fmt(r.tA)});
+  $('sB').textContent=T(d.sB,{p:fmt(num('sale')),n,v:fmt(r.VB),t2:fmt(r.tB)});
+  $('sD').textContent=T(d.sD,{l:Math.round(DST_LOAD*100),p:fmt(num('sale')*(1-DST_LOAD)),n,v:fmt(r.VD),t2:fmt(r.tD)});
+  $('oGain').textContent=fmt(r.G0);
+  $('oUs').textContent=T(d.us,{u:fmt(r.U0)}); $('oT1').textContent=fmt(r.now.t1250);
+  $('oLs').textContent=T(d.ls,{l:fmt(r.L0)}); $('oT2').textContent=fmt(r.now.tL);
+  $('oNs').textContent=T(d.ns,{th:short(TAX.NIIT_TH[st])}); $('oT3').textContent=fmt(r.now.niit);
+  $('oCs').textContent=T(d.cs,{y:TAX.CA_YEAR}); $('oT4').textContent=fmt(r.now.ca);
+  $('oTt').textContent=fmt(r.now.total); $('oTts').textContent=T(d.tts,{p:r.G0>0?(r.now.total/r.G0*100).toFixed(1):'0'});
+  $('oLeft').textContent=fmt(r.inv);
+  last={s:fmt(num('sale')),b:fmt(num('basis')),dp:fmt(num('dep')),o:fmt(num('inc')),st:st==='mfj'?d.st_m:d.st_s,n,g:num('gr'),
+    gn:fmt(r.G0),t1:fmt(r.now.t1250),t2:fmt(r.now.tL),t3:fmt(r.now.niit),t4:fmt(r.now.ca),t:fmt(r.now.total),
+    A:fmt(r.A),B:fmt(r.B),C:fmt(r.C),D:fmt(r.D),d:fmt(diff)};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(T(d.sms,last));
+  klSend();
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+function setSt(v){ st=v; $('sS').setAttribute('aria-pressed',v==='single'); $('sM').setAttribute('aria-pressed',v==='mfj'); calc(); }
+/* embed mode (?embed=1): iframe on kenlamrealty.com, height via postMessage klToolsHeight */
+const EMBED=/[?&]embed=1/.test(location.search);
+let klSend=()=>{};
+if(EMBED){ document.documentElement.classList.add('embed'); let lastH=0;
+  klSend=()=>{ const w=document.querySelector('.wrap'); const h=Math.ceil(w.getBoundingClientRect().bottom+window.scrollY+40); if(Math.abs(h-lastH)<4) return; lastH=h; try{ parent.postMessage({klToolsHeight:h},'*'); }catch(e){} };
+  window.addEventListener('resize',()=>klSend());
+  document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('a[href]'); if(!a) return; const h=a.getAttribute('href'); if(h.startsWith('#')||a.target==='_blank') return; if(h.startsWith('/')) a.href='https://tools.kenlamrealty.com'+h; a.target='_top'; },true); }
+['sale','basis','dep','inc','yrs','gr'].forEach(id=>$(id).addEventListener('input',calc));
+$('sS').onclick=()=>setSt('single'); $('sM').onclick=()=>setSt('mfj');
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus(); klSend();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], o=Object.assign({},last,{nm:$('fname').value.trim()||'—',em:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'});
+  /* LEAD → FUB: mailto ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const a=document.createElement('a'); a.href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(T(d.subj,o))+'&body='+encodeURIComponent(T(d.body,o)); a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){} };
+applyLang();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
