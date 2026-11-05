@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Transfer Tax Từng City</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+@media (max-width:420px){.total .v{font-size:min(58px,13vw)}}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+
+/* ---- T222 thêm ---- */
+.chart{display:grid;gap:12px}
+.chart h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.cb{display:grid;gap:5px;min-width:0}
+.cb .hd{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:14px}
+.cb .hd b{font-weight:500;min-width:0}
+.cb .hd span{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.cb .tr{height:14px;border-radius:999px;background:var(--line);overflow:hidden}
+.cb .tr i{display:block;height:100%;border-radius:999px;background:var(--brass);transition:width .2s}
+.cb.p1 .tr i{background:#CBB7A3}.cb.p3 .tr i{background:var(--ok)}.cb.p4 .tr i{background:#A9B7A0}
+.cb small{font-size:12px;color:var(--muted);line-height:1.4}
+.cb.best .hd span{color:var(--ok)}
+.ctl input[type=number].sm{font-size:20px}
+</style>
+<style>
+/* ---- Nhóm thuế T230–T238 thêm (không đổi class cũ) ---- */
+.ctl select{flex:1;min-width:0;width:100%;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:13px 2px;appearance:auto}
+.seg{flex-wrap:wrap}
+.seg button{min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.mhl{list-style:none;margin:0;padding:0;display:grid;gap:10px}.mhl li{display:grid;gap:2px;border-top:1px solid var(--line);padding-top:10px}.mhl li:first-child{border-top:0;padding-top:0}.mhl a{color:var(--fg);text-decoration:none;font-weight:500}.mhl a b{color:var(--brass);font-weight:600;margin-right:4px}.mhl span{color:var(--muted);font-size:14px}
+.tx{display:grid;border-top:1px solid var(--line)}
+.tx .r{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:13px 0;border-bottom:1px solid var(--line);min-width:0}
+.tx .r h3{margin:0;font-size:16px;font-weight:500;min-width:0}
+.tx .r p{grid-column:1/-1;margin:0;font-size:14px;color:var(--muted);line-height:1.5}
+.tx .r p a{color:var(--brass)}
+.pill{font-size:12px;font-weight:600;padding:3px 11px;border-radius:999px;white-space:nowrap;align-self:start;border:1px solid currentColor}
+.pill.no{color:var(--ok)}.pill.maybe{color:var(--brass)}.pill.yes{color:var(--warn)}
+.cmp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:420px){.cmp{grid-template-columns:1fr}}
+.cmp div{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:2px;min-width:0}
+.cmp .k{font-size:12px;color:var(--muted);line-height:1.35}
+.cmp .v{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
+.cmp .v small{font-family:var(--body);font-size:13px;color:var(--muted)}
+.cmp .best{border-color:var(--ok)}.cmp .best .v{color:var(--ok)}
+.status a{color:var(--brass)}
+.note a{color:var(--brass)}
+[hidden]{display:none!important}
+</style>
+
+<meta name="description" content="Transfer tax for every city in Santa Clara and Alameda County: county + city + San Jose Measure E, Mountain View Measure G, Berkeley, Oakland tiers, who pays, and the price cliff.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t231/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Transfer tax by city · Ken Lam Tools">
+<meta property="og:description" content="County + city transfer tax for every Santa Clara and Alameda city, with the tier cliff warning.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t231/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+html.embed .kl-back{display:none}
+html.embed body{padding-top:8px}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Transfer tax by city: how much, and who pays</h1>
+    <p class="sub" data-i="sub">Pick the city and the price. County, city and Measure E/G add up right away. Numbers on open are an example.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="row2">
+      <div class="field">
+        <label for="price"><span data-i="l_price">Sale price</span></label>
+        <div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" min="0" step="10000" value="2350000"></div>
+      </div>
+      <div class="field">
+        <label for="city"><span data-i="l_city">City</span></label>
+        <div class="ctl"><select id="city"></select></div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="kind"><span data-i="l_kind">What kind of transfer?</span></label>
+      <div class="ctl"><select id="kind">
+        <option value="sale" data-i="k_sale">Sale (money changes hands)</option>
+        <option value="gift" data-i="k_gift">Gift, no loan taken over</option>
+        <option value="death" data-i="k_death">Inheritance (after a death)</option>
+        <option value="trust" data-i="k_trust">Into / out of your own trust, no sale</option>
+        <option value="divorce" data-i="k_divorce">Between spouses in a divorce</option>
+        <option value="llc" data-i="k_llc">Into your own LLC, same % ownership</option>
+      </select></div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_close">Closing date</span></label>
+      <div class="seg" role="group" data-k="yr">
+        <button type="button" data-v="2026" aria-pressed="true" data-i="y26">In 2026</button>
+        <button type="button" data-v="2027" aria-pressed="false" data-i="y27">2027 or later</button>
+      </div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_who">Who pays</span></label>
+      <div class="seg" role="group" data-k="who">
+        <button type="button" data-v="custom" aria-pressed="true" data-i="w_custom">Local custom</button>
+        <button type="button" data-v="seller" aria-pressed="false" data-i="w_seller">Seller pays all</button>
+        <button type="button" data-v="half" aria-pressed="false" data-i="w_half">Split 50/50</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" id="bigK"></div>
+      <div class="v"><span id="big">$0</span> <small id="bigPct"></small></div>
+    </div>
+    <div class="status ok" id="status"></div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_county">County documentary tax</b> <small id="sCounty"></small></span><span class="a" id="oCounty">$0</span></div>
+      <div class="line" id="rCity"><span class="n"><b id="nCity"></b> <small id="sCity"></small></span><span class="a" id="oCity">$0</span></div>
+      <div class="line warnl" id="rExtra"><span class="n"><b id="nExtra"></b> <small id="sExtra"></small></span><span class="a" id="oExtra">$0</span></div>
+      <div class="line sum"><span class="n"><b data-i="n_total">Total transfer tax</b></span><span class="a" id="oTotal">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_seller">Seller pays</b> <small id="sWho"></small></span><span class="a" id="oSeller">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_buyer">Buyer pays</b></span><span class="a" id="oBuyer">$0</span></div>
+    </div>
+    <div class="status warn" id="cliff" hidden></div>
+    <div class="note" id="cityNote"></div>
+    <div class="note" data-i="est_note">Estimate. Who pays is custom, not law: it is negotiable in the contract. Escrow and title compute the final number.</div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="ex_t">When is it $0?</h2>
+    <div data-i="ex_list">
+      <ul class="mhl">
+        <li><a><b>R&amp;T 11911</b> Gift, no money paid</a><span>Tax is on consideration only. No price, no tax. Taking over the loan can count as consideration.</span></li>
+        <li><a><b>R&amp;T 11930</b> Inheritance, or into / out of a trust with no sale</a><span>Write "R&amp;T 11930, transfer to trust, no consideration" on the deed for your own living trust.</span></li>
+        <li><a><b>R&amp;T 11927</b> Spouses in a divorce or legal separation</a><span>Deed between spouses under a divorce or separation.</span></li>
+        <li><a><b>R&amp;T 11925</b> Into your own LLC, same % ownership</a><span>Same people, same shares before and after. Change the shares later and tax can come back.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <p class="myth" data-i="myth"><b>Common mistake:</b> "Transfer tax is a small fee." In Santa Clara County it is, about $1.10 per $1,000. Cross into San Jose above $2.3M, or Oakland and Berkeley, and it jumps to tens of thousands. The rate also applies to the whole price, not just the part above the line. $1 over can cost more than $17,000.</p>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next step</h2>
+    <ol>
+      <li data-i="nx1">Selling? See everything you take home after commission, escrow and this tax: <a href="/t21/">T21</a>.</li>
+      <li data-i="nx2">Not a sale, but a gift, inheritance or trust? See every tax that applies: <a href="/t230/">T230</a>.</li>
+      <li data-i="nx3">Giving the house to your child? Check the property tax side: <a href="/t232/">T232</a>.</li>
+    </ol>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video guide"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t231/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this to yourself</h2>
+    <p data-i="f_sub">Ken will reply if anything in your city looks off. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="/t230/" data-i="ft_lib">Transferring a home: what tax applies? (T230)</a> · <span data-i="ft_vid">Kiến Thức Địa Ốc video (coming soon)</span></span>
+    <span data-i="ft_est">General information, not tax or legal advice. Ask escrow, a CPA or an attorney before you sign. Rates checked 05/11/2026.</span>
+    <span class="src"><span data-i="ft_src">Sources</span> (05/11/2026):
+      <a href="https://apps.acgov.org/auditor/clerk/transfertax.htm" target="_blank" rel="noopener">Alameda County Clerk-Recorder</a> ·
+      <a href="https://gocodebook.com/library/us/ca/san-jose-zoning/title-4/chapter-4.58" target="_blank" rel="noopener">SJMC 4.58</a> ·
+      <a href="https://gocodebook.com/library/us/ca/san-jose-zoning/title-4/chapter-4.59" target="_blank" rel="noopener">SJMC 4.59 (Measure E)</a> ·
+      <a href="https://mountainview.gov/our-city/departments/finance-and-administrative-services/city-tax-information/real-property-transfer-conveyance-tax" target="_blank" rel="noopener">Mountain View</a> ·
+      <a href="https://berkeleyca.gov/city-services/report-pay/property-transfer-tax" target="_blank" rel="noopener">Berkeley</a> ·
+      <a href="https://www.oaklandca.gov/resources/real-estate-transfer-tax" target="_blank" rel="noopener">Oakland</a> ·
+      <a href="https://piedmont.ca.gov/news/november_3__2026_general_election_results" target="_blank" rel="noopener">Piedmont GG</a> ·
+      <a href="https://www.albanyca.gov/Government/Election-Information/Ballot-Measures-for-General-Municipal-Election-2026" target="_blank" rel="noopener">Albany S</a> ·
+      <a href="https://page.fnf.com/rs/393-REY-847/images/Who%20Pays%20What%20-%20California%20Transfer%20Tax%20and%20Fees%20%28rev%2001062026%29.pdf" target="_blank" rel="noopener">FNF Who Pays What</a> ·
+      <a href="https://ccr.saccounty.gov/content/ccr/us/en/transfer-tax-exemptions-under-revenue-and-taxation-code.html" target="_blank" rel="noopener">R&amp;T exemptions</a></span>
+    <span class="who">Ken Lam Realty · Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 05/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== TRANSFER TAX RATES — sửa 1 chỗ ở đây khi luật/số đổi (checked 05/11/2026, /home/claude/thue/FACTS.md §2) =====
+   COUNTY: $0.55 per $500 or fraction = $1.10/$1,000 (R&T 11911), both counties. https://apps.acgov.org/auditor/clerk/transfertax.htm
+   Base: price rounded UP to the next $500 for county + city $/1,000 rates (Alameda County page; SJ/MV "$1.65 per $500 or fractional part").
+   tiers: [[price up to, $ per $1,000], ...] — rate applies to the WHOLE price (not marginal).
+   Santa Clara County:
+     San Jose conveyance $3.30/$1,000 (SJMC 4.58) https://gocodebook.com/library/us/ca/san-jose-zoning/title-4/chapter-4.58
+     San Jose Measure E (SJMC 4.59) on full price, in addition: ≤$2.3M 0; >$2.3M 0.75%; >$5M 1%; >$10M 1.5%
+       https://gocodebook.com/library/us/ca/san-jose-zoning/title-4/chapter-4.59 ; $2.3M from 7/1/2025 via Old Republic / FNF (official SJ notice UNVERIFIED — KEN DUYỆT)
+     Palo Alto $3.30/$1,000 (PAMC 2.34, FNF 1/6/2026 — official code page blocked, KEN DUYỆT)
+     Mountain View $3.30/$1,000; Measure G $15/$1,000 on price > $6M, whole price, replaces $3.30 (operative date UNVERIFIED)
+       https://mountainview.gov/our-city/departments/finance-and-administrative-services/city-tax-information/real-property-transfer-conveyance-tax
+     Other SCC cities + unincorporated: no city tax (FNF table, ESTIMATE $0)
+   Alameda County (Clerk-Recorder table):
+     Alameda $12 · Albany $15 · Berkeley $15 ≤$1.7M / $25 above · Emeryville $12 <$1M / $15 ≤$2M / $25 above · Hayward $8.50
+     Oakland $10 ≤$300K / $15 ≤$2M / $17.50 ≤$5M / $25 above · Piedmont $13 · San Leandro $11 · others + unincorporated none
+     Berkeley Measure W from 1/1/2027: 1.5% / 2.5% ≥$1.6M / 3% ≥$1.9M / 3.5% ≥$3.0M — thresholds will be recalculated, NOT final
+       https://berkeleyca.gov/city-services/report-pay/property-transfer-tax
+     Piedmont Measure GG ($17.50 from 7/1/2027) and Albany Measure S (1%–3% tiers from 1/1/2027): passed unofficially 11/3/2026, NOT certified → 2026 rates used + note.
+   Who pays (custom, negotiable — FNF Who Pays What rev 01/06/2026): county = seller; city = 50/50 buyer/seller. Measure E: seller (no printed custom — KEN DUYỆT).
+   ---------------------------------------------------------------------------------------------------------------
+   WORKED EXAMPLE (checked in Python 05/11/2026): San Jose, $2,350,000, 2026, local custom
+     county 4,700 × $0.55 = $2,585 · city 4,700 × $1.65 = $7,755 · Measure E 0.75% × 2,350,000 = $17,625 → total $27,965
+     seller = 2,585 + 7,755/2 + 17,625 = $24,087.50 · buyer = $3,877.50
+     Cliff: at $2,300,000 total = 2,530 + 7,590 = $10,120 → $17,845 less tax for a $50,000 lower price.
+   =============================================================================================================== */
+const LAW={
+  COUNTY_PER500:0.55,
+  MEAS_E:[[2300000,0],[5000000,0.0075],[10000000,0.01],[Infinity,0.015]],   /* [up to, % of whole price] */
+  SPLIT_CITY:0.5,               /* buyer share of city tax by custom */
+  E_SELLER:1                    /* seller share of Measure E by default — KEN DUYỆT */
+};
+const SJ=[[Infinity,3.30]];
+const CITIES=[
+  {id:'sj', n:'San Jose',      c:'SC', t:SJ, mE:true},
+  {id:'pa', n:'Palo Alto',     c:'SC', t:[[Infinity,3.30]], tag:'pa'},
+  {id:'mv', n:'Mountain View', c:'SC', t:[[6000000,3.30],[Infinity,15]], tag:'mv'},
+  {id:'cb', n:'Campbell',      c:'SC', t:[]},
+  {id:'cu', n:'Cupertino',     c:'SC', t:[]},
+  {id:'gi', n:'Gilroy',        c:'SC', t:[]},
+  {id:'la', n:'Los Altos',     c:'SC', t:[]},
+  {id:'lah',n:'Los Altos Hills',c:'SC', t:[]},
+  {id:'lg', n:'Los Gatos',     c:'SC', t:[]},
+  {id:'mp', n:'Milpitas',      c:'SC', t:[]},
+  {id:'ms', n:'Monte Sereno',  c:'SC', t:[]},
+  {id:'mh', n:'Morgan Hill',   c:'SC', t:[]},
+  {id:'sc', n:'Santa Clara',   c:'SC', t:[]},
+  {id:'sa', n:'Saratoga',      c:'SC', t:[]},
+  {id:'sv', n:'Sunnyvale',     c:'SC', t:[]},
+  {id:'usc',n:'Unincorporated Santa Clara County', c:'SC', t:[], un:true},
+  {id:'ala',n:'Alameda',       c:'AL', t:[[Infinity,12]]},
+  {id:'alb',n:'Albany',        c:'AL', t:[[Infinity,15]], tag:'alb'},
+  {id:'brk',n:'Berkeley',      c:'AL', t:[[1700000,15],[Infinity,25]], t27:[[1599999.99,15],[1899999.99,25],[2999999.99,30],[Infinity,35]], tag:'brk'},
+  {id:'du', n:'Dublin',        c:'AL', t:[]},
+  {id:'em', n:'Emeryville',    c:'AL', t:[[999999.99,12],[2000000,15],[Infinity,25]]},
+  {id:'fre',n:'Fremont',       c:'AL', t:[]},
+  {id:'hay',n:'Hayward',       c:'AL', t:[[Infinity,8.50]]},
+  {id:'lv', n:'Livermore',     c:'AL', t:[]},
+  {id:'nw', n:'Newark',        c:'AL', t:[]},
+  {id:'oak',n:'Oakland',       c:'AL', t:[[300000,10],[2000000,15],[5000000,17.5],[Infinity,25]], tag:'oak'},
+  {id:'pie',n:'Piedmont',      c:'AL', t:[[Infinity,13]], tag:'pie'},
+  {id:'pl', n:'Pleasanton',    c:'AL', t:[]},
+  {id:'sl', n:'San Leandro',   c:'AL', t:[[Infinity,11]]},
+  {id:'uc', n:'Union City',    c:'AL', t:[]},
+  {id:'ual',n:'Unincorporated Alameda County (Castro Valley, San Lorenzo…)', c:'AL', t:[], un:true}
+];
+const tierOf=(tbl,p)=>{ for(let i=0;i<tbl.length;i++) if(p<=tbl[i][0]) return i; return tbl.length-1; };
+/* Pure calc */
+function ttax(o){
+  const city=CITIES.find(c=>c.id===o.cityId)||CITIES[0], P=Math.max(0,o.price||0);
+  const base=Math.ceil(P/500)*500;
+  const tbl=(o.yr==='2027'&&city.t27)?city.t27:city.t;
+  let cityRate=0, ti=-1; if(tbl.length&&P>0){ ti=tierOf(tbl,P); cityRate=tbl[ti][1]; }
+  const county=P>100?LAW.COUNTY_PER500*base/500:0;
+  const cityT=P>0?base*cityRate/1000:0;
+  let er=0, ei=-1; if(city.mE&&P>0){ ei=tierOf(LAW.MEAS_E,P); er=LAW.MEAS_E[ei][1]; }
+  const extra=P*er;
+  const total=county+cityT+extra;
+  let seller, buyer;
+  if(o.who==='seller'){ seller=total; buyer=0; }
+  else if(o.who==='half'){ seller=total/2; buyer=total/2; }
+  else { buyer=cityT*LAW.SPLIT_CITY+extra*(1-LAW.E_SELLER); seller=total-buyer; }
+  return {city,P,base,tbl,cityRate,ti,county,cityT,er,ei,extra,total,seller,buyer};
+}
+/* Cliff: highest price in the next lower tier (Measure E or city table). */
+function cliff(o){
+  const r=ttax(o); let T=null;
+  if(r.ei>0) T=LAW.MEAS_E[r.ei-1][0];
+  if(r.ti>0){ const t=r.tbl[r.ti-1][0]; if(T===null||t>T) T=t; }
+  if(T===null) return null;
+  T=Math.floor(T);                       /* whole dollars, still inside the lower tier */
+  const lo=ttax(Object.assign({},o,{price:T}));
+  return {T, drop:r.P-T, save:r.total-lo.total, sellerNetHi:r.P-r.seller, sellerNetLo:T-lo.seller};
+}
+const CODE={gift:'R&T 11911',death:'R&T 11930',trust:'R&T 11930',divorce:'R&T 11927',llc:'R&T 11925'};
+
+const I18N={
+ vi:{title:'Transfer tax từng thành phố: bao nhiêu, ai trả',sub:'Chọn city, nhập giá. Thuế county, city, Measure E/G cộng ra liền. Số mở sẵn là ví dụ.',
+  l_price:'Giá bán',l_city:'Thành phố',l_kind:'Sang tên kiểu gì?',
+  k_sale:'Bán (có trả tiền)',k_gift:'Cho tặng, không nhận lại loan',k_death:'Thừa kế (người đứng tên mất)',k_trust:'Bỏ vào / rút ra trust của mình, không bán',k_divorce:'Vợ chồng ly dị sang tên',k_llc:'Bỏ vào LLC của mình, giữ nguyên % sở hữu',
+  l_close:'Ngày close',y26:'Trong năm 2026',y27:'Từ 2027 trở đi',l_who:'Ai trả',w_custom:'Theo thông lệ',w_seller:'Seller trả hết',w_half:'Chia đôi',
+  k_tot:'Tổng transfer tax',k_zero:'Không mất transfer tax',
+  n_county:'Thuế county (documentary)',n_total:'Tổng transfer tax',n_seller:'Seller trả',n_buyer:'Buyer trả',
+  city_n:'Thuế city {c}',city_none:'Thuế city',city_s:'${r} mỗi $1,000, tính trên toàn bộ giá',city_0:'{c} không có thuế city',un_0:'Khu unincorporated: chỉ có thuế county',
+  e_n:'San Jose Measure E',e_s:'{p}% toàn bộ giá, cộng thêm (trên $2.3M)',e_0:'Dưới $2.3M: không có Measure E',
+  cty_s:'$0.55 mỗi $500 (= $1.10/$1,000)',pct:'= {p}% giá bán',
+  who_custom:'county seller, city chia đôi{e}',who_e:', Measure E seller',who_seller:'seller trả hết',who_half:'mỗi bên một nửa',
+  st_sale:'Bán {p} ở {c}: tổng <b>{t}</b>. Seller trả khoảng {s}, buyer {b}.',
+  st_ex:'<b>Không mất transfer tax</b> nếu đúng loại này. Ghi lý do miễn trên deed: <b>{code}</b>.',
+  st_ex_gift:' Lưu ý: người nhận gánh luôn loan còn nợ thì số loan đó có thể bị tính là "tiền trả", lúc đó vẫn có thuế.',
+  st_ex_llc:' Nếu sau này đổi % sở hữu, thuế (và property tax) có thể quay lại.',
+  cliff:'<b>Nhảy bậc:</b> giá xuống {t} (thấp hơn {d}) thì tổng thuế bớt {s}.',
+  cliff_win:' Seller còn cầm về nhiều hơn ở giá {t} ({a} so với {b}). Thương lượng ngay ngưỡng này có lợi cho cả hai bên.',
+  cliff_lose:' Nhưng seller vẫn cầm về nhiều hơn ở giá hiện tại ({b} so với {a}). Chỉ đáng khi chênh giá nhỏ hơn tiền thuế bớt.',
+  n_brk26:'Berkeley 2026: 1.5% tới $1.7M, 2.5% trên đó (toàn bộ giá). Nhà làm seismic hay home-hardening có thể được hoàn tới 1/3 phần 1.5%. Hỏi city.',
+  n_brk27:'Berkeley từ 01/01/2027 (Measure W): 1.5%, 2.5% từ $1.6M, 3% từ $1.9M, 3.5% từ $3.0M. <b>Các ngưỡng này chưa chốt</b>, city sẽ tính lại trước ngày có hiệu lực.',
+  n_oak:'Oakland: người mua nhà lần đầu thu nhập thấp/trung bình (LMI) được giảm 0.5% ở 2 bậc đầu. Buyer và seller cùng chịu trách nhiệm trả.',
+  n_pie:'Piedmont Measure GG (bầu 03/11/2026, kết quả chưa chính thức, ~69% thuận): nếu được xác nhận, thuế lên $17.50/$1,000 (1.75%) cho nhà close từ 01/07/2027. Tool đang dùng mức hiện tại $13.',
+  n_alb:'Albany Measure S (bầu 03/11/2026, chưa chính thức): nếu được xác nhận, từ 01/01/2027 đổi sang 5 bậc 1%–3% trên toàn bộ giá. Ngưỡng từng bậc chưa công bố, nên tool vẫn dùng $15/$1,000.',
+  n_mv:'Mountain View Measure G: trên $6M thì $15/$1,000 cho toàn bộ giá, thay cho mức $3.30.',
+  n_pa:'Palo Alto $3.30/$1,000 lấy từ bảng của title company; trang code của city chưa mở được để đối chiếu.',
+  n_sj:'San Jose: thuế city $3.30/$1,000 là thuế riêng, cộng thêm thuế county. Measure E chỉ tính khi giá trên $2.3M (ngưỡng từ 01/07/2025).',
+  n_none:'Ở đây chỉ có thuế county. Nhà ở unincorporated (có địa chỉ bưu điện của city bên cạnh) vẫn tính như vậy, nhưng kiểm parcel trên tax bill cho chắc.',
+  est_note:'Ước tính. Ai trả là thông lệ, không phải luật, ghi trong hợp đồng là thương lượng được. Escrow và title tính số cuối cùng.',
+  ex_t:'Khi nào $0?',
+  ex_list:'<ul class="mhl"><li><a><b>R&amp;T 11911</b> Cho tặng, không trả tiền</a><span>Thuế chỉ tính trên tiền trả. Không có giá thì không có thuế. Nhận lại loan có thể bị coi là tiền trả.</span></li><li><a><b>R&amp;T 11930</b> Thừa kế, hay bỏ vào / rút ra trust mà không bán</a><span>Living trust của mình: ghi trên deed "R&amp;T 11930, transfer to trust, no consideration".</span></li><li><a><b>R&amp;T 11927</b> Vợ chồng ly dị hay ly thân</a><span>Deed giữa hai vợ chồng theo bản án ly dị hay ly thân.</span></li><li><a><b>R&amp;T 11925</b> Bỏ vào LLC của mình, giữ nguyên %</a><span>Cùng người, cùng % trước và sau. Đổi % về sau thì thuế có thể quay lại.</span></li></ul>',
+  myth:'<b>Nhiều người hiểu sai:</b> "Transfer tax là phí lặt vặt." Ở Santa Clara County thì đúng, khoảng $1.10 mỗi $1,000. Qua San Jose trên $2.3M, hay Oakland, Berkeley là lên cả chục ngàn. Mà mức thuế áp cho <b>toàn bộ giá</b>, không phải phần vượt. Lố $1 có khi mất thêm hơn $17,000.',
+  nx_title:'Bước tiếp theo',
+  nx1:'Bán nhà? Coi cầm về bao nhiêu sau commission, escrow và thuế này: <a href="/t21/">T21</a>.',
+  nx2:'Không phải bán mà cho, để lại, bỏ vào trust? Coi mọi loại thuế dính vào: <a href="/t230/">T230</a>.',
+  nx3:'Cho con nhà? Coi phần property tax: <a href="/t232/">T232</a>.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi kết quả này về email',f_sub:'Ken coi thấy số ở city bạn có gì lạ sẽ trả lời. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Sang tên nhà: có mất thuế không? (T230)',ft_vid:'Video Kiến Thức Địa Ốc (sắp có)',
+  ft_est:'Thông tin chung, không phải tư vấn thuế hay luật. Hỏi escrow, CPA hay luật sư trước khi ký. Mức thuế kiểm ngày 05/11/2026.',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi xem tool T231 (transfer tax): {c}, giá {p}. Tổng thuế ước tính {t}, seller {s}, buyer {b}. Cho tôi hỏi thêm.',
+  subj:'Transfer tax {c} — {nm}',
+  body:'Tên: {nm}\nEmail: {em}\nPhone: {ph}\n\nThành phố: {c}\nGiá: {p}\nLoại sang tên: {k}\nNgày close: {y}\n\nThuế county: {co}\nThuế city: {ci}\nMeasure E: {ex}\nTổng: {t} ({pc}% giá)\nSeller trả: {s}\nBuyer trả: {b}\n\nƯớc tính, không phải tư vấn thuế.\nGửi từ tool T231 tools.kenlamrealty.com'},
+ en:{title:'Transfer tax by city: how much, and who pays',sub:'Pick the city and the price. County, city and Measure E/G add up right away. Numbers on open are an example.',
+  l_price:'Sale price',l_city:'City',l_kind:'What kind of transfer?',
+  k_sale:'Sale (money changes hands)',k_gift:'Gift, no loan taken over',k_death:'Inheritance (after a death)',k_trust:'Into / out of your own trust, no sale',k_divorce:'Between spouses in a divorce',k_llc:'Into your own LLC, same % ownership',
+  l_close:'Closing date',y26:'In 2026',y27:'2027 or later',l_who:'Who pays',w_custom:'Local custom',w_seller:'Seller pays all',w_half:'Split 50/50',
+  k_tot:'Total transfer tax',k_zero:'No transfer tax',
+  n_county:'County documentary tax',n_total:'Total transfer tax',n_seller:'Seller pays',n_buyer:'Buyer pays',
+  city_n:'{c} city tax',city_none:'City tax',city_s:'${r} per $1,000 on the whole price',city_0:'{c} has no city tax',un_0:'Unincorporated area: county tax only',
+  e_n:'San Jose Measure E',e_s:'{p}% of the whole price, on top (over $2.3M)',e_0:'$2.3M or less: no Measure E',
+  cty_s:'$0.55 per $500 (= $1.10/$1,000)',pct:'= {p}% of price',
+  who_custom:'county seller, city split{e}',who_e:', Measure E seller',who_seller:'seller pays all',who_half:'half each',
+  st_sale:'Selling for {p} in {c}: total <b>{t}</b>. Seller pays about {s}, buyer {b}.',
+  st_ex:'<b>No transfer tax</b> for this kind of transfer. Put the exemption on the deed: <b>{code}</b>.',
+  st_ex_gift:' Careful: if the person receiving it takes over the loan, the loan balance can count as consideration and be taxed.',
+  st_ex_llc:' Change the ownership % later and the tax (and property tax) can come back.',
+  cliff:'<b>Tier cliff:</b> at {t} ({d} lower) the total tax drops by {s}.',
+  cliff_win:' The seller actually nets more at {t} ({a} vs {b}). Pricing right at the line helps both sides.',
+  cliff_lose:' But the seller still nets more at the current price ({b} vs {a}). Only worth it when the price gap is smaller than the tax saved.',
+  n_brk26:'Berkeley 2026: 1.5% up to $1.7M, 2.5% above (whole price). Seismic or home-hardening work can earn a rebate of up to 1/3 of the 1.5% part. Ask the city.',
+  n_brk27:'Berkeley from 01/01/2027 (Measure W): 1.5%, 2.5% from $1.6M, 3% from $1.9M, 3.5% from $3.0M. <b>These thresholds are not final</b>; the city will recalculate them before they take effect.',
+  n_oak:'Oakland: low/moderate-income (LMI) first-time buyers get 0.5% off the first two tiers. Buyer and seller are both liable for the tax.',
+  n_pie:'Piedmont Measure GG (11/3/2026 vote, unofficial, ~69% yes): if certified, the rate goes to $17.50/$1,000 (1.75%) for closings from 07/01/2027. This tool uses today\'s $13.',
+  n_alb:'Albany Measure S (11/3/2026 vote, unofficial): if certified, from 01/01/2027 it becomes 5 tiers of 1%–3% on the whole price. Tier thresholds are not published, so this tool still uses $15/$1,000.',
+  n_mv:'Mountain View Measure G: over $6M the rate is $15/$1,000 on the whole price, instead of $3.30.',
+  n_pa:'Palo Alto $3.30/$1,000 comes from title company tables; the city code page could not be opened to double-check.',
+  n_sj:'San Jose: the $3.30/$1,000 city tax is separate and on top of the county tax. Measure E applies only over $2.3M (threshold from 07/01/2025).',
+  n_none:'Only the county tax here. Unincorporated homes (with a nearby city\'s mailing address) work the same way, but check the parcel on the tax bill.',
+  est_note:'Estimate. Who pays is custom, not law: it is negotiable in the contract. Escrow and title compute the final number.',
+  ex_t:'When is it $0?',
+  ex_list:'<ul class="mhl"><li><a><b>R&amp;T 11911</b> Gift, no money paid</a><span>Tax is on consideration only. No price, no tax. Taking over the loan can count as consideration.</span></li><li><a><b>R&amp;T 11930</b> Inheritance, or into / out of a trust with no sale</a><span>Write "R&amp;T 11930, transfer to trust, no consideration" on the deed for your own living trust.</span></li><li><a><b>R&amp;T 11927</b> Spouses in a divorce or legal separation</a><span>Deed between spouses under a divorce or separation.</span></li><li><a><b>R&amp;T 11925</b> Into your own LLC, same % ownership</a><span>Same people, same shares before and after. Change the shares later and tax can come back.</span></li></ul>',
+  myth:'<b>Common mistake:</b> "Transfer tax is a small fee." In Santa Clara County it is, about $1.10 per $1,000. Cross into San Jose above $2.3M, or Oakland and Berkeley, and it jumps to tens of thousands. The rate also applies to <b>the whole price</b>, not just the part above the line. $1 over can cost more than $17,000.',
+  nx_title:'Next step',
+  nx1:'Selling? See everything you take home after commission, escrow and this tax: <a href="/t21/">T21</a>.',
+  nx2:'Not a sale, but a gift, inheritance or trust? See every tax that applies: <a href="/t230/">T230</a>.',
+  nx3:'Giving the house to your child? Check the property tax side: <a href="/t232/">T232</a>.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this to yourself',f_sub:'Ken will reply if anything in your city looks off. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'Transferring a home: what tax applies? (T230)',ft_vid:'Kiến Thức Địa Ốc video (coming soon)',
+  ft_est:'General information, not tax or legal advice. Ask escrow, a CPA or an attorney before you sign. Rates checked 05/11/2026.',
+  ft_src:'Sources',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I used tool T231 (transfer tax): {c}, price {p}. Total tax about {t}, seller {s}, buyer {b}. I have a question.',
+  subj:'Transfer tax {c} — {nm}',
+  body:'Name: {nm}\nEmail: {em}\nPhone: {ph}\n\nCity: {c}\nPrice: {p}\nTransfer type: {k}\nClosing: {y}\n\nCounty tax: {co}\nCity tax: {ci}\nMeasure E: {ex}\nTotal: {t} ({pc}% of price)\nSeller pays: {s}\nBuyer pays: {b}\n\nEstimate, not tax advice.\nSent from tool T231 tools.kenlamrealty.com'}
+};
+/* ===== shared engine (copied from T222: i18n, embed, email → FUB, sms) ===== */
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const T=(s,o)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+let last={};
+const S={};
+document.querySelectorAll('.seg[data-k]').forEach(g=>{const k=g.dataset.k, bs=[...g.querySelectorAll('button')];
+  const on=bs.find(b=>b.getAttribute('aria-pressed')==='true')||bs[0]; S[k]=on.dataset.v;
+  bs.forEach(b=>b.onclick=()=>{S[k]=b.dataset.v; bs.forEach(x=>x.setAttribute('aria-pressed',x===b)); calc();});});
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+/* embed mode (?embed=1): iframe on kenlamrealty.com, height via postMessage klToolsHeight */
+const EMBED=/[?&]embed=1/.test(location.search);
+let klSend=()=>{};
+if(EMBED){ document.documentElement.classList.add('embed'); let lastH=0;
+  klSend=()=>{ const w=document.querySelector('.wrap'); const h=Math.ceil(w.getBoundingClientRect().bottom+window.scrollY+40); if(Math.abs(h-lastH)<4) return; lastH=h; try{ parent.postMessage({klToolsHeight:h},'*'); }catch(e){} };
+  window.addEventListener('resize',()=>klSend());
+  document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('a[href]'); if(!a) return; const h=a.getAttribute('href'); if(h.startsWith('#')||a.target==='_blank') return; if(h.startsWith('/')) a.href='https://tools.kenlamrealty.com'+h; a.target='_top'; },true); }
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus(); klSend();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], o=Object.assign({},last,{nm:$('fname').value.trim()||'—',em:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'});
+  /* LEAD → FUB: mailto ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const a=document.createElement('a'); a.href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(T(d.subj,o))+'&body='+encodeURIComponent(T(d.body,o)); a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){} };
+function setSms(txt){ $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(txt); klSend(); }
+
+const UN_VI={usc:'Unincorporated Santa Clara County (ngoài city)',ual:'Unincorporated Alameda County (Castro Valley, San Lorenzo…)'};
+function fillCities(){
+  const v=$('city').value||'sj', nm=c=>lang==='vi'&&UN_VI[c.id]?UN_VI[c.id]:c.n;
+  $('city').innerHTML='<optgroup label="Santa Clara County">'+CITIES.filter(c=>c.c==='SC').map(c=>'<option value="'+c.id+'">'+nm(c)+'</option>').join('')+'</optgroup>'
+    +'<optgroup label="Alameda County">'+CITIES.filter(c=>c.c==='AL').map(c=>'<option value="'+c.id+'">'+nm(c)+'</option>').join('')+'</optgroup>';
+  $('city').value=v;
+}
+const pc=x=>(+x.toFixed(2)).toString();
+function calc(){
+  const d=I18N[lang], kind=$('kind').value;
+  const o={price:num('price'),cityId:$('city').value,yr:S.yr,who:S.who};
+  const r=ttax(o), c=r.city, cn=c.un?(lang==='vi'?UN_VI[c.id]:c.n):c.n;
+  const ex=kind!=='sale';
+  const z=v=>ex?0:v;
+  $('bigK').textContent=ex?d.k_zero:d.k_tot;
+  $('big').textContent=fmt(z(r.total));
+  $('bigPct').textContent=ex||!r.P?'':T(d.pct,{p:(r.total/r.P*100).toFixed(2)});
+  $('sCounty').textContent=d.cty_s; $('oCounty').textContent=fmt(z(r.county));
+  $('nCity').textContent=r.tbl.length?T(d.city_n,{c:c.n}):d.city_none;
+  $('sCity').textContent=r.tbl.length?T(d.city_s,{r:r.cityRate%1?r.cityRate.toFixed(2):String(r.cityRate)}):(c.un?d.un_0:T(d.city_0,{c:c.n}));
+  $('oCity').textContent=fmt(z(r.cityT));
+  $('rExtra').hidden=!c.mE;
+  $('nExtra').textContent=d.e_n; $('sExtra').textContent=r.er?T(d.e_s,{p:pc(r.er*100)}):d.e_0; $('oExtra').textContent=fmt(z(r.extra));
+  $('oTotal').textContent=fmt(z(r.total)); $('oSeller').textContent=fmt(z(r.seller)); $('oBuyer').textContent=fmt(z(r.buyer));
+  $('sWho').textContent=S.who==='custom'?T(d.who_custom,{e:c.mE?d.who_e:''}):S.who==='seller'?d.who_seller:d.who_half;
+  if(ex){ $('status').className='status ok'; $('status').innerHTML=T(d.st_ex,{code:CODE[kind]})+(kind==='gift'?d.st_ex_gift:kind==='llc'?d.st_ex_llc:''); }
+  else { $('status').className='status ok'; $('status').innerHTML=T(d.st_sale,{p:fmt(r.P),c:cn,t:fmt(r.total),s:fmt(r.seller),b:fmt(r.buyer)}); }
+  /* cliff — show when the lower tier is within 10% of the price */
+  const cl=ex?null:cliff(o);
+  if(cl&&cl.drop>0&&cl.drop<=r.P*0.10&&cl.save>0){
+    $('cliff').hidden=false;
+    $('cliff').innerHTML=T(d.cliff,{t:fmt(cl.T),d:fmt(cl.drop),s:fmt(cl.save)})+T(cl.sellerNetLo>cl.sellerNetHi?d.cliff_win:d.cliff_lose,{t:fmt(cl.T),a:fmt(cl.sellerNetLo),b:fmt(cl.sellerNetHi)});
+  } else $('cliff').hidden=true;
+  const tag=c.tag||(c.id==='sj'?'sj':null);
+  $('cityNote').innerHTML=tag==='brk'?(S.yr==='2027'?d.n_brk27:d.n_brk26):tag?d['n_'+tag]:(r.tbl.length?'':d.n_none);
+  $('cityNote').classList.toggle('hide',!$('cityNote').innerHTML);
+  const ko=$('kind').selectedOptions[0];
+  last={c:cn,p:fmt(r.P),k:ko?ko.textContent:'',y:S.yr==='2027'?d.y27:d.y26,co:fmt(z(r.county)),ci:fmt(z(r.cityT)),ex:fmt(z(r.extra)),t:fmt(z(r.total)),pc:ex||!r.P?'0':(r.total/r.P*100).toFixed(2),s:fmt(z(r.seller)),b:fmt(z(r.buyer))};
+  setSms(T(d.sms,last));
+}
+const _apply=applyLang;
+applyLang=function(){ fillCities(); _apply(); };
+['price'].forEach(id=>$(id).addEventListener('input',calc));
+['city','kind'].forEach(id=>$(id).addEventListener('change',calc));
+fillCities(); applyLang();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
