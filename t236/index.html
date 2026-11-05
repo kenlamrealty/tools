@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lender Lấy Điểm Nào</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T37 thêm (không đổi class cũ) ---- */
+.score{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.score b{font-family:var(--display);font-weight:400;font-size:40px;line-height:1;font-variant-numeric:tabular-nums;color:var(--fg)}
+.score span{font-size:13px;color:var(--muted)}
+.rng{width:100%;margin:4px 0 0;accent-color:var(--brass);height:28px;cursor:pointer}
+.ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.total .pay{margin-top:10px;font-size:15px;color:var(--muted)}
+.total .pay b{color:var(--fg);font-size:22px;font-weight:500;font-variant-numeric:tabular-nums}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45;background:var(--brass-soft)}
+.status b{font-weight:500}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.tbl th{font-size:12px;font-weight:500;color:var(--muted);text-align:right;padding:6px 0;border-bottom:1px solid var(--line)}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl td{padding:9px 0;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.tbl td small{color:var(--muted);font-size:11px;display:block;white-space:normal}
+.tbl tr.me td{color:var(--brass);font-weight:600}
+.tbl tr.me td small{color:var(--brass);font-weight:400}
+.tbl td.x{color:var(--warn)}
+.tbl tr.me td.x{color:var(--brass)}
+.tblk{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.tlw{display:grid;gap:12px}
+.tlw h2,.next h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-r{display:flex;align-items:center;gap:10px}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.gcal{font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.task .why a{color:var(--brass)}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+</style>
+<meta name="description" content="Enter 3 scores per borrower: see each middle score, the representative score the lender prices on, and whether dropping a co-borrower helps.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t236/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Which Credit Score Does the Lender Use · Ken Lam Tools">
+<meta property="og:description" content="Enter 3 scores per borrower: see each middle score, the representative score the lender prices on, and whether dropping a co-borrower helps.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t236/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.embed .kl-back{display:none}
+/* ---- nhóm credit T23x thêm (không đổi class cũ) ---- */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl select:focus-visible{outline:none}
+.ctl .chev{color:var(--muted);font-size:14px;pointer-events:none}
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.row3 .ctl{padding:0 8px}.row3 .ctl input{font-size:19px;padding:11px 2px;text-align:center}
+.hint{font-size:12px;color:var(--muted);line-height:1.45}
+.hide{display:none!important}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap;line-height:1.5}
+.pill.ok{background:rgba(79,122,90,.14);color:var(--ok)}
+.pill.near{background:var(--brass-soft);color:var(--brass)}
+.pill.no{background:rgba(154,91,46,.13);color:var(--warn)}
+.pill.chk{border:1px solid var(--line);color:var(--muted)}
+.estl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:500}
+.lr{display:grid;gap:4px;padding:12px 0;border-bottom:1px solid var(--line)}
+.lr:first-child{border-top:1px solid var(--line)}
+.lr .h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.lr .h b{font-weight:500;font-size:15px;min-width:0}
+.lr .h .d{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap;text-align:right}
+.lr .t{font-size:13px;color:var(--muted);line-height:1.5}
+.lr .t a{color:var(--brass)}
+.lr .e{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.lr .e b{color:var(--fg);font-weight:500}
+.lr.me .h b{color:var(--brass)}
+.who2{display:grid;gap:8px;border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--panel)}
+.who2 h3{font-family:var(--display);font-weight:400;font-size:21px;margin:0;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.who2 h3 small{font-family:var(--body);font-size:12px;color:var(--muted)}
+.row3 label{font-size:11px;color:var(--muted);text-align:center;display:block;margin-bottom:4px}
+.mid{border-color:var(--brass)!important;background:var(--brass-soft)!important}
+.wrap>*,.result>*{min-width:0}
+.lr .h{flex-wrap:wrap}
+.lr .h .d{white-space:normal;display:flex;flex-wrap:wrap;gap:4px 8px;justify-content:flex-end;align-items:baseline}
+
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Which score does the lender use?</h1>
+    <p class="sub" data-i="sub">Lenders pull 3 scores per person, not one. Enter each person's scores to see the one that actually sets your price.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="who2">
+      <h3><span data-i="b1">Borrower 1</span> <small data-i="b_hint">Equifax · Experian · TransUnion</small></h3>
+      <div class="row3">
+        <div><label for="a1">Equifax</label><div class="ctl" id="ca1"><input id="a1" type="number" inputmode="numeric" min="300" max="850" value="742"></div></div>
+        <div><label for="a2">Experian</label><div class="ctl" id="ca2"><input id="a2" type="number" inputmode="numeric" min="300" max="850" value="718"></div></div>
+        <div><label for="a3">TransUnion</label><div class="ctl" id="ca3"><input id="a3" type="number" inputmode="numeric" min="300" max="850" value="731"></div></div>
+      </div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_two">Second borrower on the loan?</span></label>
+      <div class="seg" id="two"><button type="button" aria-pressed="false" data-v="0" data-i="no">No</button><button type="button" aria-pressed="true" data-v="1" data-i="yes">Yes</button></div>
+    </div>
+    <div class="who2" id="p2">
+      <h3><span data-i="b2">Borrower 2</span> <small data-i="b_hint2">leave one blank if only 2 scores</small></h3>
+      <div class="row3">
+        <div><label for="c1">Equifax</label><div class="ctl" id="cc1"><input id="c1" type="number" inputmode="numeric" min="300" max="850" value="688"></div></div>
+        <div><label for="c2">Experian</label><div class="ctl" id="cc2"><input id="c2" type="number" inputmode="numeric" min="300" max="850" value="664"></div></div>
+        <div><label for="c3">TransUnion</label><div class="ctl" id="cc3"><input id="c3" type="number" inputmode="numeric" min="300" max="850" value="701"></div></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="loan"><span data-i="l_loan">Loan amount</span> <small data-i="opt">(optional)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="loan" type="number" inputmode="numeric" min="0" step="10000" value="960000"></div>
+      </div>
+      <div class="field">
+        <label for="inc2"><span data-i="l_inc2">Borrower 2's share of income</span></label>
+        <div class="ctl"><input id="inc2" type="number" inputmode="decimal" min="0" max="100" step="5" value="40"><span class="post">%</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">Score the lender prices your loan on</div>
+      <div class="v" id="repV">—</div>
+      <div class="pay" id="repS"></div>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_m1">Borrower 1 middle score</b> <span id="m1s"></span></span><span class="a" id="m1">—</span></div>
+      <div class="line" id="lm2"><span class="n"><b data-i="n_m2">Borrower 2 middle score</b> <span id="m2s"></span></span><span class="a" id="m2">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_rep">Representative score (pricing, FHA)</b> <span data-i="n_rep_s">lowest borrower</span></span><span class="a" id="rep">—</span></div>
+      <div class="line" id="lavg"><span class="n"><b data-i="n_avg">Average median score</b> <span data-i="n_avg_s">only for Fannie Mae manual underwriting</span></span><span class="a" id="avg">—</span></div>
+    </div>
+    <div class="note" id="dropNote"></div>
+    <div class="note" data-i="rule_note">Rule: each person's middle of 3 scores (or the lower of 2). With 2 borrowers, Fannie Mae and FHA use the lowest borrower's score. Fannie Mae's average median score is now used only for manual underwriting (620 fixed / 640 ARM); DU no longer has a minimum. A lender may pick Classic FICO or VantageScore 4.0, but one model for everyone on the loan.</div>
+  </section>
+
+  <p class="myth" data-i="myth"><b>Common myth:</b> "The lender uses the higher score, or our average." No. For pricing, the lender takes each person's middle score, then uses the lower of the two. A strong co-borrower doesn't pull the weaker score up.</p>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">Take the score shown above to <a href="/t235/">T235</a> to see which loans fit, and to <a href="/t37/">T37</a> to see the monthly cost.</li>
+      <li data-i="nx2">Lower borrower close to a tier? Pay down that person's cards first with <a href="/t232/">T232</a>.</li>
+      <li data-i="nx3">One bureau much lower than the others? Pull that report and check for errors; dispute with <a href="/t234/">T234</a>.</li>
+      <li data-i="nx4">Before dropping someone from the loan, ask the lender to run it both ways: price and DTI.</li>
+    </ol>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video guide"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t236/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this result to yourself</h2>
+    <p data-i="f_sub">Ken gets a copy and can connect you with a lender for a free soft-pull review. No spam.</p>
+    <div class="field"><label for="fname" data-i="f_name">Name</label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone" data-i="f_phone">Phone (optional)</label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#credit-score" target="_blank" rel="noopener" data-i="ft_lib">Library</a> · <a href="https://kenlamrealty.com/library#video-credit" target="_blank" rel="noopener" data-i="ft_vid">Video</a> · <a href="/t230/" data-i="ft_hub">All credit tools (T230)</a></span>
+    <span data-i="ft_disc">For information only.</span>
+    <span class="src"><span data-i="ft_src">Sources</span> (05/11/2026):
+      <a href="https://selling-guide.fanniemae.com/sel/b3-5.1-02/determining-credit-score-mortgage-loan" target="_blank" rel="noopener">Fannie Mae B3-5.1-02</a> ·
+      <a href="https://selling-guide.fanniemae.com/sel/b3-5.1-01/general-requirements-credit-scores" target="_blank" rel="noopener">Fannie Mae B3-5.1-01</a> ·
+      <a href="https://www.hud.gov/sites/default/files/hudclips/documents/2026-11hsgml.pdf" target="_blank" rel="noopener">HUD ML 2026-11</a> ·
+      <a href="https://www.fhfa.gov/policy/credit-scores" target="_blank" rel="noopener">FHFA credit scores</a> ·
+      <a href="https://singlefamily.fanniemae.com/media/9391/display" target="_blank" rel="noopener">Fannie Mae LLPA Matrix 09/09/2026</a></span>
+    <span class="who">Ken Lam Realty · Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 05/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+
+</div>
+
+<script>
+/* ===== RULES T236 — sửa ở đây (nguồn: /home/claude/credit/FACTS.md, tra 05/11/2026) =====
+   Fannie B3-5.1-02 (VERIFIED): 3 điểm → middle; 2 điểm → thấp hơn; nhiều người → điểm thấp nhất = representative score (dùng cho LLPA).
+   Average median score: trung bình median từng người — chỉ dùng cho manual UW (min 620 fixed / 640 ARM, B3-5.1-01). DU không còn min từ 11/16/2025.
+   FHA MDCS (HUD ML 2026-11, VERIFIED): middle of 3 / lower of 2 mỗi người; người thấp nhất = MDCS. Từ 01/01/2027 còn lấy thấp nhất giữa các model.
+   FHFA: lender chọn Classic FICO hoặc VS 4.0, 1 model cho mọi người trên 1 loan (VERIFIED).
+   LLPA: Fannie Mae LLPA Matrix 09/09/2026, purchase, LTV 75.01–80% (VERIFIED) — chỉ để ví dụ chênh phí khi bỏ người điểm thấp. */
+const RULES={
+  min:300, max:850, manualFixed:620, manualArm:640,
+  llpa:[[780,0.375],[760,0.625],[740,0.875],[720,1.25],[700,1.375],[680,1.75],[660,1.875],[640,2.25],[0,2.75]]
+};
+const UPDATED='05/11/2026';
+/* ===== Phần chung nhóm credit (giống T37) ===== */
+const COMMON={
+ vi:{b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video',
+  f_title:'Gửi kết quả này về email',f_sub:'Ken nhận được bản copy, có thể giới thiệu lender coi hồ sơ bằng soft pull miễn phí. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  nx_title:'Bước tiếp theo',ft_read:'Đọc thêm:',ft_lib:'Bài Library: điểm tín dụng và vay nhà',ft_vid:'Video Kiến Thức Địa Ốc',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  ft_disc:'Thông tin tham khảo, không phải tư vấn pháp lý, tài chính hay cam kết cho vay. Điểm thật do FICO/VantageScore và 3 bureau tính.'},
+ en:{b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch video',
+  f_title:'Email this result to yourself',f_sub:'Ken gets a copy and can connect you with a lender for a free soft-pull review. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  nx_title:'Next steps',ft_read:'Read more:',ft_lib:'Library: credit scores and your mortgage',ft_vid:'Real estate basics video',
+  ft_src:'Sources',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  ft_disc:'For information only. Not legal or financial advice and not a commitment to lend. Your real scores are calculated by FICO/VantageScore and the 3 bureaus.'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:NaN};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let last={};
+/* ===== T236 ===== */
+const I18N={
+ vi:{title:'Lender lấy điểm nào? (2 người đứng tên)',sub:'Lender kéo 3 điểm cho mỗi người, không phải 1. Nhập điểm từng người để thấy con số thật sự quyết định giá loan.',
+  b1:'Người 1',b2:'Người 2',b_hint:'Equifax · Experian · TransUnion',b_hint2:'chỉ có 2 điểm thì để trống 1 ô',l_two:'Có người thứ 2 đứng tên loan?',no:'Không',yes:'Có',
+  l_loan:'Số tiền vay',opt:'(không bắt buộc)',l_inc2:'Người 2 góp bao nhiêu % thu nhập',
+  r_total:'Điểm lender dùng để tính giá loan',repS:'Là middle score của {w}',repS1:'Middle score của người 1',repS_need:'Nhập ít nhất 2 điểm cho mỗi người',
+  w1:'người 1',w2:'người 2',
+  n_m1:'Middle score người 1',n_m2:'Middle score người 2',n_rep:'Representative score (tính giá, FHA)',n_rep_s:'người thấp nhất',n_avg:'Average median score',n_avg_s:'chỉ cho manual underwriting Fannie Mae',
+  of3:'(giữa của 3)',of2:'(thấp hơn của 2)',
+  st:'Lender lấy <b>{r}</b>, không phải {hi}. Mỗi người lấy điểm giữa, rồi lấy người thấp hơn.',st1:'Lender lấy <b>{r}</b>: điểm giữa của 3 điểm (hoặc điểm thấp hơn nếu chỉ có 2).',
+  st_man:' Nếu bị manual underwriting: average median {a} so với mức 620 (fixed) / 640 (ARM) — {ok}.',man_ok:'qua',man_no:'chưa qua',
+  dr_t:'<b>Nếu bỏ người {lw} ra khỏi loan:</b> điểm dùng lên từ {r} thành <b>{hi}</b>{ll}. Nhưng mất luôn thu nhập của người đó (~{inc}% tổng thu nhập), DTI tăng; hồ sơ có thể không còn đủ tiền vay. Nhờ lender chạy thử cả 2 cách trước khi quyết.',
+  dr_ll:' — phí LLPA ví dụ (Fannie Mae, LTV 75–80%) giảm từ {p1}% xuống {p2}%, khoảng {s} trên loan {l}',
+  dr_same:'<b>Bỏ người 2 ra khỏi loan không giúp gì về điểm:</b> 2 người cùng nhóm phí hoặc người thấp hơn mới là người chính. Giữ cả 2 thì còn thu nhập cho DTI.',
+  dr_one:'Chỉ 1 người đứng tên: điểm dùng là middle score của người đó.',
+  rule_note:'Luật: mỗi người lấy điểm giữa của 3 điểm (hoặc điểm thấp hơn nếu chỉ có 2). Có 2 người thì Fannie Mae và FHA lấy điểm của người thấp hơn. Average median score của Fannie Mae giờ chỉ dùng cho manual underwriting (620 fixed / 640 ARM); DU không còn điểm tối thiểu. Lender có thể chọn Classic FICO hoặc VantageScore 4.0, nhưng 1 model cho mọi người trên loan.',
+  myth:'<b>Nhiều người hiểu sai:</b> "Lender lấy điểm cao, hay lấy trung bình 2 vợ chồng." Không. Để tính giá, lender lấy điểm giữa của từng người, rồi lấy người thấp hơn. Người điểm cao không kéo người điểm thấp lên được.',
+  nx1:'Đem điểm ở trên qua <a href="/t235/">T235</a> coi vay được loại nào, và <a href="/t37/">T37</a> coi tốn bao nhiêu mỗi tháng.',
+  nx2:'Người điểm thấp gần mốc? Trả thẻ của người đó trước bằng <a href="/t232/">T232</a>.',
+  nx3:'Có 1 bureau thấp hơn hẳn? Lấy report bureau đó coi có sai không; dispute bằng <a href="/t234/">T234</a>.',
+  nx4:'Trước khi bỏ ai ra khỏi loan, nhờ lender chạy thử cả 2 cách: giá và DTI.',
+  ft_hub:'Mọi tool điểm tín dụng (T230)',
+  sms:'Chào Ken, tôi xem tool T236: người 1 middle {m1}, người 2 middle {m2}, lender lấy {r}. Nhờ Ken coi giùm.',
+  subj:'Lender lấy điểm nào — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nNgười 1: {s1} → middle {m1}\nNgười 2: {s2} → middle {m2}\nRepresentative score: {r}\nAverage median (manual UW): {a}\nSố tiền vay: {l}\n\n{dr}\n\nThông tin tham khảo.\nGửi từ tool T236 tools.kenlamrealty.com'},
+ en:{title:'Which score does the lender use?',sub:"Lenders pull 3 scores per person, not one. Enter each person's scores to see the one that actually sets your price.",
+  b1:'Borrower 1',b2:'Borrower 2',b_hint:'Equifax · Experian · TransUnion',b_hint2:'leave one blank if only 2 scores',l_two:'Second borrower on the loan?',no:'No',yes:'Yes',
+  l_loan:'Loan amount',opt:'(optional)',l_inc2:"Borrower 2's share of income",
+  r_total:'Score the lender prices your loan on',repS:"It's {w}'s middle score",repS1:"Borrower 1's middle score",repS_need:'Enter at least 2 scores per person',
+  w1:'borrower 1',w2:'borrower 2',
+  n_m1:'Borrower 1 middle score',n_m2:'Borrower 2 middle score',n_rep:'Representative score (pricing, FHA)',n_rep_s:'lowest borrower',n_avg:'Average median score',n_avg_s:'only for Fannie Mae manual underwriting',
+  of3:'(middle of 3)',of2:'(lower of 2)',
+  st:'The lender uses <b>{r}</b>, not {hi}. Each person\'s middle score, then the lower person.',st1:'The lender uses <b>{r}</b>: the middle of 3 scores (or the lower of 2).',
+  st_man:' If manually underwritten: average median {a} vs the 620 (fixed) / 640 (ARM) minimum — {ok}.',man_ok:'meets it',man_no:'below it',
+  dr_t:'<b>If borrower {lw} comes off the loan:</b> the score used goes from {r} to <b>{hi}</b>{ll}. But you also lose that person\'s income (~{inc}% of the total), so DTI goes up and the file may no longer qualify for the amount. Ask the lender to run it both ways first.',
+  dr_ll:' — example LLPA fee (Fannie Mae, LTV 75–80%) drops from {p1}% to {p2}%, about {s} on a {l} loan',
+  dr_same:'<b>Dropping borrower 2 does not help the score:</b> both are in the same fee tier, or the lower score is borrower 1. Keeping both keeps the income for DTI.',
+  dr_one:"One borrower: the score used is that person's middle score.",
+  rule_note:"Rule: each person's middle of 3 scores (or the lower of 2). With 2 borrowers, Fannie Mae and FHA use the lowest borrower's score. Fannie Mae's average median score is now used only for manual underwriting (620 fixed / 640 ARM); DU no longer has a minimum. A lender may pick Classic FICO or VantageScore 4.0, but one model for everyone on the loan.",
+  myth:'<b>Common myth:</b> "The lender uses the higher score, or our average." No. For pricing, the lender takes each person\'s middle score, then uses the lower of the two. A strong co-borrower doesn\'t pull the weaker score up.',
+  nx1:'Take the score shown above to <a href="/t235/">T235</a> to see which loans fit, and to <a href="/t37/">T37</a> to see the monthly cost.',
+  nx2:"Lower borrower close to a tier? Pay down that person's cards first with <a href=\"/t232/\">T232</a>.",
+  nx3:'One bureau much lower than the others? Pull that report and check for errors; dispute with <a href="/t234/">T234</a>.',
+  nx4:'Before dropping someone from the loan, ask the lender to run it both ways: price and DTI.',
+  ft_hub:'All credit tools (T230)',
+  sms:'Hi Ken, I used tool T236: borrower 1 middle {m1}, borrower 2 middle {m2}, lender uses {r}. Can you take a look?',
+  subj:'Which score the lender uses — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nBorrower 1: {s1} → middle {m1}\nBorrower 2: {s2} → middle {m2}\nRepresentative score: {r}\nAverage median (manual UW): {a}\nLoan amount: {l}\n\n{dr}\n\nFor information only.\nSent from tool T236 tools.kenlamrealty.com'}
+};
+let two=1;
+$('two').addEventListener('click',e=>{const b=e.target.closest('button[data-v]'); if(!b) return; $('two').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); two=+b.getAttribute('data-v'); calc();});
+['a1','a2','a3','c1','c2','c3','loan','inc2'].forEach(id=>$(id).addEventListener('input',calc));
+const T=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]!=null?o[k]:m);
+/* hàm thuần */
+function median(list){ const s=list.filter(x=>isFinite(x)&&x>=RULES.min&&x<=RULES.max).sort((a,b)=>a-b);
+  if(s.length===3) return {v:s[1],n:3,idx:list.indexOf(s[1])}; if(s.length===2) return {v:s[0],n:2,idx:list.indexOf(s[0])}; if(s.length===1) return {v:s[0],n:1,idx:list.indexOf(s[0])}; return null; }
+function repScore(ms){ const v=ms.filter(Boolean); if(!v.length) return null; const rep=Math.min(...v.map(m=>m.v)), avg=v.reduce((a,m)=>a+m.v,0)/v.length; return {rep,avg}; }
+const llpaOf=s=>RULES.llpa.find(r=>s>=r[0])[1];
+function calc(){
+  const D=I18N[lang];
+  $('p2').classList.toggle('hide',!two); $('lm2').classList.toggle('hide',!two); $('lavg').classList.toggle('hide',!two);
+  $('inc2').closest('.field').classList.toggle('hide',!two);
+  const A=['a1','a2','a3'].map(num), C=['c1','c2','c3'].map(num);
+  const m1=median(A), m2=two?median(C):null;
+  ['ca','cc'].forEach((p,j)=>{ const m=j?m2:m1; for(let k=1;k<=3;k++) $(p+k).classList.toggle('mid',!!m&&m.n>1&&m.idx===k-1); });
+  const bad=!m1||m1.n<2||(two&&(!m2||m2.n<2));
+  const sfx=m=>m?(m.n===3?D.of3:m.n===2?D.of2:''):'';
+  $('m1').textContent=m1?m1.v:'—'; $('m1s').textContent=sfx(m1); $('m2').textContent=m2?m2.v:'—'; $('m2s').textContent=sfx(m2);
+  if(bad){ $('repV').textContent='—'; $('repS').textContent=D.repS_need; $('rep').textContent='—'; $('avg').textContent='—'; $('status').innerHTML=''; $('dropNote').innerHTML=''; last={}; setSms(); return; }
+  const r=repScore([m1,m2]), loan=Math.max(0,num('loan')||0), inc=Math.min(100,Math.max(0,num('inc2')||0));
+  $('repV').textContent=r.rep; $('rep').textContent=r.rep; const avgR=Math.round(r.avg*10)/10; $('avg').textContent=avgR;
+  let st, dr;
+  if(!two){ $('repS').textContent=D.repS1; st=D.st1.replace('{r}',r.rep); dr=D.dr_one; }
+  else {
+    const low=m2.v<m1.v?2:1, hi=Math.max(m1.v,m2.v); $('repS').textContent=T(D.repS,{w:D['w'+low]});
+    st=T(D.st,{r:r.rep,hi:hi})+T(D.st_man,{a:avgR,ok:avgR>=RULES.manualFixed?D.man_ok:D.man_no});
+    if(m1.v===m2.v){ st=D.st1.replace('{r}',r.rep)+T(D.st_man,{a:avgR,ok:avgR>=RULES.manualFixed?D.man_ok:D.man_no}); }
+    const p1=llpaOf(r.rep), p2=llpaOf(hi);
+    if(low===2&&p2<p1){ const ll=loan>0?T(D.dr_ll,{p1,p2,s:fmt(loan*(p1-p2)/100),l:fmt(loan)}):''; dr=T(D.dr_t,{lw:'2',r:r.rep,hi,ll,inc}); }
+    else if(low===1&&p2<p1){ const ll=loan>0?T(D.dr_ll,{p1,p2,s:fmt(loan*(p1-p2)/100),l:fmt(loan)}):''; dr=T(D.dr_t,{lw:'1',r:r.rep,hi,ll,inc:100-inc}); }
+    else dr=D.dr_same;
+  }
+  $('status').innerHTML=st; $('dropNote').innerHTML=dr;
+  const sc=a=>a.map(x=>isFinite(x)?x:'—').join(' / ');
+  last={s1:sc(A),s2:two?sc(C):'—',m1:m1.v,m2:m2?m2.v:'—',r:r.rep,a:two?avgR:'—',l:loan?fmt(loan):'—',dr:dr.replace(/<[^>]+>/g,'')};
+  setSms();
+}
+/* ===== Phần chung: ngôn ngữ, email, sms, embed ===== */
+I18N.vi=Object.assign({},COMMON.vi,I18N.vi); I18N.en=Object.assign({},COMMON.en,I18N.en);
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; if(typeof onLang==='function') onLang(); calc();
+}
+function setSms(){ const s=I18N[lang].sms.replace(/\{(\w+)\}/g,(m,k)=>last[k]??m); $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s); }
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing), hoặc thay bằng fetch() tới FUB webhook khi có endpoint. Không gửi dữ liệu đi đâu khác. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+try{ if(new URLSearchParams(location.search).get('embed')==='1') document.documentElement.classList.add('embed'); }catch(e){}
+applyLang();
+
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
