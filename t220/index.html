@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Does It Qualify for 1031?</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+</style>
+<meta name="description" content="Check if your property can go into a 1031 exchange: property type, rental vs personal days, related-party sales, and the name on title.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t220/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Does my property qualify for a 1031? · Ken Lam Tools">
+<meta property="og:description" content="Property type, rental vs personal days, related parties, title. See Yes / Risky / No with the reason for each point.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t220/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+/* 1031 group additions (T220–T229) */
+.embed .kl-back{display:none}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:12px 2px;appearance:auto}
+.ctl input[type=text]{font-size:17px}
+.total .v.word{font-size:58px;overflow-wrap:anywhere}
+.total .vs{font-size:14px;color:var(--muted);margin-top:6px}
+.line .a.ok{color:var(--ok)}
+.line .a.rk,.line .a.no{color:var(--warn)}
+.line .a.no{font-weight:600}
+.line .n{overflow-wrap:anywhere}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:12px;min-width:0}
+.box h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.box p{margin:0;font-size:14px;color:var(--muted)}
+.ticks{display:grid;gap:0;border-top:1px solid var(--line)}
+.tick{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:15px;line-height:1.4;cursor:pointer}
+.tick input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0}
+.tick small{grid-column:2;font-size:12px;color:var(--muted)}
+.prow{display:grid;grid-template-columns:22px minmax(0,1fr) minmax(0,118px) 30px;gap:8px;align-items:center}
+.prow .ix{font-size:13px;color:var(--muted);text-align:right}
+.prow .ctl{padding:0 8px}
+.prow .ctl input{font-size:15px;padding:10px 4px}
+.prow .del{border:0;background:transparent;color:var(--muted);font:inherit;font-size:20px;cursor:pointer;padding:0;line-height:1}
+.prow .buy{grid-column:2/4;font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center;margin-top:-4px}
+.prow .buy input{accent-color:var(--brass)}
+.add{justify-self:start;border:1px dashed var(--line);background:transparent;color:var(--brass);font:inherit;font-size:14px;padding:8px 14px;border-radius:999px;cursor:pointer}
+.add[disabled]{opacity:.4;cursor:default}
+.letter{width:100%;min-height:340px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:12px;resize:vertical}
+.qs{margin:0;padding-left:22px;display:grid;gap:8px;font-size:14px;line-height:1.5}
+.qs li small{color:var(--muted)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.btnrow .btn{flex:1;min-width:120px;padding:11px 14px;font-size:14px}
+.tag{display:inline-block;font-size:11px;letter-spacing:.04em;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 7px;margin-left:4px;vertical-align:1px}
+@media print{body *{visibility:hidden}.printme,.printme *{visibility:visible}.printme{position:absolute;left:0;top:0;border:0}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Can this property go into a 1031?</h1>
+    <p class="sub" data-i="sub">Pick the property type and how you used it. See Yes / Risky / No, with the reason for each point.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="ptype"><span data-i="l_type">What is the property you are selling?</span></label>
+      <div class="ctl"><select id="ptype">
+        <option value="rental" data-i="o_rental">Rental home / condo / multi-unit</option>
+        <option value="land" data-i="o_land">Land (raw lot, held to invest)</option>
+        <option value="comm" data-i="o_comm">Commercial building / store / office</option>
+        <option value="vac" data-i="o_vac">Vacation / second home</option>
+        <option value="home" data-i="o_home">My primary home (I live there)</option>
+        <option value="flip" data-i="o_flip">Flip / fix-and-sell / I build to sell</option>
+        <option value="smllc" data-i="o_smllc">House owned by my single-member LLC</option>
+        <option value="part" data-i="o_part">My share in a multi-member LLC / partnership</option>
+      </select></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="months"><span data-i="l_months">Months you have owned it</span></label>
+        <div class="ctl"><input id="months" type="number" inputmode="numeric" min="0" max="600" step="1" value="36"><span class="post" data-i="u_mo">mo</span></div>
+      </div>
+      <div class="field">
+        <label for="rent"><span data-i="l_rent">Days rented at fair rent </span><small data-i="l_rent_s">(per year, the lower year)</small></label>
+        <div class="ctl"><input id="rent" type="number" inputmode="numeric" min="0" max="366" step="1" value="330"><span class="post" data-i="u_d">days</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="pers"><span data-i="l_pers">Days you or family used it </span><small data-i="l_pers_s">(per year, the higher year)</small></label>
+        <div class="ctl"><input id="pers" type="number" inputmode="numeric" min="0" max="366" step="1" value="0"><span class="post" data-i="u_d2">days</span></div>
+      </div>
+      <div class="field">
+        <label for="rel"><span data-i="l_rel">Selling to / buying from family?</span></label>
+        <div class="ctl"><select id="rel">
+          <option value="no" data-i="o_rel_no">No, strangers both sides</option>
+          <option value="sell" data-i="o_rel_sell">Selling to a relative / my company</option>
+          <option value="buy" data-i="o_rel_buy">Buying from a relative / my company</option>
+        </select></div>
+      </div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_title">Name on title: old vs new property</span></label>
+      <div class="seg" role="group">
+        <button type="button" id="tSame" aria-pressed="true" data-i="t_same">Same name</button>
+        <button type="button" id="tChg" aria-pressed="false" data-i="t_chg">Will change</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">Can it be a 1031?</div>
+      <div class="v word" id="verdict">—</div>
+      <div class="vs" id="vsub"></div>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="lines" id="checks"></div>
+    <div class="note" data-i="est_note">General information only, not tax or legal advice. The IRS looks at your intent and the full facts. Ask a CPA and your Qualified Intermediary before you list.</div>
+  </section>
+
+  <p class="myth" data-i="myth"><b>Common mistake:</b> "I rented it a few weekends, so my vacation home is a rental." Not by itself. The IRS safe harbor wants 24 months of ownership, at least 14 days a year at fair rent, and personal use no more than 14 days or 10% of rented days.</p>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">It qualifies? Run the money side: gain, boot and your 45/180-day dates in <a href="/t27/">T27</a>.</li>
+      <li data-i="nx2">Not sure which kind of 1031 fits (delayed, reverse, DST)? <a href="/t228/">T228</a>.</li>
+      <li data-i="nx3">Used to live there? §121 and §1031 can work together: <a href="/t224/">T224</a>.</li>
+      <li data-i="nx4">Pick a Qualified Intermediary before the sale closes: <a href="/t226/">T226</a>. Then follow the dated checklist: <a href="/t227/">T227</a>.</li>
+    </ol>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video guide"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t220/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this 1031 check to yourself</h2>
+    <p data-i="f_sub">Ken will reply with what to ask your CPA and QI. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#1031-exchange" target="_blank" rel="noopener" data-i="ft_lib">1031 exchange, step by step</a> · <a href="https://kenlamrealty.com/library#video-1031" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a> · <a href="/t229/" data-i="ft_gl">1031 glossary (T229)</a></span>
+    <span data-i="ft_est">General information, not tax or legal advice. Ask a CPA and a Qualified Intermediary before you sign anything.</span>
+    <span class="src"><span data-i="ft_src">Sources</span> (04/11/2026):
+      <a href="https://www.law.cornell.edu/uscode/text/26/1031" target="_blank" rel="noopener">26 USC §1031</a> ·
+      <a href="https://www.law.cornell.edu/cfr/text/26/1.1031(a)-1" target="_blank" rel="noopener">Treas. Reg. §1.1031(a)-1</a> ·
+      <a href="https://www.irs.gov/pub/irs-drop/rp-08-16.pdf" target="_blank" rel="noopener">Rev. Proc. 2008-16</a> ·
+      <a href="https://www.irs.gov/instructions/i8824" target="_blank" rel="noopener">Form 8824 Instructions</a> ·
+      <a href="https://www.irs.gov/publications/p523" target="_blank" rel="noopener">IRS Pub 523</a> ·
+      <a href="https://www.ipx1031.com/top-1031-misconceptions-2026/" target="_blank" rel="noopener">IPX1031 (practitioner)</a></span>
+    <span class="who">Ken Lam Realty · Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Luật & số liệu — sửa ở đây khi luật đổi (tra 04/11/2026, nguồn: /home/claude/1031/FACTS.md) =====
+   §1031(a)(1): real property giữ để kinh doanh/đầu tư. Đất ↔ nhà là like-kind: 26 CFR 1.1031(a)-1(b),(c).
+   §1031(a)(2): nhà giữ chủ yếu để bán (dealer/flip) KHÔNG được.  https://www.law.cornell.edu/uscode/text/26/1031
+   Nhà ở chính: không được 1031 (Form 8824 Instr.) → §121 (Pub 523). 
+   Partnership/LLC interest: không được (1.1031(a)-1; IPX1031 misconceptions 2026). Drop-and-swap: rủi ro "held for investment" — ƯỚC TÍNH/practitioner.
+   SMLLC: disregarded → chủ là taxpayer (FTB 3840 Instr.). Federal SMLLC trên trang IRS 1031: UNVERIFIED → KEN DUYỆT.
+   Rev. Proc. 2008-16 (vacation/dwelling unit safe harbor): sở hữu ≥24 tháng; mỗi 12 tháng cho thuê fair rent ≥14 ngày;
+     tự dùng ≤ max(14 ngày, 10% số ngày cho thuê).  https://www.irs.gov/pub/irs-drop/rp-08-16.pdf
+   Thời gian giữ: luật không có tối thiểu; thực hành thường khuyên 1–2 năm — ƯỚC TÍNH.
+   Related party §1031(f): 2 bên giữ ≥2 năm sau lần chuyển cuối; ngoại lệ: chết, §1033, không nhằm né thuế. Nộp 8824 thêm 2 năm.
+   Same taxpayer: đổi tên trên title giữa chừng có thể hỏng (IPX1031 misconceptions 2026 — practitioner). */
+const SH_MONTHS=24, SH_RENT_MIN=14, SH_PERS_DAYS=14, SH_PERS_PCT=0.10, HOLD_MIN_SAFE=12, REL_YEARS=2;
+
+const I18N={
+ en:{title:'Can this property go into a 1031?',sub:'Pick the property type and how you used it. See Yes / Risky / No, with the reason for each point.',
+  l_type:'What is the property you are selling?',o_rental:'Rental home / condo / multi-unit',o_land:'Land (raw lot, held to invest)',o_comm:'Commercial building / store / office',
+  o_vac:'Vacation / second home',o_home:'My primary home (I live there)',o_flip:'Flip / fix-and-sell / I build to sell',o_smllc:'House owned by my single-member LLC',o_part:'My share in a multi-member LLC / partnership',
+  l_months:'Months you have owned it',u_mo:'mo',l_rent:'Days rented at fair rent ',l_rent_s:'(per year, the lower year)',u_d:'days',u_d2:'days',
+  l_pers:'Days you or family used it ',l_pers_s:'(per year, the higher year)',l_rel:'Selling to / buying from family?',
+  o_rel_no:'No, strangers both sides',o_rel_sell:'Selling to a relative / my company',o_rel_buy:'Buying from a relative / my company',
+  l_title:'Name on title: old vs new property',t_same:'Same name',t_chg:'Will change',
+  r_total:'Can it be a 1031?',v_ok:'Likely yes',v_rk:'Risky',v_no:'No',
+  vs:'{ok} OK · {rk} risky · {no} no',
+  s_ok:'<b>Looks like a fit.</b> Nothing here blocks a 1031. Still get your CPA and QI to confirm before you list.',
+  s_rk:'<b>Possible, with risk.</b> Fix or document the risky points below before you list.',
+  s_no:'<b>Not as it stands.</b> At least one point blocks a 1031. Read why below.',
+  st_ok:'OK',st_rk:'Risky',st_no:'No',
+  c_type:'Type of property',c_use:'Rental vs personal use',c_hold:'How long you held it',c_rel:'Related party',c_title:'Same taxpayer on title',c_us:'Replacement in the US',
+  w_inv:'Held for investment or business. Land for a building is like-kind too.',
+  w_home:'A home you live in does not qualify. Use §121 instead: up to $250K / $500K of gain tax-free.',
+  w_flip:'Property held "primarily for sale" is excluded by law (§1031(a)(2)). Flips and dealer inventory are out.',
+  w_part:'A share in an LLC or partnership is not real property for a 1031. "Drop and swap" into TIC deeds right before a sale is risky (estimate). Plan with a CPA early.',
+  w_smllc:'A single-member LLC is usually disregarded, so you are the taxpayer. Buy the new one in the same LLC or your own name. Confirm with the QI.',
+  w_vac_ok:'Meets the Rev. Proc. 2008-16 safe harbor: {m} months owned, {r} rented days, {p} personal days (limit {lim}).',
+  w_vac_rk:'Outside the Rev. Proc. 2008-16 safe harbor ({why}). Not automatically out, but the IRS can question your intent.',
+  why_m:'needs 24 months, you have {m}',why_r:'needs 14+ fair-rent days a year, you have {r}',why_p:'personal use {p} days is over the {lim}-day limit',
+  w_use_ok:'{r} rented days, {p} personal days. Personal use is under the {lim}-day line.',
+  w_use_rk:'{p} personal days is over {lim} (the greater of 14 days or 10% of rented days). Mixed use weakens "held for investment".',
+  w_use_zero:'Zero rented days for a rental is a red flag. Show it was offered for rent at a fair price.',
+  w_use_na:'Not used for this type.',
+  w_hold_rk:'{m} months. The law sets no minimum, but a short hold looks like a flip. Many advisors want 1–2 years (estimate).',
+  w_hold_ok:'{m} months. The law sets no minimum; intent is the test.',
+  w_rel_ok:'No related party. No 2-year rule to watch.',
+  w_rel_rk:'Related-party exchange: both of you must keep the properties 2 years after the swap, or the deferral is lost (§1031(f)). Exceptions: death, condemnation, no tax-avoidance purpose. File Form 8824 for 2 more years. Ask a CPA before you sign.',
+  w_title_ok:'Same taxpayer sells and buys. Keep it that way until the new one closes.',
+  w_title_rk:'The taxpayer that sells must be the one that buys. Adding a spouse or a new LLC mid-exchange can break it. Ask the QI before changing anything.',
+  w_us:'US property only swaps for US property. Foreign real estate is not like-kind (§1031(h)).',
+  est_note:'General information only, not tax or legal advice. The IRS looks at your intent and the full facts. Ask a CPA and your Qualified Intermediary before you list.',
+  myth:'<b>Common mistake:</b> "I rented it a few weekends, so my vacation home is a rental." Not by itself. The IRS safe harbor wants 24 months of ownership, at least 14 days a year at fair rent, and personal use no more than 14 days or 10% of rented days.',
+  nx_title:'Next steps',
+  nx1:'It qualifies? Run the money side: gain, boot and your 45/180-day dates in <a href="/t27/">T27</a>.',
+  nx2:'Not sure which kind of 1031 fits (delayed, reverse, DST)? <a href="/t228/">T228</a>.',
+  nx3:'Used to live there? §121 and §1031 can work together: <a href="/t224/">T224</a>.',
+  nx4:'Pick a Qualified Intermediary before the sale closes: <a href="/t226/">T226</a>. Then follow the dated checklist: <a href="/t227/">T227</a>.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this 1031 check to yourself',f_sub:'Ken will reply with what to ask your CPA and QI. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'1031 exchange, step by step',ft_vid:'3-min video',ft_gl:'1031 glossary (T229)',
+  ft_est:'General information, not tax or legal advice. Ask a CPA and a Qualified Intermediary before you sign anything.',
+  ft_src:'Sources',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I used the 1031 qualify check (T220): {ty}, owned {m} months. Result: {v}. I have a question.',
+  subj:'1031 qualify check — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nProperty: {ty}\nMonths owned: {m}\nRented days/yr: {r}\nPersonal days/yr: {p}\nRelated party: {rl}\nTitle: {tt}\n\nResult: {v}\n{lines}\n\nGeneral information, not tax advice.\nSent from tool T220 tools.kenlamrealty.com'},
+ vi:{title:'Nhà mình đổi 1031 được không?',sub:'Chọn loại nhà và cách mình xài. Ra liền Được / Rủi ro / Không, kèm lý do từng điểm.',
+  l_type:'Căn mình định bán là loại gì?',o_rental:'Nhà / condo / nhiều căn đang cho thuê',o_land:'Đất trống (giữ để đầu tư)',o_comm:'Thương mại: building, tiệm, văn phòng',
+  o_vac:'Nhà nghỉ mát / nhà thứ hai',o_home:'Nhà mình đang ở (nhà chính)',o_flip:'Nhà flip / sửa rồi bán / xây để bán',o_smllc:'Nhà đứng tên LLC 1 thành viên của mình',o_part:'Phần hùn trong LLC nhiều người / partnership',
+  l_months:'Mình giữ căn này bao lâu',u_mo:'tháng',l_rent:'Số ngày cho thuê giá thị trường ',l_rent_s:'(mỗi năm, lấy năm ít hơn)',u_d:'ngày',u_d2:'ngày',
+  l_pers:'Số ngày mình / người nhà ở ',l_pers_s:'(mỗi năm, lấy năm nhiều hơn)',l_rel:'Bán cho / mua của người nhà?',
+  o_rel_no:'Không, 2 bên đều người ngoài',o_rel_sell:'Bán cho người nhà / công ty mình',o_rel_buy:'Mua của người nhà / công ty mình',
+  l_title:'Tên trên title: căn cũ so với căn mới',t_same:'Giữ y tên',t_chg:'Sẽ đổi tên',
+  r_total:'Đổi 1031 được không?',v_ok:'Được',v_rk:'Rủi ro',v_no:'Không',
+  vs:'{ok} được · {rk} rủi ro · {no} không',
+  s_ok:'<b>Coi bộ hợp.</b> Không có điểm nào chặn 1031. Vẫn nhờ CPA và QI xác nhận trước khi lên MLS.',
+  s_rk:'<b>Làm được, nhưng có rủi ro.</b> Sửa hoặc có giấy tờ cho mấy điểm rủi ro bên dưới trước khi lên MLS.',
+  s_no:'<b>Như vầy thì không được.</b> Có ít nhất 1 điểm chặn 1031. Xem lý do bên dưới.',
+  st_ok:'Được',st_rk:'Rủi ro',st_no:'Không',
+  c_type:'Loại nhà',c_use:'Cho thuê hay tự ở',c_hold:'Giữ bao lâu',c_rel:'Người nhà (related party)',c_title:'Cùng 1 taxpayer trên title',c_us:'Nhà mới ở trong Mỹ',
+  w_inv:'Giữ để đầu tư hoặc kinh doanh. Đất đổi lấy nhà cũng là like-kind.',
+  w_home:'Nhà mình đang ở thì không 1031 được. Đi đường §121: miễn thuế tới $250K / $500K tiền lời.',
+  w_flip:'Nhà giữ "chủ yếu để bán" bị luật loại ra (§1031(a)(2)). Nhà flip, nhà của dealer là không được.',
+  w_part:'Phần hùn trong LLC hay partnership không phải real property, không 1031 được. Làm "drop and swap" (chia ra TIC) sát ngày bán là rủi ro (ước tính). Bàn với CPA sớm.',
+  w_smllc:'LLC 1 thành viên thường được coi như "không tồn tại" về thuế, nên mình là taxpayer. Mua căn mới cũng bằng LLC đó hoặc tên mình. Hỏi QI cho chắc.',
+  w_vac_ok:'Đạt safe harbor Rev. Proc. 2008-16: giữ {m} tháng, cho thuê {r} ngày, tự ở {p} ngày (tối đa {lim}).',
+  w_vac_rk:'Không đạt safe harbor Rev. Proc. 2008-16 ({why}). Chưa chắc rớt, nhưng IRS có quyền hỏi ý định của mình.',
+  why_m:'cần 24 tháng, mình mới {m}',why_r:'cần cho thuê ít nhất 14 ngày/năm, mình có {r}',why_p:'tự ở {p} ngày, quá mức {lim} ngày',
+  w_use_ok:'Cho thuê {r} ngày, tự ở {p} ngày. Tự ở dưới mức {lim} ngày.',
+  w_use_rk:'Tự ở {p} ngày, quá {lim} (lấy số lớn hơn giữa 14 ngày và 10% số ngày cho thuê). Vừa ở vừa cho thuê thì yếu phần "giữ để đầu tư".',
+  w_use_zero:'Nhà cho thuê mà 0 ngày có người thuê là cờ đỏ. Phải chứng minh có rao cho thuê giá thị trường.',
+  w_use_na:'Không áp dụng cho loại này.',
+  w_hold_rk:'{m} tháng. Luật không có mức tối thiểu, nhưng giữ ngắn quá nhìn giống flip. Nhiều CPA muốn 1–2 năm (ước tính).',
+  w_hold_ok:'{m} tháng. Luật không có mức tối thiểu; quan trọng là ý định.',
+  w_rel_ok:'Không dính người nhà. Không phải canh luật 2 năm.',
+  w_rel_rk:'Đổi với người nhà: 2 bên phải giữ nhà ít nhất 2 năm sau khi đổi, không thì mất phần hoãn thuế (§1031(f)). Ngoại lệ: có người mất, bị trưng thu, không nhằm né thuế. Nộp Form 8824 thêm 2 năm. Hỏi CPA trước khi ký.',
+  w_title_ok:'Cùng 1 taxpayer bán và mua. Giữ y vậy cho tới khi close căn mới.',
+  w_title_rk:'Ai bán thì người đó phải mua. Thêm tên vợ/chồng hay lập LLC mới giữa chừng là dễ hỏng. Hỏi QI trước khi đổi gì.',
+  w_us:'Nhà ở Mỹ chỉ đổi lấy nhà ở Mỹ. Nhà ngoài nước (kể cả Việt Nam) không phải like-kind (§1031(h)).',
+  est_note:'Chỉ là thông tin chung, không phải tư vấn thuế hay luật. IRS xét ý định và toàn bộ sự việc. Hỏi CPA và Qualified Intermediary trước khi lên MLS.',
+  myth:'<b>Nhiều người hiểu sai:</b> "Nhà nghỉ mát cho thuê được vài cuối tuần là thành nhà cho thuê." Chưa đủ. Safe harbor của IRS đòi giữ 24 tháng, mỗi năm cho thuê giá thị trường ít nhất 14 ngày, và tự ở không quá 14 ngày hoặc 10% số ngày cho thuê.',
+  nx_title:'Bước tiếp theo',
+  nx1:'Được rồi? Tính phần tiền: tiền lời, boot, ngày 45/180 ở <a href="/t27/">T27</a>.',
+  nx2:'Chưa biết loại 1031 nào hợp (delayed, reverse, DST)? <a href="/t228/">T228</a>.',
+  nx3:'Trước đây có ở căn này? §121 với §1031 xài chung được: <a href="/t224/">T224</a>.',
+  nx4:'Chọn Qualified Intermediary trước ngày close bán: <a href="/t226/">T226</a>. Rồi đi theo checklist có ngày: <a href="/t227/">T227</a>.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi kết quả này về email',f_sub:'Ken sẽ trả lời mấy câu nên hỏi CPA và QI. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'1031 exchange từng bước',ft_vid:'Video 3 phút',ft_gl:'Từ điển 1031 (T229)',
+  ft_est:'Thông tin chung, không phải tư vấn thuế hay luật. Hỏi CPA và Qualified Intermediary trước khi ký giấy.',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi xem tool T220 (nhà đổi 1031 được không): {ty}, giữ {m} tháng. Kết quả: {v}. Cho tôi hỏi thêm.',
+  subj:'Kiểm tra 1031 — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nLoại nhà: {ty}\nGiữ: {m} tháng\nNgày cho thuê/năm: {r}\nNgày tự ở/năm: {p}\nNgười nhà: {rl}\nTitle: {tt}\n\nKết quả: {v}\n{lines}\n\nThông tin chung, không phải tư vấn thuế.\nGửi từ tool T220 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const strip=s=>String(s).replace(/<[^>]+>/g,'');
+const pad=n=>String(n).padStart(2,'0');
+const parseD=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||''); return m?new Date(+m[1],+m[2]-1,+m[3]):null;};
+const addDays=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+const ymd=d=>d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const fd=d=>lang==='vi'?pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear():d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+const daysBetween=(a,b)=>Math.round((Date.UTC(b.getFullYear(),b.getMonth(),b.getDate())-Date.UTC(a.getFullYear(),a.getMonth(),a.getDate()))/864e5);
+function gcal(text,d,details){ return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(text)+'&dates='+ymd(d)+'/'+ymd(addDays(d,1))+'&details='+encodeURIComponent(details); }
+let last={};
+async function copyText(txt,btn){ try{ await navigator.clipboard.writeText(txt); }catch(e){ const t=document.createElement('textarea'); t.value=txt; t.style.position='fixed'; t.style.opacity='0'; document.body.appendChild(t); t.select(); try{document.execCommand('copy')}catch(_){} t.remove(); } if(btn){ const o=btn.textContent; btn.textContent='✓'; setTimeout(()=>{btn.textContent=o},1400);} }
+
+let titleChg=false;
+
+/* ---- Hàm thuần: trả về danh sách điểm {k, s:'ok'|'rk'|'no'|'na', w, v} ---- */
+function check220(i){
+  const out=[], m=Math.max(0,i.months), r=Math.max(0,i.rent), p=Math.max(0,i.pers);
+  const lim=Math.max(SH_PERS_DAYS,Math.floor(r*SH_PERS_PCT));
+  const t=i.type;
+  if(t==='home') out.push({k:'c_type',s:'no',w:'w_home'});
+  else if(t==='flip') out.push({k:'c_type',s:'no',w:'w_flip'});
+  else if(t==='part') out.push({k:'c_type',s:'no',w:'w_part'});
+  else if(t==='smllc') out.push({k:'c_type',s:'ok',w:'w_smllc'});
+  else if(t==='vac'){
+    const why=[]; if(m<SH_MONTHS) why.push(['why_m']); if(r<SH_RENT_MIN) why.push(['why_r']); if(p>lim) why.push(['why_p']);
+    out.push({k:'c_type',s:why.length?'rk':'ok',w:why.length?'w_vac_rk':'w_vac_ok',why});
+  } else out.push({k:'c_type',s:'ok',w:'w_inv'});
+  /* use */
+  if(t==='rental'||t==='smllc'||t==='comm'){
+    if(r===0) out.push({k:'c_use',s:'rk',w:'w_use_zero'});
+    else out.push({k:'c_use',s:p>lim?'rk':'ok',w:p>lim?'w_use_rk':'w_use_ok'});
+  } else if(t==='vac'){ /* đã xét trong safe harbor */ }
+  else out.push({k:'c_use',s:'na',w:'w_use_na'});
+  /* hold */
+  if(t!=='home'&&t!=='flip'&&t!=='part') out.push({k:'c_hold',s:m<HOLD_MIN_SAFE?'rk':'ok',w:m<HOLD_MIN_SAFE?'w_hold_rk':'w_hold_ok'});
+  out.push({k:'c_rel',s:i.rel==='no'?'ok':'rk',w:i.rel==='no'?'w_rel_ok':'w_rel_rk'});
+  out.push({k:'c_title',s:i.titleChg?'rk':'ok',w:i.titleChg?'w_title_rk':'w_title_ok'});
+  out.push({k:'c_us',s:'ok',w:'w_us'});
+  const no=out.filter(x=>x.s==='no').length, rk=out.filter(x=>x.s==='rk').length, ok=out.filter(x=>x.s==='ok').length;
+  return {items:out,no,rk,ok,verdict:no?'no':rk?'rk':'ok',lim,m,r,p};
+}
+
+function calc(){
+  const d=I18N[lang];
+  const res=check220({type:$('ptype').value,months:num('months'),rent:num('rent'),pers:num('pers'),rel:$('rel').value,titleChg});
+  const rep=s=>s.replace(/\{m\}/g,res.m).replace(/\{r\}/g,res.r).replace(/\{p\}/g,res.p).replace(/\{lim\}/g,res.lim);
+  let html='', plain=[];
+  res.items.forEach(x=>{
+    let w=d[x.w]; if(x.why) w=w.replace('{why}',x.why.map(a=>d[a[0]]).join('; '));
+    w=rep(w);
+    const st=x.s==='na'?'—':d['st_'+x.s];
+    html+='<div class="line"><span class="n"><b>'+esc(d[x.k])+'</b> <small>'+esc(w)+'</small></span><span class="a '+x.s+'">'+esc(st)+'</span></div>';
+    plain.push('- '+strip(d[x.k])+': '+st+' — '+w);
+  });
+  $('checks').innerHTML=html;
+  $('verdict').textContent=d['v_'+res.verdict];
+  $('verdict').style.color=res.verdict==='ok'?'var(--ok)':res.verdict==='no'?'var(--warn)':'';
+  $('vsub').textContent=d.vs.replace('{ok}',res.ok).replace('{rk}',res.rk).replace('{no}',res.no);
+  $('status').innerHTML=d['s_'+res.verdict]; $('status').className='status '+(res.verdict==='ok'?'ok':'warn');
+  const sel=$('ptype'), rs=$('rel');
+  last={ty:sel.options[sel.selectedIndex].text,m:res.m,r:res.r,p:res.p,rl:rs.options[rs.selectedIndex].text,tt:titleChg?d.t_chg:d.t_same,v:d['v_'+res.verdict],lines:plain.join('\n')};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(d.sms.replace(/\{(\w+)\}/g,(m,k)=>last[k]??m));
+}
+['months','rent','pers'].forEach(id=>$(id).addEventListener('input',calc));
+['ptype','rel'].forEach(id=>$(id).addEventListener('change',calc));
+$('tSame').onclick=()=>{titleChg=false;$('tSame').setAttribute('aria-pressed','true');$('tChg').setAttribute('aria-pressed','false');calc();};
+$('tChg').onclick=()=>{titleChg=true;$('tChg').setAttribute('aria-pressed','true');$('tSame').setAttribute('aria-pressed','false');calc();};
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  if(typeof onLang==='function') onLang();
+  calc();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing), hoặc thay bằng fetch() tới FUB webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=()=>copyText('4086662825',$('copyBtn'));
+try{ if(new URLSearchParams(location.search).get('embed')==='1') document.documentElement.classList.add('embed'); }catch(e){}
+applyLang();
+
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

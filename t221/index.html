@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>45-Day ID Checker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+</style>
+<meta name="description" content="List up to 10 replacement properties. See if you pass the 3-property, 200% or 95% rule, your real day 45, and a ready identification letter for your QI.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t221/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="1031 45-day identification checker · Ken Lam Tools">
+<meta property="og:description" content="3-property, 200% or 95% rule, your real day 45, and a ready ID letter for your QI.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t221/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+/* 1031 group additions (T220–T229) */
+.embed .kl-back{display:none}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:12px 2px;appearance:auto}
+.ctl input[type=text]{font-size:17px}
+.total .v.word{font-size:58px;overflow-wrap:anywhere}
+.total .vs{font-size:14px;color:var(--muted);margin-top:6px}
+.line .a.ok{color:var(--ok)}
+.line .a.rk,.line .a.no{color:var(--warn)}
+.line .a.no{font-weight:600}
+.line .n{overflow-wrap:anywhere}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:12px;min-width:0}
+.box h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.box p{margin:0;font-size:14px;color:var(--muted)}
+.ticks{display:grid;gap:0;border-top:1px solid var(--line)}
+.tick{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:15px;line-height:1.4;cursor:pointer}
+.tick input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0}
+.tick small{grid-column:2;font-size:12px;color:var(--muted)}
+.prow{display:grid;grid-template-columns:22px minmax(0,1fr) minmax(0,118px) 30px;gap:8px;align-items:center}
+.prow .ix{font-size:13px;color:var(--muted);text-align:right}
+.prow .ctl{padding:0 8px}
+.prow .ctl input{font-size:15px;padding:10px 4px}
+.prow .del{border:0;background:transparent;color:var(--muted);font:inherit;font-size:20px;cursor:pointer;padding:0;line-height:1}
+.prow .buy{grid-column:2/4;font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center;margin-top:-4px}
+.prow .buy input{accent-color:var(--brass)}
+.add{justify-self:start;border:1px dashed var(--line);background:transparent;color:var(--brass);font:inherit;font-size:14px;padding:8px 14px;border-radius:999px;cursor:pointer}
+.add[disabled]{opacity:.4;cursor:default}
+.letter{width:100%;min-height:340px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:12px;resize:vertical}
+.qs{margin:0;padding-left:22px;display:grid;gap:8px;font-size:14px;line-height:1.5}
+.qs li small{color:var(--muted)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.btnrow .btn{flex:1;min-width:120px;padding:11px 14px;font-size:14px}
+.tag{display:inline-block;font-size:11px;letter-spacing:.04em;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 7px;margin-left:4px;vertical-align:1px}
+@media print{body *{visibility:hidden}.printme,.printme *{visibility:visible}.printme{position:absolute;left:0;top:0;border:0}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Picking the new property in 45 days: 3-property, 200% or 95%?</h1>
+    <p class="sub" data-i="sub">Enter your sale price and the properties you plan to name. See which rule you pass, your real day 45, and a letter ready for your QI.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="row2">
+      <div class="field">
+        <label for="sale"><span data-i="l_sale">Sale price (old property)</span></label>
+        <div class="ctl"><span class="pre">$</span><input id="sale" type="number" inputmode="numeric" min="0" step="10000" value="1500000"></div>
+      </div>
+      <div class="field">
+        <label for="close"><span data-i="l_close">Sale close date</span></label>
+        <div class="ctl"><input id="close" type="date"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_list">Properties you plan to name </span><small data-i="l_list_s">(price; tick the ones you expect to buy)</small></label>
+      <div id="plist" style="display:grid;gap:10px"></div>
+      <button type="button" class="add" id="addBtn" data-i="add">+ Add property</button>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">Your list passes</div>
+      <div class="v word" id="verdict">—</div>
+      <div class="vs" id="vsub"></div>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_r3">3-property rule</b> <small id="s3"></small></span><span class="a" id="a3"></span></div>
+      <div class="line"><span class="n"><b data-i="n_r200">200% rule</b> <small id="s200"></small></span><span class="a" id="a200"></span></div>
+      <div class="line"><span class="n"><b data-i="n_r95">95% rule</b> <small id="s95"></small></span><span class="a" id="a95"></span></div>
+      <div class="line sum"><span class="n"><b data-i="n_tot">Total value named</b> <small id="sTot"></small></span><span class="a" id="aTot">$0</span></div>
+    </div>
+  </section>
+
+  <section class="dl" aria-label="Deadlines">
+    <div class="dd">
+      <div class="hd"><span class="t" data-i="d45_t">Day 45 · identify in writing</span><span class="left" id="d45L"></span></div>
+      <div class="date" id="d45"></div>
+      <p data-i="d45_p">Signed list delivered to your QI by midnight. Calendar days. Weekends and holidays count. You can change the list in writing until then, not after.</p>
+      <a class="gcal" id="g45" target="_blank" rel="noopener" data-i="gcal">Add to Google Calendar</a>
+    </div>
+    <div class="dd">
+      <div class="hd"><span class="t" data-i="d180_t">Day 180 · close the new property</span><span class="left" id="d180L"></span></div>
+      <div class="date" id="d180"></div>
+      <p id="d180P"></p>
+    </div>
+  </section>
+
+  <section class="box" aria-label="Identification letter">
+    <h2 data-i="lt_title">Identification letter (English, for your QI)</h2>
+    <p data-i="lt_sub">Fill in the names, check every address, then sign and send it to your QI. Many QIs have their own form: use theirs if they do.</p>
+    <div class="row2">
+      <div class="field"><label for="tp"><span data-i="l_tp">Taxpayer name(s) on title</span></label><div class="ctl"><input id="tp" type="text" autocomplete="name"></div></div>
+      <div class="field"><label for="qi"><span data-i="l_qi">QI company</span></label><div class="ctl"><input id="qi" type="text"></div></div>
+    </div>
+    <div class="field"><label for="old"><span data-i="l_old">Old property address</span></label><div class="ctl"><input id="old" type="text"></div></div>
+    <textarea class="letter" id="letter" readonly aria-label="Letter text"></textarea>
+    <div class="btnrow"><button type="button" class="btn" id="cpLetter" data-i="cp">Copy letter</button></div>
+  </section>
+
+  <p class="myth" data-i="myth"><b>Common mistake:</b> "I told my agent which houses I like, so they're identified." No. It must be a signed writing delivered to your QI (or another party to the exchange who is not you or your agent) by midnight of day 45, with an address or legal description for each one.</p>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">Check the money side (gain, boot, equal-or-up) for the property you will buy: <a href="/t27/">T27</a>.</li>
+      <li data-i="nx2">Put day 45 and day 180 on a dated checklist: <a href="/t227/">T227</a>.</li>
+      <li data-i="nx3">No QI yet? Pick one before the sale closes: <a href="/t226/">T226</a>.</li>
+      <li data-i="nx4">Not sure you'll find a property in time? Compare a DST or a reverse exchange: <a href="/t228/">T228</a>.</li>
+    </ol>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video guide"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t221/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this list check to yourself</h2>
+    <p data-i="f_sub">Ken will reply with your dates and what to double-check with your QI. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#1031-exchange" target="_blank" rel="noopener" data-i="ft_lib">1031 exchange, step by step</a> · <a href="https://kenlamrealty.com/library#video-1031" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a> · <a href="/t229/" data-i="ft_gl">1031 glossary (T229)</a></span>
+    <span data-i="ft_est">General information, not tax or legal advice. The sample letter is a starting point only. Ask a CPA and your Qualified Intermediary before you sign.</span>
+    <span class="src"><span data-i="ft_src">Sources</span> (04/11/2026):
+      <a href="https://www.law.cornell.edu/cfr/text/26/1.1031(k)-1" target="_blank" rel="noopener">Treas. Reg. §1.1031(k)-1 (b),(c)</a> ·
+      <a href="https://www.law.cornell.edu/uscode/text/26/1031" target="_blank" rel="noopener">26 USC §1031(a)(3)</a> ·
+      <a href="https://www.irs.gov/instructions/i8824" target="_blank" rel="noopener">Form 8824 Instructions</a></span>
+    <span class="who">Ken Lam Realty · Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Luật & số liệu — sửa ở đây khi luật đổi (tra 04/11/2026, nguồn: /home/claude/1031/FACTS.md) =====
+   ID_DAYS 45 / EXCH_DAYS 180: Treas. Reg. §1.1031(k)-1(b)(2); §1031(a)(3). 180 = ngày 180 HOẶC hạn tờ khai (kể cả extension), cái nào trước.
+     https://www.law.cornell.edu/cfr/text/26/1.1031(k)-1
+   Luật identify §1.1031(k)-1(c)(4): 3 căn bất kỳ giá; HOẶC tổng FMV ≤ 200% FMV căn bán; HOẶC (quá cả 2) mua thật ≥ 95% tổng FMV đã ghi.
+     FMV căn bán: tool lấy giá bán làm FMV (đơn giản hoá).
+   Cách identify (c)(2)-(3): giấy có ký tên, giao trước hết ngày 45 cho QI / người không phải taxpayer hay disqualified person; mô tả rõ (địa chỉ, legal description).
+   Rút lại (c)(6): được trước hết ngày 45, bằng giấy ký tên gửi cùng người.
+   Hạn tờ khai: 15/4 năm sau, cuối tuần dời qua thứ Hai (không tính lễ DC Emancipation Day — KEN DUYỆT). */
+const ID_DAYS=45, EXCH_DAYS=180, MAX3=3, PCT200=2.00, PCT95=0.95, MAX_ROWS=10;
+
+const I18N={
+ en:{title:'Picking the new property in 45 days: 3-property, 200% or 95%?',sub:'Enter your sale price and the properties you plan to name. See which rule you pass, your real day 45, and a letter ready for your QI.',
+  l_sale:'Sale price (old property)',l_close:'Sale close date',l_list:'Properties you plan to name ',l_list_s:'(price; tick the ones you expect to buy)',add:'+ Add property',
+  ph_addr:'Address',buy:'expect to buy',del:'Remove',
+  r_total:'Your list passes',v_3:'3-property',v_200:'200% rule',v_95:'95% rule',v_fail:'Fails',v_none:'Add a property',
+  vs:'{n} properties · {t} named',
+  s_3:'<b>Safe.</b> 3 or fewer properties: any price is OK.',
+  s_200:'<b>OK under 200%.</b> More than 3, but the total is within {x} (200% of your sale).',
+  s_95:'<b>Only passes if you really buy at least {x}.</b> You are over both limits. If one escrow falls out, the whole exchange can fail.',
+  s_fail:'<b>This list breaks every rule.</b> Over 3 properties, over {x}, and what you expect to buy is under 95%. Cut the list or tick what you will buy.',
+  s_none:'<b>No properties yet.</b> Add at least one with a price.',
+  pass:'Pass',fail:'Fail',na:'—',
+  s3d:'{n} of max 3',s200d:'{t} vs limit {x}',s95d:'expect to buy {b} of {t} ({p}%), need 95%',s95n:'not needed',
+  sTot:'vs your sale {s} ({p}%)',
+  d45_t:'Day 45 · identify in writing',d180_t:'Day 180 · close the new property',
+  d45_p:'Signed list delivered to your QI by midnight. Calendar days. Weekends and holidays count. You can change the list in writing until then, not after.',
+  d180_ok:'Close by midnight. Calendar days, no weekend extension.',
+  d180_warn:'<b>Watch out:</b> your tax return is due {tax}, before day 180. File an extension by {tax}, or that is your real deadline.',
+  left:'{n} days left',today:'today',past:'{n} days ago',gcal:'Add to Google Calendar',
+  cal45:'1031: identify replacement property (day 45)',cal_d:'Signed ID letter to the QI by midnight. — tools.kenlamrealty.com/t221/',
+  lt_title:'Identification letter (English, for your QI)',lt_sub:'Fill in the names, check every address, then sign and send it to your QI. Many QIs have their own form: use theirs if they do.',
+  l_tp:'Taxpayer name(s) on title',l_qi:'QI company',l_old:'Old property address',cp:'Copy letter',
+  myth:'<b>Common mistake:</b> "I told my agent which houses I like, so they\'re identified." No. It must be a signed writing delivered to your QI (or another party to the exchange who is not you or your agent) by midnight of day 45, with an address or legal description for each one.',
+  nx_title:'Next steps',
+  nx1:'Check the money side (gain, boot, equal-or-up) for the property you will buy: <a href="/t27/">T27</a>.',
+  nx2:'Put day 45 and day 180 on a dated checklist: <a href="/t227/">T227</a>.',
+  nx3:'No QI yet? Pick one before the sale closes: <a href="/t226/">T226</a>.',
+  nx4:'Not sure you\'ll find a property in time? Compare a DST or a reverse exchange: <a href="/t228/">T228</a>.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this list check to yourself',f_sub:'Ken will reply with your dates and what to double-check with your QI. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'1031 exchange, step by step',ft_vid:'3-min video',ft_gl:'1031 glossary (T229)',
+  ft_est:'General information, not tax or legal advice. The sample letter is a starting point only. Ask a CPA and your Qualified Intermediary before you sign.',
+  ft_src:'Sources',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I used the 45-day ID checker (T221): sold {s}, closing {c}, naming {n} properties ({t}). Result: {v}. Day 45 is {d45}. I have a question.',
+  subj:'1031 45-day ID check — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nSale price: {s}\nSale close: {c}\nDay 45: {d45}\nDay 180: {d180}\n\nProperties named:\n{list}\nTotal named: {t}\nResult: {v}\n\nGeneral information, not tax advice.\nSent from tool T221 tools.kenlamrealty.com'},
+ vi:{title:'Chọn nhà mới trong 45 ngày: luật 3 căn, 200% hay 95%?',sub:'Nhập giá bán và mấy căn định ghi tên. Ra liền mình qua luật nào, ngày 45 thật, và thư identification soạn sẵn để gửi QI.',
+  l_sale:'Giá bán (căn cũ)',l_close:'Ngày close bán',l_list:'Mấy căn định ghi tên ',l_list_s:'(giá; tick căn mình tính mua thật)',add:'+ Thêm căn',
+  ph_addr:'Địa chỉ',buy:'tính mua',del:'Xoá',
+  r_total:'Danh sách của mình qua luật',v_3:'3 căn',v_200:'200%',v_95:'95%',v_fail:'Rớt',v_none:'Thêm 1 căn',
+  vs:'{n} căn · tổng {t}',
+  s_3:'<b>An toàn.</b> Từ 3 căn trở xuống: giá bao nhiêu cũng được.',
+  s_200:'<b>Qua luật 200%.</b> Hơn 3 căn, nhưng tổng giá không quá {x} (200% giá bán).',
+  s_95:'<b>Chỉ qua nếu mua thật ít nhất {x}.</b> Mình đã vượt cả 2 mức. 1 escrow rớt là cả vụ 1031 có thể hỏng.',
+  s_fail:'<b>Danh sách này rớt hết.</b> Hơn 3 căn, quá {x}, và phần tính mua dưới 95%. Bớt căn hoặc tick căn sẽ mua.',
+  s_none:'<b>Chưa có căn nào.</b> Thêm ít nhất 1 căn có giá.',
+  pass:'Qua',fail:'Rớt',na:'—',
+  s3d:'{n} / tối đa 3',s200d:'{t} so với mức {x}',s95d:'tính mua {b} / {t} ({p}%), cần 95%',s95n:'không cần',
+  sTot:'so với giá bán {s} ({p}%)',
+  d45_t:'Ngày 45 · identify bằng giấy',d180_t:'Ngày 180 · close căn mới',
+  d45_p:'Danh sách có ký tên, gửi QI trước nửa đêm. Tính ngày lịch, thứ Bảy Chủ Nhật lễ vẫn tính. Muốn đổi căn thì gửi giấy trước ngày này, qua rồi là thôi.',
+  d180_ok:'Close trước nửa đêm. Tính ngày lịch, không dời vì cuối tuần.',
+  d180_warn:'<b>Cẩn thận:</b> hạn nộp thuế {tax} tới trước ngày 180. Phải file extension trước {tax}, không thì đó là hạn chót thật.',
+  left:'còn {n} ngày',today:'hôm nay',past:'đã qua {n} ngày',gcal:'Thêm vào Google Calendar',
+  cal45:'1031: hạn identify nhà thay thế (ngày 45)',cal_d:'Gửi QI thư identify có ký tên trước nửa đêm. — tools.kenlamrealty.com/t221/',
+  lt_title:'Thư identification (tiếng Anh, gửi QI)',lt_sub:'Điền tên, kiểm lại từng địa chỉ, ký tên rồi gửi QI. QI nào có form riêng thì xài form của họ.',
+  l_tp:'Tên taxpayer trên title',l_qi:'Công ty QI',l_old:'Địa chỉ căn cũ',cp:'Copy thư',
+  myth:'<b>Nhiều người hiểu sai:</b> "Nói với agent mấy căn mình thích là đã identify rồi." Không. Phải là giấy có ký tên, gửi QI (hoặc 1 bên trong giao dịch không phải mình hay agent của mình) trước nửa đêm ngày 45, mỗi căn có địa chỉ hoặc legal description.',
+  nx_title:'Bước tiếp theo',
+  nx1:'Tính phần tiền (tiền lời, boot, bằng-hoặc-lớn-hơn) cho căn sẽ mua: <a href="/t27/">T27</a>.',
+  nx2:'Đưa ngày 45 và 180 vào checklist có ngày: <a href="/t227/">T227</a>.',
+  nx3:'Chưa có QI? Chọn trước ngày close bán: <a href="/t226/">T226</a>.',
+  nx4:'Sợ không kịp kiếm nhà? So DST hay reverse exchange: <a href="/t228/">T228</a>.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi kết quả này về email',f_sub:'Ken sẽ gửi lại ngày chót và mấy điểm nên hỏi lại QI. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'1031 exchange từng bước',ft_vid:'Video 3 phút',ft_gl:'Từ điển 1031 (T229)',
+  ft_est:'Thông tin chung, không phải tư vấn thuế hay luật. Thư mẫu chỉ để bắt đầu. Hỏi CPA và Qualified Intermediary trước khi ký.',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi xem tool T221 (identify 45 ngày): bán {s}, close {c}, ghi {n} căn ({t}). Kết quả: {v}. Ngày 45 là {d45}. Cho tôi hỏi thêm.',
+  subj:'Kiểm tra identify 45 ngày — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nGiá bán: {s}\nNgày close bán: {c}\nNgày 45: {d45}\nNgày 180: {d180}\n\nCác căn ghi tên:\n{list}\nTổng: {t}\nKết quả: {v}\n\nThông tin chung, không phải tư vấn thuế.\nGửi từ tool T221 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const strip=s=>String(s).replace(/<[^>]+>/g,'');
+const pad=n=>String(n).padStart(2,'0');
+const parseD=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||''); return m?new Date(+m[1],+m[2]-1,+m[3]):null;};
+const addDays=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+const ymd=d=>d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const fd=d=>lang==='vi'?pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear():d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+const daysBetween=(a,b)=>Math.round((Date.UTC(b.getFullYear(),b.getMonth(),b.getDate())-Date.UTC(a.getFullYear(),a.getMonth(),a.getDate()))/864e5);
+function gcal(text,d,details){ return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(text)+'&dates='+ymd(d)+'/'+ymd(addDays(d,1))+'&details='+encodeURIComponent(details); }
+let last={};
+async function copyText(txt,btn){ try{ await navigator.clipboard.writeText(txt); }catch(e){ const t=document.createElement('textarea'); t.value=txt; t.style.position='fixed'; t.style.opacity='0'; document.body.appendChild(t); t.select(); try{document.execCommand('copy')}catch(_){} t.remove(); } if(btn){ const o=btn.textContent; btn.textContent='✓'; setTimeout(()=>{btn.textContent=o},1400);} }
+
+let rows=[{a:'',p:1200000,b:true},{a:'',p:1350000,b:false},{a:'',p:1100000,b:false}];
+
+/* ---- Hàm thuần ---- */
+function check221(sale,list){
+  const L=list.filter(x=>x.p>0), n=L.length, tot=L.reduce((s,x)=>s+x.p,0), buy=L.filter(x=>x.b).reduce((s,x)=>s+x.p,0);
+  const lim=sale*PCT200, r3=n>0&&n<=MAX3, r200=n>0&&tot<=lim, over=n>0&&!r3&&!r200, r95=over&&tot>0&&buy>=PCT95*tot;
+  const rule=n===0?'none':r3?'3':r200?'200':r95?'95':'fail';
+  return {n,tot,buy,lim,r3,r200,over,r95,rule,need95:PCT95*tot};
+}
+function taxDue(c){ let d=new Date(c.getFullYear()+1,3,15); while(d.getDay()===0||d.getDay()===6) d=addDays(d,1); return d; }
+function leftTxt(d,target){ const n=daysBetween(new Date(),target); return n>0?d.left.replace('{n}',n):n===0?d.today:d.past.replace('{n}',-n); }
+const fdEN=d=>d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+
+function renderRows(){
+  const d=I18N[lang]; let h='';
+  rows.forEach((r,i)=>{
+    h+='<div class="prow"><span class="ix">'+(i+1)+'.</span>'
+      +'<div class="ctl"><input type="text" data-r="'+i+'" data-f="a" placeholder="'+esc(d.ph_addr)+'" value="'+esc(r.a)+'" aria-label="'+esc(d.ph_addr)+' '+(i+1)+'"></div>'
+      +'<div class="ctl"><span class="pre">$</span><input type="number" inputmode="numeric" min="0" step="10000" data-r="'+i+'" data-f="p" value="'+(r.p||'')+'" aria-label="Price '+(i+1)+'"></div>'
+      +'<button type="button" class="del" data-x="'+i+'" aria-label="'+esc(d.del)+'">×</button>'
+      +'<label class="buy"><input type="checkbox" data-r="'+i+'" data-f="b"'+(r.b?' checked':'')+'> <span>'+esc(d.buy)+'</span></label></div>';
+  });
+  $('plist').innerHTML=h; $('addBtn').disabled=rows.length>=MAX_ROWS;
+}
+$('plist').addEventListener('input',e=>{ const t=e.target, i=+t.getAttribute('data-r'), f=t.getAttribute('data-f'); if(!f||!rows[i]) return;
+  if(f==='a') rows[i].a=t.value; else if(f==='p'){ const v=parseFloat(t.value); rows[i].p=isFinite(v)?v:0; } else rows[i].b=t.checked; calc(); });
+$('plist').addEventListener('change',e=>{ const t=e.target; if(t.getAttribute('data-f')==='b'){ rows[+t.getAttribute('data-r')].b=t.checked; calc(); } });
+$('plist').addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('button[data-x]'); if(!b) return; rows.splice(+b.getAttribute('data-x'),1); renderRows(); calc(); });
+$('addBtn').onclick=()=>{ if(rows.length<MAX_ROWS){ rows.push({a:'',p:0,b:false}); renderRows(); calc(); const ins=$('plist').querySelectorAll('input[data-f="a"]'); ins[ins.length-1].focus(); } };
+function onLang(){ renderRows(); }
+
+function letterText(c,dl,L){
+  const tp=$('tp').value.trim()||'[Taxpayer name(s), exactly as on title]', qi=$('qi').value.trim()||'[Qualified Intermediary company]', old=$('old').value.trim()||'[Relinquished property address]';
+  let t='IDENTIFICATION OF REPLACEMENT PROPERTY\nInternal Revenue Code §1031 and Treas. Reg. §1.1031(k)-1(c)\n\n'
+   +'To: '+qi+' (Qualified Intermediary)\nFrom: '+tp+' (Taxpayer)\nRe: Relinquished property at '+old+'\n'
+   +'Transfer (closing) date of relinquished property: '+fdEN(c)+'\nIdentification deadline (day 45, midnight): '+fdEN(dl)+'\n\n'
+   +'The Taxpayer identifies the following real property as replacement property in the exchange:\n\n';
+  L.forEach((x,i)=>{ t+=(i+1)+'. '+(x.a.trim()||'[Street address, city, CA ZIP]')+'\n   APN / legal description: [__________]\n   Estimated fair market value: '+fmt(x.p)+'\n'; });
+  t+='\nThe Taxpayer may revoke or change this identification only by a signed writing delivered to the Qualified Intermediary before the end of the identification period.\n\n'
+   +'Taxpayer signature: ______________________   Date: __________\nTaxpayer signature: ______________________   Date: __________\n\n'
+   +'Received by the Qualified Intermediary: ______________________   Date/time: __________\n\n'
+   +'Sample only. Not legal or tax advice. Have your QI and CPA review before signing.';
+  return t;
+}
+
+function calc(){
+  const d=I18N[lang], sale=Math.max(0,num('sale'));
+  const r=check221(sale,rows), L=rows.filter(x=>x.p>0);
+  const vk={none:'v_none','3':'v_3','200':'v_200','95':'v_95',fail:'v_fail'}[r.rule];
+  $('verdict').textContent=d[vk];
+  $('verdict').style.color=(r.rule==='3'||r.rule==='200')?'var(--ok)':(r.rule==='fail')?'var(--warn)':'';
+  $('vsub').textContent=d.vs.replace('{n}',r.n).replace('{t}',fmt(r.tot));
+  const sk={none:'s_none','3':'s_3','200':'s_200','95':'s_95',fail:'s_fail'}[r.rule];
+  $('status').innerHTML=d[sk].replace('{x}',fmt(r.rule==='95'?r.need95:r.lim));
+  $('status').className='status '+((r.rule==='3'||r.rule==='200')?'ok':'warn');
+  const pf=(el,ok)=>{ $(el).textContent=ok?d.pass:d.fail; $(el).className='a '+(ok?'ok':'no'); };
+  pf('a3',r.r3); $('s3').textContent=d.s3d.replace('{n}',r.n);
+  pf('a200',r.r200); $('s200').textContent=d.s200d.replace('{t}',fmt(r.tot)).replace('{x}',fmt(r.lim));
+  if(r.over){ pf('a95',r.r95); $('s95').textContent=d.s95d.replace('{b}',fmt(r.buy)).replace('{t}',fmt(r.tot)).replace('{p}',r.tot?Math.round(r.buy/r.tot*100):0); }
+  else { $('a95').textContent=d.na; $('a95').className='a'; $('s95').textContent=d.s95n; }
+  $('aTot').textContent=fmt(r.tot); $('sTot').textContent=d.sTot.replace('{s}',fmt(sale)).replace('{p}',sale?Math.round(r.tot/sale*100):0);
+  let c=parseD($('close').value); if(!c){ const t=new Date(); c=new Date(t.getFullYear(),t.getMonth(),t.getDate()); }
+  const d45=addDays(c,ID_DAYS), d180=addDays(c,EXCH_DAYS), tx=taxDue(c), early=tx<d180;
+  $('d45').textContent=fd(d45); $('d45L').textContent=leftTxt(d,d45);
+  $('d180').textContent=fd(early?tx:d180); $('d180L').textContent=leftTxt(d,early?tx:d180);
+  $('d180P').innerHTML=early?d.d180_warn.replace(/\{tax\}/g,fd(tx)):d.d180_ok;
+  $('g45').href=gcal(d.cal45,d45,d.cal_d);
+  $('letter').value=letterText(c,d45,L.length?L:[{a:'',p:0}]);
+  last={s:fmt(sale),c:fd(c),n:r.n,t:fmt(r.tot),v:d[vk],d45:fd(d45),d180:fd(early?tx:d180),
+    list:L.map((x,i)=>(i+1)+'. '+(x.a.trim()||'—')+' — '+fmt(x.p)+(x.b?' ('+d.buy+')':'')).join('\n')||'—'};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(d.sms.replace(/\{(\w+)\}/g,(m,k)=>last[k]??m));
+}
+(function(){ const t=new Date(); if(!$('close').value) $('close').value=iso(new Date(t.getFullYear(),t.getMonth(),t.getDate())); })();
+['sale','close','tp','qi','old'].forEach(id=>$(id).addEventListener('input',calc));
+$('close').addEventListener('change',calc);
+$('cpLetter').onclick=()=>copyText($('letter').value,$('cpLetter'));
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  if(typeof onLang==='function') onLang();
+  calc();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing), hoặc thay bằng fetch() tới FUB webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=()=>copyText('4086662825',$('copyBtn'));
+try{ if(new URLSearchParams(location.search).get('embed')==='1') document.documentElement.classList.add('embed'); }catch(e){}
+applyLang();
+
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
