@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Read Your Loan Estimate, Line by Line · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Enter price, down payment, rate and loan type. See a sample Loan Estimate filled in, tap any line for a plain-English explanation, plus your LE delivery and expiry dates.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t311/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Read Your Loan Estimate, Line by Line · Ken Lam Tools">
+<meta property="og:description" content="A sample Loan Estimate with your numbers. Tap any line: what it is, what's normal in the Bay Area, what to ask the lender.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t311/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+html.embed .kl-back{display:none}
+html.embed body{padding-top:8px}
+/* T311 additions */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.seg4 button{font-size:14px;padding:11px 4px}
+.chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.chips div{min-width:0;overflow:hidden;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;display:grid;gap:2px}
+.chips .k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.chips .v{font-family:var(--display);font-size:clamp(18px,5.6vw,26px);white-space:nowrap;line-height:1.1;font-variant-numeric:tabular-nums}
+.chips .v small{font-family:var(--body);font-size:12px;color:var(--muted)}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.box h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.box ul,.box ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.box a{color:var(--brass)}
+.box.flag{border-color:var(--warn)}
+.box.flag h2{color:var(--warn)}
+.dates{display:grid;gap:0;border-top:1px solid var(--line)}
+.dates .line .a{color:var(--fg)}
+.le{display:grid;gap:14px}
+.pg{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 16px 6px;display:grid;gap:4px}
+.pg .ph{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:2px solid var(--brass);padding-bottom:8px;margin-bottom:4px}
+.pg .ph h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.pg .ph span{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.pg h3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--brass);font-weight:600;margin:12px 0 2px}
+details.li{border-bottom:1px solid var(--line);scroll-margin-top:12px}
+details.li>summary{list-style:none;display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:10px 0;cursor:pointer;font-size:15px}
+details.li>summary::-webkit-details-marker{display:none}
+details.li>summary .n{min-width:0;flex:1 1 auto}
+details.li>summary .n b{font-weight:500}
+details.li>summary .n i{font-style:normal;display:inline-block;min-width:20px;color:var(--brass);font-weight:600}
+details.li>summary .n small{display:block;font-size:12px;color:var(--muted)}
+details.li>summary .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap;text-align:right}
+details.li>summary .a::after{content:'＋';color:var(--brass);font-weight:400;margin-left:8px;font-size:13px}
+details.li[open]>summary .a::after{content:'－'}
+details.li.tot>summary{font-weight:500}
+details.li.tot>summary .n b{font-weight:600}
+details.li[open]{background:linear-gradient(var(--brass-soft),var(--brass-soft)) no-repeat;background-size:3px 100%}
+.ex{display:grid;gap:8px;padding:0 0 14px 12px;font-size:14px;line-height:1.5}
+.ex p{margin:0}
+.ex .t{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);font-weight:600;margin-bottom:1px}
+.ex .ask{background:var(--brass-soft);border-radius:8px;padding:8px 10px}
+.ex .bd{display:grid;gap:2px;font-size:13px;color:var(--muted);border:1px dashed var(--line);border-radius:8px;padding:8px 10px}
+.ex .bd div{display:flex;justify-content:space-between;gap:10px}
+.ex .bd span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--fg)}
+.ex .lk{font-size:12px}
+.ex .lk a{color:var(--brass);text-decoration:none}
+.ex .lk button{border:0;background:none;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;padding:0;margin-left:8px}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.next a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.lead{font-size:13px;color:var(--muted);margin:0}
+footer .src a{overflow-wrap:anywhere}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Read your Loan Estimate, line by line</h1>
+    <p class="sub" data-i="sub">Enter 5 numbers. You get a sample Loan Estimate filled in. Tap any line to see what it means and what to ask.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="price"><span data-i="l_price">Purchase price</span></label>
+      <div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" min="0" step="10000" value="1400000"></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="down"><span data-i="l_down">Down payment</span></label>
+        <div class="ctl"><input id="down" type="number" inputmode="decimal" min="0" max="100" step="0.5" value="20"><span class="post">%</span></div>
+      </div>
+      <div class="field">
+        <label for="rate"><span data-i="l_rate">Interest rate </span><small data-i="l_rate_s">(30-yr fixed)</small></label>
+        <div class="ctl"><input id="rate" type="number" inputmode="decimal" min="0" max="20" step="0.01" value="7.24"><span class="post">%</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_type">Loan type</span></label>
+      <div class="seg seg4" role="group" id="typeSeg">
+        <button type="button" data-t="conv" aria-pressed="true">Conventional</button>
+        <button type="button" data-t="fha" aria-pressed="false">FHA</button>
+        <button type="button" data-t="va" aria-pressed="false">VA</button>
+        <button type="button" data-t="jumbo" aria-pressed="false">Jumbo</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="app"><span data-i="l_app">Date you gave the lender your application </span><small data-i="l_app_s">(the 6 items below)</small></label>
+      <div class="ctl"><input id="app" type="date" value="2026-11-05"></div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_ctc">Estimated cash to close</div>
+      <div class="v"><span id="big">$0</span></div>
+    </div>
+    <div class="chips">
+      <div><span class="k" data-i="c_pay">Monthly</span><span class="v" id="cPay">$0</span></div>
+      <div><span class="k">APR</span><span class="v" id="cApr">0%</span></div>
+      <div><span class="k" data-i="c_cc">Closing costs</span><span class="v" id="cCc">$0</span></div>
+    </div>
+    <p class="who2" id="aprLine" style="margin:0;font-size:15px"></p>
+    <div class="note" id="tNote"></div>
+  </section>
+
+  <section class="box" id="dates" aria-label="Key dates">
+    <h2 data-i="d_t">Your Loan Estimate dates</h2>
+    <div class="dates">
+      <div class="line"><span class="n"><b data-i="d_app">Application complete</b></span><span class="a" id="dApp">—</span></div>
+      <div class="line"><span class="n"><b data-i="d_le">LE must be delivered or mailed by</b><small data-i="d_le_s">3rd business day after application</small></span><span class="a" id="dLe">—</span></div>
+      <div class="line"><span class="n"><b data-i="d_exp">Say "intent to proceed" by</b><small data-i="d_exp_s">lender only has to honor the LE for 10 business days</small></span><span class="a" id="dExp">—</span></div>
+      <div class="line"><span class="n"><b data-i="d_7">Earliest closing allowed</b><small data-i="d_7_s">7th business day after the LE is delivered</small></span><span class="a" id="d7">—</span></div>
+    </div>
+    <p class="lead" data-i="d_note">Business days here: Monday–Friday, no federal holidays (assumes the lender's office is closed Saturday). The 7-day rule counts Saturdays. If the LE is mailed, count it as received 3 business days later.</p>
+    <h2 data-i="six_t" style="font-size:22px">6 things that make an "application"</h2>
+    <ol data-i="six">
+      <li>Your name</li><li>Your income</li><li>Your Social Security number (to pull credit)</li><li>The property address</li><li>An estimate of the home's value</li><li>The loan amount you want</li>
+    </ol>
+    <p class="lead" data-i="six_n">Once the lender has these 6, the 3-day clock starts. A lender can't make you send a purchase contract or pay stubs first just to give you a Loan Estimate.</p>
+    <div class="note" data-i="appr_n"><b>A Loan Estimate is not an approval.</b> At this point the lender has not approved or denied you. It only shows the terms you'd likely get if you move forward.</div>
+    <div class="note" data-i="fee_n"><b>Before you say "intent to proceed":</b> the only fee a lender may charge is a reasonable credit report fee. No application fee, no appraisal fee yet. Silence doesn't count as intent. You have to tell them.</div>
+  </section>
+
+  <section class="le" id="le" aria-label="Sample Loan Estimate"></section>
+  <p class="lead" data-i="le_disc">This is our own drawing of the 3-page Loan Estimate, not the official CFPB form. Section names follow the rule (12 CFR 1026.37). Numbers are estimates for a Santa Clara County purchase. Your lender's LE is the real one.</p>
+
+  <section class="box flag" aria-label="Red flags">
+    <h2 data-i="rf_t">Red flags</h2>
+    <ul data-i="rf"></ul>
+  </section>
+
+  <video src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px;margin-top:8px" aria-label="How to use this tool"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t311/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this Loan Estimate breakdown to yourself</h2>
+    <p data-i="f_sub">Ken will reply and help you check it against the real LE from your lender. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, text Ken the number below.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_t">Next steps</h2>
+    <ol>
+      <li data-i="nx1">Got your real LE? Get 2 more from other lenders and compare section A and the APR line by line.</li>
+      <li data-i="nx2">All-in cash to bring, city by city: <a href="/t03/">T03</a>. Today's rates: <a href="/t30/">T30</a>. Should you buy points: <a href="/t38/">T38</a>.</li>
+      <li data-i="nx3">3 days before signing you get the Closing Disclosure. Check it against this LE: <a href="/t312/">T312</a>.</li>
+      <li data-i="nx4">Taxes and HOA split on closing day: <a href="/t64/">T64</a>. Last checks before close: <a href="/t63/">T63</a>. Word list: <a href="/t190/#loan-estimate">Loan Estimate</a> · <a href="/t190/#apr">APR</a> · <a href="/t190/#rate-lock">rate lock</a>.</li>
+    </ol>
+  </section>
+  <p class="myth" data-i="myth"><b>Many people get this wrong:</b> "APR is my interest rate." No. APR adds points and other loan fees on top of the rate, so it's usually higher. Use it only to compare loans. The LE itself says: "This is not your interest rate." (<a href="https://www.consumerfinance.gov/ask-cfpb/what-is-the-difference-between-a-mortgage-interest-rate-and-an-apr-en-135/" target="_blank" rel="noopener">CFPB</a>)</p>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="#" data-todo="library-loan-estimate" data-i="ft_lib">How to read a Loan Estimate</a> · <a href="#" data-todo="video-kien-thuc-loan-estimate" data-i="ft_vid">Kiến Thức Địa Ốc video</a></span>
+    <span data-i="ft_est">Estimate only. Lender, title, escrow, insurance, PMI and VA funding fee numbers are typical 2026 Bay Area estimates, not quotes. Your lender's Loan Estimate is the real one. General information, not lending, tax or legal advice.</span>
+    <span class="src"><span data-i="ft_src">Sources (checked 05/11/2026):</span> <a href="https://www.govinfo.gov/content/pkg/CFR-2022-title12-vol9/pdf/CFR-2022-title12-vol9-sec1026-19.pdf" target="_blank" rel="noopener">12 CFR 1026.19</a> · <a href="https://www.law.cornell.edu/cfr/text/12/1026.37" target="_blank" rel="noopener">12 CFR 1026.37</a> · <a href="https://consumerfinance.gov/owning-a-home/loan-estimate/" target="_blank" rel="noopener">CFPB Loan Estimate explainer</a> · <a href="https://www.consumerfinance.gov/ask-cfpb/what-information-do-i-have-to-provide-a-lender-in-order-to-receive-a-loan-estimate-en-1987/" target="_blank" rel="noopener">CFPB: 6 items</a> · <a href="https://www.consumerfinance.gov/ask-cfpb/my-loan-officer-said-that-i-need-to-express-my-intent-to-proceed-in-order-for-my-mortgage-loan-application-to-move-forward-what-does-that-mean-en-1989/" target="_blank" rel="noopener">CFPB: intent to proceed</a> · <a href="https://www.freddiemac.com/pmms" target="_blank" rel="noopener">Freddie Mac PMMS</a> · <a href="https://www.fhfa.gov/news/news-release/fhfa-announces-conforming-loan-limit-values-for-2026" target="_blank" rel="noopener">FHFA 2026 limits</a> · <a href="https://www.law.cornell.edu/cfr/text/12/1024.17" target="_blank" rel="noopener">12 CFR 1024.17 (escrow cushion)</a> · <a href="https://www.stewart.com/content/dam/stewart/Microsites/california/pdfs/Escrow%20Impound%20Schedule_updated.pdf" target="_blank" rel="noopener">Stewart CA impound schedule</a> · <a href="https://www.jvmlending.com/blog/what-are-the-average-closing-costs-in-california/" target="_blank" rel="noopener">JVM Lending fee ranges</a></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 05/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== NUMBERS & RULES — edit here (one place). Looked up 05/11/2026 unless noted. =====
+   TRID timing — 12 CFR 1026.19(e) (govinfo CFR-2022), https://www.govinfo.gov/content/pkg/CFR-2022-title12-vol9/pdf/CFR-2022-title12-vol9-sec1026-19.pdf
+     LE delivered/mailed no later than 3rd business day after application (e)(1)(iii); no later than 7th business day before consummation.
+     Only a bona fide credit report fee before intent to proceed (e)(2)(i). Lender may reissue if intent comes after 10 business days (e)(3)(iv)(E).
+     Mailed LE = received 3 business days after mailing.
+   Business days: LE 3-day / 10-day use the general definition (office open) → we assume Mon–Fri minus federal holidays (ESTIMATE of lender hours).
+     7-day waiting period uses the specific definition: all days except Sunday + federal holidays (5 U.S.C. 6103(a)) — §1026.2(a)(6) page blocked, per Alston 2021.
+     HOLIDAYS list = actual dates AND observed weekdays (conservative: both treated as non-business days).
+   6 application items — CFPB Ask #1987. LE ≠ approval — CFPB Ask #1995. Form layout — 12 CFR 1026.37 (Cornell).
+   RATE_DEFAULT 7.24%: Freddie Mac PMMS 30-yr, week of 29/10/2026 (same as T01/T13/T30).
+   From T03 CFG (03/11/2026) so numbers match: TAX_RATE 1.25%, INS_RATE 0.30% (ESTIMATE), CONF_LIMIT $1,249,125 (FHFA 2026),
+     LENDER_FEES conv/fha $1,800 jumbo $2,200, APPRAISAL $800/$850/$1,200, CREDIT $100, ESCROW_BUYER_MISC loan $450, RECORDING loan $200,
+     INSPECTION $600, LOAN_RATES = WFG CA rate book eff 2/1/2023 (lender's policy, concurrent) — all ESTIMATE, KEN DUYỆT.
+     VA uses the FHA appraisal/lender-fee figures (ESTIMATE).
+   FLOOD_CERT ~$20: themortgagereports.com/35800 (21/10/2026) — ESTIMATE.
+   PMI_TABLE: same as T01 (annual % of loan by down %, ESTIMATE). Ends when balance is first SCHEDULED to hit 78% of price (HPA, see T13).
+   FHA: UFMIP 1.75% + annual MIP 50/55 bps (base ≤ $726,200) or 70/75 bps (above), LTV ≤90% → 11 yrs else life — HUD ML 2023-05 (same as T13). Not re-checked this pass.
+   VA funding fee (purchase, first use): <5% down 2.15%, 5–<10% 1.5%, ≥10% 1.25% — ESTIMATE, va.gov page blocked this pass, KEN DUYỆT. No monthly MI on VA.
+   IMPOUND_TAX_MONTHS by close month (CA, Stewart 10/2018, ESTIMATE): Jan 6 … Dec 5. Insurance impound 2 months (FACTS "2–3", ESTIMATE). Cushion cap 1/6 yr, 12 CFR 1024.17.
+   EMD 3% of price shown as "Deposit" (ESTIMATE, common Bay Area). Estimated closing = application + 30 days (assumption).
+   APR: finance charge = section A + flood cert + UFMIP/VA fee + prepaid interest; monthly MI is in the payment stream. Appraisal, credit report,
+     title, escrow, recording excluded (real-estate-related). Solved by IRR on 360 monthly payments, no odd first period → lender APR may differ a few bps.
+   TIP = (scheduled interest over 30 yrs + prepaid interest) / loan amount.
+*/
+const CFG={
+  RATE_DEFAULT:7.24, TERM:360,
+  TAX_RATE:0.0125, INS_RATE:0.0030, CONF_LIMIT:1249125, FHA_LIMIT:1249125,
+  LENDER_FEES:{conv:1800,fha:1800,va:1800,jumbo:2200}, APPRAISAL:{conv:800,fha:850,va:850,jumbo:1200}, CREDIT:100, FLOOD_CERT:20,
+  ESCROW_MISC:450, RECORDING:200, INSPECTION:600,
+  LOAN_RATES:[[250000,597],[300000,653],[400000,777],[600000,1020],[700000,1118],[800000,1216],[900000,1301],[1000000,1371],[1100000,1421],[1200000,1471],[1500000,1621],[1750000,1721],[2000000,1821],[3500000,2521],[4700000,3001]],
+  PMI_TABLE:[[5,0.011],[10,0.0085],[15,0.006],[20,0.004]], PMI_END_LTV:0.78,
+  FHA:{ufmip:0.0175,baseCut:726200,lo:{le95:0.0050,gt95:0.0055},hi:{le95:0.0070,gt95:0.0075},m11:132,minDown:3.5},
+  VA_FF:[[5,0.0215],[10,0.015],[Infinity,0.0125]],
+  IMPOUND_TAX_MONTHS:[6,7,2,3,4,5,6,7,8,9,4,5], INS_IMPOUND_MONTHS:2, HOI_PREPAID_MONTHS:12,
+  EMD_PCT:0.03, CLOSE_AFTER_DAYS:30, LE_DAYS:3, EXPIRE_DAYS:10, WAIT_DAYS:7
+};
+/* Federal holidays 2026–2027 (5 U.S.C. 6103(a)): actual dates + observed weekdays. Add next years here. */
+const HOLIDAYS=['2026-01-01','2026-01-19','2026-02-16','2026-05-25','2026-06-19','2026-07-03','2026-07-04','2026-09-07','2026-10-12','2026-11-11','2026-11-26','2026-12-25',
+  '2027-01-01','2027-01-18','2027-02-15','2027-05-31','2027-06-18','2027-06-19','2027-07-04','2027-07-05','2027-09-06','2027-10-11','2027-11-11','2027-11-25','2027-12-24','2027-12-25','2027-12-31'];
+const UPDATED='05/11/2026';
+
+/*CALC-START*/
+const HSET=new Set(HOLIDAYS);
+function D(s){const [y,m,d]=s.split('-').map(Number);return new Date(Date.UTC(y,m-1,d));}
+function iso(d){return d.toISOString().slice(0,10);}
+function addDays(d,n){return new Date(d.getTime()+n*864e5);}
+function isBizGeneral(d){const w=d.getUTCDay();return w!==0&&w!==6&&!HSET.has(iso(d));}
+function isBizSpecific(d){return d.getUTCDay()!==0&&!HSET.has(iso(d));}
+function addBiz(d,n,f){let x=d,k=0;while(k<n){x=addDays(x,1);if(f(x))k++;}return x;}
+function pmt(L,r,n){return L<=0?0:(r===0?L/n:L*r/(1-Math.pow(1+r,-n)));}
+function interp(t,x){if(x<=0)return 0;if(x<=t[0][0])return t[0][1];for(let i=1;i<t.length;i++){const [x1,y1]=t[i];if(x<=x1){const [x0,y0]=t[i-1];return y0+(y1-y0)*(x-x0)/(x1-x0);}}
+  const [xa,ya]=t[t.length-2],[xb,yb]=t[t.length-1];return yb+(yb-ya)*(x-xb)/(xb-xa);}
+function irrMonthly(af,pays){let lo=0,hi=0.05;for(let it=0;it<200;it++){const m=(lo+hi)/2;let pv=0,df=1;for(let k=0;k<pays.length;k++){df/=(1+m);pv+=pays[k]*df;}if(pv>af)lo=m;else hi=m;}return (lo+hi)/2;}
+/* inp: {price, downPct, rate, type:'conv'|'fha'|'va'|'jumbo', app:'YYYY-MM-DD'} */
+function computeLE(inp){
+  const price=Math.max(0,inp.price||0), downPct=Math.min(100,Math.max(0,inp.downPct||0)), rate=Math.max(0,inp.rate||0);
+  let type=inp.type; const down=price*downPct/100, base=Math.max(0,price-down);
+  const autoJumbo=type==='conv'&&base>CFG.CONF_LIMIT; if(autoJumbo) type='jumbo';
+  const jumboSmall=inp.type==='jumbo'&&base<=CFG.CONF_LIMIT;
+  const ltv=price>0?base/price:0;
+  let ufmip=0,vaff=0,vaRate=0;
+  if(type==='fha') ufmip=base*CFG.FHA.ufmip;
+  if(type==='va'){ for(const [lim,r] of CFG.VA_FF){ if(downPct<lim){vaRate=r;break;} } vaff=base*vaRate; }
+  const loan=base+ufmip+vaff, financed=ufmip+vaff;
+  const r=rate/100/12, n=CFG.TERM, pi=pmt(loan,r,n);
+  /* schedule */
+  const bal=[loan]; let b=loan, totInt=0;
+  for(let k=1;k<=n;k++){const it=b*r;totInt+=it;b=Math.max(0,b-(pi-it));bal.push(b);}
+  /* monthly MI by month (1..n) */
+  const mi=new Array(n+1).fill(0); let miRate=0, miEnd=0, miKind='none';
+  if((type==='conv'||type==='jumbo')&&downPct<20&&loan>0){
+    miKind='pmi'; miRate=CFG.PMI_TABLE[CFG.PMI_TABLE.length-1][1]; for(const [lim,p] of CFG.PMI_TABLE){ if(downPct<lim){miRate=p;break;} }
+    const tgt=price*CFG.PMI_END_LTV; let end=n; for(let k=0;k<=n;k++){ if(bal[k]<=tgt){end=k;break;} } miEnd=end;
+    for(let k=1;k<=end;k++) mi[k]=loan*miRate/12;
+  } else if(type==='fha'&&loan>0){
+    miKind='mip'; const t=base>CFG.FHA.baseCut?CFG.FHA.hi:CFG.FHA.lo; miRate=ltv>0.95?t.gt95:t.le95;
+    miEnd=ltv<=0.90?CFG.FHA.m11:n;
+    for(let y=0;y*12<miEnd;y++){ let s=0; for(let j=0;j<12;j++) s+=bal[y*12+j]; const m=miRate*(s/12)/12; for(let j=1;j<=12&&y*12+j<=miEnd;j++) mi[y*12+j]=m; }
+  }
+  const mi1=mi[1]||0;
+  /* dates */
+  const appD=D(inp.app||'2026-11-05');
+  const leBy=addBiz(appD,CFG.LE_DAYS,isBizGeneral);
+  const expBy=addBiz(leBy,CFG.EXPIRE_DAYS,isBizGeneral);
+  const earliest=addBiz(leBy,CFG.WAIT_DAYS,isBizSpecific);
+  const close=addDays(appD,CFG.CLOSE_AFTER_DAYS);
+  const cm=close.getUTCMonth(), dim=new Date(Date.UTC(close.getUTCFullYear(),cm+1,0)).getUTCDate();
+  const pDays=dim-close.getUTCDate()+1;
+  /* page 2 */
+  const has=loan>0;
+  const A={orig:has?CFG.LENDER_FEES[type]:0}; A.t=A.orig;
+  const B={appr:has?CFG.APPRAISAL[type]:0,credit:has?CFG.CREDIT:0,flood:has?CFG.FLOOD_CERT:0,ufmip,vaff}; B.t=B.appr+B.credit+B.flood+ufmip+vaff;
+  const C={ltitle:has?interp(CFG.LOAN_RATES,loan):0,settle:has?CFG.ESCROW_MISC:0}; C.t=C.ltitle+C.settle;
+  const Dt=A.t+B.t+C.t;
+  const E={rec:has?CFG.RECORDING:0,tt:0}; E.t=E.rec+E.tt;
+  const hoiYr=price*CFG.INS_RATE, taxYr=price*CFG.TAX_RATE, daily=loan*rate/100/365;
+  const F={hoi:hoiYr*CFG.HOI_PREPAID_MONTHS/12,days:pDays,daily,pint:daily*pDays,mip:0,tax:0}; F.t=F.hoi+F.pint;
+  const taxM=CFG.IMPOUND_TAX_MONTHS[cm];
+  const G={hoiM:CFG.INS_IMPOUND_MONTHS,hoi:hoiYr/12*CFG.INS_IMPOUND_MONTHS,taxM,tax:taxYr/12*taxM}; G.t=G.hoi+G.tax;
+  const H={insp:CFG.INSPECTION,owner:0}; H.t=H.insp+H.owner;
+  const It=E.t+F.t+G.t+H.t, credits=0, J=Dt+It-credits;
+  const deposit=price*CFG.EMD_PCT;
+  const ctc=J-financed+down-deposit;
+  /* page 1 */
+  const escrowMo=(taxYr+hoiYr)/12;
+  const pay1=pi+mi1+escrowMo, payLater=pi+escrowMo;
+  /* page 3 */
+  let paid5=0; for(let k=1;k<=60;k++) paid5+=pi+mi[k];
+  const in5=paid5+Dt, prin5=loan-bal[60];
+  const pfc=A.t+B.flood+ufmip+vaff+F.pint;
+  const af=loan-pfc; const pays=[]; for(let k=1;k<=n;k++) pays.push(pi+mi[k]);
+  const apr=has&&af>0?irrMonthly(af,pays)*12*100:0;
+  const tip=has?(totInt+F.pint)/loan*100:0;
+  return {price,downPct,down,base,loan,ltv,type,autoJumbo,jumboSmall,ufmip,vaff,vaRate,financed,rate,pi,mi1,miRate,miEnd,miKind,escrowMo,pay1,payLater,taxYr,hoiYr,
+    appD,leBy,expBy,earliest,close,A,B,C,Dt,E,F,G,H,It,credits,J,deposit,ctc,in5,prin5,pfc,af,apr,tip,totInt};
+}
+if(typeof module!=='undefined'){module.exports={computeLE,addBiz,isBizGeneral,isBizSpecific,D,iso};}
+/*CALC-END*/
+</script>
+<script>
+/* ===== Text (EN default / VI). Each LE line: k = kid, a = adult, t = tip, q = question for the lender ===== */
+const ELI={
+ 'date-issued':{en:{k:"It's the day the bakery hands you a written price list.",a:"The date the lender issued this LE. It has to go out within 3 business days of your application.",t:"Write down when you actually got it. Delivery dates drive every deadline after it.",q:"What date did you send my Loan Estimate, and how: email, mail or in person?"},
+  vi:{k:"Giống ngày tiệm bánh đưa mình tờ bảng giá có ghi ngày.",a:"Ngày lender ra LE này. Luật bắt phải gửi trong 3 ngày làm việc sau khi nộp hồ sơ.",t:"Ghi lại ngày mình thật sự nhận. Mọi mốc sau đều tính từ ngày giao.",q:"Anh/chị gửi Loan Estimate cho tôi ngày nào, bằng email, bưu điện hay đưa tận tay?"}},
+ 'rate-lock':{en:{k:"Like a coupon with an end date. Locked means the price is saved for you until then.",a:"Shows if your rate is locked and until when. If not locked, the rate, points and lender credits can still change, and the lender sends a new LE within 3 business days after you lock.",t:"\"NO\" here is normal early on. Just know the numbers can move. Get the lock in writing with the end date and time.",q:"Is my rate locked? Until what date and time, and what does an extension cost?"},
+  vi:{k:"Giống phiếu giảm giá có ngày hết hạn. Lock là giá được giữ cho mình tới ngày đó.",a:"Cho biết lãi suất đã lock chưa và tới ngày nào. Chưa lock thì rate, points, lender credits còn đổi được. Khi lock, lender phải gửi LE mới trong 3 ngày làm việc.",t:"Mới đầu ghi \"NO\" là bình thường. Chỉ cần biết số còn đổi. Lock rồi thì xin giấy có ngày giờ hết hạn.",q:"Rate của tôi lock chưa? Tới ngày giờ nào? Gia hạn lock tốn bao nhiêu?"}},
+ 'loan-amount':{en:{k:"How much money you borrow from the bank's piggy bank.",a:"Price minus your down payment. On FHA and VA the upfront fee is usually added on top, so the loan is a bit bigger.",t:"Over $1,249,125 in Santa Clara/Alameda (2026) is a jumbo loan. Rules and rates differ.",q:"Is any fee added into my loan amount?"},
+  vi:{k:"Số tiền mình mượn từ heo đất của ngân hàng.",a:"Giá nhà trừ tiền down. FHA và VA thường cộng thêm phí upfront vào loan, nên loan lớn hơn một chút.",t:"Ở Santa Clara/Alameda năm 2026, vay trên $1,249,125 là jumbo. Luật và lãi khác.",q:"Có phí nào cộng thẳng vào số tiền vay không?"}},
+ 'interest-rate':{en:{k:"The rent you pay each year for borrowing the money.",a:"The yearly rate on your balance. Fixed for 30 years here. The column next to it says whether it can go up after closing.",t:"Compare rates on the same day with the same points. A lower rate with 1 point is a different deal than a higher rate with 0.",q:"How many points am I paying for this rate? What's the rate with zero points?"},
+  vi:{k:"Tiền thuê mình trả mỗi năm vì mượn tiền.",a:"Lãi suất tính trên số còn nợ. Ở đây cố định 30 năm. Cột bên cạnh cho biết sau khi close có tăng được không.",t:"So rate cùng 1 ngày, cùng số points. Rate thấp mà trả 1 point khác hẳn rate cao mà 0 point.",q:"Rate này tôi trả mấy points? Nếu 0 point thì rate bao nhiêu?"}},
+ 'monthly-pi':{en:{k:"The same slice you pay every month: part pays back the loan, part is the rent.",a:"Principal + interest only. It does not include taxes, insurance or mortgage insurance.",t:"In year 1 most of this is interest. That's normal on a 30-year loan.",q:"What's my full monthly payment with taxes, insurance and MI?"},
+  vi:{k:"Phần mình trả đều mỗi tháng: một phần trả nợ, một phần là tiền thuê.",a:"Chỉ gồm gốc + lãi. Chưa có thuế nhà, bảo hiểm, mortgage insurance.",t:"Năm đầu phần lớn là tiền lãi. Loan 30 năm thì vậy.",q:"Tổng tiền trả mỗi tháng gồm thuế, bảo hiểm và MI là bao nhiêu?"}},
+ 'prepayment-penalty':{en:{k:"A fine for giving the money back early. You want \"NO\".",a:"Says if you pay a penalty for paying off or refinancing early. Most home loans today say NO.",t:"If it says YES, ask how much and for how long. Adding one later forces a new 3-day wait before closing.",q:"Is there any prepayment penalty if I refinance or sell?"},
+  vi:{k:"Tiền phạt nếu trả tiền sớm. Mình muốn thấy chữ \"NO\".",a:"Cho biết trả hết sớm hoặc refinance có bị phạt không. Đa số loan nhà bây giờ ghi NO.",t:"Ghi YES thì hỏi phạt bao nhiêu, trong bao lâu. Thêm penalty vào sau thì phải chờ lại 3 ngày mới được close.",q:"Tôi refinance hoặc bán nhà sớm có bị phạt không?"}},
+ 'balloon':{en:{k:"A giant last payment, like owing the whole cake at the end. You want \"NO\".",a:"Says if a big lump sum is due at some point. A normal 30-year fixed says NO.",t:"YES means you'll need to refinance or sell before that date. Big risk if rates are high then.",q:"Is there any balloon payment? When and how much?"},
+  vi:{k:"Một cục tiền to phải trả 1 lần ở cuối. Mình muốn thấy \"NO\".",a:"Cho biết có lúc nào phải trả 1 cục lớn không. Loan 30 năm cố định bình thường ghi NO.",t:"YES nghĩa là tới ngày đó phải refinance hoặc bán nhà. Lúc đó lãi cao là kẹt.",q:"Có balloon payment không? Khi nào, bao nhiêu?"}},
+ 'pp-mi':{en:{k:"Insurance that protects the bank, not you, when you put down less money.",a:"Conventional under 20% down = PMI. FHA = MIP. VA has no monthly MI (it has a funding fee instead). The second column shows when it drops off.",t:"Conventional PMI ends on its own when your balance is scheduled to reach 78% of the price. FHA MIP with under 10% down stays for the life of the loan.",q:"How much is my monthly MI and on what date does it end?"},
+  vi:{k:"Bảo hiểm này bảo vệ ngân hàng, không phải mình, khi mình down ít.",a:"Conventional down dưới 20% thì có PMI. FHA có MIP. VA không có MI hàng tháng (thay bằng funding fee). Cột thứ 2 cho thấy khi nào hết.",t:"PMI conventional tự bỏ khi số nợ theo lịch xuống 78% giá nhà. FHA down dưới 10% thì MIP theo suốt đời loan.",q:"MI mỗi tháng bao nhiêu, tới ngày nào thì hết?"}},
+ 'pp-escrow':{en:{k:"A jar the bank fills every month so the tax and insurance bills get paid on time.",a:"Monthly property tax + homeowner's insurance collected with your payment (impound). We use 1.25% of price for tax and 0.30% for insurance, both estimates.",t:"Your real tax goes up after closing (supplemental bill). Insurance quotes in CA vary a lot, so get a real quote early.",q:"Is an escrow (impound) account required, and can I waive it?"},
+  vi:{k:"Một cái hũ ngân hàng bỏ tiền vào mỗi tháng để tới hạn đóng thuế và bảo hiểm giùm mình.",a:"Thuế nhà + bảo hiểm nhà thu chung với tiền trả hàng tháng (impound). Tool dùng 1.25% giá nhà cho thuế, 0.30% cho bảo hiểm, đều ước tính.",t:"Thuế thật sẽ tăng sau khi close (bill supplemental). Bảo hiểm ở CA chênh nhiều, xin báo giá sớm.",q:"Có bắt buộc escrow (impound) account không? Tôi bỏ được không?"}},
+ 'pp-total':{en:{k:"Everything you hand over each month, added up.",a:"P&I + MI + escrow. This is the number to budget, not the P&I line.",t:"HOA dues are not in here. Add them yourself if the home has an HOA.",q:"Does this total include everything you will collect monthly?"},
+  vi:{k:"Tất cả số tiền mình đưa mỗi tháng, cộng lại.",a:"Gốc lãi + MI + escrow. Tính ngân sách bằng số này, không phải dòng P&I.",t:"Chưa có HOA. Nhà có HOA thì tự cộng thêm.",q:"Tổng này đã gồm hết những gì lender thu hàng tháng chưa?"}},
+ 'pp-tia':{en:{k:"Every year the house has its own bills: property tax, insurance, HOA. This adds them all up, even the ones the bank doesn't pay for you.",a:"Estimated monthly taxes, insurance and assessments, with a note on which ones are in escrow. Items not in escrow you pay yourself.",t:"Mello-Roos or special assessments can be big in newer areas. Check the tax bill.",q:"Which of these are in escrow and which do I pay myself?"},
+  vi:{k:"Mỗi năm căn nhà có mấy cái bill riêng: thuế nhà, bảo hiểm, phí HOA. Dòng này cộng hết lại, kể cả bill ngân hàng không đóng giùm mình.",a:"Thuế, bảo hiểm, assessments ước tính mỗi tháng, có ghi khoản nào nằm trong escrow. Khoản nào không có thì mình tự đóng.",t:"Khu mới có Mello-Roos hay special assessment có thể khá nặng. Coi tax bill.",q:"Khoản nào trong escrow, khoản nào tôi tự đóng?"}},
+ 'closing-costs':{en:{k:"All the little fees you pay to finish the deal, like tickets, tax and service at the movies.",a:"Loan Costs + Other Costs − Lender Credits (line J on page 2). Buyers often pay 2–5% of price in total (estimate).",t:"This is not the same as cash to close. The down payment is separate.",q:"Which of these fees are yours and which are paid to others?"},
+  vi:{k:"Mọi khoản phí nhỏ để làm xong vụ mua, giống vé, thuế, phí dịch vụ khi đi coi phim.",a:"Loan Costs + Other Costs − Lender Credits (dòng J ở trang 2). Người mua thường tốn tổng 2–5% giá nhà (ước tính).",t:"Không phải tiền mang tới escrow. Tiền down tính riêng.",q:"Khoản nào là phí của anh/chị, khoản nào trả cho bên khác?"}},
+ 'cash-to-close':{en:{k:"The total money you bring on the last day, after what you already put in.",a:"Closing costs + down payment − deposit (EMD) − seller credits ± adjustments. Page 2 shows the math.",t:"Wire it only after calling escrow at a number you already trust. Wire fraud is real.",q:"What's my estimated cash to close, and what's already credited?"},
+  vi:{k:"Tổng tiền mình mang tới ngày cuối, sau khi trừ tiền đã đưa trước.",a:"Closing costs + tiền down − tiền cọc (EMD) − seller credits ± điều chỉnh. Trang 2 có phép tính.",t:"Chỉ wire tiền sau khi gọi escrow bằng số điện thoại mình biết chắc. Lừa wire có thật.",q:"Tiền mang tới close ước tính bao nhiêu, đã trừ những gì?"}},
+ 'sec-a':{en:{k:"The bank's own fee for making your loan. Like the baker's price for baking the cake.",a:"Points, application, underwriting, origination. Paid to the lender. Zero tolerance: this can't go up at closing unless something real changed. Common range: 0.5–1% of the loan, or a flat fee (estimate).",t:"This is the line to compare across lenders. Ask each for the same rate and compare A.",q:"Can you lower or waive the underwriting or processing fee?"},
+  vi:{k:"Phí của chính ngân hàng khi làm loan. Giống tiền công thợ làm bánh.",a:"Points, phí application, underwriting, origination. Trả cho lender. Zero tolerance: lúc close không được tăng trừ khi có thay đổi thật. Thường 0.5–1% loan hoặc phí cố định (ước tính).",t:"So dòng này giữa các lender. Xin cùng 1 rate rồi so mục A.",q:"Phí underwriting/processing giảm hoặc bỏ được không?"}},
+ 'sec-b':{en:{k:"Stuff the bank picks for you, like the bakery choosing the delivery guy.",a:"Appraisal, credit report, flood certificate, and on FHA/VA the upfront MIP or funding fee. You can't shop these. Zero tolerance. Bay Area appraisal often $500–$900+ (estimate).",t:"A jumbo or unusual home may need a pricier appraisal. Ask before it's ordered.",q:"Which of these do I pay up front and which at closing?"},
+  vi:{k:"Mấy thứ ngân hàng tự chọn giùm, giống tiệm bánh chọn người giao hàng.",a:"Appraisal, credit report, flood certificate, và với FHA/VA là upfront MIP hay funding fee. Mình không shop được. Zero tolerance. Appraisal ở Bay Area thường $500–$900+ (ước tính).",t:"Nhà jumbo hay nhà lạ có thể cần appraisal mắc hơn. Hỏi trước khi họ đặt.",q:"Khoản nào tôi trả trước, khoản nào trả lúc close?"}},
+ 'sec-c':{en:{k:"Things you're allowed to pick yourself, like choosing which shop wraps the gift.",a:"Lender's title insurance and settlement/escrow charges tied to the loan. If you pick from the lender's list, the total can't rise more than 10%. Pick outside the list and there's no limit.",t:"In Santa Clara, the seller usually picks title/escrow in the contract. Shopping is limited, but ask anyway.",q:"Can you send me your written list of providers for section C?"},
+  vi:{k:"Mấy thứ mình được tự chọn, giống chọn tiệm gói quà.",a:"Bảo hiểm title cho lender và phí escrow liên quan tới loan. Chọn trong list lender đưa thì tổng không được tăng quá 10%. Chọn ngoài list thì không có giới hạn.",t:"Ở Santa Clara, title/escrow thường do seller chọn trong hợp đồng. Khó shop, nhưng cứ hỏi.",q:"Gửi tôi danh sách nhà cung cấp cho mục C được không?"}},
+ 'sec-d':{en:{k:"All the loan fees put in one pile.",a:"A + B + C. This number also goes into the \"In 5 Years\" total on page 3.",t:"Compare D across lenders, but only for the same rate and points.",q:"Why is your D higher than the other lender's?"},
+  vi:{k:"Gom hết phí của loan vô 1 đống.",a:"A + B + C. Số này cũng được cộng vào \"In 5 Years\" ở trang 3.",t:"So D giữa các lender, nhưng phải cùng rate, cùng points.",q:"Sao D của anh/chị cao hơn bên kia?"}},
+ 'sec-e':{en:{k:"Fees the government charges, like stamps on an envelope.",a:"Recording fees to file your deed and loan, plus any transfer tax you owe. In Santa Clara the county transfer tax is usually the seller's. San Jose, Mountain View and Palo Alto buyers may split a city tax (see T03).",t:"Transfer tax is zero tolerance. Recording is in the 10% group.",q:"Am I paying any city transfer tax on this purchase?"},
+  vi:{k:"Phí nhà nước thu, giống tiền tem dán bao thư.",a:"Phí recording để ghi giấy tờ nhà và loan, cộng transfer tax nếu mình phải trả. Ở Santa Clara, transfer tax của county thường do seller trả. San Jose, Mountain View, Palo Alto có thể chia city tax (coi T03).",t:"Transfer tax là zero tolerance. Recording nằm trong nhóm 10%.",q:"Tôi có phải trả city transfer tax trong vụ này không?"}},
+ 'sec-f':{en:{k:"Paying ahead, like buying a full year of a club membership on day one.",a:"Homeowner's insurance (often 12 months up front), prepaid interest from closing day to month end (loan × rate ÷ 365 × days), sometimes MI or taxes. No limit on change, just a good-faith estimate.",t:"Closing near the end of the month means fewer days of prepaid interest. It doesn't save money overall, it just moves when you pay.",q:"How many days of prepaid interest did you assume?"},
+  vi:{k:"Trả trước, giống mua thẻ hội viên cả năm ngay ngày đầu.",a:"Bảo hiểm nhà (thường 12 tháng trả trước), lãi trả trước từ ngày close tới cuối tháng (loan × rate ÷ 365 × số ngày), đôi khi MI hay thuế. Không có giới hạn thay đổi, chỉ cần ước tính thiện chí.",t:"Close gần cuối tháng thì ít ngày lãi trả trước. Tổng không rẻ hơn, chỉ dời lúc trả.",q:"Anh/chị tính mấy ngày lãi trả trước?"}},
+ 'sec-g':{en:{k:"Starting coins in the tax-and-insurance jar so it never runs dry.",a:"The first deposit into your impound account: a few months of insurance and property tax. In California the number of tax months depends on the closing month (estimate, 2–9). A cushion up to 1/6 of the yearly total is allowed.",t:"It's your money. When the loan pays off, what's left in the account comes back.",q:"How many months of tax and insurance are you collecting, and why?"},
+  vi:{k:"Bỏ sẵn ít tiền vô hũ thuế-bảo hiểm cho khỏi bị cạn.",a:"Tiền bỏ lần đầu vào impound account: vài tháng bảo hiểm và thuế nhà. Ở California số tháng thuế tùy tháng close (ước tính, 2–9). Được giữ dư tối đa 1/6 tổng năm.",t:"Tiền này vẫn là của mình. Trả hết loan thì phần còn dư trả lại.",q:"Anh/chị thu mấy tháng thuế và bảo hiểm, tại sao?"}},
+ 'sec-h':{en:{k:"Other things for the house, not the loan, like a check-up for the house.",a:"Home inspection, HOA fees, home warranty, owner's title insurance (always marked \"optional\"). In Santa Clara the seller usually pays owner's title; in Alameda the buyer does.",t:"Who pays H items is decided in the purchase contract. Negotiate there.",q:"Which H items does my contract say the seller pays?"},
+  vi:{k:"Mấy thứ khác cho căn nhà, không phải cho loan, giống đi khám tổng quát cho nhà.",a:"Inspection, phí HOA, home warranty, bảo hiểm title cho chủ nhà (luôn ghi \"optional\"). Ở Santa Clara seller thường trả owner's title; ở Alameda buyer trả.",t:"Ai trả mấy khoản mục H là do hợp đồng mua quyết. Trả giá ở đó.",q:"Theo hợp đồng của tôi, khoản nào mục H seller trả?"}},
+ 'sec-i':{en:{k:"All the non-loan costs in one pile.",a:"E + F + G + H.",t:"Most of this is prepaids and impounds, which are your own money set aside, not fees.",q:"Which of these can change before closing?"},
+  vi:{k:"Gom hết chi phí không phải của loan vô 1 đống.",a:"E + F + G + H.",t:"Phần lớn là prepaids và impound, là tiền của mình để dành, không phải phí.",q:"Khoản nào còn có thể đổi trước khi close?"}},
+ 'sec-j':{en:{k:"The grand total of all fees, minus any gift the bank gives you back.",a:"D + I − Lender Credits. This is your total closing costs.",t:"Lender credits lower J but usually come with a higher rate. Check the APR.",q:"Are there lender credits available, and at what rate?"},
+  vi:{k:"Tổng cộng mọi phí, trừ đi phần ngân hàng tặng lại.",a:"D + I − Lender Credits. Đây là tổng closing costs.",t:"Lender credits làm J nhỏ lại nhưng thường đi kèm rate cao hơn. Coi APR.",q:"Có lender credit không, và với rate bao nhiêu?"}},
+ 'lender-credits':{en:{k:"The bank paying some of your fees, in exchange for a slightly higher rent.",a:"Money from the lender toward closing costs, usually for taking a higher rate. Shown as a minus.",t:"If you'll keep the loan a short time, credits can be a good deal. Long time: maybe not.",q:"What's the break-even if I take a credit vs. zero points?"},
+  vi:{k:"Ngân hàng trả giùm một phần phí, đổi lại tiền thuê cao hơn chút.",a:"Tiền lender bù vào closing costs, thường vì mình lấy rate cao hơn. Ghi số âm.",t:"Giữ loan ngắn thì credit có lợi. Giữ lâu thì chưa chắc.",q:"Lấy credit so với 0 point thì bao lâu huề vốn?"}},
+ 'ctc-j':{en:{k:"Start with the grand total of fees.",a:"Total Closing Costs, line J.",t:"Same number as page 2, bottom.",q:"Is this the same J as page 2?"},
+  vi:{k:"Bắt đầu bằng tổng các phí.",a:"Total Closing Costs, dòng J.",t:"Giống số cuối trang 2.",q:"Số này giống J ở trang 2 không?"}},
+ 'ctc-financed':{en:{k:"Fees the bank tucked into the loan, so you don't bring cash for them.",a:"Closing costs paid from your loan amount. On FHA/VA this is usually the upfront MIP or funding fee. Shown as a minus.",t:"Financed fees still cost interest for 30 years.",q:"How much more is my payment because the fee is financed?"},
+  vi:{k:"Phí ngân hàng nhét vào loan, nên mình khỏi mang tiền mặt.",a:"Closing costs trả bằng tiền vay. FHA/VA thường là upfront MIP hay funding fee. Ghi số âm.",t:"Phí cộng vào loan vẫn tốn lãi 30 năm.",q:"Cộng phí vào loan thì tiền trả mỗi tháng tăng bao nhiêu?"}},
+ 'ctc-down':{en:{k:"Your own part of the house price.",a:"Price minus the base loan amount.",t:"Gift money for the down needs a gift letter and a paper trail. Start early.",q:"What documents do you need for my down payment funds?"},
+  vi:{k:"Phần tiền nhà mình tự bỏ ra.",a:"Giá nhà trừ số tiền vay gốc.",t:"Tiền tặng để down cần gift letter và giấy tờ chứng minh nguồn. Lo sớm.",q:"Tiền down của tôi cần giấy tờ gì?"}},
+ 'ctc-deposit':{en:{k:"The promise money you already gave, so it's subtracted.",a:"Your earnest money deposit (EMD). We assume 3% of price, a common Bay Area number (estimate). Shown as a minus.",t:"Make sure escrow shows it received. It's your money, already in the pot.",q:"Is my deposit already credited?"},
+  vi:{k:"Tiền cọc hứa hẹn đã đưa rồi, nên được trừ ra.",a:"Tiền cọc (EMD). Tool giả sử 3% giá, mức hay gặp ở Bay Area (ước tính). Ghi số âm.",t:"Coi escrow đã ghi nhận chưa. Tiền này là của mình, đã nằm sẵn trong nồi.",q:"Tiền cọc của tôi đã được trừ chưa?"}},
+ 'ctc-seller':{en:{k:"Money the seller chips in, like a friend paying for your popcorn.",a:"Seller credits toward your costs. Conventional loans cap it (3%/6%/9% by down, 2% investment) and it can't exceed your actual closing costs.",t:"You can't take extra seller credit as cash. Ask only for what your costs can absorb.",q:"How much seller credit can my loan accept?"},
+  vi:{k:"Tiền seller góp giùm, giống bạn bè trả tiền bắp rang cho mình.",a:"Seller credit bù closing costs. Conventional có trần (3%/6%/9% tùy down, nhà đầu tư 2%) và không vượt closing costs thật.",t:"Credit dư không lấy ra tiền mặt được. Chỉ xin vừa đủ.",q:"Loan của tôi nhận tối đa bao nhiêu seller credit?"}},
+ 'ctc-total':{en:{k:"What you actually bring on closing day.",a:"J − financed + down − deposit − seller credits ± adjustments. The final number is on your Closing Disclosure.",t:"Property tax and HOA prorations can move this a few thousand. See T64.",q:"When will escrow give me the exact amount to wire?"},
+  vi:{k:"Số tiền thật mình mang tới ngày close.",a:"J − phần cộng vào loan + down − cọc − seller credit ± điều chỉnh. Số chót nằm trong Closing Disclosure.",t:"Chia thuế nhà và HOA có thể làm số này lệch vài ngàn. Coi T64.",q:"Khi nào escrow đưa số chính xác để wire?"}},
+ 'in-5-years':{en:{k:"How much you'd hand the bank in 5 years, and how much of the loan you'd have paid back.",a:"Total of P&I, MI and loan costs (D) over the first 5 years, and how much principal you paid down.",t:"Great for comparing two loans when you might sell or refinance within 5 years.",q:"Can you show me In 5 Years for zero points too?"},
+  vi:{k:"Sau 5 năm mình đưa ngân hàng bao nhiêu, và trả được bao nhiêu phần nợ.",a:"Tổng gốc lãi, MI và loan costs (D) trong 5 năm đầu, và số gốc đã trả xuống.",t:"Dùng để so 2 loan khi mình có thể bán hay refinance trong 5 năm.",q:"Cho tôi coi In 5 Years với 0 point luôn được không?"}},
+ 'apr':{en:{k:"The \"real price tag\" of the loan: the rent plus the fees, squeezed into one yearly number.",a:"Annual Percentage Rate: your cost over the loan term as a rate, counting points, lender fees, MI and prepaid interest. The LE says: \"This is not your interest rate.\"",t:"Only compare APRs on the same loan type and term. Fees that aren't finance charges (title, appraisal) are left out.",q:"What fees are included in this APR?"},
+  vi:{k:"\"Giá thật\" của loan: tiền thuê cộng phí, gom thành 1 con số mỗi năm.",a:"Annual Percentage Rate: chi phí suốt đời loan tính thành lãi suất, gồm points, phí lender, MI và lãi trả trước. LE ghi rõ: \"This is not your interest rate.\"",t:"Chỉ so APR cùng loại loan, cùng thời hạn. Phí không tính vào finance charge (title, appraisal) không có trong APR.",q:"APR này gồm những phí nào?"}},
+ 'tip':{en:{k:"Borrow $100, and over 30 years how much extra you pay in interest. 150% means you pay $150 extra for every $100 you borrowed.",a:"Total Interest Percentage: total interest over the full term as a % of the loan. Over 100% means you pay more in interest than you borrowed.",t:"Paying a little extra principal each month shrinks this a lot.",q:"How much would TIP drop if I paid $200 extra a month?"},
+  vi:{k:"Mượn $100 thì suốt 30 năm phải trả thêm bao nhiêu tiền lời. Ghi 150% nghĩa là mượn $100 trả thêm $150 tiền lời.",a:"Total Interest Percentage: tổng tiền lãi suốt thời hạn loan, tính bằng % số tiền vay. Trên 100% là tiền lãi nhiều hơn tiền mượn.",t:"Trả thêm chút tiền gốc mỗi tháng làm số này giảm nhiều.",q:"Mỗi tháng trả thêm $200 thì TIP giảm bao nhiêu?"}},
+ 'oc-appraisal':{en:{k:"The bank sends someone to check the house is worth the price.",a:"The lender may order an appraisal and must give you a copy promptly, even if the loan doesn't close.",t:"If it comes in low, you renegotiate, bring more cash, or use your appraisal contingency.",q:"When will I get the appraisal copy?"},
+  vi:{k:"Ngân hàng cho người tới coi căn nhà có đáng giá đó không.",a:"Lender có thể đặt appraisal và phải gửi bản copy cho mình sớm, kể cả khi loan không close.",t:"Appraisal thấp thì trả giá lại, bỏ thêm tiền, hoặc dùng appraisal contingency.",q:"Khi nào tôi nhận được bản appraisal?"}},
+ 'oc-assumption':{en:{k:"Can someone else take over your loan later, like handing over a phone plan?",a:"Says if a future buyer can take over your loan. Conventional usually no. FHA and VA often yes, with lender approval.",t:"An assumable low-rate loan can help you sell later if rates are high.",q:"Is this loan assumable, and under what conditions?"},
+  vi:{k:"Sau này người khác có nhận lại loan của mình được không, giống chuyển gói điện thoại.",a:"Cho biết người mua sau có nhận lại loan của mình được không. Conventional thường không. FHA, VA thường được, nếu lender đồng ý.",t:"Loan lãi thấp mà assumable có thể giúp bán nhà dễ hơn lúc lãi cao.",q:"Loan này assumable không, điều kiện gì?"}},
+ 'oc-insurance':{en:{k:"You must have home insurance. You pick the company.",a:"The lender requires homeowner's insurance and says you can choose the provider.",t:"In California, shop early. Some areas need FAIR Plan plus a wrap policy.",q:"What coverage and deductible do you require?"},
+  vi:{k:"Phải có bảo hiểm nhà. Mình tự chọn hãng.",a:"Lender bắt có homeowner's insurance và cho mình chọn hãng.",t:"Ở California, đi xin giá sớm. Có khu phải mua FAIR Plan kèm thêm policy bổ sung.",q:"Anh/chị đòi mức bảo hiểm và deductible bao nhiêu?"}},
+ 'oc-late':{en:{k:"Pay late and there's a fine, like a late library book.",a:"States how many days late before a fee kicks in, and the fee as a % of the payment. Your LE shows the exact numbers.",t:"Set autopay a few days before the due date.",q:"After how many days is a payment late, and what's the fee?"},
+  vi:{k:"Trả trễ thì bị phạt, giống trả sách thư viện trễ.",a:"Ghi trễ mấy ngày thì bị phí, và phí bao nhiêu % tiền trả. LE của mình có số chính xác.",t:"Cài autopay vài ngày trước hạn.",q:"Trễ mấy ngày thì bị phạt, phạt bao nhiêu?"}},
+ 'oc-refi':{en:{k:"Nobody promises you can swap for a cheaper loan later.",a:"Says refinancing depends on your finances, the home's value and market conditions, and you may not be able to.",t:"\"Marry the house, date the rate\" only works if you still qualify later. Don't buy a payment you can't afford today.",q:"If rates drop, what would a refinance cost me?"},
+  vi:{k:"Không ai hứa sau này mình đổi được loan rẻ hơn.",a:"Ghi rõ refinance tùy tài chính của mình, giá nhà và thị trường, có thể không làm được.",t:"Câu \"cứ mua đi, sau refinance\" chỉ đúng khi lúc đó mình còn đủ điều kiện. Đừng mua mức trả tháng mình không gánh nổi hôm nay.",q:"Nếu lãi giảm, refinance tốn bao nhiêu?"}},
+ 'oc-servicing':{en:{k:"Who you send the money to each month. It might change.",a:"Says if the lender will service your loan or transfer servicing to another company.",t:"If servicing moves, you'll get a notice. Never send payment to a new place without that letter.",q:"Do you plan to keep servicing my loan?"},
+  vi:{k:"Mình gửi tiền cho ai mỗi tháng. Có thể đổi.",a:"Cho biết lender tự thu tiền (service) hay chuyển cho công ty khác.",t:"Đổi chỗ thu thì có thư báo. Không có thư thì đừng gửi tiền chỗ mới.",q:"Anh/chị có giữ servicing loan của tôi không?"}},
+ 'confirm-receipt':{en:{k:"Signing only says \"I got the paper\", not \"I promise to buy\".",a:"If there's a signature line, it says signing only confirms you received the form. Without one: \"You do not have to accept this loan because you have received this form or signed a loan application.\"",t:"Intent to proceed is a separate step. Say it in writing when you're ready.",q:"How do I tell you I intend to proceed?"},
+  vi:{k:"Ký chỉ có nghĩa \"tôi nhận giấy rồi\", không phải \"tôi hứa mua\".",a:"Nếu có dòng ký, ký chỉ xác nhận đã nhận form. Không có dòng ký thì có câu: \"You do not have to accept this loan because you have received this form or signed a loan application.\"",t:"Intent to proceed là bước riêng. Sẵn sàng thì báo bằng văn bản.",q:"Tôi báo intent to proceed bằng cách nào?"}}
+};
+const I18N={
+ en:{title:'Read your Loan Estimate, line by line',sub:'Enter 5 numbers. You get a sample Loan Estimate filled in. Tap any line to see what it means and what to ask.',
+  l_price:'Purchase price',l_down:'Down payment',l_rate:'Interest rate ',l_rate_s:'(30-yr fixed)',l_type:'Loan type',l_app:'Date you gave the lender your application ',l_app_s:'(the 6 items below)',
+  r_ctc:'Estimated cash to close',c_pay:'Monthly',c_cc:'Closing costs',
+  apr_line:'APR {a}% vs. rate {r}%: fees add about {d} points to the yearly cost.',
+  t_conv:'Conventional, {d}% down.',t_pmi:' PMI about {m}/mo (estimate) until about month {e}, when the balance is scheduled to hit 78% of the price.',
+  t_auto:'Loan is over the 2026 conforming limit ($1,249,125), so it is shown as a jumbo.',t_jsmall:'This loan is under $1,249,125, so it would usually be conventional, not jumbo.',
+  t_fha:'FHA: 1.75% upfront MIP ({u}) added to the loan, monthly MIP about {m} ({y}).',t_fha_life:'for the life of the loan',t_fha_11:'for 11 years',
+  t_fha_down:' FHA needs at least 3.5% down.',t_fha_lim:' FHA max loan here in 2026 is $1,249,125; this is over.',
+  t_va:'VA: funding fee {p}% ({u}) added to the loan (estimate, first use; some veterans are exempt). No monthly MI.',
+  t_close:' Estimated closing date: {c} (application + 30 days, an assumption).',
+  d_t:'Your Loan Estimate dates',d_app:'Application complete',d_le:'LE must be delivered or mailed by',d_le_s:'3rd business day after application',
+  d_exp:'Say "intent to proceed" by',d_exp_s:'lender only has to honor the LE for 10 business days',d_7:'Earliest closing allowed',d_7_s:'7th business day after the LE is delivered',
+  d_note:"Business days here: Monday–Friday, no federal holidays (assumes the lender's office is closed Saturday). The 7-day rule counts Saturdays. If the LE is mailed, count it as received 3 business days later.",
+  six_t:'6 things that make an "application"',six:'<li>Your name</li><li>Your income</li><li>Your Social Security number (to pull credit)</li><li>The property address</li><li>An estimate of the home\'s value</li><li>The loan amount you want</li>',
+  six_n:"Once the lender has these 6, the 3-day clock starts. A lender can't make you send a purchase contract or pay stubs first just to give you a Loan Estimate.",
+  appr_n:'<b>A Loan Estimate is not an approval.</b> At this point the lender has not approved or denied you. It only shows the terms you\'d likely get if you move forward.',
+  fee_n:'<b>Before you say "intent to proceed":</b> the only fee a lender may charge is a reasonable credit report fee. No application fee, no appraisal fee yet. Silence doesn\'t count as intent. You have to tell them.',
+  p1:'Page 1',p2:'Page 2',p3:'Page 3',p1t:'Loan Estimate',p2t:'Closing Cost Details',p3t:'Additional Information',
+  h_top:'Loan details',h_lt:'Loan Terms',h_pp:'Projected Payments',h_cc:'Costs at Closing',h_lc:'Loan Costs',h_oc:'Other Costs',h_ctc:'Calculating Cash to Close',h_cmp:'Comparisons',h_other:'Other Considerations',
+  n_date:'Date issued',n_lock:'Rate lock',v_lock:'NO (sample)',n_loan:'Loan amount',n_rate:'Interest rate',n_pi:'Monthly principal & interest',n_pp:'Prepayment penalty',n_bal:'Balloon payment',v_no:'NO',
+  n_mi:'Mortgage insurance',n_esc:'Estimated escrow',n_tot:'Estimated total monthly payment',n_tia:'Estimated taxes, insurance & assessments',n_tia_s:'monthly · in escrow: property tax, homeowner\'s insurance',
+  yrs:'Years {a}–{b}',none:'none',
+  n_ccost:'Estimated closing costs',n_cash:'Estimated cash to close',
+  a:'Origination charges',b:'Services you cannot shop for',c:'Services you can shop for',d:'Total loan costs (A + B + C)',e:'Taxes and other government fees',f:'Prepaids',g:'Initial escrow payment at closing',h:'Other',i:'Total other costs (E + F + G + H)',j:'Total closing costs (D + I − lender credits)',lc:'Lender credits',
+  b_orig:'Origination / underwriting / processing',b_appr:'Appraisal',b_credit:'Credit report',b_flood:'Flood certification',b_ufmip:'FHA upfront MIP (1.75%)',b_vaff:'VA funding fee',
+  b_lt:"Title – lender's title insurance",b_set:'Title – settlement / escrow (loan tie-in, notary, courier)',b_rec:'Recording fees',b_tt:'Transfer tax (buyer share, most Santa Clara cities)',
+  b_hoi:"Homeowner's insurance (12 months)",b_pint:'Prepaid interest ({d} days × {p}/day)',b_mip:'Mortgage insurance premium',b_ptax:'Property taxes',
+  b_ghoi:"Homeowner's insurance ({m} mo)",b_gtax:'Property taxes ({m} mo)',b_insp:'Home inspection',b_own:"Title – owner's title insurance (optional) · seller pays in Santa Clara",
+  n_j:'Total closing costs (J)',n_fin:'Closing costs financed (in loan amount)',n_down:'Down payment / funds from borrower',n_dep:'Deposit (EMD, 3% assumed)',n_sc:'Seller credits',n_ctc:'Estimated cash to close',
+  n_5:'In 5 years',v_5:'{t} total paid · {p} principal paid off',n_apr:'Annual Percentage Rate (APR)',n_tip:'Total Interest Percentage (TIP)',
+  n_oa:'Appraisal',n_oas:'Assumption',n_oi:"Homeowner's insurance",n_ol:'Late payment',n_or:'Refinance',n_os:'Servicing',n_cr:'Confirm receipt',
+  v_oa:'copy sent to you',v_oas_no:'usually no',v_oas_yes:'often yes',v_oi:'required, you choose',v_ol:'see your LE',v_or:'not guaranteed',v_os:'ask',v_cr:'not a promise',
+  L_k:'For a 10-year-old',L_a:'For grown-ups',L_t:'Tip / where people get burned',L_q:'Ask your lender',L_link:'Link to this line',L_copied:'Copied',
+  le_disc:"This is our own drawing of the 3-page Loan Estimate, not the official CFPB form. Section names follow the rule (12 CFR 1026.37). Numbers are estimates for a Santa Clara County purchase. Your lender's LE is the real one.",
+  alam:'Alameda County: the buyer usually also pays the escrow fee and owner\'s title, about {a} more on this price (estimate, see T03).',
+  rf_t:'Red flags',
+  rf:'<li>The lender wants an application or appraisal fee <b>before</b> you get the LE and say intent to proceed. Only a credit report fee is allowed.</li><li>No LE within 3 business days after you gave the 6 items, or they say "send your contract first".</li><li>Rate shows "NO" lock but they talk like it\'s guaranteed. Get the lock in writing.</li><li>Section A on one LE is far above the others for the same rate. That fee can\'t go down later, only now.</li><li>APR is much higher than the rate. Ask what fees are inside it.</li><li>Prepayment penalty or balloon says YES on a regular home loan.</li><li>Anyone emails you new wiring instructions. Call escrow at a number you already know.</li>',
+  nx_t:'Next steps',nx1:'Got your real LE? Get 2 more from other lenders and compare section A and the APR line by line.',
+  nx2:'All-in cash to bring, city by city: <a href="/t03/">T03</a>. Today\'s rates: <a href="/t30/">T30</a>. Should you buy points: <a href="/t38/">T38</a>.',
+  nx3:'3 days before signing you get the Closing Disclosure. Check it against this LE: <a href="/t312/">T312</a>.',
+  nx4:'Taxes and HOA split on closing day: <a href="/t64/">T64</a>. Last checks before close: <a href="/t63/">T63</a>. Word list: <a href="/t190/#loan-estimate">Loan Estimate</a> · <a href="/t190/#apr">APR</a> · <a href="/t190/#rate-lock">rate lock</a>.',
+  myth:'<b>Many people get this wrong:</b> "APR is my interest rate." No. APR adds points and other loan fees on top of the rate, so it\'s usually higher. Use it only to compare loans. The LE itself says: "This is not your interest rate." (<a href="https://www.consumerfinance.gov/ask-cfpb/what-is-the-difference-between-a-mortgage-interest-rate-and-an-apr-en-135/" target="_blank" rel="noopener">CFPB</a>)',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this Loan Estimate breakdown to yourself',f_sub:"Ken will reply and help you check it against the real LE from your lender. No spam.",f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, text Ken the number below.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'How to read a Loan Estimate',ft_vid:'Kiến Thức Địa Ốc video',
+  ft_est:"Estimate only. Lender, title, escrow, insurance, PMI and VA funding fee numbers are typical 2026 Bay Area estimates, not quotes. Your lender's Loan Estimate is the real one. General information, not lending, tax or legal advice.",
+  ft_src:'Sources (checked 05/11/2026):',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  types:{conv:'Conventional',fha:'FHA',va:'VA',jumbo:'Jumbo'},
+  sms:'Hi Ken, I ran the Loan Estimate tool: price {p}, {d}% down, {r}%, {lt}. It shows cash to close {ctc}, APR {apr}%. Can you look at my real LE?',
+  subj:'My Loan Estimate breakdown — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nPrice: {p}\nDown: {d}% ({da})\nRate: {r}%\nLoan type: {lt}\nLoan amount: {l}\nApplication date: {app}\n\nLE due by: {le}\nIntent to proceed by: {exp}\nEarliest closing: {ec}\n\nMonthly payment (yr 1): {pay}\nA Origination: {A}\nB Cannot shop: {B}\nC Can shop: {C}\nD Loan costs: {D}\nI Other costs: {I}\nJ Closing costs: {J}\nCash to close: {ctc}\nAPR: {apr}%  TIP: {tip}%\n\nSent from tool T311 tools.kenlamrealty.com'},
+ vi:{title:'Đọc Loan Estimate từng dòng',sub:'Nhập 5 số. Ra liền một bản Loan Estimate mẫu có số của mình. Bấm vào dòng nào cũng có giải thích và câu nên hỏi.',
+  l_price:'Giá mua',l_down:'Tiền down',l_rate:'Lãi suất ',l_rate_s:'(30 năm cố định)',l_type:'Loại loan',l_app:'Ngày đưa lender hồ sơ ',l_app_s:'(đủ 6 thứ ở dưới)',
+  r_ctc:'Tiền mang tới close (ước tính)',c_pay:'Mỗi tháng',c_cc:'Closing costs',
+  apr_line:'APR {a}% so với rate {r}%: phí làm chi phí mỗi năm cao thêm khoảng {d} điểm.',
+  t_conv:'Conventional, down {d}%.',t_pmi:' PMI khoảng {m}/tháng (ước tính) tới khoảng tháng thứ {e}, lúc nợ theo lịch xuống 78% giá nhà.',
+  t_auto:'Loan vượt mức conforming 2026 ($1,249,125), nên tool tính là jumbo.',t_jsmall:'Loan dưới $1,249,125, thường là conventional, không phải jumbo.',
+  t_fha:'FHA: upfront MIP 1.75% ({u}) cộng vào loan, MIP hàng tháng khoảng {m} ({y}).',t_fha_life:'suốt đời loan',t_fha_11:'trong 11 năm',
+  t_fha_down:' FHA cần down ít nhất 3.5%.',t_fha_lim:' FHA ở đây năm 2026 cho vay tối đa $1,249,125; loan này vượt.',
+  t_va:'VA: funding fee {p}% ({u}) cộng vào loan (ước tính, lần đầu dùng; có người được miễn). Không có MI hàng tháng.',
+  t_close:' Ngày close ước tính: {c} (nộp hồ sơ + 30 ngày, giả định).',
+  d_t:'Các mốc ngày Loan Estimate',d_app:'Ngày nộp đủ hồ sơ',d_le:'LE phải giao hoặc gửi trước',d_le_s:'ngày làm việc thứ 3 sau khi nộp',
+  d_exp:'Báo "intent to proceed" trước',d_exp_s:'lender chỉ phải giữ LE 10 ngày làm việc',d_7:'Sớm nhất được close',d_7_s:'ngày làm việc thứ 7 sau khi nhận LE',
+  d_note:'Ngày làm việc ở đây: thứ Hai–thứ Sáu, trừ lễ liên bang (giả sử văn phòng lender nghỉ thứ Bảy). Luật 7 ngày thì có tính thứ Bảy. LE gửi bưu điện thì coi như nhận sau 3 ngày làm việc.',
+  six_t:'6 thứ làm thành "application"',six:'<li>Tên</li><li>Thu nhập</li><li>Số Social Security (để kéo credit)</li><li>Địa chỉ căn nhà</li><li>Giá trị ước tính của nhà</li><li>Số tiền muốn vay</li>',
+  six_n:'Lender có đủ 6 thứ này là đồng hồ 3 ngày bắt đầu chạy. Lender không được bắt mình gửi hợp đồng mua hay giấy lương trước rồi mới đưa Loan Estimate.',
+  appr_n:'<b>Loan Estimate không phải approval.</b> Lúc này lender chưa duyệt cũng chưa từ chối. Nó chỉ cho thấy điều kiện mình có thể nhận nếu đi tiếp.',
+  fee_n:'<b>Trước khi báo "intent to proceed":</b> lender chỉ được thu phí credit report hợp lý. Chưa được thu phí application, phí appraisal. Im lặng không tính là đồng ý. Mình phải nói.',
+  p1:'Trang 1',p2:'Trang 2',p3:'Trang 3',p1t:'Loan Estimate',p2t:'Chi tiết closing costs',p3t:'Thông tin thêm',
+  h_top:'Thông tin loan',h_lt:'Loan Terms (điều khoản)',h_pp:'Projected Payments (tiền trả dự kiến)',h_cc:'Costs at Closing (tiền lúc close)',h_lc:'Loan Costs (phí loan)',h_oc:'Other Costs (chi phí khác)',h_ctc:'Calculating Cash to Close (tính tiền mang tới)',h_cmp:'Comparisons (để so sánh)',h_other:'Other Considerations (điều cần biết)',
+  n_date:'Ngày ra LE (Date issued)',n_lock:'Rate lock',v_lock:'NO (mẫu)',n_loan:'Số tiền vay',n_rate:'Lãi suất',n_pi:'Gốc + lãi mỗi tháng',n_pp:'Phạt trả sớm (prepayment penalty)',n_bal:'Balloon payment',v_no:'NO',
+  n_mi:'Mortgage insurance',n_esc:'Escrow ước tính',n_tot:'Tổng trả mỗi tháng ước tính',n_tia:'Thuế, bảo hiểm & assessments ước tính',n_tia_s:'mỗi tháng · trong escrow: thuế nhà, bảo hiểm nhà',
+  yrs:'Năm {a}–{b}',none:'không có',
+  n_ccost:'Closing costs ước tính',n_cash:'Tiền mang tới close ước tính',
+  a:'Origination charges (phí lender)',b:'Services you cannot shop for (không tự chọn được)',c:'Services you can shop for (tự chọn được)',d:'Total loan costs (A + B + C)',e:'Taxes and other government fees (thuế, phí nhà nước)',f:'Prepaids (trả trước)',g:'Initial escrow payment (tiền đầu vào impound)',h:'Other (khác)',i:'Total other costs (E + F + G + H)',j:'Total closing costs (D + I − lender credits)',lc:'Lender credits',
+  b_orig:'Origination / underwriting / processing',b_appr:'Appraisal (thẩm định)',b_credit:'Credit report',b_flood:'Flood certification',b_ufmip:'FHA upfront MIP (1.75%)',b_vaff:'VA funding fee',
+  b_lt:"Title – lender's title insurance",b_set:'Title – settlement / escrow (loan tie-in, notary, courier)',b_rec:'Phí recording',b_tt:'Transfer tax (phần buyer, đa số city ở Santa Clara)',
+  b_hoi:'Bảo hiểm nhà (12 tháng)',b_pint:'Lãi trả trước ({d} ngày × {p}/ngày)',b_mip:'Mortgage insurance premium',b_ptax:'Thuế nhà',
+  b_ghoi:'Bảo hiểm nhà ({m} tháng)',b_gtax:'Thuế nhà ({m} tháng)',b_insp:'Home inspection',b_own:"Title – owner's title insurance (optional) · ở Santa Clara seller trả",
+  n_j:'Tổng closing costs (J)',n_fin:'Closing costs cộng vào loan',n_down:'Tiền down',n_dep:'Tiền cọc (EMD, giả sử 3%)',n_sc:'Seller credits',n_ctc:'Tiền mang tới close ước tính',
+  n_5:'Sau 5 năm (In 5 Years)',v_5:'trả tổng {t} · trả xuống {p} tiền gốc',n_apr:'Annual Percentage Rate (APR)',n_tip:'Total Interest Percentage (TIP)',
+  n_oa:'Appraisal',n_oas:'Assumption (người khác nhận loan)',n_oi:'Bảo hiểm nhà',n_ol:'Trả trễ',n_or:'Refinance',n_os:'Servicing (ai thu tiền)',n_cr:'Xác nhận đã nhận',
+  v_oa:'gửi bản copy cho mình',v_oas_no:'thường không',v_oas_yes:'thường được',v_oi:'bắt buộc, mình chọn',v_ol:'coi LE',v_or:'không bảo đảm',v_os:'hỏi lender',v_cr:'không phải lời hứa',
+  L_k:'Nói cho con nít hiểu',L_a:'Nói thật cho người lớn',L_t:'Mẹo / chỗ hay bị hớ',L_q:'Câu nên hỏi lender',L_link:'Link tới dòng này',L_copied:'Đã copy',
+  le_disc:'Đây là bản vẽ lại 3 trang Loan Estimate theo cách của mình, không phải form chính thức của CFPB. Tên các mục theo luật (12 CFR 1026.37). Số là ước tính cho nhà mua ở Santa Clara County. LE thật của lender mới là số chính.',
+  alam:'Alameda County: người mua thường trả thêm escrow fee và owner\'s title, khoảng {a} nữa với giá này (ước tính, coi T03).',
+  rf_t:'Dấu hiệu đáng ngờ',
+  rf:'<li>Lender đòi phí application hay appraisal <b>trước</b> khi mình nhận LE và báo intent to proceed. Chỉ được thu phí credit report.</li><li>Đưa đủ 6 thứ mà sau 3 ngày làm việc chưa có LE, hoặc nói "gửi hợp đồng trước đã".</li><li>Rate lock ghi "NO" mà nói như chắc chắn rồi. Đòi giấy lock.</li><li>Mục A của 1 LE cao hơn hẳn mấy LE khác cùng rate. Phí đó sau này không giảm, chỉ trả giá được bây giờ.</li><li>APR cao hơn rate nhiều. Hỏi trong đó có những phí gì.</li><li>Loan nhà bình thường mà prepayment penalty hay balloon ghi YES.</li><li>Ai đó email hướng dẫn wire tiền mới. Gọi escrow bằng số mình biết chắc.</li>',
+  nx_t:'Bước tiếp theo',nx1:'Có LE thật rồi? Xin thêm 2 LE của lender khác, so mục A và APR từng dòng.',
+  nx2:'Tổng tiền mang tới escrow theo từng city: <a href="/t03/">T03</a>. Lãi suất hôm nay: <a href="/t30/">T30</a>. Có nên mua points: <a href="/t38/">T38</a>.',
+  nx3:'3 ngày trước khi ký sẽ có Closing Disclosure. So với LE này: <a href="/t312/">T312</a>.',
+  nx4:'Chia thuế và HOA ngày close: <a href="/t64/">T64</a>. Kiểm tra trước khi close: <a href="/t63/">T63</a>. Từ điển: <a href="/t190/#loan-estimate">Loan Estimate</a> · <a href="/t190/#apr">APR</a> · <a href="/t190/#rate-lock">rate lock</a>.',
+  myth:'<b>Nhiều người hiểu sai:</b> "APR là lãi suất của tôi." Sai. APR cộng points và các phí vay khác vào rate, nên thường cao hơn. Chỉ dùng để so các loan. LE ghi rõ: "This is not your interest rate." (<a href="https://www.consumerfinance.gov/ask-cfpb/what-is-the-difference-between-a-mortgage-interest-rate-and-an-apr-en-135/" target="_blank" rel="noopener">CFPB</a>)',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi bảng Loan Estimate này về email',f_sub:'Ken nhận được sẽ trả lời và giúp so với LE thật của lender. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số dưới đây nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Cách đọc Loan Estimate',ft_vid:'Video Kiến Thức Địa Ốc',
+  ft_est:'Chỉ là ước tính. Phí lender, title, escrow, bảo hiểm, PMI và VA funding fee là mức hay gặp ở Bay Area 2026, không phải báo giá. LE thật của lender mới là số chính. Thông tin chung, không phải tư vấn cho vay, thuế hay luật.',
+  ft_src:'Nguồn (tra 05/11/2026):',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  types:{conv:'Conventional',fha:'FHA',va:'VA',jumbo:'Jumbo'},
+  sms:'Chào Ken, tôi vừa dùng tool Loan Estimate: giá {p}, down {d}%, lãi {r}%, {lt}. Ra tiền mang tới close {ctc}, APR {apr}%. Ken coi giùm LE thật của tôi được không?',
+  subj:'Bảng Loan Estimate của tôi — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nGiá mua: {p}\nDown: {d}% ({da})\nLãi suất: {r}%\nLoại loan: {lt}\nSố tiền vay: {l}\nNgày nộp hồ sơ: {app}\n\nLE phải tới trước: {le}\nBáo intent to proceed trước: {exp}\nSớm nhất được close: {ec}\n\nTrả mỗi tháng (năm 1): {pay}\nA Phí lender: {A}\nB Không tự chọn: {B}\nC Tự chọn: {C}\nD Phí loan: {D}\nI Chi phí khác: {I}\nJ Closing costs: {J}\nTiền mang tới close: {ctc}\nAPR: {apr}%  TIP: {tip}%\n\nGửi từ tool T311 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const fmt2=n=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const fill=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+const fdate=d=>{const y=d.getUTCFullYear(),m=d.getUTCMonth()+1,dd=d.getUTCDate();
+  if(lang==='vi'){const w=['CN','T2','T3','T4','T5','T6','T7'][d.getUTCDay()];return w+' '+String(dd).padStart(2,'0')+'/'+String(m).padStart(2,'0')+'/'+y;}
+  return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric',timeZone:'UTC'});};
+let type='conv', last={}, R=null;
+
+/* LE layout: rows {id, n:labelKey, v:fn(r,d)->string, s:fn(r,d)->sub, cls, letter, bd:fn(r,d)->[[label,val]]} */
+const LE=[
+ {pg:'p1',t:'p1t',secs:[
+  {h:'h_top',rows:[
+   {id:'date-issued',n:'n_date',v:r=>fdate(r.leBy)},
+   {id:'rate-lock',n:'n_lock',v:(r,d)=>d.v_lock}]},
+  {h:'h_lt',rows:[
+   {id:'loan-amount',n:'n_loan',v:r=>fmt(r.loan)},
+   {id:'interest-rate',n:'n_rate',v:r=>r.rate.toFixed(3).replace(/0$/,'')+'%'},
+   {id:'monthly-pi',n:'n_pi',v:r=>fmt2(r.pi)},
+   {id:'prepayment-penalty',n:'n_pp',v:(r,d)=>d.v_no},
+   {id:'balloon',n:'n_bal',v:(r,d)=>d.v_no}]},
+  {h:'h_pp',rows:[
+   {id:'pp-mi',n:'n_mi',v:(r,d)=>r.mi1>0?fmt(r.mi1):d.none,s:(r,d)=>ppSplit(r,d,'mi')},
+   {id:'pp-escrow',n:'n_esc',v:r=>'+ '+fmt(r.escrowMo)},
+   {id:'pp-total',n:'n_tot',v:r=>fmt(r.pay1),s:(r,d)=>ppSplit(r,d,'tot'),cls:'tot'},
+   {id:'pp-tia',n:'n_tia',v:r=>fmt(r.escrowMo),s:(r,d)=>d.n_tia_s}]},
+  {h:'h_cc',rows:[
+   {id:'closing-costs',n:'n_ccost',v:r=>fmt(r.J),cls:'tot'},
+   {id:'cash-to-close',n:'n_cash',v:r=>fmt(r.ctc),cls:'tot'}]}]},
+ {pg:'p2',t:'p2t',secs:[
+  {h:'h_lc',rows:[
+   {id:'sec-a',L:'A',n:'a',v:r=>fmt(r.A.t),bd:(r,d)=>[[d.b_orig,r.A.orig]]},
+   {id:'sec-b',L:'B',n:'b',v:r=>fmt(r.B.t),bd:(r,d)=>{const a=[[d.b_appr,r.B.appr],[d.b_credit,r.B.credit],[d.b_flood,r.B.flood]];if(r.ufmip)a.push([d.b_ufmip,r.ufmip]);if(r.vaff)a.push([d.b_vaff+' ('+(r.vaRate*100).toFixed(2)+'%)',r.vaff]);return a;}},
+   {id:'sec-c',L:'C',n:'c',v:r=>fmt(r.C.t),bd:(r,d)=>[[d.b_lt,r.C.ltitle],[d.b_set,r.C.settle]]},
+   {id:'sec-d',L:'D',n:'d',v:r=>fmt(r.Dt),cls:'tot'}]},
+  {h:'h_oc',rows:[
+   {id:'sec-e',L:'E',n:'e',v:r=>fmt(r.E.t),bd:(r,d)=>[[d.b_rec,r.E.rec],[d.b_tt,r.E.tt]]},
+   {id:'sec-f',L:'F',n:'f',v:r=>fmt(r.F.t),bd:(r,d)=>[[d.b_hoi,r.F.hoi],[fill(d.b_pint,{d:r.F.days,p:fmt2(r.F.daily)}),r.F.pint],[d.b_mip,0],[d.b_ptax,0]]},
+   {id:'sec-g',L:'G',n:'g',v:r=>fmt(r.G.t),bd:(r,d)=>[[fill(d.b_ghoi,{m:r.G.hoiM}),r.G.hoi],[fill(d.b_gtax,{m:r.G.taxM}),r.G.tax]]},
+   {id:'sec-h',L:'H',n:'h',v:r=>fmt(r.H.t),bd:(r,d)=>[[d.b_insp,r.H.insp],[d.b_own,0]]},
+   {id:'sec-i',L:'I',n:'i',v:r=>fmt(r.It),cls:'tot'},
+   {id:'lender-credits',n:'lc',v:r=>fmt(-r.credits)},
+   {id:'sec-j',L:'J',n:'j',v:r=>fmt(r.J),cls:'tot'}]},
+  {h:'h_ctc',rows:[
+   {id:'ctc-j',n:'n_j',v:r=>fmt(r.J)},
+   {id:'ctc-financed',n:'n_fin',v:r=>fmt(-r.financed)},
+   {id:'ctc-down',n:'n_down',v:r=>fmt(r.down)},
+   {id:'ctc-deposit',n:'n_dep',v:r=>fmt(-r.deposit)},
+   {id:'ctc-seller',n:'n_sc',v:r=>fmt(0)},
+   {id:'ctc-total',n:'n_ctc',v:r=>fmt(r.ctc),cls:'tot'}]}]},
+ {pg:'p3',t:'p3t',secs:[
+  {h:'h_cmp',rows:[
+   {id:'in-5-years',n:'n_5',v:r=>fmt(r.in5),s:(r,d)=>fill(d.v_5,{t:fmt(r.in5),p:fmt(r.prin5)})},
+   {id:'apr',n:'n_apr',v:r=>r.apr.toFixed(3)+'%',cls:'tot'},
+   {id:'tip',n:'n_tip',v:r=>r.tip.toFixed(3)+'%'}]},
+  {h:'h_other',rows:[
+   {id:'oc-appraisal',n:'n_oa',v:(r,d)=>d.v_oa},
+   {id:'oc-assumption',n:'n_oas',v:(r,d)=>(r.type==='fha'||r.type==='va')?d.v_oas_yes:d.v_oas_no},
+   {id:'oc-insurance',n:'n_oi',v:(r,d)=>d.v_oi},
+   {id:'oc-late',n:'n_ol',v:(r,d)=>d.v_ol},
+   {id:'oc-refi',n:'n_or',v:(r,d)=>d.v_or},
+   {id:'oc-servicing',n:'n_os',v:(r,d)=>d.v_os},
+   {id:'confirm-receipt',n:'n_cr',v:(r,d)=>d.v_cr}]}]}
+];
+function ppSplit(r,d,kind){
+  if(!(r.miEnd>0&&r.miEnd<360)) return kind==='mi'&&r.mi1>0?fill(d.yrs,{a:1,b:30}):'';
+  const yEnd=Math.ceil(r.miEnd/12);
+  return kind==='mi'? fill(d.yrs,{a:1,b:yEnd})+': '+fmt(r.mi1)+' · '+fill(d.yrs,{a:yEnd+1,b:30})+': $0'
+                    : fill(d.yrs,{a:1,b:yEnd})+': '+fmt(r.pay1)+' · '+fill(d.yrs,{a:yEnd+1,b:30})+': '+fmt(r.payLater);
+}
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function buildLE(){
+  const d=I18N[lang], open=new Set([...document.querySelectorAll('details.li[open]')].map(x=>x.id));
+  let h='';
+  for(const p of LE){
+    h+='<article class="pg"><div class="ph"><h2>'+d[p.t]+'</h2><span>'+d[p.pg]+'</span></div>';
+    for(const s of p.secs){
+      h+='<h3>'+d[s.h]+'</h3>';
+      for(const row of s.rows){
+        const e=ELI[row.id][lang];
+        h+='<details class="li'+(row.cls?' '+row.cls:'')+'" id="'+row.id+'"'+(open.has(row.id)?' open':'')+'><summary><span class="n">'+(row.L?'<i>'+row.L+'</i>':'')+'<b>'+d[row.n]+'</b><small data-s="'+row.id+'"></small></span><span class="a" data-v="'+row.id+'"></span></summary>'+
+          '<div class="ex">'+(row.bd?'<div class="bd" data-bd="'+row.id+'"></div>':'')+
+          '<p><span class="t">'+d.L_k+'</span>'+esc(e.k)+'</p><p><span class="t">'+d.L_a+'</span>'+esc(e.a)+'</p><p><span class="t">'+d.L_t+'</span>'+esc(e.t)+'</p>'+
+          '<p class="ask"><span class="t">'+d.L_q+'</span>“'+esc(e.q)+'”</p>'+
+          '<span class="lk"><a href="#'+row.id+'">#'+row.id+'</a><button type="button" data-cp="'+row.id+'">'+d.L_link+'</button></span></div></details>';
+      }
+    }
+    h+='</article>';
+  }
+  $('le').innerHTML=h;
+}
+function fillLE(r){
+  const d=I18N[lang];
+  for(const p of LE) for(const s of p.secs) for(const row of s.rows){
+    const v=document.querySelector('[data-v="'+row.id+'"]'); if(v) v.textContent=row.v(r,d);
+    const sm=document.querySelector('[data-s="'+row.id+'"]'); if(sm) sm.textContent=row.s?row.s(r,d):'';
+    if(row.bd){const b=document.querySelector('[data-bd="'+row.id+'"]'); if(b) b.innerHTML=row.bd(r,d).map(([l,x])=>'<div><span>'+esc(l)+'</span><span>'+fmt(x)+'</span></div>').join('');}
+  }
+}
+function calc(){
+  const d=I18N[lang];
+  const r=computeLE({price:num('price'),downPct:num('down'),rate:num('rate'),type,app:$('app').value||'2026-11-05'}); R=r;
+  $('big').textContent=fmt(r.ctc);
+  $('cPay').textContent=fmt(r.pay1); $('cApr').textContent=r.apr.toFixed(2)+'%'; $('cCc').textContent=fmt(r.J);
+  $('aprLine').textContent=fill(d.apr_line,{a:r.apr.toFixed(3),r:r.rate.toFixed(3).replace(/0$/,''),d:(r.apr-r.rate).toFixed(2)});
+  let t='';
+  if(r.type==='fha'){ t=fill(d.t_fha,{u:fmt(r.ufmip),m:fmt(r.mi1),y:r.miEnd>=360?d.t_fha_life:d.t_fha_11}); if(r.downPct<3.5) t+=d.t_fha_down; if(r.base>CFG.FHA_LIMIT) t+=d.t_fha_lim; }
+  else if(r.type==='va'){ t=fill(d.t_va,{p:(r.vaRate*100).toFixed(2),u:fmt(r.vaff)}); }
+  else { t=(r.autoJumbo?d.t_auto+' ':'')+(r.jumboSmall?d.t_jsmall+' ':'')+fill(d.t_conv,{d:r.downPct}); if(r.miKind==='pmi') t+=fill(d.t_pmi,{m:fmt(r.mi1),e:r.miEnd}); }
+  t+=fill(d.t_close,{c:fdate(r.close)});
+  const escFull=CFG_ESC(r.price), owner=interpHO(r.price);
+  t+=' '+fill(d.alam,{a:fmt(escFull+owner)});
+  $('tNote').textContent=t;
+  $('dApp').textContent=fdate(r.appD); $('dLe').textContent=fdate(r.leBy); $('dExp').textContent=fdate(r.expBy); $('d7').textContent=fdate(r.earliest);
+  fillLE(r);
+  last={p:fmt(r.price),d:r.downPct,da:fmt(r.down),r:r.rate,lt:d.types[r.type],l:fmt(r.loan),app:fdate(r.appD),le:fdate(r.leBy),exp:fdate(r.expBy),ec:fdate(r.earliest),
+    pay:fmt(r.pay1),A:fmt(r.A.t),B:fmt(r.B.t),C:fmt(r.C.t),D:fmt(r.Dt),I:fmt(r.It),J:fmt(r.J),ctc:fmt(r.ctc),apr:r.apr.toFixed(3),tip:r.tip.toFixed(3)};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+  klSend();
+}
+/* Alameda difference note: escrow fee + owner's policy (T03 numbers, estimate) */
+const HO_RATES=[[250000,1045],[300000,1155],[400000,1375],[500000,1595],[600000,1716],[700000,1892],[750000,1980],[800000,2046],[900000,2178],[1000000,2310],[1100000,2585],[1200000,2695],[1250000,2750],[1500000,3025],[1750000,3300],[2000000,3575],[2500000,4015],[3000000,4455],[3500000,4952],[4000000,5337],[4700000,5876]];
+function CFG_ESC(p){return p>0?250+2.00*p/1000:0;}
+function interpHO(p){return interp(HO_RATES,p);}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  buildLE(); calc();
+}
+/* embed mode (?embed=1): iframe on kenlamrealty.com, height via postMessage klToolsHeight */
+const EMBED=/[?&]embed=1/.test(location.search);
+let klSend=()=>{};
+if(EMBED){ document.documentElement.classList.add('embed'); let lastH=0;
+  klSend=()=>{ const w=document.querySelector('.wrap'); const h=Math.ceil(w.getBoundingClientRect().bottom+window.scrollY+40); if(Math.abs(h-lastH)<4) return; lastH=h; try{ parent.postMessage({klToolsHeight:h},'*'); }catch(e){} };
+  window.addEventListener('resize',()=>klSend()); new ResizeObserver(()=>klSend()).observe(document.body);
+  document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('a[href]'); if(!a) return; const h=a.getAttribute('href'); if(h.startsWith('#')||a.target==='_blank') return; if(h.startsWith('/')) a.href='https://tools.kenlamrealty.com'+h; a.target='_top'; },true); }
+['price','down','rate','app'].forEach(id=>{$(id).addEventListener('input',calc);$(id).addEventListener('change',calc);});
+document.querySelectorAll('#typeSeg button').forEach(b=>b.onclick=()=>{type=b.dataset.t;document.querySelectorAll('#typeSeg button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
+  if(type==='va'&&num('down')===20){} calc();});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus(); klSend();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], o=Object.assign({},last,{n:$('fname').value.trim()||'—',e:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'});
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing), hoặc thay bằng fetch() tới FUB webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,o))+'&body='+encodeURIComponent(fill(d.body,o));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false; klSend();
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+$('le').addEventListener('click',async e=>{const b=e.target.closest('[data-cp]'); if(!b) return; e.preventDefault();
+  const u=location.origin+location.pathname+'#'+b.dataset.cp; try{await navigator.clipboard.writeText(u);}catch(x){} b.textContent=I18N[lang].L_copied; try{history.replaceState(null,'','#'+b.dataset.cp);}catch(x){} });
+$('le').addEventListener('toggle',()=>klSend(),true);
+function openHash(){ const h=decodeURIComponent(location.hash.slice(1)); if(!h) return; const el=document.getElementById(h); if(el&&el.tagName==='DETAILS'){ el.open=true; setTimeout(()=>el.scrollIntoView({block:'start'}),30); } }
+window.addEventListener('hashchange',openHash);
+applyLang(); openHash();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
