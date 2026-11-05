@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Khóa Credit Danh Tính</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T37 thêm (không đổi class cũ) ---- */
+.score{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.score b{font-family:var(--display);font-weight:400;font-size:40px;line-height:1;font-variant-numeric:tabular-nums;color:var(--fg)}
+.score span{font-size:13px;color:var(--muted)}
+.rng{width:100%;margin:4px 0 0;accent-color:var(--brass);height:28px;cursor:pointer}
+.ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.total .pay{margin-top:10px;font-size:15px;color:var(--muted)}
+.total .pay b{color:var(--fg);font-size:22px;font-weight:500;font-variant-numeric:tabular-nums}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45;background:var(--brass-soft)}
+.status b{font-weight:500}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.tbl th{font-size:12px;font-weight:500;color:var(--muted);text-align:right;padding:6px 0;border-bottom:1px solid var(--line)}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl td{padding:9px 0;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.tbl td small{color:var(--muted);font-size:11px;display:block;white-space:normal}
+.tbl tr.me td{color:var(--brass);font-weight:600}
+.tbl tr.me td small{color:var(--brass);font-weight:400}
+.tbl td.x{color:var(--warn)}
+.tbl tr.me td.x{color:var(--brass)}
+.tblk{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.tlw{display:grid;gap:12px}
+.tlw h2,.next h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-r{display:flex;align-items:center;gap:10px}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.gcal{font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.task .why a{color:var(--brass)}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+</style>
+<meta name="description" content="Step-by-step checklist: free credit freeze at all 3 bureaus, fraud alert 1 or 7 years, IdentityTheft.gov, and when to lift the freeze before a lender pulls credit.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t239/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Credit Freeze &amp; Identity Theft Checklist · Ken Lam Tools">
+<meta property="og:description" content="Step-by-step checklist: free credit freeze at all 3 bureaus, fraud alert 1 or 7 years, IdentityTheft.gov, and when to lift the freeze before a lender pulls credit.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t239/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+<style>
+/* ---- credit group additions (không đổi class cũ) ---- */
+.embed .kl-back{display:none}
+[hidden]{display:none!important}
+.total .pay b{font-size:inherit;font-weight:600}
+#sit{display:grid;grid-template-columns:1fr 1fr}
+#sit button{border-top:1px solid var(--line)}
+#sit button:nth-child(-n+2){border-top:0}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:12px 2px;appearance:auto}
+.ctl input[type=date],.ctl input[type=month]{font-size:17px;min-height:48px}
+.seg{flex-wrap:wrap}
+.letter{white-space:pre-wrap;word-break:break-word;font-family:var(--body);font-size:14px;line-height:1.55;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:16px;margin:0;max-height:520px;overflow:auto}
+.letter mark{background:var(--brass-soft);color:var(--fg);border-radius:4px;padding:0 2px}
+.letter .pb{display:block;border-top:1px dashed var(--line);margin:18px 0}
+.lbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.addr{font-size:14px;line-height:1.5;display:grid;gap:8px}
+.addr div{border-left:2px solid var(--brass);padding-left:10px}
+.warnbox{font-size:14px;line-height:1.5;border:1px solid var(--warn);color:var(--fg);border-radius:10px;padding:10px 12px}
+.warnbox b{color:var(--warn);font-weight:500}
+.links{display:grid;gap:8px}
+.links a{color:var(--brass)}
+@media print{
+  body{background:#fff;color:#000;padding:0}
+  body *{visibility:hidden}
+  #letter,#letter *{visibility:visible}
+  #letter{position:absolute;left:0;top:0;width:100%;max-height:none;overflow:visible;border:0;background:#fff;padding:0;font-size:12pt;color:#000}
+  #letter mark{background:none;color:#000}
+  #letter .pb{border:0;margin:0;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Credit freeze &amp; identity theft checklist</h1>
+    <p class="sub" data-i="sub">Pick what is going on. Get the steps in order, the official links, and the dates to remember.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label><span data-i="l_sit">What is going on?</span></label>
+      <div class="seg" id="sit" role="group">
+        <button type="button" data-s="prevent" aria-pressed="true" data-i="s_prevent">Just protect me</button>
+        <button type="button" data-s="lost" aria-pressed="false" data-i="s_lost">Lost wallet / SSN leaked</button>
+        <button type="button" data-s="theft" aria-pressed="false" data-i="s_theft">Strange account on report</button>
+        <button type="button" data-s="loan" aria-pressed="false" data-i="s_loan">Applying for a loan soon</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="dt"><span id="lDate"></span></label>
+      <div class="ctl"><input id="dt" type="date"></div>
+    </div>
+    <div class="field" id="rptF">
+      <label><span data-i="l_rpt">Filed an FTC or police report yet?</span></label>
+      <div class="seg" id="rpt" role="group">
+        <button type="button" data-r="0" aria-pressed="true" data-i="r_no">Not yet</button>
+        <button type="button" data-r="1" aria-pressed="false" data-i="r_yes">Yes</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" id="rK"></div>
+      <div class="v"><span id="rV"></span> <small id="rU"></small></div>
+      <div class="pay" id="rPay"></div>
+    </div>
+    <div class="lines" id="rLines"></div>
+    <div class="warnbox" id="loanWarn" data-i="loan_warn"><b>Before a lender pulls your credit:</b> temporarily lift (thaw) the freeze at all 3 bureaus. Mortgages pull all 3 (tri-merge). If it is still frozen, the pull fails and your pre-approval waits.</div>
+    <div class="links">
+      <div class="tblk" data-i="t_links">Official links</div>
+      <div id="links"></div>
+    </div>
+    <div class="note" data-i="priv_note">This page asks for no SSN, no account numbers and sends nothing anywhere. Only type your SSN on the bureaus' own sites or IdentityTheft.gov.</div>
+  </section>
+
+  <section class="tlw" aria-label="Checklist">
+    <div class="top"><h2 id="ckT"></h2><span class="cnt"><span id="ckDone">0</span>/<span id="ckAll">0</span> <span data-i="ck_tasks">done</span></span></div>
+    <div class="bar" aria-hidden="true"><i class="b1" id="ckBar"></i></div>
+    <div id="tl"></div>
+    <button type="button" class="reset" id="ckReset" data-i="ck_reset">Clear checkmarks</button>
+  </section>
+
+  <p class="myth" data-i="myth"><b>Common myth:</b> "Freezing my credit costs money, so I'll buy a monitoring plan." A credit freeze is free at all 3 bureaus (federal law since Sep 21, 2018) and stays on until you lift it.</p>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">Pull all 3 reports free, every week, at <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">AnnualCreditReport.com</a>. Look for accounts and inquiries you don't know.</li>
+      <li data-i="nx2">Found an account that isn't yours? Write the dispute letter in <a href="/t234/">T234</a> (reason: identity theft) and enclose your FTC report.</li>
+      <li data-i="nx3">Shopping lenders? Lift the freeze first, then keep the pulls inside the window in <a href="/t237/">T237</a>.</li>
+      <li data-i="nx4">See your overall credit picture in <a href="/t230/">T230</a>, and what your score costs you in <a href="/t37/">T37</a>.</li>
+    </ol>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video guide"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t239/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this checklist to yourself</h2>
+    <p data-i="f_sub">You get the steps, the links and the dates. No SSN, no account numbers. No spam.</p>
+    <div class="field"><label for="fname" data-i="f_name">Name</label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone" data-i="f_phone">Phone (optional)</label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sentOk" hidden data-i="f_ok">Email opened. Hit Send and you're done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#credit-freeze" target="_blank" rel="noopener" data-i="ft_lib">Credit freeze and identity theft</a> · <a href="https://kenlamrealty.com/library#video-credit" target="_blank" rel="noopener" data-i="ft_vid">Kiến Thức Địa Ốc video</a></span>
+    <span data-i="ft_est">For information only. Not legal or financial advice, and not a commitment to lend. Real scores are calculated by FICO/VantageScore and the 3 bureaus.</span>
+    <span class="src"><span data-i="ft_src">Sources</span> (05/11/2026):
+      <a href="https://consumer.ftc.gov/articles/credit-freeze-or-fraud-alert-whats-right-your-credit-report" target="_blank" rel="noopener">FTC: Credit freeze or fraud alert (Aug 2025)</a> ·
+      <a href="https://consumer.ftc.gov/consumer-alerts/2018/09/free-credit-freezes-are-here" target="_blank" rel="noopener">FTC: Free credit freezes (Sep 2018)</a> ·
+      <a href="https://www.identitytheft.gov" target="_blank" rel="noopener">IdentityTheft.gov</a> ·
+      <a href="https://www.fhfa.gov/policy/credit-scores" target="_blank" rel="noopener">FHFA: tri-merge</a> ·
+      <a href="https://consumer.ftc.gov/blog/2020/05/credit-reports-are-now-free-every-week" target="_blank" rel="noopener">FTC: free weekly reports</a></span>
+    <span class="who">Ken Lam Realty · Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 05/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số liệu / luật — sửa ở đây (tra 05/11/2026, nguồn: /home/claude/credit/FACTS.md) =====
+   Freeze: miễn phí, giữ tới khi mình mở, phải làm ở cả 3 bureau (free từ 21/09/2018) —
+     https://consumer.ftc.gov/articles/credit-freeze-or-fraud-alert-whats-right-your-credit-report (Aug 2025) VERIFIED
+   Fraud alert: initial 1 năm (gia hạn được, báo 1 bureau là đủ); extended 7 năm (cần FTC Identity Theft Report hoặc police report);
+     active duty 1 năm — cùng nguồn FTC. VERIFIED
+   IdentityTheft.gov = nơi làm FTC Identity Theft Report — VERIFIED
+   Tri-merge (mortgage kéo cả 3 bureau) vẫn bắt buộc — https://www.fhfa.gov/policy/credit-scores VERIFIED
+   LIFT_BEFORE 3 ngày: nhắc mở freeze trước ngày lender kéo — ƯỚC TÍNH (FACTS không có thời gian mở), KEN DUYỆT.
+   REMIND_BEFORE 14 ngày: nhắc gia hạn fraud alert trước khi hết — chọn cho tiện, không phải luật.
+   FREEZE_URL: trang freeze của từng bureau — KHÔNG có trong FACTS, KEN DUYỆT (link chính của FTC: IdentityTheft.gov CreditBureauContacts). */
+const RULES={INITIAL_YRS:1,EXTENDED_YRS:7,LIFT_BEFORE:3,REMIND_BEFORE:14,FREEZE_COST:0};
+const FREEZE_URL={
+  eq:{name:'Equifax',url:'https://www.equifax.com/personal/credit-report-services/credit-freeze/'},
+  ex:{name:'Experian',url:'https://www.experian.com/freeze/center.html'},
+  tu:{name:'TransUnion',url:'https://www.transunion.com/credit-freeze'}
+};
+const LINK={ftcContacts:'https://www.identitytheft.gov/#/CreditBureauContacts',idt:'https://www.identitytheft.gov',acr:'https://www.annualcreditreport.com',ftc:'https://consumer.ftc.gov/articles/credit-freeze-or-fraud-alert-whats-right-your-credit-report'};
+/* Thứ tự việc theo tình huống. Mỗi id có chữ trong I18N.t_<id> = [việc, giải thích] */
+const STEPS={
+  prevent:['fz_eq','fz_ex','fz_tu','pin','pull','liftrule'],
+  lost:['alert1','fz_all','pull','watch','renew'],
+  theft:['idt','fz_all','alert7','dispute','company','pull'],
+  loan:['askb','lift','keep','refz','shop']
+};
+
+const I18N={
+ vi:{title:'Khóa credit &amp; bị lấy cắp danh tính',sub:'Chọn chuyện đang gặp. Ra từng bước theo thứ tự, link chính thức, và các ngày cần nhớ.',
+  l_sit:'Đang gặp chuyện gì?',s_prevent:'Chỉ muốn phòng ngừa',s_lost:'Mất ví / lộ SSN',s_theft:'Thấy tài khoản lạ',s_loan:'Sắp xin vay',
+  ld_prevent:'Ngày bạn khóa (freeze)',ld_lost:'Ngày mất ví / lộ SSN',ld_theft:'Ngày phát hiện tài khoản lạ',ld_loan:'Ngày lender sẽ kéo credit',
+  l_rpt:'Đã làm FTC report hoặc police report chưa?',r_no:'Chưa',r_yes:'Rồi',
+  k_prevent:'Khóa credit ở 3 bureau tốn',u_prevent:'mỗi bureau',p_prevent:'Freeze <b>miễn phí</b>, giữ tới khi bạn tự mở. Phải làm ở <b>cả 3</b>.',
+  k_lost:'Fraud alert 1 năm hết hạn ngày',p_lost:'Đặt alert ở 1 bureau là đủ, họ báo 2 bureau kia. Gia hạn được.',
+  k_theft1:'Extended fraud alert (7 năm) tới',p_theft1:'Cần FTC Identity Theft Report hoặc police report. Bạn đã có, nên xin được.',
+  k_theft0:'Việc đầu tiên: làm report ở',p_theft0:'Có FTC report rồi mới xin được extended fraud alert <b>7 năm</b>.',
+  k_loan:'Mở freeze tạm thời trước ngày',p_loan:'Lender kéo credit ngày <b>{d}</b>. Mở ở <b>cả 3 bureau</b>, nhắc {n} ngày trước (ước tính).',
+  ln_cost:'Phí freeze',ln_cost_v:'$0 × 3 bureau',ln_a1:'Initial fraud alert (1 năm) hết',ln_a7:'Extended fraud alert (7 năm) hết',ln_lift:'Mở freeze trước',ln_pull:'Lender kéo credit',ln_renew:'Nhắc gia hạn alert',ln_need:'cần FTC/police report',
+  loan_warn:'<b>Trước khi lender kéo credit:</b> mở freeze tạm thời (lift / thaw) ở cả 3 bureau. Mortgage kéo cả 3 (tri-merge). Còn khóa là kéo không được, pre-approval phải chờ.',
+  t_links:'Link chính thức',lk_eq:'Equifax: trang freeze',lk_ex:'Experian: trang freeze',lk_tu:'TransUnion: trang freeze',lk_ftc:'FTC: liên lạc 3 bureau (freeze & fraud alert)',lk_idt:'IdentityTheft.gov: làm FTC Identity Theft Report',lk_acr:'AnnualCreditReport.com: report miễn phí mỗi tuần',
+  priv_note:'Trang này không hỏi SSN, không hỏi số tài khoản, không gửi dữ liệu đi đâu. Chỉ gõ SSN trên trang chính thức của bureau hoặc IdentityTheft.gov.',
+  ck_t:{prevent:'Checklist khóa credit',lost:'Checklist khi mất ví / lộ SSN',theft:'Checklist khi bị lấy cắp danh tính',loan:'Checklist trước khi xin vay'},
+  ck_tasks:'xong',ck_reset:'Xoá dấu tick',gcal:'Nhắc trên Google Calendar',
+  cal_renew:'Gia hạn fraud alert (T239)',cal_lift:'Mở freeze credit cả 3 bureau (T239)',cal_d:'tools.kenlamrealty.com/t239/',
+  t_fz_eq:['Freeze ở Equifax','Miễn phí. Tạo account, lưu lại login hoặc PIN để sau này mở.'],
+  t_fz_ex:['Freeze ở Experian','Miễn phí. Mỗi bureau làm riêng, khóa 1 cái không khóa 2 cái kia.'],
+  t_fz_tu:['Freeze ở TransUnion','Miễn phí. Xong 3 cái là người lạ không mở được credit mới bằng tên bạn.'],
+  t_fz_all:['Freeze ở cả 3 bureau: Equifax, Experian, TransUnion','Miễn phí, giữ tới khi bạn mở. Fraud alert chỉ là "gọi xác nhận"; freeze mới chặn hẳn.'],
+  t_pin:['Cất login / PIN của 3 bureau chỗ an toàn','Lúc đi vay cần mở freeze. Quên login là mất thời gian.'],
+  t_pull:['Lấy report cả 3 bureau ở AnnualCreditReport.com','Miễn phí mỗi tuần. Coi có tài khoản hay inquiry lạ không.'],
+  t_liftrule:['Nhớ: trước khi xin vay, mở freeze tạm thời','Mở ở cả 3 cho mortgage. Đóng lại sau khi xong.'],
+  t_alert1:['Đặt initial fraud alert ở 1 bureau','Báo 1 bureau là họ báo 2 bureau kia. Giữ 1 năm, gia hạn được. Lender phải xác nhận với bạn trước khi mở credit mới.'],
+  t_watch:['Coi kỹ thẻ, ngân hàng, report vài tháng tới','Thấy tài khoản lạ thì chuyển qua tình huống "Thấy tài khoản lạ".'],
+  t_renew:['Gia hạn fraud alert trước khi hết 1 năm','Dùng nút nhắc Google Calendar ở trên.'],
+  t_idt:['Làm report ở IdentityTheft.gov','Ra FTC Identity Theft Report và kế hoạch từng bước. Report này dùng cho extended alert và thư dispute.'],
+  t_alert7:['Xin extended fraud alert 7 năm','Cần FTC Identity Theft Report hoặc police report.'],
+  t_dispute:['Dispute từng mục lạ với từng bureau','Dùng T234, chọn lý do "Bị lấy cắp danh tính", kèm FTC report.'],
+  t_company:['Gọi bộ phận fraud của công ty có tài khoản lạ','Báo tài khoản không phải của bạn, xin đóng, ghi lại tên người nói chuyện và ngày.'],
+  t_askb:['Hỏi lender sẽ kéo bureau nào, ngày nào','Mortgage kéo cả 3 (tri-merge). Đừng chỉ mở 1 bureau.'],
+  t_lift:['Mở freeze tạm thời ở cả 3 bureau','Chọn khoảng thời gian mở (vd 30 ngày) cho dư ra. Mở vài ngày trước ngày kéo là ước tính an toàn.'],
+  t_keep:['Để mở tới ngày close, hoặc hỏi lender khi nào kéo lại','Thực tế lender thường kiểm credit lại ngay trước close. Còn khóa là trễ.'],
+  t_refz:['Close xong thì khóa lại cả 3','Lift tạm thời thì tự khóa lại khi hết hạn; bỏ hẳn thì phải tự khóa lại.'],
+  t_shop:['So nhiều lender trong cùng 1 khoảng thời gian','Coi T237: kéo dồn trong cửa sổ thì chỉ tính như 1 inquiry.'],
+  myth:'<b>Nhiều người hiểu sai:</b> "Khóa credit tốn tiền, thôi mua gói monitoring." Không. Freeze <b>miễn phí</b> ở cả 3 bureau (luật liên bang từ 21/09/2018) và giữ tới khi bạn tự mở.',
+  nx_title:'Bước tiếp theo',
+  nx1:'Lấy report cả 3 bureau miễn phí, tuần nào cũng được, ở <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">AnnualCreditReport.com</a>. Coi có tài khoản, inquiry lạ không.',
+  nx2:'Thấy tài khoản không phải của mình? Viết thư dispute ở <a href="/t234/">T234</a> (lý do: bị lấy cắp danh tính), kèm FTC report.',
+  nx3:'Đi hỏi lender? Mở freeze trước, rồi dồn các lần kéo trong cửa sổ ở <a href="/t237/">T237</a>.',
+  nx4:'Coi tổng quát credit ở <a href="/t230/">T230</a>, và điểm đang làm mình tốn bao nhiêu ở <a href="/t37/">T37</a>.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video',
+  f_title:'Gửi checklist này về email',f_sub:'Bạn nhận các bước, link và ngày. Không SSN, không số tài khoản. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Khóa credit và bị lấy cắp danh tính',ft_vid:'Video Kiến Thức Địa Ốc',
+  ft_est:'Thông tin tham khảo, không phải tư vấn pháp lý, tài chính hay cam kết cho vay. Điểm thật do FICO/VantageScore và 3 bureau tính.',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi dùng tool T239 (khóa credit): {s}, ngày {d}. {k} {v}. Nhờ Ken chỉ thêm.',
+  subj:'Checklist khóa credit — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nTình huống: {s}\nNgày: {d}\n{k} {v}\n{lines}\n\nCác bước:\n{ck}\n\nLink:\n{lk}\n\nGửi từ tool T239 tools.kenlamrealty.com'},
+ en:{title:'Credit freeze &amp; identity theft checklist',sub:'Pick what is going on. Get the steps in order, the official links, and the dates to remember.',
+  l_sit:'What is going on?',s_prevent:'Just protect me',s_lost:'Lost wallet / SSN leaked',s_theft:'Strange account on report',s_loan:'Applying for a loan soon',
+  ld_prevent:'Date you freeze',ld_lost:'Date wallet was lost / SSN leaked',ld_theft:'Date you found the account',ld_loan:'Date the lender will pull credit',
+  l_rpt:'Filed an FTC or police report yet?',r_no:'Not yet',r_yes:'Yes',
+  k_prevent:'Freezing at the 3 bureaus costs',u_prevent:'per bureau',p_prevent:'A freeze is <b>free</b> and stays until you lift it. Do it at <b>all 3</b>.',
+  k_lost:'1-year fraud alert ends on',p_lost:'Place it at one bureau; that bureau tells the other two. You can renew it.',
+  k_theft1:'Extended fraud alert (7 years) until',p_theft1:'Needs an FTC Identity Theft Report or police report. You have one, so you can ask for it.',
+  k_theft0:'First step: file a report at',p_theft0:'You need an FTC report before you can get the <b>7-year</b> extended fraud alert.',
+  k_loan:'Lift the freeze before',p_loan:'The lender pulls on <b>{d}</b>. Lift at <b>all 3 bureaus</b>; reminder set {n} days ahead (estimate).',
+  ln_cost:'Freeze fee',ln_cost_v:'$0 × 3 bureaus',ln_a1:'Initial fraud alert (1 yr) ends',ln_a7:'Extended fraud alert (7 yr) ends',ln_lift:'Lift freeze by',ln_pull:'Lender pulls credit',ln_renew:'Renewal reminder',ln_need:'needs FTC/police report',
+  loan_warn:'<b>Before a lender pulls your credit:</b> temporarily lift (thaw) the freeze at all 3 bureaus. Mortgages pull all 3 (tri-merge). If it is still frozen, the pull fails and your pre-approval waits.',
+  t_links:'Official links',lk_eq:'Equifax: freeze page',lk_ex:'Experian: freeze page',lk_tu:'TransUnion: freeze page',lk_ftc:'FTC: contact the 3 bureaus (freeze & fraud alert)',lk_idt:'IdentityTheft.gov: file an FTC Identity Theft Report',lk_acr:'AnnualCreditReport.com: free reports every week',
+  priv_note:"This page asks for no SSN, no account numbers and sends nothing anywhere. Only type your SSN on the bureaus' own sites or IdentityTheft.gov.",
+  ck_t:{prevent:'Credit freeze checklist',lost:'Lost wallet / SSN leaked checklist',theft:'Identity theft checklist',loan:'Before you apply for a loan'},
+  ck_tasks:'done',ck_reset:'Clear checkmarks',gcal:'Remind me in Google Calendar',
+  cal_renew:'Renew fraud alert (T239)',cal_lift:'Lift credit freeze at all 3 bureaus (T239)',cal_d:'tools.kenlamrealty.com/t239/',
+  t_fz_eq:['Freeze at Equifax','Free. Make an account and save the login or PIN so you can lift it later.'],
+  t_fz_ex:['Freeze at Experian','Free. Each bureau is separate; freezing one does not freeze the others.'],
+  t_fz_tu:['Freeze at TransUnion','Free. With all 3 done, a stranger can\'t open new credit in your name.'],
+  t_fz_all:['Freeze at all 3 bureaus: Equifax, Experian, TransUnion','Free and stays until you lift it. A fraud alert only asks lenders to verify; a freeze blocks new credit.'],
+  t_pin:['Store your 3 bureau logins / PINs somewhere safe','You will need them to lift the freeze when you apply for a loan.'],
+  t_pull:['Pull all 3 reports at AnnualCreditReport.com','Free every week. Look for accounts or inquiries you don\'t know.'],
+  t_liftrule:['Remember: lift the freeze before you apply for credit','For a mortgage, lift all 3. Freeze again when done.'],
+  t_alert1:['Place an initial fraud alert at one bureau','That bureau tells the other two. Lasts 1 year, renewable. Lenders must verify it is you before opening new credit.'],
+  t_watch:['Watch your cards, bank and reports for a few months','See an account you don\'t know? Switch to "Strange account on report".'],
+  t_renew:['Renew the fraud alert before the year ends','Use the Google Calendar reminder above.'],
+  t_idt:['File a report at IdentityTheft.gov','You get an FTC Identity Theft Report and a step-by-step plan. Use it for the extended alert and dispute letters.'],
+  t_alert7:['Ask for a 7-year extended fraud alert','Needs an FTC Identity Theft Report or police report.'],
+  t_dispute:['Dispute each fake item with each bureau','Use T234, reason "Identity theft", and enclose your FTC report.'],
+  t_company:['Call the fraud department of the company with the fake account','Say it isn\'t yours, ask to close it, write down who you spoke to and the date.'],
+  t_askb:['Ask the lender which bureaus they pull, and when','Mortgages pull all 3 (tri-merge). Don\'t lift just one.'],
+  t_lift:['Temporarily lift the freeze at all 3 bureaus','Pick a lift window with room to spare (say 30 days). Lifting a few days before the pull is a safe estimate.'],
+  t_keep:['Keep it lifted until closing, or ask when they pull again','In practice lenders often re-check credit right before closing. Frozen then means a delay.'],
+  t_refz:['After closing, freeze all 3 again','A temporary lift re-freezes on its own when it ends; a full removal does not.'],
+  t_shop:['Shop lenders inside one short window','See T237: pulls bunched in the window count like one inquiry.'],
+  myth:'<b>Common myth:</b> "Freezing my credit costs money, so I\'ll buy a monitoring plan." A credit freeze is <b>free</b> at all 3 bureaus (federal law since Sep 21, 2018) and stays on until you lift it.',
+  nx_title:'Next steps',
+  nx1:'Pull all 3 reports free, every week, at <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">AnnualCreditReport.com</a>. Look for accounts and inquiries you don\'t know.',
+  nx2:'Found an account that isn\'t yours? Write the dispute letter in <a href="/t234/">T234</a> (reason: identity theft) and enclose your FTC report.',
+  nx3:'Shopping lenders? Lift the freeze first, then keep the pulls inside the window in <a href="/t237/">T237</a>.',
+  nx4:'See your overall credit picture in <a href="/t230/">T230</a>, and what your score costs you in <a href="/t37/">T37</a>.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch video',
+  f_title:'Email this checklist to yourself',f_sub:'You get the steps, the links and the dates. No SSN, no account numbers. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'Credit freeze and identity theft',ft_vid:'Kiến Thức Địa Ốc video',
+  ft_est:'For information only. Not legal or financial advice, and not a commitment to lend. Real scores are calculated by FICO/VantageScore and the 3 bureaus.',
+  ft_src:'Sources',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I used tool T239 (credit freeze): {s}, date {d}. {k} {v}. Can you help?',
+  subj:'Credit freeze checklist — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nSituation: {s}\nDate: {d}\n{k} {v}\n{lines}\n\nSteps:\n{ck}\n\nLinks:\n{lk}\n\nSent from tool T239 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const strip=s=>String(s).replace(/<[^>]+>/g,'').replace(/&amp;/g,'&');
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const addDays=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+const addYears=(d,n)=>{ const x=new Date(d.getFullYear()+n,d.getMonth(),d.getDate()); if(x.getMonth()!==d.getMonth()) x.setDate(0); return x; };
+const parseD=s=>{ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||''); return m?new Date(+m[1],+m[2]-1,+m[3]):null; };
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const fD=d=>lang==='vi'?pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear():MON[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
+function gcal(text,d,details){ return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(text)+'&dates='+ymd(d)+'/'+ymd(addDays(d,1))+'&details='+encodeURIComponent(details); }
+async function copyText(txt,btn){ try{ await navigator.clipboard.writeText(txt); }catch(e){ const t=document.createElement('textarea'); t.value=txt; t.style.position='fixed'; t.style.opacity='0'; document.body.appendChild(t); t.select(); try{document.execCommand('copy')}catch(_){} t.remove(); } if(btn){ const o=btn.textContent; btn.textContent='✓'; setTimeout(()=>{btn.textContent=o},1400);} }
+
+/* ----- Tính — hàm thuần ----- */
+function dates(d0){ const a1=addYears(d0,RULES.INITIAL_YRS); return {a1,a7:addYears(d0,RULES.EXTENDED_YRS),renew:addDays(a1,-RULES.REMIND_BEFORE),lift:addDays(d0,-RULES.LIFT_BEFORE)}; }
+
+let sit='prevent', rpt=0, last={}, done={};
+try{ done=JSON.parse(localStorage.getItem('kl_t239_ck')||'{}')||{}; }catch(e){ done={}; }
+const saveDone=()=>{ try{ localStorage.setItem('kl_t239_ck',JSON.stringify(done)); }catch(e){} };
+
+function calc(){
+  const d=I18N[lang], today=new Date(); today.setHours(0,0,0,0);
+  const d0=parseD($('dt').value)||today, x=dates(d0);
+  $('lDate').textContent=d['ld_'+sit];
+  $('rptF').hidden=!(sit==='theft'||sit==='lost');
+  $('loanWarn').hidden=sit!=='loan'&&sit!=='prevent';
+  let k,v,u='',p,lines=[],cal=null;
+  if(sit==='prevent'){ k=d.k_prevent; v='$'+RULES.FREEZE_COST; u=d.u_prevent; p=d.p_prevent;
+    lines=[[d.ln_cost,d.ln_cost_v]]; }
+  else if(sit==='lost'){ k=d.k_lost; v=fD(x.a1); p=d.p_lost;
+    lines=[[d.ln_a1,fD(x.a1)],[d.ln_renew,fD(x.renew)],[d.ln_a7,rpt?fD(x.a7):d.ln_need],[d.ln_cost,d.ln_cost_v]];
+    cal={t:d.cal_renew,d:x.renew}; }
+  else if(sit==='theft'){ if(rpt){ k=d.k_theft1; v=fD(x.a7); p=d.p_theft1; } else { k=d.k_theft0; v='IdentityTheft.gov'; p=d.p_theft0; }
+    lines=[[d.ln_a7,rpt?fD(x.a7):d.ln_need],[d.ln_a1,fD(x.a1)],[d.ln_cost,d.ln_cost_v]]; }
+  else { k=d.k_loan; v=fD(x.lift); p=d.p_loan.replace('{d}',esc(fD(d0))).replace('{n}',RULES.LIFT_BEFORE);
+    lines=[[d.ln_lift,fD(x.lift)],[d.ln_pull,fD(d0)],[d.ln_cost,d.ln_cost_v]];
+    cal={t:d.cal_lift,d:x.lift}; }
+  $('rK').textContent=k; $('rV').textContent=v; $('rU').textContent=u; $('rPay').innerHTML=p;
+  $('rV').style.fontSize=v.length>12?'40px':'';
+  $('rLines').innerHTML=lines.map(l=>'<div class="line"><span class="n">'+esc(l[0])+'</span><span class="a">'+esc(l[1])+'</span></div>').join('');
+  const lk=[];
+  if(sit!=='lost'||true){ ['eq','ex','tu'].forEach(b=>lk.push([d['lk_'+b],FREEZE_URL[b].url])); }
+  lk.push([d.lk_ftc,LINK.ftcContacts]);
+  if(sit==='theft'||sit==='lost') lk.push([d.lk_idt,LINK.idt]);
+  lk.push([d.lk_acr,LINK.acr]);
+  $('links').innerHTML=lk.map(l=>'<div><a href="'+l[1]+'" target="_blank" rel="noopener">'+esc(l[0])+'</a></div>').join('');
+  /* checklist */
+  const ids=STEPS[sit]; let h='<div class="phase">', n=0;
+  if(cal) h+='<div class="ph-h"><h3>'+esc(fD(cal.d))+'</h3><span class="ph-r"><a class="gcal" target="_blank" rel="noopener" href="'+esc(gcal(cal.t,cal.d,d.cal_d))+'">'+esc(d.gcal)+'</a></span></div>';
+  ids.forEach(id=>{ const key=sit+'_'+id, ok=!!done[key], [t,why]=d['t_'+id]; if(ok) n++;
+    h+='<div class="task'+(ok?' done':'')+'"><input type="checkbox" data-k="'+key+'" aria-label="'+esc(t)+'"'+(ok?' checked':'')+'><span class="tt">'+esc(t)+'</span><div class="why">'+esc(why)+'</div></div>'; });
+  $('tl').innerHTML=h+'</div>'; $('ckT').textContent=d.ck_t[sit];
+  $('ckDone').textContent=n; $('ckAll').textContent=ids.length; $('ckBar').style.width=(n/ids.length*100)+'%';
+  last={s:strip(d['s_'+sit]),d:fD(d0),k,v,lines:lines.map(l=>l[0]+': '+l[1]).join('\n'),ck:ids.map((id,i)=>(i+1)+'. '+d['t_'+id][0]).join('\n'),lk:lk.map(l=>l[0]+': '+l[1]).join('\n')};
+  const s=d.sms.replace(/\{(\w+)\}/g,(m,kk)=>last[kk]??m);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s);
+}
+$('tl').addEventListener('change',e=>{ const k=e.target.getAttribute&&e.target.getAttribute('data-k'); if(!k) return; if(e.target.checked) done[k]=1; else delete done[k]; saveDone(); calc(); });
+$('ckReset').onclick=()=>{ done={}; saveDone(); calc(); };
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+function seg(id,attr,set){ document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{ set(b.getAttribute(attr)); document.querySelectorAll('#'+id+' button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); calc(); }); }
+seg('sit','data-s',v=>{sit=v;}); seg('rpt','data-r',v=>{rpt=+v;});
+$('dt').addEventListener('input',calc); $('dt').addEventListener('change',calc);
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing), hoặc thay bằng fetch() tới FUB webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sentOk').hidden=false;
+};
+$('copyBtn').onclick=()=>copyText('4086662825',$('copyBtn'));
+$('dt').value=iso(new Date());
+try{ if(new URLSearchParams(location.search).get('embed')==='1') document.documentElement.classList.add('embed'); }catch(e){}
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

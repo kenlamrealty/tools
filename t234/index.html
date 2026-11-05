@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Thư Dispute Credit</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T37 thêm (không đổi class cũ) ---- */
+.score{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.score b{font-family:var(--display);font-weight:400;font-size:40px;line-height:1;font-variant-numeric:tabular-nums;color:var(--fg)}
+.score span{font-size:13px;color:var(--muted)}
+.rng{width:100%;margin:4px 0 0;accent-color:var(--brass);height:28px;cursor:pointer}
+.ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.total .pay{margin-top:10px;font-size:15px;color:var(--muted)}
+.total .pay b{color:var(--fg);font-size:22px;font-weight:500;font-variant-numeric:tabular-nums}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45;background:var(--brass-soft)}
+.status b{font-weight:500}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.tbl th{font-size:12px;font-weight:500;color:var(--muted);text-align:right;padding:6px 0;border-bottom:1px solid var(--line)}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl td{padding:9px 0;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.tbl td small{color:var(--muted);font-size:11px;display:block;white-space:normal}
+.tbl tr.me td{color:var(--brass);font-weight:600}
+.tbl tr.me td small{color:var(--brass);font-weight:400}
+.tbl td.x{color:var(--warn)}
+.tbl tr.me td.x{color:var(--brass)}
+.tblk{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.tlw{display:grid;gap:12px}
+.tlw h2,.next h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-r{display:flex;align-items:center;gap:10px}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.gcal{font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.task .why a{color:var(--brass)}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+</style>
+<meta name="description" content="Build a credit report dispute letter for Equifax, Experian or TransUnion, or a goodwill letter to a creditor. Copy or print, with the 30/45-day deadline.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t234/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Credit Report Dispute &amp; Goodwill Letter · Ken Lam Tools">
+<meta property="og:description" content="Build a credit report dispute letter for Equifax, Experian or TransUnion, or a goodwill letter to a creditor. Copy or print, with the 30/45-day deadline.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t234/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+<style>
+/* ---- credit group additions (không đổi class cũ) ---- */
+.embed .kl-back{display:none}
+[hidden]{display:none!important}
+.total .pay b{font-size:inherit;font-weight:600}
+#sit{display:grid;grid-template-columns:1fr 1fr}
+#sit button{border-top:1px solid var(--line)}
+#sit button:nth-child(-n+2){border-top:0}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:12px 2px;appearance:auto}
+.ctl input[type=date],.ctl input[type=month]{font-size:17px;min-height:48px}
+.seg{flex-wrap:wrap}
+.letter{white-space:pre-wrap;word-break:break-word;font-family:var(--body);font-size:14px;line-height:1.55;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:16px;margin:0;max-height:520px;overflow:auto}
+.letter mark{background:var(--brass-soft);color:var(--fg);border-radius:4px;padding:0 2px}
+.letter .pb{display:block;border-top:1px dashed var(--line);margin:18px 0}
+.lbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.addr{font-size:14px;line-height:1.5;display:grid;gap:8px}
+.addr div{border-left:2px solid var(--brass);padding-left:10px}
+.warnbox{font-size:14px;line-height:1.5;border:1px solid var(--warn);color:var(--fg);border-radius:10px;padding:10px 12px}
+.warnbox b{color:var(--warn);font-weight:500}
+.links{display:grid;gap:8px}
+.links a{color:var(--brass)}
+@media print{
+  body{background:#fff;color:#000;padding:0}
+  body *{visibility:hidden}
+  #letter,#letter *{visibility:visible}
+  #letter{position:absolute;left:0;top:0;width:100%;max-height:none;overflow:visible;border:0;background:#fff;padding:0;font-size:12pt;color:#000}
+  #letter mark{background:none;color:#000}
+  #letter .pb{border:0;margin:0;break-after:page;page-break-after:always}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Write a credit report dispute letter</h1>
+    <p class="sub" data-i="sub">Pick the bureau, the item and what is wrong. The letter fills in below. Copy it or print it, then mail it certified.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label><span data-i="l_mode">Which letter?</span></label>
+      <div class="seg" id="mode" role="group">
+        <button type="button" data-m="dispute" aria-pressed="true" data-i="m_dispute">Dispute (error)</button>
+        <button type="button" data-m="goodwill" aria-pressed="false" data-i="m_goodwill">Goodwill (true late)</button>
+      </div>
+    </div>
+    <div class="field dsp">
+      <label for="bureau"><span data-i="l_bureau">Send to which bureau?</span></label>
+      <div class="ctl"><select id="bureau"></select></div>
+    </div>
+    <div class="row2 dsp">
+      <div class="field">
+        <label for="item"><span data-i="l_item">What item?</span></label>
+        <div class="ctl"><select id="item"></select></div>
+      </div>
+      <div class="field">
+        <label for="reason"><span data-i="l_reason">What is wrong?</span></label>
+        <div class="ctl"><select id="reason"></select></div>
+      </div>
+    </div>
+    <div class="row2 gw" hidden>
+      <div class="field">
+        <label for="lateMo"><span data-i="l_late">Month of the late payment</span></label>
+        <div class="ctl"><input id="lateMo" type="month"></div>
+      </div>
+      <div class="field">
+        <label for="gwWhy"><span data-i="l_why">Why it happened</span></label>
+        <div class="ctl"><select id="gwWhy"></select></div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="sentD"><span data-i="l_date">Date you mail it</span></label>
+      <div class="ctl"><input id="sentD" type="date"></div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" id="rK"></div>
+      <div class="v"><span id="rV"></span> <small id="rU"></small></div>
+      <div class="pay" id="rPay"></div>
+    </div>
+    <div class="lines" id="rLines"></div>
+    <div class="warnbox" id="gwWarn" hidden data-i="gw_warn"><b>A goodwill letter is a request, not a legal right.</b> If the late payment is accurate, the creditor can say no and the late can stay up to 7 years. Ask politely. Never threaten.</div>
+    <div class="note" id="hint"></div>
+    <div>
+      <div class="tblk" data-i="t_letter">Your letter (English, so the bureau or creditor can read it)</div>
+    </div>
+    <pre class="letter" id="letter"></pre>
+    <div class="lbtns">
+      <button class="btn primary" type="button" id="copyL" data-i="b_copy">Copy letter</button>
+      <button class="btn" type="button" id="printL" data-i="b_print">Print letter</button>
+    </div>
+    <div class="note" data-i="ph_note">Fill in every [bracket] by hand after you print. This page never asks for your full SSN or full account numbers and sends nothing anywhere.</div>
+    <div class="addr" id="addr"></div>
+  </section>
+
+  <section class="tlw" aria-label="Checklist">
+    <div class="top"><h2 id="ckT"></h2><span class="cnt"><span id="ckDone">0</span>/<span id="ckAll">0</span> <span data-i="ck_tasks">done</span></span></div>
+    <div class="bar" aria-hidden="true"><i class="b1" id="ckBar"></i></div>
+    <div id="tl"></div>
+    <button type="button" class="reset" id="ckReset" data-i="ck_reset">Clear checkmarks</button>
+  </section>
+
+  <p class="myth" data-i="myth"><b>Common myth:</b> "A dispute can wipe any bad mark." No. Only information that is wrong or can't be verified gets corrected or removed. An accurate late or collection can stay up to 7 years.</p>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">Pull all 3 reports free, every week, at <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">AnnualCreditReport.com</a>. Find the exact item before you write.</li>
+      <li data-i="nx2">Not sure when an item falls off? Check <a href="/t233/">T233</a>. Want your overall picture first? <a href="/t230/">T230</a>.</li>
+      <li data-i="nx3">Account you never opened? Do the identity theft steps in <a href="/t239/">T239</a> first, then send this letter with your FTC report.</li>
+      <li data-i="nx4">Credit repair companies can't charge you before the work is done (CROA). The FTC says anything they can do legally, you can do yourself for little or no cost. See what your score costs you in <a href="/t37/">T37</a>.</li>
+    </ol>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video guide"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t234/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email the deadlines to yourself</h2>
+    <p data-i="f_sub">You get the bureau, the deadline dates and the checklist. The letter itself stays on your device. No spam.</p>
+    <div class="field"><label for="fname" data-i="f_name">Name</label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone" data-i="f_phone">Phone (optional)</label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sentOk" hidden data-i="f_ok">Email opened. Hit Send and you're done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#credit-dispute" target="_blank" rel="noopener" data-i="ft_lib">Fixing errors on your credit report</a> · <a href="https://kenlamrealty.com/library#video-credit" target="_blank" rel="noopener" data-i="ft_vid">Kiến Thức Địa Ốc video</a></span>
+    <span data-i="ft_est">For information only. Not legal, financial advice or a commitment to lend. Real scores are calculated by FICO/VantageScore and the 3 bureaus.</span>
+    <span class="src"><span data-i="ft_src">Sources</span> (05/11/2026):
+      <a href="https://www.govinfo.gov/content/pkg/USCODE-2022-title15/html/USCODE-2022-title15-chap41-subchapIII-sec1681i.htm" target="_blank" rel="noopener">FCRA 15 USC 1681i (30/45 days)</a> ·
+      <a href="https://www.govinfo.gov/content/pkg/USCODE-2024-title15/html/USCODE-2024-title15-chap41-subchapIII-sec1681c.htm" target="_blank" rel="noopener">FCRA 15 USC 1681c (7 years)</a> ·
+      <a href="https://www.equifax.com/personal/help/article-list/-/h/a/mail-in-credit-report-dispute/" target="_blank" rel="noopener">Equifax mail dispute</a> ·
+      <a href="https://www.experian.com/disputes/experian-mailing-address.html" target="_blank" rel="noopener">Experian mail dispute</a> ·
+      <a href="https://www.transunion.com/customer-support/dispute-by-mail" target="_blank" rel="noopener">TransUnion dispute by mail</a> ·
+      <a href="https://www.bulkorder.ftc.gov/sites/bulkorder.ftc.gov/files/publications/965a_fixing_your_credit_jan2026-508.pdf" target="_blank" rel="noopener">FTC: Fixing your credit (CROA, Jan 2026)</a> ·
+      <a href="https://consumer.ftc.gov/blog/2020/05/credit-reports-are-now-free-every-week" target="_blank" rel="noopener">FTC: free weekly reports</a></span>
+    <span class="who">Ken Lam Realty · Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 05/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số liệu / luật — sửa ở đây (tra 05/11/2026, nguồn: /home/claude/credit/FACTS.md) =====
+   DAYS 30 / DAYS_MAX 45: FCRA 15 USC 1681i(a)(1) — bureau có 30 ngày từ lúc NHẬN dispute; +15 (tối đa 45) nếu mình gửi thêm thông tin trong 30 ngày đó.
+     https://www.govinfo.gov/content/pkg/USCODE-2022-title15/html/USCODE-2022-title15-chap41-subchapIII-sec1681i.htm  VERIFIED
+   YEARS 7: late/hầu hết vết xấu 7 năm — 15 USC 1681c(a)(5). Collection/charge-off: 7 năm bắt đầu 180 ngày sau lần trễ đầu — 1681c(a)(4),(c). VERIFIED
+   Địa chỉ bureau (mail dispute) — VERIFIED trên trang chính thức từng bureau (link trong ADDR.src).
+   Goodwill letter: KHÔNG phải quyền theo luật, creditor tùy ý — ESTIMATE (thực tế ngành), KEN DUYỆT câu chữ.
+   CROA: không thu tiền trước khi làm xong; hợp đồng giấy; 3 ngày hủy — FTC "Fixing your credit" Jan 2026. VERIFIED */
+const RULES={DAYS:30,DAYS_MAX:45,YEARS:7,CO_DELAY_DAYS:180};
+const ADDR={
+  eq:{name:'Equifax',lines:['Equifax Information Services LLC','P.O. Box 740256','Atlanta, GA 30374-0256'],src:'https://www.equifax.com/personal/help/article-list/-/h/a/mail-in-credit-report-dispute/'},
+  ex:{name:'Experian',lines:['Experian','P.O. Box 4500','Allen, TX 75013'],src:'https://www.experian.com/disputes/experian-mailing-address.html'},
+  tu:{name:'TransUnion',lines:['TransUnion Consumer Solutions','P.O. Box 2000','Chester, PA 19016-2000'],src:'https://www.transunion.com/customer-support/dispute-by-mail'}
+};
+/* lý do nào hợp với loại mục nào */
+const ITEMS={late:['notmine','date','dup','idtheft'],collection:['notmine','paid','balance','date','dup','idtheft'],chargeoff:['notmine','paid','balance','date','dup','idtheft'],account:['notmine','idtheft','dup','balance'],inquiry:['notmine','idtheft']};
+const GW_WHY=['medical','job','family','bank','moved','other'];
+/* Thư luôn viết tiếng Anh (bureau/creditor ở Mỹ). [ngoặc vuông] = khách tự điền tay. */
+const L_TYPE={late:'Late payment',collection:'Collection account',chargeoff:'Charge-off',account:'Account I do not recognize',inquiry:'Hard inquiry'};
+const L_REASON={
+  notmine:'This account is not mine. I never opened it and never authorized anyone to open it.',
+  notmine_inquiry:'I did not authorize this inquiry. I did not apply for credit with this company.',
+  paid:'I paid this debt in full on [date paid]. The report still shows it as unpaid or with a balance. Proof of payment is enclosed.',
+  balance:'The balance is wrong. The report shows $[reported balance]. The correct balance is $[correct balance]. Proof is enclosed.',
+  date_late:'The late payment is reported for the wrong date. I was not late in [month/year shown on the report]. My payment records are enclosed.',
+  date:'The dates on this item are wrong (for example the date of first delinquency or the date opened). The correct date is [correct date]. Records are enclosed.',
+  dup:'This item is listed more than once on my report. It is the same debt reported [number] times. Please remove the duplicate.',
+  idtheft:'This item is the result of identity theft. I did not open, use or authorize it. My FTC Identity Theft Report from IdentityTheft.gov is enclosed (report number [FTC report number]).',
+  idtheft_inquiry:'This inquiry is the result of identity theft. I did not apply for credit with this company. My FTC Identity Theft Report from IdentityTheft.gov is enclosed (report number [FTC report number]).'
+};
+const L_GW={
+  medical:'At that time I was dealing with a medical problem in my family, and the payment slipped.',
+  job:'At that time I had lost my job, and I fell behind for that month.',
+  family:'At that time my family had an emergency, and I missed the due date.',
+  bank:'At that time my automatic payment failed because of a bank account change, and I did not catch it in time.',
+  moved:'At that time I was moving, and the statement did not reach me.',
+  other:'At that time [explain briefly and honestly what happened].'
+};
+
+const I18N={
+ vi:{title:'Viết thư dispute sai sót gửi bureau',sub:'Chọn bureau, chọn mục, chọn chỗ sai. Thư tự điền ở dưới. Copy hoặc in ra, rồi gửi certified mail.',
+  l_mode:'Viết thư gì?',m_dispute:'Dispute (báo sai)',m_goodwill:'Goodwill (late có thật)',
+  l_bureau:'Gửi bureau nào?',l_item:'Mục nào?',l_reason:'Sai chỗ nào?',l_late:'Tháng bị late',l_why:'Vì sao bị late',l_date:'Ngày gửi thư',
+  bu:{eq:'Equifax',ex:'Experian',tu:'TransUnion',all:'Cả 3 bureau (3 thư)'},
+  it:{late:'Late payment (trả trễ)',collection:'Collection',chargeoff:'Charge-off',account:'Tài khoản lạ',inquiry:'Hard inquiry'},
+  rs:{notmine:'Không phải của tôi',paid:'Đã trả rồi',balance:'Sai số dư',date:'Sai ngày',dup:'Bị ghi trùng',idtheft:'Bị lấy cắp danh tính'},
+  gw:{medical:'Bệnh / chuyện sức khỏe',job:'Mất việc',family:'Chuyện gia đình gấp',bank:'Autopay / ngân hàng lỗi',moved:'Dọn nhà, không nhận statement',other:'Lý do khác'},
+  r_k_d:'Bureau phải trả lời trong',r_u_d:'ngày',r_pay_d:'tính từ ngày bureau <b>nhận</b> thư · sớm nhất: <b>{d}</b>',
+  r_k_g:'Vết late này tự rớt khỏi report khoảng',r_pay_g:'còn khoảng <b>{y}</b> nếu creditor không chịu gỡ',
+  ln_30:'Hạn 30 ngày (sớm nhất)',ln_45:'Nếu bạn gửi thêm giấy trong 30 ngày: tối đa 45 ngày',ln_n:'Số thư cần gửi',ln_n_v:'{n} thư',ln_late:'Tháng bị late',ln_to:'Gửi cho',ln_to_v:'Creditor (công ty cho vay), không phải bureau',
+  yr:'{y} năm {m} tháng',
+  h_late:'Khi biết ngày bưu điện giao (tracking), cộng 30 ngày từ ngày đó. Gửi thư ngày nào thì bureau nhận trễ hơn vài ngày, nên ngày ở trên là sớm nhất.',
+  h_co:'Collection / charge-off: 7 năm tính từ khoảng 180 ngày sau lần trễ đầu tiên. Ngày "first delinquency" sai có thể làm vết xấu nằm lâu hơn — đáng dispute.',
+  h_id:'Bị lấy cắp danh tính: làm report ở IdentityTheft.gov trước (xem T239), rồi kèm report vào thư này.',
+  h_gw:'Thư goodwill gửi thẳng cho creditor (địa chỉ trên statement hoặc hỏi customer service), không gửi bureau. Nên trả cho account current trước rồi mới xin.',
+  gw_warn:'<b>Goodwill letter là thư XIN, không phải quyền theo luật.</b> Late có thật thì creditor có quyền từ chối, và late có thể nằm tới 7 năm. Xin lịch sự. Đừng dọa.',
+  t_letter:'Thư của bạn (viết tiếng Anh để bureau hoặc creditor đọc được)',b_copy:'Copy thư',b_print:'In thư',copied:'Đã copy ✓',
+  ph_note:'In ra rồi tự điền tay mọi chỗ [ngoặc vuông]. Trang này không bao giờ hỏi số SSN đầy đủ hay số tài khoản đầy đủ, và không gửi dữ liệu đi đâu cả.',
+  addr_t:'Địa chỉ gửi dispute qua bưu điện',addr_src:'trang chính thức',
+  ck_t_d:'Checklist gửi thư dispute',ck_t_g:'Checklist gửi thư goodwill',ck_tasks:'xong',ck_reset:'Xoá dấu tick',gcal:'Nhắc trên Google Calendar',
+  cal_t:'Credit dispute: coi bureau trả lời chưa (T234)',cal_d:'Đếm 30 ngày từ ngày bưu điện giao. Gửi thêm giấy thì tối đa 45 ngày. tools.kenlamrealty.com/t234/',
+  ck_d:['In thư, điền tay mọi [ngoặc vuông], ký tên','Kèm bản COPY giấy tờ chứng minh (không gửi bản gốc). Giữ lại 1 bộ copy của mọi thứ','Gửi USPS Certified Mail, có Return Receipt. Giữ số tracking','Ghi lại ngày bưu điện giao. Hạn 30 ngày tính từ ngày đó (45 nếu bạn gửi thêm giấy trong 30 ngày)','Lỗi hiện ở bureau nào thì gửi bureau đó, mỗi bureau 1 thư riêng','Có kết quả thì lấy report lại ở AnnualCreditReport.com coi đã sửa chưa'],
+  ck_g:['Điền tay [ngoặc vuông]. Viết ngắn, thật, nhận lỗi','Gửi cho creditor, không gửi bureau. Lấy địa chỉ trên statement hoặc hỏi customer service','Trả cho account current trước, có vài tháng trả đúng hạn để nói','Họ từ chối là quyền của họ. Có thể xin lại lịch sự sau. Đừng dọa kiện','Đừng trả tiền trước cho ai hứa "xóa late" (luật CROA cấm thu trước)'],
+  myth:'<b>Nhiều người hiểu sai:</b> "Dispute là xóa được mọi vết xấu." Không. Chỉ thông tin sai hoặc không xác minh được mới bị sửa hay gỡ. Late hay collection có thật vẫn có thể nằm tới 7 năm.',
+  nx_title:'Bước tiếp theo',
+  nx1:'Lấy report cả 3 bureau miễn phí, tuần nào cũng được, ở <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">AnnualCreditReport.com</a>. Tìm đúng mục sai trước khi viết.',
+  nx2:'Không biết bao lâu vết xấu mới rớt? Coi <a href="/t233/">T233</a>. Muốn coi tổng quát trước? <a href="/t230/">T230</a>.',
+  nx3:'Tài khoản mình chưa từng mở? Làm các bước bị lấy cắp danh tính ở <a href="/t239/">T239</a> trước, rồi gửi thư này kèm FTC report.',
+  nx4:'Công ty credit repair không được thu tiền trước khi làm xong (luật CROA). FTC nói: cái gì họ làm hợp pháp được thì mình tự làm được, gần như không tốn tiền. Coi điểm đang làm mình tốn bao nhiêu ở <a href="/t37/">T37</a>.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video',
+  f_title:'Gửi các ngày hạn về email',f_sub:'Bạn nhận bureau, các ngày hạn và checklist. Thư thì vẫn nằm trên máy bạn. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Sửa lỗi trên credit report',ft_vid:'Video Kiến Thức Địa Ốc',
+  ft_est:'Thông tin tham khảo, không phải tư vấn pháp lý, tài chính hay cam kết cho vay. Điểm thật do FICO/VantageScore và 3 bureau tính.',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms_d:'Chào Ken, tôi đang viết thư dispute credit ({b}, {it}: {rs}) bằng tool T234. Gửi ngày {s}, hạn sớm nhất {d30}. Nhờ Ken coi giùm.',
+  sms_g:'Chào Ken, tôi đang viết goodwill letter cho 1 late tháng {lm} bằng tool T234. Late này rớt khoảng {off}. Nhờ Ken coi giùm.',
+  subj:'Thư dispute credit — {n}',
+  body_d:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nThư: Dispute\nBureau: {b}\nMục: {it}\nLý do: {rs}\nNgày gửi: {s}\nHạn trả lời: 30 ngày từ ngày bureau nhận (sớm nhất {d30}); tối đa 45 ngày nếu gửi thêm giấy (sớm nhất {d45})\n\nChecklist:\n{ck}\n\nGửi từ tool T234 tools.kenlamrealty.com',
+  body_g:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nThư: Goodwill (thư xin, không phải quyền theo luật)\nTháng bị late: {lm}\nLý do: {rs}\nNgày gửi: {s}\nLate tự rớt khỏi report khoảng: {off}\n\nChecklist:\n{ck}\n\nGửi từ tool T234 tools.kenlamrealty.com'},
+ en:{title:'Write a credit report dispute letter',sub:'Pick the bureau, the item and what is wrong. The letter fills in below. Copy it or print it, then mail it certified.',
+  l_mode:'Which letter?',m_dispute:'Dispute (error)',m_goodwill:'Goodwill (true late)',
+  l_bureau:'Send to which bureau?',l_item:'What item?',l_reason:'What is wrong?',l_late:'Month of the late payment',l_why:'Why it happened',l_date:'Date you mail it',
+  bu:{eq:'Equifax',ex:'Experian',tu:'TransUnion',all:'All 3 bureaus (3 letters)'},
+  it:{late:'Late payment',collection:'Collection',chargeoff:'Charge-off',account:'Account I don\'t know',inquiry:'Hard inquiry'},
+  rs:{notmine:'Not mine',paid:'Already paid',balance:'Wrong balance',date:'Wrong date',dup:'Listed twice',idtheft:'Identity theft'},
+  gw:{medical:'Medical / health',job:'Lost my job',family:'Family emergency',bank:'Autopay / bank error',moved:'Moved, missed the statement',other:'Other reason'},
+  r_k_d:'The bureau must answer within',r_u_d:'days',r_pay_d:'from the day the bureau <b>receives</b> it · earliest: <b>{d}</b>',
+  r_k_g:'This late falls off your report around',r_pay_g:'about <b>{y}</b> left if the creditor says no',
+  ln_30:'30-day deadline (earliest)',ln_45:'If you send more documents within the 30 days: up to 45 days',ln_n:'Letters to mail',ln_n_v:'{n} letter(s)',ln_late:'Late payment month',ln_to:'Send to',ln_to_v:'The creditor, not the bureau',
+  yr:'{y} yr {m} mo',
+  h_late:'Once tracking shows the delivered date, count 30 days from that day. The bureau gets it a few days after you mail it, so the date above is the earliest.',
+  h_co:'Collections / charge-offs: the 7 years start about 180 days after the first missed payment. A wrong "first delinquency" date can keep it on longer, so it is worth disputing.',
+  h_id:'Identity theft: file a report at IdentityTheft.gov first (see T239), then enclose it with this letter.',
+  h_gw:'Mail a goodwill letter to the creditor (address on your statement, or ask customer service), not to a bureau. Bring the account current before you ask.',
+  gw_warn:'<b>A goodwill letter is a request, not a legal right.</b> If the late payment is accurate, the creditor can say no and the late can stay up to 7 years. Ask politely. Never threaten.',
+  t_letter:'Your letter (English, so the bureau or creditor can read it)',b_copy:'Copy letter',b_print:'Print letter',copied:'Copied ✓',
+  ph_note:'Fill in every [bracket] by hand after you print. This page never asks for your full SSN or full account numbers and sends nothing anywhere.',
+  addr_t:'Mail dispute addresses',addr_src:'official page',
+  ck_t_d:'Dispute mailing checklist',ck_t_g:'Goodwill letter checklist',ck_tasks:'done',ck_reset:'Clear checkmarks',gcal:'Remind me in Google Calendar',
+  cal_t:'Credit dispute: has the bureau answered? (T234)',cal_d:'Count 30 days from the delivered date. Up to 45 if you sent more documents. tools.kenlamrealty.com/t234/',
+  ck_d:['Print it, fill in every [bracket] by hand, sign it','Enclose COPIES of your proof (never originals). Keep a copy of everything','Send by USPS Certified Mail with Return Receipt. Keep the tracking number','Write down the delivered date. The 30 days count from then (45 if you send more documents within the 30)','Send one letter to each bureau that shows the error','When results come, pull your report again at AnnualCreditReport.com to confirm the fix'],
+  ck_g:['Fill in the [brackets]. Keep it short, honest, own the mistake','Mail it to the creditor, not a bureau. Use the address on your statement or ask customer service','Bring the account current first, with some on-time months to point to','A "no" is their right. You can ask again politely later. Don\'t threaten to sue','Never pay anyone upfront to "remove" a late (CROA bans upfront fees)'],
+  myth:'<b>Common myth:</b> "A dispute can wipe any bad mark." No. Only information that is wrong or can\'t be verified gets corrected or removed. An accurate late or collection can stay up to 7 years.',
+  nx_title:'Next steps',
+  nx1:'Pull all 3 reports free, every week, at <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">AnnualCreditReport.com</a>. Find the exact item before you write.',
+  nx2:'Not sure when an item falls off? Check <a href="/t233/">T233</a>. Want your overall picture first? <a href="/t230/">T230</a>.',
+  nx3:'Account you never opened? Do the identity theft steps in <a href="/t239/">T239</a> first, then send this letter with your FTC report.',
+  nx4:'Credit repair companies can\'t charge you before the work is done (CROA). The FTC says anything they can do legally, you can do yourself for little or no cost. See what your score costs you in <a href="/t37/">T37</a>.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch video',
+  f_title:'Email the deadlines to yourself',f_sub:'You get the bureau, the deadline dates and the checklist. The letter itself stays on your device. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'Fixing errors on your credit report',ft_vid:'Kiến Thức Địa Ốc video',
+  ft_est:'For information only. Not legal or financial advice, and not a commitment to lend. Real scores are calculated by FICO/VantageScore and the 3 bureaus.',
+  ft_src:'Sources',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms_d:'Hi Ken, I\'m writing a credit dispute letter ({b}, {it}: {rs}) with tool T234. Mailing {s}, earliest deadline {d30}. Can you take a look?',
+  sms_g:'Hi Ken, I\'m writing a goodwill letter for a {lm} late payment with tool T234. It falls off around {off}. Can you take a look?',
+  subj:'Credit dispute letter — {n}',
+  body_d:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nLetter: Dispute\nBureau: {b}\nItem: {it}\nReason: {rs}\nMail date: {s}\nDeadline: 30 days from when the bureau receives it (earliest {d30}); up to 45 days if you send more documents (earliest {d45})\n\nChecklist:\n{ck}\n\nSent from tool T234 tools.kenlamrealty.com',
+  body_g:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nLetter: Goodwill (a request, not a legal right)\nLate payment month: {lm}\nReason: {rs}\nMail date: {s}\nLate falls off around: {off}\n\nChecklist:\n{ck}\n\nSent from tool T234 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const addDays=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+const parseD=s=>{ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||''); return m?new Date(+m[1],+m[2]-1,+m[3]):null; };
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONL=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const fD=d=>lang==='vi'?pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear():MON[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
+const fM=(y,m)=>lang==='vi'?pad(m+1)+'/'+y:MON[m]+' '+y;
+const fLong=d=>MONL[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
+function gcal(text,d,details){ return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(text)+'&dates='+ymd(d)+'/'+ymd(addDays(d,1))+'&details='+encodeURIComponent(details); }
+async function copyText(txt,btn,ok){ try{ await navigator.clipboard.writeText(txt); }catch(e){ const t=document.createElement('textarea'); t.value=txt; t.style.position='fixed'; t.style.opacity='0'; document.body.appendChild(t); t.select(); try{document.execCommand('copy')}catch(_){} t.remove(); } if(btn){ const o=btn.textContent; btn.textContent=ok||'✓'; setTimeout(()=>{btn.textContent=o},1400);} }
+
+/* ----- Tính — hàm thuần ----- */
+function deadlines(mailed){ return {d30:addDays(mailed,RULES.DAYS),d45:addDays(mailed,RULES.DAYS_MAX)}; }
+function falloff(y,m,today){ /* late tháng m (0-11) năm y → rớt khoảng cùng tháng + 7 năm */
+  const offY=y+RULES.YEARS, left=(offY-today.getFullYear())*12+(m-today.getMonth());
+  return {y:offY,m,left:Math.max(0,left)};
+}
+function disputeLetter(bk,item,reason,mailed){
+  const a=ADDR[bk], inq=item==='inquiry';
+  let rk=reason; if(inq&&(reason==='notmine'||reason==='idtheft')) rk=reason+'_inquiry'; if(reason==='date'&&item==='late') rk='date_late';
+  const ref=inq?'Inquiry date: [date of the inquiry on the report]':'Account number (last 4 only): [Account last 4]';
+  return ['[Your full name]','[Street address]','[City, State ZIP]','Date of birth: [MM/DD/YYYY]','SSN (last 4 only): [Last 4 SSN]','',
+    fLong(mailed),'',...a.lines,'',
+    'Re: Dispute of inaccurate information on my credit report','',
+    'Dear '+a.name+',','',
+    'I am writing to dispute the following item on my credit report:','',
+    (inq?'Company that pulled my credit: ':'Creditor / collector: ')+'[Creditor or collector name]',ref,'Type: '+L_TYPE[item],'',
+    L_REASON[rk],'',
+    'Under the Fair Credit Reporting Act (15 U.S.C. § 1681i), please investigate this item and correct or delete it if it is inaccurate or cannot be verified. Please send me the results of your investigation and an updated copy of my credit report.','',
+    'Enclosed: copies (not originals) of [list your documents].','',
+    'Sincerely,','','[Signature]','[Your full name]'].join('\n');
+}
+function goodwillLetter(y,m,why,mailed){
+  return ['[Your full name]','[Street address]','[City, State ZIP]','[Phone]','',
+    fLong(mailed),'',
+    '[Creditor name]','[Creditor address from your statement]','',
+    'Re: Goodwill request, account ending in [Account last 4]','',
+    'Dear [Creditor name] Customer Care Team,','',
+    'I am writing to ask for a goodwill adjustment. My account was reported late for '+MONL[m]+' '+y+'.','',
+    L_GW[why]+' That is not an excuse, and I take responsibility for it.','',
+    'Since then I have [brought the account current and made every payment on time]. I value this account and plan to keep it in good standing.','',
+    'I am preparing to [buy a home / apply for a mortgage], and this one late payment is hurting my credit. I understand the report may be accurate and that removing it is entirely your decision. I am asking, as a gesture of goodwill, if you would consider removing the late payment for '+MONL[m]+' '+y+' from your reports to the credit bureaus.','',
+    'Thank you for your time and for considering my request.','',
+    'Sincerely,','','[Signature]','[Your full name]'].join('\n');
+}
+
+let mode='dispute', last={}, letterTxt='', done={};
+try{ done=JSON.parse(localStorage.getItem('kl_t234_ck')||'{}')||{}; }catch(e){ done={}; }
+const saveDone=()=>{ try{ localStorage.setItem('kl_t234_ck',JSON.stringify(done)); }catch(e){} };
+
+function fillSelect(el,keys,labels){ const v=el.value; el.innerHTML=keys.map(k=>'<option value="'+k+'">'+esc(labels[k])+'</option>').join(''); if(keys.includes(v)) el.value=v; }
+function markHtml(t){ return esc(t).replace(/\[[^\]]+\]/g,m=>'<mark>'+m+'</mark>'); }
+
+function calc(){
+  const d=I18N[lang], today=new Date(); today.setHours(0,0,0,0);
+  const mailed=parseD($('sentD').value)||today;
+  document.querySelectorAll('.dsp').forEach(e=>e.hidden=mode!=='dispute');
+  document.querySelectorAll('.gw').forEach(e=>e.hidden=mode!=='goodwill');
+  $('gwWarn').hidden=mode!=='goodwill';
+  let lines='', hint='';
+  if(mode==='dispute'){
+    fillSelect($('reason'),ITEMS[$('item').value]||ITEMS.late,d.rs);
+    const bu=$('bureau').value, item=$('item').value, reason=$('reason').value, bks=bu==='all'?['eq','ex','tu']:[bu];
+    const dl=deadlines(mailed);
+    $('rK').textContent=d.r_k_d; $('rV').textContent=RULES.DAYS; $('rU').textContent=d.r_u_d;
+    $('rPay').innerHTML=d.r_pay_d.replace('{d}',esc(fD(dl.d30)));
+    lines+='<div class="line"><span class="n"><b>'+esc(d.ln_30)+'</b></span><span class="a">'+esc(fD(dl.d30))+'</span></div>';
+    lines+='<div class="line"><span class="n">'+esc(d.ln_45)+'</span><span class="a">'+esc(fD(dl.d45))+'</span></div>';
+    lines+='<div class="line"><span class="n">'+esc(d.ln_n)+'</span><span class="a">'+esc(d.ln_n_v.replace('{n}',bks.length))+'</span></div>';
+    hint=d.h_late; if(item==='collection'||item==='chargeoff') hint+=' '+d.h_co; if(reason==='idtheft') hint+=' '+d.h_id;
+    const parts=bks.map(b=>disputeLetter(b,item,reason,mailed));
+    letterTxt=parts.join('\n\n\n');
+    $('letter').innerHTML=parts.map(markHtml).join('<span class="pb"></span>');
+    $('addr').innerHTML='<div class="tblk">'+esc(d.addr_t)+'</div>'+bks.map(b=>'<div><b>'+ADDR[b].name+'</b><br>'+ADDR[b].lines.slice(ADDR[b].lines[0]===ADDR[b].name?1:0).map(esc).join('<br>')+'<br><a href="'+ADDR[b].src+'" target="_blank" rel="noopener" style="color:var(--brass)">'+esc(d.addr_src)+'</a></div>').join('');
+    $('addr').hidden=false;
+    last={b:d.bu[bu],it:d.it[item],rs:d.rs[reason],s:fD(mailed),d30:fD(dl.d30),d45:fD(dl.d45)};
+  } else {
+    let lm=/^(\d{4})-(\d{2})$/.exec($('lateMo').value||''); let y,m;
+    if(lm){ y=+lm[1]; m=+lm[2]-1; } else { y=today.getFullYear()-1; m=today.getMonth(); }
+    const why=$('gwWhy').value, fo=falloff(y,m,today);
+    $('rK').textContent=d.r_k_g; $('rV').textContent=fM(fo.y,fo.m); $('rU').textContent='';
+    $('rPay').innerHTML=d.r_pay_g.replace('{y}',esc(d.yr.replace('{y}',Math.floor(fo.left/12)).replace('{m}',fo.left%12)));
+    lines+='<div class="line"><span class="n">'+esc(d.ln_late)+'</span><span class="a">'+esc(fM(y,m))+'</span></div>';
+    lines+='<div class="line"><span class="n">'+esc(d.ln_to)+'</span><span class="a" style="white-space:normal;text-align:right">'+esc(d.ln_to_v)+'</span></div>';
+    hint=d.h_gw;
+    letterTxt=goodwillLetter(y,m,why,mailed);
+    $('letter').innerHTML=markHtml(letterTxt);
+    $('addr').innerHTML=''; $('addr').hidden=true;
+    last={lm:fM(y,m),rs:d.gw[why],s:fD(mailed),off:fM(fo.y,fo.m)};
+  }
+  $('rLines').innerHTML=lines; $('hint').textContent=hint;
+  const s=(mode==='dispute'?d.sms_d:d.sms_g).replace(/\{(\w+)\}/g,(x,k)=>last[k]??x);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s);
+  renderTasks(mailed);
+}
+function renderTasks(mailed){
+  const d=I18N[lang], list=mode==='dispute'?d.ck_d:d.ck_g, pre=mode==='dispute'?'d':'g';
+  $('ckT').textContent=mode==='dispute'?d.ck_t_d:d.ck_t_g;
+  let h='<div class="phase">', x=0;
+  if(mode==='dispute'){ const dl=deadlines(mailed||new Date());
+    h+='<div class="ph-h"><h3>'+esc(fD(dl.d30))+'</h3><span class="ph-r"><a class="gcal" target="_blank" rel="noopener" href="'+esc(gcal(d.cal_t,dl.d30,d.cal_d))+'">'+esc(d.gcal)+'</a></span></div>'; }
+  list.forEach((t,i)=>{ const k=pre+i, ok=!!done[k]; if(ok) x++;
+    h+='<div class="task'+(ok?' done':'')+'"><input type="checkbox" data-k="'+k+'" aria-label="'+esc(t)+'"'+(ok?' checked':'')+'><span class="tt">'+esc(t)+'</span></div>'; });
+  $('tl').innerHTML=h+'</div>'; $('ckDone').textContent=x; $('ckAll').textContent=list.length; $('ckBar').style.width=(x/list.length*100)+'%';
+  last.ck=list.map(t=>'- '+t).join('\n');
+}
+$('tl').addEventListener('change',e=>{ const k=e.target.getAttribute&&e.target.getAttribute('data-k'); if(!k) return; if(e.target.checked) done[k]=1; else delete done[k]; saveDone(); calc(); });
+$('ckReset').onclick=()=>{ done={}; saveDone(); calc(); };
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  fillSelect($('bureau'),['eq','ex','tu','all'],d.bu); fillSelect($('item'),Object.keys(ITEMS),d.it); fillSelect($('gwWhy'),GW_WHY,d.gw);
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+document.querySelectorAll('#mode button').forEach(b=>b.onclick=()=>{ mode=b.getAttribute('data-m'); document.querySelectorAll('#mode button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); calc(); });
+['bureau','item','reason','gwWhy','sentD','lateMo'].forEach(id=>{ $(id).addEventListener('input',calc); $(id).addEventListener('change',calc); });
+$('copyL').onclick=()=>copyText(letterTxt,$('copyL'),I18N[lang].copied);
+$('printL').onclick=()=>window.print();
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing), hoặc thay bằng fetch() tới FUB webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(mode==='dispute'?d.body_d:d.body_g));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sentOk').hidden=false;
+};
+$('copyBtn').onclick=()=>copyText('4086662825',$('copyBtn'));
+(function(){ const t=new Date(); $('sentD').value=iso(t); $('lateMo').value=(t.getFullYear()-1)+'-'+pad(t.getMonth()+1); })();
+try{ if(new URLSearchParams(location.search).get('embed')==='1') document.documentElement.classList.add('embed'); }catch(e){}
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
