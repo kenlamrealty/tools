@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Which 1031 Fits Me</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+</style>
+<style>
+/* ---- T228 thêm ---- */
+.seg.s3 button{font-size:14px;padding:11px 6px}
+.types{display:grid;gap:12px}
+.types h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.ty{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:8px;min-width:0}
+.ty.f2{border-color:var(--brass)}
+.ty.f0{opacity:.72}
+.ty .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.ty h3{font-family:var(--display);font-weight:400;font-size:24px;line-height:1.15;margin:0}
+.fit{font-size:12px;border-radius:999px;padding:2px 10px;border:1px solid var(--line);white-space:nowrap}
+.fit.f2{color:var(--ok);border-color:var(--ok)}
+.fit.f1{color:var(--brass);border-color:var(--brass)}
+.fit.f0{color:var(--warn);border-color:var(--warn)}
+.ty p{margin:0;font-size:14px;color:var(--muted);line-height:1.5}
+.ty p b{color:var(--fg);font-weight:500}
+.ty .why{color:var(--fg)}
+.ty ul{margin:0;padding-left:18px;font-size:14px;line-height:1.5;color:var(--muted);display:grid;gap:3px}
+.ty .cost{font-size:14px}
+.ty .cost b{font-variant-numeric:tabular-nums}
+.total .v.nm{font-size:40px;line-height:1.1}
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+.embed .kl-back{display:none}
+</style>
+<meta name="description" content="Answer five quick questions and see which kind of 1031 fits: delayed, simultaneous, reverse, improvement, DST, TIC or 721 UPREIT, with pros, cons, estimated cost and risks.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t228/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Which kind of 1031 fits me? · Ken Lam Tools">
+<meta property="og:description" content="Answer five quick questions and see which kind of 1031 fits: delayed, simultaneous, reverse, improvement, DST, TIC or 721 UPREIT.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t228/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Which kind of 1031 fits you?</h1>
+    <p class="sub" data-i="sub">Five quick answers. See which exchange type fits, what it costs, and where people get burned.</p>
+  </header>
+
+  <section class="inputs" aria-label="Your situation">
+    <div class="field">
+      <label><span data-i="q_ord">Timing: what happens first?</span></label>
+      <div class="seg s3" role="group" data-q="ord">
+        <button type="button" data-v="sell" aria-pressed="true" data-i="o_sell">Sell old first</button>
+        <button type="button" data-v="same" aria-pressed="false" data-i="o_same">Same day</button>
+        <button type="button" data-v="buy" aria-pressed="false" data-i="o_buy">Must buy new first</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label><span data-i="q_ll">Done being a landlord?</span></label>
+        <div class="seg" role="group" data-q="ll">
+          <button type="button" data-v="y" aria-pressed="false" data-i="o_y">Yes</button>
+          <button type="button" data-v="n" aria-pressed="true" data-i="o_n">No</button>
+        </div>
+      </div>
+      <div class="field">
+        <label><span data-i="q_bld">Build or fix the new one with 1031 money?</span></label>
+        <div class="seg" role="group" data-q="bld">
+          <button type="button" data-v="y" aria-pressed="false" data-i="o_y2">Yes</button>
+          <button type="button" data-v="n" aria-pressed="true" data-i="o_n2">No</button>
+        </div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label><span data-i="q_spl">Split it up / leave to several heirs?</span></label>
+        <div class="seg" role="group" data-q="spl">
+          <button type="button" data-v="y" aria-pressed="false" data-i="o_y3">Yes</button>
+          <button type="button" data-v="n" aria-pressed="true" data-i="o_n3">No</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="eq"><span data-i="q_eq">Equity to reinvest</span></label>
+        <div class="ctl"><span class="pre">$</span><input id="eq" type="number" inputmode="numeric" min="0" step="10000" value="900000"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label><span data-i="q_acc">Accredited investor? </span><small data-i="q_acc_s">(net worth over $1M not counting your home, or income over $200K / $300K with spouse for 2 years)</small></label>
+      <div class="seg s3" role="group" data-q="acc">
+        <button type="button" data-v="y" aria-pressed="false" data-i="o_y4">Yes</button>
+        <button type="button" data-v="n" aria-pressed="false" data-i="o_n4">No</button>
+        <button type="button" data-v="u" aria-pressed="true" data-i="o_u">Not sure</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">Best fit for you</div>
+      <div class="v nm"><span id="best">—</span></div>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_cost">Estimated cost of the best fit</b> <small id="oCosts"></small></span><span class="a" id="oCost">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_good">Good fits</b></span><span class="a" id="oGood">0</span></div>
+      <div class="line"><span class="n"><b data-i="n_maybe">Possible, with care</b></span><span class="a" id="oMaybe">0</span></div>
+    </div>
+    <div class="note" data-i="est_note">Costs are estimates from industry sources, not quotes. "Usually / thường" means common practice, not a rule in the tax code. Not tax, legal or investment advice. Ask a CPA, your Qualified Intermediary and, for DSTs, a licensed securities advisor.</div>
+  </section>
+
+  <section class="types" aria-label="Exchange types">
+    <h2 data-i="ty_title">All 7 options, best fit first</h2>
+    <div id="types"></div>
+  </section>
+
+  <p class="myth" data-i="myth"><b>Common mistake:</b> "A DST is just an easy 1031, no landlord work." The no-landlord part is real. But a DST is a security. Usually only accredited investors can buy, upfront costs often run 10–18% of your money, and you usually can't get out early. You give up control too.</p>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">First check the property qualifies at all: <a href="/t220/">T220</a>.</li>
+      <li data-i="nx2">Delayed exchange? Run the numbers in <a href="/t27/">T27</a> and plan your 45-day list in <a href="/t221/">T221</a>.</li>
+      <li data-i="nx3">Is a 1031 even worth it versus paying the tax, or holding until death? Compare in <a href="/t222/">T222</a>.</li>
+      <li data-i="nx4">Pick the QI (or exchange accommodation titleholder for reverse) with <a href="/t226/">T226</a>, then put every date on the calendar with <a href="/t227/">T227</a>.</li>
+    </ol>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video guide"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t228/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this 1031 match to yourself</h2>
+    <p data-i="f_sub">Ken will reply with a few QIs and advisors who handle this type. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#1031-types" target="_blank" rel="noopener" data-i="ft_lib">Types of 1031 exchanges</a> · <a href="https://kenlamrealty.com/library#video-1031" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span data-i="ft_est">General information only. Not tax, legal or investment advice. Ask a CPA and your Qualified Intermediary before you sign.</span>
+    <span class="src"><span data-i="ft_src">Sources</span> (04/11/2026):
+      <a href="https://www.law.cornell.edu/cfr/text/26/1.1031(k)-1" target="_blank" rel="noopener">Treas. Reg. §1.1031(k)-1</a> ·
+      <a href="https://www.irs.gov/pub/irs-drop/rp-00-37.pdf" target="_blank" rel="noopener">Rev. Proc. 2000-37</a> ·
+      <a href="https://www.irs.gov/pub/irs-irbs/irb04-33.pdf" target="_blank" rel="noopener">Rev. Proc. 2004-51</a> ·
+      <a href="https://www.irs.gov/pub/irs-drop/rr-04-86.pdf" target="_blank" rel="noopener">Rev. Rul. 2004-86 (DST)</a> ·
+      <a href="https://www.irs.gov/pub/irs-drop/rp-02-22.pdf" target="_blank" rel="noopener">Rev. Proc. 2002-22 (TIC)</a> ·
+      <a href="https://www.sec.gov/resources-small-businesses/small-business-compliance-guides/accredited-investor-net-worth-standard" target="_blank" rel="noopener">SEC accredited investor</a> ·
+      <a href="https://www.law.cornell.edu/uscode/text/26/1014" target="_blank" rel="noopener">26 USC 1014</a> ·
+      <a href="https://www.realized1031.com/blog/qualified-intermediary-fees" target="_blank" rel="noopener">QI fees (est.)</a> ·
+      <a href="https://www.deferred.com/1031-exchange-faqs/how-much-does-a-reverse-1031-exchange-cost" target="_blank" rel="noopener">Reverse cost (est.)</a> ·
+      <a href="https://fnrpusa.com/?p=6687" target="_blank" rel="noopener">DST fees (est.)</a> ·
+      <a href="https://www.realized1031.com/blog/how-are-upreit-transactions-taxed" target="_blank" rel="noopener">UPREIT (est.)</a> ·
+      <a href="https://www.ftb.ca.gov/forms/2026/2026-593-instructions.html" target="_blank" rel="noopener">FTB 593</a></span>
+    <span class="who">Ken Lam Realty · Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Loại 1031 + phí ước tính — sửa ở đây (tra 04/11/2026) =====
+   Delayed 45/180: Treas. Reg. §1.1031(k)-1 https://www.law.cornell.edu/cfr/text/26/1.1031(k)-1
+   Simultaneous: không cần 45/180; FTB 593 miễn trừ khi boot > $1,500 https://www.ftb.ca.gov/forms/2026/2026-593-instructions.html
+   Reverse: Rev. Proc. 2000-37 (EAT, agreement trong 5 business days, identify 45, xong 180) https://www.irs.gov/pub/irs-drop/rp-00-37.pdf
+     Rev. Proc. 2004-51: không áp dụng nếu đã sở hữu căn mới trong 180 ngày trước khi chuyển cho EAT https://www.irs.gov/pub/irs-irbs/irb04-33.pdf
+   Improvement: EAT giữ căn mới khi xây; chỉ phần xây xong trước ngày 180 mới tính (ƯỚC TÍNH — cách hiểu thực hành, KEN DUYỆT).
+   DST: Rev. Rul. 2004-86 https://www.irs.gov/pub/irs-drop/rr-04-86.pdf ; là chứng khoán, thường Reg D, accredited investor (SEC).
+     Tối thiểu ~ $100k, phí đầu 10–18% equity: ƯỚC TÍNH (Realized 1031 2026-09-24; FNRP).
+   TIC: Rev. Proc. 2002-22 = ruling guidelines, KHÔNG phải safe harbor; ≤35 chủ; bán/thuê/refi/thuê quản lý phải đồng ý hết.
+   721 UPREIT: §721, KHÔNG phải 1031; OP units không 1031 tiếp được; đổi/redeem là chịu thuế — ƯỚC TÍNH (Realized 1031).
+   §1014 step-up khi mất: https://www.law.cornell.edu/uscode/text/26/1014
+   Phí QI delayed $600–$1,200 (+$200–$400/căn thêm) — ƯỚC TÍNH (Realized 1031 2019). Reverse $3,000–$10,000+ — ƯỚC TÍNH.
+   Simultaneous / TIC / UPREIT: FACTS không có phí → ghi "hỏi QI/sponsor" (KEN DUYỆT nếu muốn thêm số). */
+const FEE={delayed:[600,1200],reverse:[3000,10000],improve:[3000,10000],dstPct:[0.10,0.18],DST_MIN:100000};
+const TYPES=['delayed','simul','reverse','improve','dst','tic','upreit'];
+const T={
+ vi:{title:'Loại 1031 nào hợp với mình?',sub:'Trả lời 5 câu. Ra liền loại 1031 nào hợp, tốn khoảng bao nhiêu, và người ta hay vấp chỗ nào.',
+  q_ord:'Thứ tự: chuyện gì xảy ra trước?',o_sell:'Bán căn cũ trước',o_same:'Cùng ngày',o_buy:'Phải mua căn mới trước',
+  q_ll:'Muốn thôi làm landlord?',q_bld:'Muốn xây / sửa căn mới bằng tiền 1031?',q_spl:'Muốn chia nhỏ / để lại cho nhiều con?',q_eq:'Equity bỏ lại vào',
+  q_acc:'Là accredited investor? ',q_acc_s:'(tài sản trên $1M không tính nhà đang ở, hoặc thu nhập trên $200K / $300K vợ chồng 2 năm liền)',
+  o_y:'Có',o_n:'Không',o_y2:'Có',o_n2:'Không',o_y3:'Có',o_n3:'Không',o_y4:'Có',o_n4:'Không',o_u:'Không chắc',
+  r_total:'Hợp với bạn nhất',n_cost:'Phí ước tính của loại hợp nhất',n_good:'Hợp',n_maybe:'Được, nhưng phải cẩn thận',
+  f2:'Hợp',f1:'Được, cẩn thận',f0:'Không hợp',pros:'Được',cons:'Mất',risk:'Rủi ro',cost:'Phí ước tính',ask:'hỏi QI / sponsor — chưa có số chắc',
+  st_one:'<b>{a}</b> là đường thẳng nhất cho tình huống của bạn.',st_two:'<b>{a}</b> hợp nhất. Cũng nên coi thêm <b>{b}</b>.',
+  st_heir:' Định giữ tới lúc mất? Con nhận nhà được step-up basis (§1014), phần lời hoãn coi như xoá. Áp dụng cho hầu hết các loại ở dưới.',
+  nm_delayed:'Delayed (bán trước, mua sau)',nm_simul:'Simultaneous (cùng ngày)',nm_reverse:'Reverse (mua trước, bán sau)',nm_improve:'Improvement / build-to-suit',nm_dst:'DST (Delaware Statutory Trust)',nm_tic:'TIC (đồng sở hữu)',nm_upreit:'721 UPREIT',
+  d_delayed:'Bán căn cũ, QI giữ tiền. 45 ngày chọn căn mới, 180 ngày close.',
+  d_simul:'2 căn close cùng lúc. Không cần đếm 45/180 ngày.',
+  d_reverse:'Một công ty EAT đứng tên giữ căn mới (hoặc căn cũ) trong lúc bạn bán căn cũ.',
+  d_improve:'EAT giữ căn mới trong lúc xây / sửa bằng tiền 1031.',
+  d_dst:'Mua một phần trong trust sở hữu nhà lớn (apartment, kho, nhà thuốc…). Sponsor lo hết.',
+  d_tic:'Đứng tên chung với người khác, mỗi người một phần, trên cùng một căn.',
+  d_upreit:'Góp nhà vào REIT, nhận OP units. Không phải 1031.',
+  p_delayed:'Phổ biến nhất, phí thấp; có thời gian tìm căn mới.',
+  c_delayed:'45 ngày đi rất nhanh; vẫn làm landlord.',
+  r_delayed:'Tiền vô tay mình là hỏng. Ngày 45/180 không gia hạn (trừ thiên tai có thông báo IRS).',
+  p_simul:'Đơn giản về giờ giấc, không lo hạn 45 ngày.',
+  c_simul:'Khó canh 2 escrow close cùng ngày.',
+  r_simul:'1 bên trễ là cả 2 kẹt. Vẫn nên có QI và exchange agreement.',
+  p_reverse:'Giữ được căn mới ưng ý trước khi bán.',
+  c_reverse:'Phí cao, phải có tiền / loan mua căn mới mà chưa có tiền bán; nhiều lender ngại cho EAT vay.',
+  r_reverse:'Agreement với EAT trong 5 business days; identify căn bán trong 45 ngày; tổng thời gian không quá 180 ngày. Đã sở hữu căn mới trong 180 ngày trước đó thì không được safe harbor (Rev. Proc. 2004-51).',
+  p_improve:'Dùng tiền 1031 để sửa, đỡ phải bỏ tiền mặt thêm, giảm boot.',
+  c_improve:'Phức tạp, phí cao như reverse.',
+  r_improve:'Thường chỉ phần xây xong trước ngày 180 mới được tính; phần chưa xong có thể thành boot.',
+  p_dst:'Hết làm landlord. DST được coi là real property cho 1031 (Rev. Rul. 2004-86). Mua nhiều mức tiền.',
+  c_dst:'Kẹt tiền nhiều năm, không quyết định được gì; sponsor không thêm tiền hay refinance được.',
+  r_dst:'Là chứng khoán, thường chỉ accredited investor mới mua được. Phí đầu thường 10–18%. Lời lỗ tuỳ sponsor.',
+  p_tic:'Gom tiền với người khác mua căn lớn hơn; chia phần rõ.',
+  c_tic:'Bán, cho thuê, refinance, thuê quản lý đều phải mọi người đồng ý.',
+  r_tic:'Rev. Proc. 2002-22 chỉ là hướng dẫn xin ruling, không phải safe harbor. Tối đa 35 chủ. Làm như partnership là mất 1031.',
+  p_upreit:'Đổi nhà lấy units của REIT lớn, đa dạng, không làm landlord.',
+  c_upreit:'Không phải 1031. Sau này không 1031 tiếp được.',
+  r_upreit:'Redeem units hoặc đổi qua cổ phiếu REIT là đóng thuế. Thường là thực hành ngành, hỏi CPA.',
+  w_buy:'cần bán trước',w_notbuy:'bạn phải mua trước',w_same:'2 căn close cùng ngày',w_buy2:'bạn phải mua trước',w_nobuy:'không cần nếu bán trước được',
+  w_bld:'bạn muốn xây / sửa',w_nobld:'không cần nếu không xây',w_ll:'bạn muốn thôi landlord',w_acc:'bạn là accredited',w_noacc:'thường chỉ accredited mới mua được',
+  w_uacc:'kiểm lại có phải accredited không',w_min:'equity dưới ~$100K tối thiểu',w_spl:'bạn muốn chia nhỏ',w_stilll:'vẫn làm landlord',w_upll:'muốn thôi landlord, chấp nhận hết 1031',w_upno:'thường chỉ khi muốn thoát hẳn',
+  w_bldtoo:'muốn sửa thì coi improvement',w_dmin:'',
+  ty_title:'Cả 7 loại, hợp nhất lên đầu',
+  est_note:'Phí là ước tính từ nguồn trong ngành, không phải báo giá. "Thường / usually" là cách làm phổ biến, không phải luật thuế. Không phải tư vấn thuế, luật hay đầu tư. Hỏi CPA, Qualified Intermediary, và với DST thì hỏi người có license chứng khoán.',
+  myth:'<b>Nhiều người hiểu sai:</b> "DST là 1031 dễ, khỏi làm landlord." Khỏi làm landlord là thật. Nhưng DST là chứng khoán. Thường chỉ accredited investor mới mua được, phí đầu hay ở mức 10–18% tiền bỏ vào, và thường không rút ra sớm được. Bạn cũng mất quyền quyết định.',
+  nx_title:'Bước tiếp theo',
+  nx1:'Trước hết coi nhà có đủ điều kiện 1031 không: <a href="/t220/">T220</a>.',
+  nx2:'Làm delayed? Tính số trong <a href="/t27/">T27</a> và lên danh sách 45 ngày trong <a href="/t221/">T221</a>.',
+  nx3:'1031 có đáng hơn đóng thuế luôn, hay giữ tới lúc mất? So trong <a href="/t222/">T222</a>.',
+  nx4:'Chọn QI (hoặc EAT nếu làm reverse) bằng <a href="/t226/">T226</a>, rồi đưa hết ngày vào lịch bằng <a href="/t227/">T227</a>.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi kết quả chọn loại 1031 về email',f_sub:'Ken nhận được sẽ gửi lại vài QI và người tư vấn quen làm loại này. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Các loại 1031',ft_vid:'Video 3 phút',
+  ft_est:'Thông tin chung, không phải tư vấn thuế, luật hay đầu tư. Hỏi CPA và Qualified Intermediary trước khi ký.',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',back:'← Tất cả tools',
+  sms:'Chào Ken, tôi xem tool T228: hợp nhất là {best}, equity {eq}. Cho tôi hỏi thêm.',
+  subj:'Loại 1031 hợp với tôi — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nTrả lời: {ans}\nEquity: {eq}\n\nHợp nhất: {best}\nPhí ước tính: {cost}\n\nTừng loại:\n{list}\n\nƯớc tính, không phải tư vấn thuế/đầu tư.\nGửi từ tool T228 tools.kenlamrealty.com'},
+ en:{title:'Which kind of 1031 fits you?',sub:'Five quick answers. See which exchange type fits, what it costs, and where people get burned.',
+  q_ord:'Timing: what happens first?',o_sell:'Sell old first',o_same:'Same day',o_buy:'Must buy new first',
+  q_ll:'Done being a landlord?',q_bld:'Build or fix the new one with 1031 money?',q_spl:'Split it up / leave to several heirs?',q_eq:'Equity to reinvest',
+  q_acc:'Accredited investor? ',q_acc_s:'(net worth over $1M not counting your home, or income over $200K / $300K with spouse for 2 years)',
+  o_y:'Yes',o_n:'No',o_y2:'Yes',o_n2:'No',o_y3:'Yes',o_n3:'No',o_y4:'Yes',o_n4:'No',o_u:'Not sure',
+  r_total:'Best fit for you',n_cost:'Estimated cost of the best fit',n_good:'Good fits',n_maybe:'Possible, with care',
+  f2:'Good fit',f1:'Possible',f0:'Not a fit',pros:'Plus',cons:'Minus',risk:'Risk',cost:'Estimated cost',ask:'ask the QI / sponsor — no firm figure',
+  st_one:'<b>{a}</b> is the most direct route for your situation.',st_two:'<b>{a}</b> fits best. Also look at <b>{b}</b>.',
+  st_heir:' Planning to hold until death? Heirs get a stepped-up basis (§1014), which wipes out the deferred gain. That works with most options below.',
+  nm_delayed:'Delayed (sell first, buy later)',nm_simul:'Simultaneous (same day)',nm_reverse:'Reverse (buy first, sell later)',nm_improve:'Improvement / build-to-suit',nm_dst:'DST (Delaware Statutory Trust)',nm_tic:'TIC (tenancy in common)',nm_upreit:'721 UPREIT',
+  d_delayed:'Sell the old property, the QI holds the money. 45 days to identify, 180 days to close.',
+  d_simul:'Both properties close at the same time. No 45/180-day clock.',
+  d_reverse:'An exchange accommodation titleholder (EAT) parks the new property (or the old one) while you sell.',
+  d_improve:'The EAT holds the new property while it is built or fixed with exchange money.',
+  d_dst:'Buy a share of a trust that owns a large property (apartments, warehouse, pharmacy…). The sponsor runs it.',
+  d_tic:'Co-own one property with others, each with an undivided share.',
+  d_upreit:'Contribute the property to a REIT partnership for OP units. Not a 1031.',
+  p_delayed:'Most common, lowest fee; time to shop for the new property.',
+  c_delayed:'45 days goes fast; you are still a landlord.',
+  r_delayed:'If the money touches your hands, it fails. 45/180 days don\'t extend (except IRS-announced disasters).',
+  p_simul:'Simple timing, no 45-day worry.',
+  c_simul:'Hard to line up two escrows on one day.',
+  r_simul:'One side slips and both get stuck. Still use a QI and an exchange agreement.',
+  p_reverse:'Lock in the property you want before you sell.',
+  c_reverse:'Higher fees; you need cash or a loan to buy without sale money, and many lenders don\'t like lending to an EAT.',
+  r_reverse:'EAT agreement within 5 business days; identify the property to sell within 45 days; whole thing within 180 days. Owned the new property in the prior 180 days? No safe harbor (Rev. Proc. 2004-51).',
+  p_improve:'Use exchange money for the work, so you bring less cash and cut boot.',
+  c_improve:'Complex; fees like a reverse.',
+  r_improve:'Usually only work finished by day 180 counts; unfinished work can end up as boot.',
+  p_dst:'No more landlord work. A DST interest counts as real property for 1031 (Rev. Rul. 2004-86). Flexible amounts.',
+  c_dst:'Money tied up for years, no say in decisions; the trust can\'t take new money or refinance.',
+  r_dst:'It is a security, usually sold only to accredited investors. Upfront load often 10–18%. Results depend on the sponsor.',
+  p_tic:'Pool money with others for a bigger property; clear shares.',
+  c_tic:'Selling, leasing, refinancing or hiring a manager needs everyone to agree.',
+  r_tic:'Rev. Proc. 2002-22 is ruling guidance, not a safe harbor. Max 35 owners. Act like a partnership and the 1031 fails.',
+  p_upreit:'Trade the property for units in a big, diversified REIT; no landlord work.',
+  c_upreit:'Not a 1031. No more 1031s after this.',
+  r_upreit:'Redeeming units or converting to REIT shares is taxable. Practitioner guidance; ask your CPA.',
+  w_buy:'needs you to sell first',w_notbuy:'you must buy first',w_same:'both close the same day',w_buy2:'you must buy first',w_nobuy:'not needed if you can sell first',
+  w_bld:'you want to build / fix',w_nobld:'not needed without construction',w_ll:'you want out of landlording',w_acc:'you are accredited',w_noacc:'usually accredited investors only',
+  w_uacc:'check whether you are accredited',w_min:'equity under the ~$100K typical minimum',w_spl:'you want to split it up',w_stilll:'you stay a landlord',w_upll:'you want out and accept the end of 1031',w_upno:'usually only for a full exit',
+  w_bldtoo:'want to fix it? see improvement',w_dmin:'',
+  ty_title:'All 7 options, best fit first',
+  est_note:'Costs are estimates from industry sources, not quotes. "Usually / thường" means common practice, not a rule in the tax code. Not tax, legal or investment advice. Ask a CPA, your Qualified Intermediary and, for DSTs, a licensed securities advisor.',
+  myth:'<b>Common mistake:</b> "A DST is just an easy 1031, no landlord work." The no-landlord part is real. But a DST is a security. Usually only accredited investors can buy, upfront costs often run 10–18% of your money, and you usually can\'t get out early. You give up control too.',
+  nx_title:'Next steps',
+  nx1:'First check the property qualifies at all: <a href="/t220/">T220</a>.',
+  nx2:'Delayed exchange? Run the numbers in <a href="/t27/">T27</a> and plan your 45-day list in <a href="/t221/">T221</a>.',
+  nx3:'Is a 1031 even worth it versus paying the tax, or holding until death? Compare in <a href="/t222/">T222</a>.',
+  nx4:'Pick the QI (or exchange accommodation titleholder for reverse) with <a href="/t226/">T226</a>, then put every date on the calendar with <a href="/t227/">T227</a>.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this 1031 match to yourself',f_sub:'Ken will reply with a few QIs and advisors who handle this type. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'Types of 1031 exchanges',ft_vid:'3-min video',
+  ft_est:'General information only. Not tax, legal or investment advice. Ask a CPA and your Qualified Intermediary before you sign.',
+  ft_src:'Sources',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',back:'← All tools',
+  sms:'Hi Ken, I used tool T228: best fit is {best}, equity {eq}. I have a question.',
+  subj:'Which 1031 fits me — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nAnswers: {ans}\nEquity: {eq}\n\nBest fit: {best}\nEstimated cost: {cost}\n\nEach type:\n{list}\n\nEstimate, not tax or investment advice.\nSent from tool T228 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+try{ if(new URLSearchParams(location.search).get('embed')==='1') document.documentElement.classList.add('embed'); }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const A={ord:'sell',ll:'n',bld:'n',spl:'n',acc:'u'};
+let last={};
+
+/* hàm thuần: điểm 2 hợp / 1 được / 0 không, kèm lý do (key) */
+function score(a,eq){
+  const o={};
+  /* delayed */
+  if(a.ord==='buy') o.delayed=[0,['w_notbuy']];
+  else { let s=a.ord==='sell'?2:1, w=[a.ord==='sell'?'':'w_same']; if(a.ll==='y'){s=Math.min(s,1);w.push('w_stilll');} if(a.bld==='y'){s=Math.min(s,1);w.push('w_bldtoo');} o.delayed=[s,w]; }
+  /* simultaneous */
+  o.simul=a.ord==='same'?[a.ll==='y'||a.bld==='y'?1:2,['w_same']]:[0,[a.ord==='buy'?'w_buy2':'w_nobuy']];
+  /* reverse */
+  o.reverse=a.ord==='buy'?[a.bld==='y'?1:2,['w_buy2']]:[0,['w_nobuy']];
+  /* improvement */
+  o.improve=a.bld==='y'?[2,['w_bld']]:[0,['w_nobld']];
+  /* DST */
+  { let s, w=[]; if(a.acc==='n'){s=0;w.push('w_noacc');} else { s=a.ll==='y'?2:1; if(a.ll==='y') w.push('w_ll'); w.push(a.acc==='y'?'w_acc':'w_uacc'); if(a.acc==='u') s=Math.min(s,1); }
+    if(eq<FEE.DST_MIN){s=0;w.push('w_min');} if(a.spl==='y'&&s>0) w.push('w_spl'); o.dst=[s,w]; }
+  /* TIC */
+  o.tic=a.spl==='y'?[1,['w_spl']]:[0,['w_stilll']];
+  if(a.ll==='y'&&o.tic[0]>0) o.tic=[1,['w_spl','w_stilll']];
+  /* UPREIT */
+  o.upreit=a.ll==='y'?[1,['w_upll']]:[0,['w_upno']];
+  if(a.bld==='y'&&o.delayed[0]===2) o.delayed[0]=1;
+  return o;
+}
+function costTxt(k,eq,d){
+  if(k==='delayed') return fmt(FEE.delayed[0])+'–'+fmt(FEE.delayed[1]);
+  if(k==='reverse'||k==='improve') return fmt(FEE[k][0])+'–'+fmt(FEE[k][1])+'+';
+  if(k==='dst') return fmt(eq*FEE.dstPct[0])+'–'+fmt(eq*FEE.dstPct[1]);
+  return d.ask;
+}
+function costSub(k,d){
+  const vi=lang==='vi';
+  if(k==='delayed') return vi?'phí QI, +$200–$400 mỗi căn thêm':'QI fee, +$200–$400 per extra property';
+  if(k==='reverse'||k==='improve') return vi?'phí EAT/QI, chưa tính LLC, luật sư, lender, title':'EAT/QI fee, plus LLC, legal, lender, title';
+  if(k==='dst') return vi?'10–18% equity, tối thiểu ~$100K':'10–18% of equity, ~$100K minimum';
+  return '';
+}
+function calc(){
+  const d=T[lang], eq=Math.max(0,parseFloat($('eq').value)||0), sc=score(A,eq);
+  const order=TYPES.slice().sort((x,y)=>sc[y][0]-sc[x][0]);
+  const best=order[0], second=order[1];
+  $('best').textContent=d['nm_'+best];
+  $('oCost').textContent=costTxt(best,eq,d); $('oCosts').textContent=costSub(best,d);
+  $('oGood').textContent=TYPES.filter(k=>sc[k][0]===2).length; $('oMaybe').textContent=TYPES.filter(k=>sc[k][0]===1).length;
+  let st=sc[second][0]>=1?d.st_two.replace('{a}',esc(d['nm_'+best])).replace('{b}',esc(d['nm_'+second])):d.st_one.replace('{a}',esc(d['nm_'+best]));
+  if(A.spl==='y') st+=d.st_heir;
+  $('status').innerHTML=st; $('status').className='status '+(sc[best][0]===2?'ok':'warn');
+  $('types').innerHTML=order.map(k=>{ const [s,w]=sc[k], why=w.filter(Boolean).map(x=>d[x]).join(' · ');
+    return '<article class="ty f'+s+'"><div class="hd"><h3>'+esc(d['nm_'+k])+'</h3><span class="fit f'+s+'">'+esc(d['f'+s])+'</span></div>'
+      +(why?'<p class="why">'+esc(why)+'</p>':'')
+      +'<p>'+esc(d['d_'+k])+'</p>'
+      +'<ul><li><b>'+esc(d.pros)+':</b> '+esc(d['p_'+k])+'</li><li><b>'+esc(d.cons)+':</b> '+esc(d['c_'+k])+'</li><li><b>'+esc(d.risk)+':</b> '+esc(d['r_'+k])+'</li></ul>'
+      +'<p class="cost"><b>'+esc(d.cost)+':</b> '+esc(costTxt(k,eq,d))+(costSub(k,d)?' <span>('+esc(costSub(k,d))+')</span>':'')+'</p></article>'; }).join('');
+  const lab={ord:d['o_'+A.ord],ll:A.ll==='y'?d.o_y:d.o_n,bld:A.bld==='y'?d.o_y:d.o_n,spl:A.spl==='y'?d.o_y:d.o_n,acc:A.acc==='y'?d.o_y:A.acc==='n'?d.o_n:d.o_u};
+  last={best:d['nm_'+best],eq:fmt(eq),cost:costTxt(best,eq,d),
+    ans:[d.q_ord+' '+lab.ord,d.q_ll+' '+lab.ll,d.q_bld+' '+lab.bld,d.q_spl+' '+lab.spl,d.q_acc.trim()+' '+lab.acc].join(' | '),
+    list:order.map(k=>'- '+d['nm_'+k]+': '+d['f'+sc[k][0]]).join('\n')};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(d.sms.replace(/\{(\w+)\}/g,(m,k)=>last[k]??m));
+}
+document.querySelectorAll('.seg[data-q]').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('button[data-v]'); if(!b) return;
+  A[g.getAttribute('data-q')]=b.getAttribute('data-v'); g.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); calc();}));
+function applyLang(){
+  const d=T[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; $('klBack').textContent=d.back; document.documentElement.lang=lang; calc();
+}
+$('eq').addEventListener('input',calc);
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=T[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const a=document.createElement('a'); a.href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body)); a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+</body>
+</html>

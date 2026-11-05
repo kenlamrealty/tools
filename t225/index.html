@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>1031 Out of California</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+</style>
+<style>
+/* ---- T225 thêm ---- */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;cursor:pointer}
+.ctl select option{background:var(--panel);color:var(--fg)}
+.ck{display:grid;gap:0}
+.ck .task .tt{cursor:default}
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+.embed .kl-back{display:none}
+</style>
+<meta name="description" content="Selling California property and buying in another state? See the FTB Form 593 withholding, the yearly Form 3840, and the California tax that waits on your deferred gain.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t225/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="1031 out of California: FTB 3840 & 593 · Ken Lam Tools">
+<meta property="og:description" content="Selling California property and buying in another state? See the FTB Form 593 withholding, the yearly Form 3840, and the California tax that waits on your deferred gain.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t225/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Moving your 1031 out of California? California still follows you.</h1>
+    <p class="sub" data-i="sub">Enter the sale and where the new property is. See what California withholds at closing, the form you file every year, and the state tax still waiting on your gain.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="row2">
+      <div class="field">
+        <label for="sale"><span data-i="l_sale">Sale price (California property)</span></label>
+        <div class="ctl"><span class="pre">$</span><input id="sale" type="number" inputmode="numeric" min="0" step="10000" value="1600000"></div>
+      </div>
+      <div class="field">
+        <label for="gain"><span data-i="l_gain">Gain you defer </span><small data-i="l_gain_s">(from T27)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="gain" type="number" inputmode="numeric" min="0" step="10000" value="800000"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="st"><span data-i="l_st">New property is in</span></label>
+        <div class="ctl"><select id="st">
+          <option value="CA">California</option>
+          <option value="TX" selected>Texas</option>
+          <option value="NV">Nevada</option>
+          <option value="AZ">Arizona</option>
+          <option value="WA">Washington</option>
+          <option value="ID">Idaho</option>
+          <option value="OR">Oregon</option>
+          <option value="FL">Florida</option>
+          <option value="TN">Tennessee</option>
+          <option value="XX" data-i="o_other">Another state</option>
+        </select></div>
+      </div>
+      <div class="field">
+        <label for="boot"><span data-i="l_boot">Boot (cash you keep) </span><small data-i="l_0">(0 if none)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="boot" type="number" inputmode="numeric" min="0" step="1000" value="0"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label><span data-i="l_ok">Does the exchange finish?</span></label>
+        <div class="seg" role="group">
+          <button type="button" id="okY" aria-pressed="true" data-i="o_yes">Yes</button>
+          <button type="button" id="okN" aria-pressed="false" data-i="o_fail">It fails</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="ca"><span data-i="l_ca">California rate </span><small data-i="l_ca_s">(estimate)</small></label>
+        <div class="ctl"><input id="ca" type="number" inputmode="decimal" min="0" max="13.3" step="0.1" value="9.3"><span class="post">%</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">California tax still waiting on your gain</div>
+      <div class="v"><span id="later">$0</span></div>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_w">Form 593 withholding at closing</b> <small id="oWs"></small></span><span class="a" id="oW">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_who">Who withholds</b></span><span class="a" id="oWho">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_3840">FTB Form 3840</b> <small data-i="n_3840_s">every year until the California gain is taxed</small></span><span class="a" id="o3840">—</span></div>
+      <div class="line warnl"><span class="n"><b data-i="n_bt">California tax this year</b> <small data-i="n_bt_s">boot (or all the gain if it fails) × your CA rate (estimate)</small></span><span class="a" id="oBt">$0</span></div>
+      <div class="line sum"><span class="n"><b data-i="n_later">CA tax later, when you sell for cash</b> <small data-i="n_later_s">deferred CA gain × your CA rate (estimate)</small></span><span class="a" id="oLater">$0</span></div>
+    </div>
+    <div class="note" data-i="est_note">Withholding is a prepayment, not an extra tax. It is credited on your California return. The "tax later" number uses today's rate on today's gain; the real amount depends on the year you sell. Estimate only, not tax advice.</div>
+  </section>
+
+  <section class="tlw" aria-label="Paperwork checklist">
+    <div class="top"><h2 data-i="ck_title">Paperwork checklist</h2></div>
+    <div class="ck" id="ck"></div>
+  </section>
+
+  <p class="myth" data-i="myth"><b>Common mistake:</b> "I moved to Texas and the new property is in Texas, so California is done with me." No. California tracks the gain you built here. Form 3840 is due every year, even if you live out of state, and even after later exchanges out-of-state to out-of-state. Skip it and FTB can assess the deferred gain plus penalties and interest.</p>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">Run your real gain and boot in the <a href="/t27/">1031 calculator (T27)</a>.</li>
+      <li data-i="nx2">Tell your QI early that the new property is out of state. The QI handles the Form 593 exchange certification. Check your QI with <a href="/t226/">T226</a>.</li>
+      <li data-i="nx3">Put the 45/180 days and the yearly 3840 on your calendar with the <a href="/t227/">dated checklist (T227)</a>.</li>
+      <li data-i="nx4">Thinking of a DST instead of a house out of state? See <a href="/t228/">which kind of 1031 fits (T228)</a>.</li>
+    </ol>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video guide"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t225/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this California summary to yourself</h2>
+    <p data-i="f_sub">Ken will reply with the forms and a few CPAs who handle out-of-state 1031s. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#1031-out-of-state" target="_blank" rel="noopener" data-i="ft_lib">1031 out of California</a> · <a href="https://kenlamrealty.com/library#video-1031" target="_blank" rel="noopener" data-i="ft_vid">3-min video</a></span>
+    <span data-i="ft_est">General information only. Not tax or legal advice. Ask a CPA and your Qualified Intermediary before you sign. The new state may have its own rules.</span>
+    <span class="src"><span data-i="ft_src">Sources</span> (04/11/2026):
+      <a href="https://www.ftb.ca.gov/forms/2025/2025-3840-instructions.html" target="_blank" rel="noopener">FTB 3840 Instructions 2025</a> ·
+      <a href="https://www.ftb.ca.gov/file/personal/reporting-like-kind-exchanges.html" target="_blank" rel="noopener">FTB reporting like-kind exchanges</a> ·
+      <a href="https://www.ftb.ca.gov/forms/2026/2026-593-instructions.html" target="_blank" rel="noopener">FTB 593 Instructions 2026</a> ·
+      <a href="https://www.ftb.ca.gov/pay/withholding/qualified-intermediary.html" target="_blank" rel="noopener">FTB QI withholding</a> ·
+      <a href="https://www.ftb.ca.gov/file/personal/income-types/capital-gains-and-losses.html" target="_blank" rel="noopener">FTB capital gains</a> ·
+      <a href="https://www.ftb.ca.gov/forms/2026/2026-540-es-instructions.html" target="_blank" rel="noopener">FTB 540-ES 2026</a></span>
+    <span class="who">Ken Lam Realty · Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Luật & số liệu California — sửa ở đây (tra 04/11/2026) =====
+   Form 593 (FTB 593 Instr. 2026 https://www.ftb.ca.gov/forms/2026/2026-593-instructions.html ; FTB QI https://www.ftb.ca.gov/pay/withholding/qualified-intermediary.html):
+     mặc định 3⅓% giá bán; giá ≤ $100,000 không withhold; 1031 hợp lệ được miễn lúc close (exchange certification);
+     deferred exchange: QI (không phải escrow) withhold nếu boot > $1,500, 3⅓% của boot (hoặc rate thay thế trên gain);
+     exchange hỏng: QI withhold 3⅓% toàn bộ giá bán. Rate thay thế cá nhân 12.3%.
+     Simultaneous exchange: miễn trừ khi boot > $1,500 (không tách riêng ở đây).
+   Form 3840 (FTB 3840 Instr. 2025 https://www.ftb.ca.gov/forms/2025/2025-3840-instructions.html): đổi nhà CA lấy nhà NGOÀI CA;
+     không kể cư trú; nộp mỗi năm tới khi gain CA bị đánh thuế; theo luôn các lần đổi sau; không nộp → FTB assess gain + phạt + lãi.
+     R&TC §18032 (cá nhân) / §24953 (công ty).
+   CA đánh gain như thu nhập thường (FTB). CA_DEFAULT 9.3% = ƯỚC TÍNH, khách tự sửa. Max 13.3% (12.3% + 1% Behavioral Health trên $1M).
+   "Thuế CA sau này" = gain hoãn × rate hôm nay: ƯỚC TÍNH (KEN DUYỆT). */
+const WH_RATE=1/30, WH_MIN_PRICE=100000, BOOT_TRIGGER=1500, CA_DEFAULT=9.3, CA_MAX=13.3;
+const CK=['qi','593','8824','3840','keep','sell'];
+const STN={TX:'Texas',NV:'Nevada',AZ:'Arizona',WA:'Washington',ID:'Idaho',OR:'Oregon',FL:'Florida',TN:'Tennessee',CA:'California'};
+const I18N={
+ vi:{title:'Đổi 1031 ra tiểu bang khác? California vẫn theo bạn.',sub:'Nhập giá bán và nhà mới ở đâu. Ra liền California giữ lại bao nhiêu lúc close, form phải nộp mỗi năm, và thuế tiểu bang vẫn chờ trên tiền lời của bạn.',
+  l_sale:'Giá bán (nhà ở California)',l_gain:'Tiền lời được hoãn ',l_gain_s:'(lấy từ T27)',l_st:'Nhà mới ở tiểu bang',o_other:'Tiểu bang khác',
+  l_boot:'Boot (tiền mặt giữ lại) ',l_0:'(không có thì 0)',l_ok:'1031 có xong không?',o_yes:'Xong',o_fail:'Bị hỏng',l_ca:'Thuế California ',l_ca_s:'(ước tính)',
+  r_total:'Thuế California vẫn chờ trên tiền lời',
+  n_w:'Form 593 withholding lúc close',n_who:'Ai giữ lại',n_3840:'FTB Form 3840',n_3840_s:'mỗi năm, tới khi gain CA bị đánh thuế',
+  n_bt:'Thuế California năm nay',n_bt_s:'boot (hỏng thì toàn bộ tiền lời) × thuế CA (ước tính)',n_later:'Thuế CA sau này, khi bán lấy tiền',n_later_s:'gain CA hoãn × thuế CA (ước tính)',
+  w_none:'giá ≤ $100,000: không withhold',w_ex:'1031 hợp lệ: miễn (exchange certification)',w_boot:'3⅓% × boot {b}',w_fail:'3⅓% × toàn bộ giá bán',w_small:'boot ≤ $1,500: không withhold',
+  who_qi:'QI',who_none:'không ai',
+  f3840_y:'Phải nộp',f3840_n:'Không cần',
+  st_out:'<b>Nhà mới ở {s}.</b> California vẫn theo dõi {g} tiền lời gốc ở đây. Nộp Form 3840 mỗi năm. Sau này bán lấy tiền, CA đòi khoảng {t} (ước tính).',
+  st_in:'<b>Nhà mới vẫn ở California.</b> Không cần Form 3840. Tiền lời vẫn hoãn bình thường, CA đánh thuế khi bạn bán lấy tiền.',
+  st_fail:'<b>Exchange hỏng.</b> QI giữ lại 3⅓% toàn bộ giá bán ({w}). Tiền lời bị tính thuế năm nay, không còn hoãn.',
+  est_note:'Withholding là đóng trước, không phải thuế thêm. Được trừ lại trên tờ khai California. Số "thuế sau này" lấy thuế suất hôm nay nhân tiền lời hôm nay; số thật tuỳ năm bạn bán. Chỉ là ước tính, không phải tư vấn thuế.',
+  ck_title:'Checklist giấy tờ',
+  c_qi:['Báo QI và escrow từ đầu: đây là 1031, nhà mới ngoài California','QI lo phần Form 593 exchange certification lúc close. Không báo thì escrow có thể giữ lại 3⅓% giá bán.'],
+  c_593:['Giữ bản Form 593 escrow / QI đưa','Nếu có withholding, đó là tiền đóng trước. Đưa CPA để trừ lại trên tờ khai California.'],
+  c_8824:['Form 8824 với tờ khai năm bán (federal + California)','Báo 1031 với IRS. CPA làm, cần giấy escrow 2 căn và giấy QI.'],
+  c_3840:['FTB Form 3840 năm đổi, rồi MỖI NĂM sau đó','Nộp kể cả khi bạn đã dọn ra khỏi California và không còn khai thuế CA nào khác. Không nộp, FTB có thể đòi thuế + phạt + lãi.'],
+  c_keep:['Lưu basis, khấu hao, giấy escrow cả 2 căn suốt thời gian giữ nhà','Bán lúc nào CA cũng hỏi phần gain gốc. Mất giấy là khó cãi.'],
+  c_sell:['Bán nhà mới lấy tiền: báo CA phần gain CA','Phần gain gốc ở California bị CA đánh thuế lúc đó, dù bạn ở tiểu bang nào. Đổi tiếp 1031 thì 3840 tiếp tục.'],
+  c_na:'(nhà mới ở CA: không cần)',
+  myth:'<b>Nhiều người hiểu sai:</b> "Tôi dọn qua Texas, nhà mới cũng ở Texas, vậy là hết dính California." Không. California theo dõi phần lời bạn có ở đây. Form 3840 nộp mỗi năm, kể cả khi bạn ở tiểu bang khác, kể cả sau này đổi tiếp từ tiểu bang khác sang tiểu bang khác. Bỏ không nộp là FTB có thể đòi thuế phần lời đó cộng phạt và lãi.',
+  nx_title:'Bước tiếp theo',
+  nx1:'Tính tiền lời và boot thật trong <a href="/t27/">máy tính 1031 (T27)</a>.',
+  nx2:'Báo QI sớm là nhà mới ngoài tiểu bang. QI lo giấy Form 593 exchange certification. Kiểm QI bằng <a href="/t226/">T226</a>.',
+  nx3:'Đưa ngày 45/180 và Form 3840 hằng năm vào lịch bằng <a href="/t227/">checklist có ngày (T227)</a>.',
+  nx4:'Đang tính mua DST thay vì nhà ngoài tiểu bang? Xem <a href="/t228/">loại 1031 nào hợp (T228)</a>.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi bảng California này về email',f_sub:'Ken nhận được sẽ gửi lại danh sách form và vài CPA quen làm 1031 ra ngoài tiểu bang. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'1031 ra ngoài California',ft_vid:'Video 3 phút',
+  ft_est:'Thông tin chung, không phải tư vấn thuế hay luật. Hỏi CPA và Qualified Intermediary trước khi ký. Tiểu bang mới có thể có luật riêng.',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',back:'← Tất cả tools',
+  sms:'Chào Ken, tôi xem tool T225: bán {s} ở CA, nhà mới ở {st}, gain hoãn {g}. Withholding {w}, thuế CA sau này khoảng {t}. Cho tôi hỏi thêm.',
+  subj:'1031 ra ngoài California — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nGiá bán (CA): {s}\nGain hoãn: {g}\nNhà mới ở: {st}\nBoot: {b}\n1031: {ok}\nThuế CA: {ca}%\n\nForm 593 withholding: {w} ({ws})\nForm 3840: {f}\nThuế CA năm nay: {bt}\nThuế CA sau này (ước tính): {t}\n\nƯớc tính, không phải tư vấn thuế.\nGửi từ tool T225 tools.kenlamrealty.com'},
+ en:{title:'Moving your 1031 out of California? California still follows you.',sub:'Enter the sale and where the new property is. See what California withholds at closing, the form you file every year, and the state tax still waiting on your gain.',
+  l_sale:'Sale price (California property)',l_gain:'Gain you defer ',l_gain_s:'(from T27)',l_st:'New property is in',o_other:'Another state',
+  l_boot:'Boot (cash you keep) ',l_0:'(0 if none)',l_ok:'Does the exchange finish?',o_yes:'Yes',o_fail:'It fails',l_ca:'California rate ',l_ca_s:'(estimate)',
+  r_total:'California tax still waiting on your gain',
+  n_w:'Form 593 withholding at closing',n_who:'Who withholds',n_3840:'FTB Form 3840',n_3840_s:'every year until the California gain is taxed',
+  n_bt:'California tax this year',n_bt_s:'boot (or all the gain if it fails) × your CA rate (estimate)',n_later:'CA tax later, when you sell for cash',n_later_s:'deferred CA gain × your CA rate (estimate)',
+  w_none:'price ≤ $100,000: no withholding',w_ex:'qualifying 1031: exempt (exchange certification)',w_boot:'3⅓% × boot of {b}',w_fail:'3⅓% × full sale price',w_small:'boot ≤ $1,500: no withholding',
+  who_qi:'QI',who_none:'nobody',
+  f3840_y:'Required',f3840_n:'Not needed',
+  st_out:'<b>New property in {s}.</b> California keeps tracking {g} of gain you built here. File Form 3840 every year. When you later sell for cash, CA expects about {t} (estimate).',
+  st_in:'<b>New property is still in California.</b> No Form 3840 needed. The gain is deferred as usual, and CA taxes it when you sell for cash.',
+  st_fail:'<b>Failed exchange.</b> The QI withholds 3⅓% of the full sale price ({w}). The gain is taxed this year, not deferred.',
+  est_note:'Withholding is a prepayment, not an extra tax. It is credited on your California return. The "tax later" number uses today\'s rate on today\'s gain; the real amount depends on the year you sell. Estimate only, not tax advice.',
+  ck_title:'Paperwork checklist',
+  c_qi:['Tell your QI and escrow up front: it\'s a 1031, new property out of state','The QI handles the Form 593 exchange certification at closing. Skip that and escrow may withhold 3⅓% of the price.'],
+  c_593:['Keep the Form 593 copy from escrow / the QI','Any withholding is a prepayment. Give it to your CPA to claim on your California return.'],
+  c_8824:['Form 8824 with the sale-year return (federal and California)','Reports the exchange to the IRS. Your CPA needs both escrow statements and the QI papers.'],
+  c_3840:['FTB Form 3840 for the exchange year, then EVERY year after','File it even after you move out of California and have no other CA return. Skip it and FTB can assess the tax plus penalties and interest.'],
+  c_keep:['Keep basis, depreciation and both escrow statements for as long as you own','Whenever you sell, CA asks about the original gain. Lost paperwork is hard to argue with.'],
+  c_sell:['Sell the new property for cash: report the California gain to CA','The original California gain is taxed by CA then, wherever you live. Exchange again and the 3840 keeps going.'],
+  c_na:'(new property in CA: not needed)',
+  myth:'<b>Common mistake:</b> "I moved to Texas and the new property is in Texas, so California is done with me." No. California tracks the gain you built here. Form 3840 is due every year, even if you live out of state, and even after later exchanges out-of-state to out-of-state. Skip it and FTB can assess the deferred gain plus penalties and interest.',
+  nx_title:'Next steps',
+  nx1:'Run your real gain and boot in the <a href="/t27/">1031 calculator (T27)</a>.',
+  nx2:'Tell your QI early that the new property is out of state. The QI handles the Form 593 exchange certification. Check your QI with <a href="/t226/">T226</a>.',
+  nx3:'Put the 45/180 days and the yearly 3840 on your calendar with the <a href="/t227/">dated checklist (T227)</a>.',
+  nx4:'Thinking of a DST instead of a house out of state? See <a href="/t228/">which kind of 1031 fits (T228)</a>.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this California summary to yourself',f_sub:'Ken will reply with the forms and a few CPAs who handle out-of-state 1031s. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'1031 out of California',ft_vid:'3-min video',
+  ft_est:'General information only. Not tax or legal advice. Ask a CPA and your Qualified Intermediary before you sign. The new state may have its own rules.',
+  ft_src:'Sources',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',back:'← All tools',
+  sms:'Hi Ken, I used tool T225: selling {s} in CA, new property in {st}, deferred gain {g}. Withholding {w}, CA tax later about {t}. I have a question.',
+  subj:'1031 out of California — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nSale price (CA): {s}\nDeferred gain: {g}\nNew property in: {st}\nBoot: {b}\nExchange: {ok}\nCA rate: {ca}%\n\nForm 593 withholding: {w} ({ws})\nForm 3840: {f}\nCA tax this year: {bt}\nCA tax later (estimate): {t}\n\nEstimate, not tax advice.\nSent from tool T225 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+try{ if(new URLSearchParams(location.search).get('embed')==='1') document.documentElement.classList.add('embed'); }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let ok=true,last={};
+
+/* hàm thuần */
+function caOut(i){
+  const sale=Math.max(0,i.sale), gain=Math.max(0,i.gain), boot=Math.max(0,i.boot), ca=Math.min(CA_MAX,Math.max(0,i.ca))/100, out=i.st!=='CA';
+  let w=0, wk='ex', who='none';
+  if(sale<=WH_MIN_PRICE){ wk='none'; }
+  else if(!i.ok){ w=sale*WH_RATE; wk='fail'; who='qi'; }
+  else if(boot>BOOT_TRIGGER){ w=boot*WH_RATE; wk='boot'; who='qi'; }
+  else if(boot>0){ wk='small'; }
+  /* xong: boot bị thuế năm nay, gain hoãn chờ sau. hỏng: toàn bộ (gain + boot) bị thuế năm nay. */
+  const deferred=i.ok?gain:0, nowTaxed=i.ok?boot:gain+boot;
+  return {w,wk,who,need3840:out&&i.ok,bt:nowTaxed*ca,later:deferred*ca,deferred};
+}
+function renderCk(r){
+  const d=I18N[lang];
+  $('ck').innerHTML=CK.map(k=>{ const [t,w]=d['c_'+k], na=(k==='3840'&&!r.need3840);
+    return '<div class="task'+(na?' done':'')+'"><input type="checkbox" aria-label="'+esc(t)+'"'+(na?' disabled':'')+'><span class="tt">'+esc(t)+(na?' '+esc(d.c_na):'')+'</span><div class="why">'+esc(w)+'</div></div>'; }).join('');
+}
+function calc(){
+  const d=I18N[lang], st=$('st').value, stName=st==='XX'?d.o_other:STN[st];
+  const r=caOut({sale:num('sale'),gain:num('gain'),boot:num('boot'),ca:num('ca'),st,ok});
+  $('later').textContent=fmt(r.later);
+  $('oW').textContent=fmt(r.w); $('oWs').textContent=d['w_'+r.wk].replace('{b}',fmt(num('boot')));
+  $('oWho').textContent=d['who_'+r.who]; $('o3840').textContent=r.need3840?d.f3840_y:d.f3840_n;
+  $('oBt').textContent=fmt(r.bt); $('oLater').textContent=fmt(r.later);
+  let s; if(!ok){ s=d.st_fail.replace('{w}',fmt(r.w)); $('status').className='status warn'; }
+  else if(st==='CA'){ s=d.st_in; $('status').className='status ok'; }
+  else { s=d.st_out.replace('{s}',esc(stName)).replace('{g}',fmt(r.deferred)).replace('{t}',fmt(r.later)); $('status').className='status warn'; }
+  $('status').innerHTML=s;
+  renderCk(r);
+  last={s:fmt(num('sale')),g:fmt(num('gain')),st:stName,b:fmt(num('boot')),ok:ok?d.o_yes:d.o_fail,ca:num('ca'),w:fmt(r.w),ws:d['w_'+r.wk].replace('{b}',fmt(num('boot'))),
+    f:r.need3840?d.f3840_y:d.f3840_n,bt:fmt(r.bt),t:fmt(r.later)};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(d.sms.replace(/\{(\w+)\}/g,(m,k)=>last[k]??m));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; $('klBack').textContent=d.back; document.documentElement.lang=lang; calc();
+}
+$('ca').value=CA_DEFAULT;
+['sale','gain','boot','ca'].forEach(id=>$(id).addEventListener('input',calc));
+$('st').addEventListener('change',calc);
+$('okY').onclick=()=>{ok=true;$('okY').setAttribute('aria-pressed','true');$('okN').setAttribute('aria-pressed','false');calc();};
+$('okN').onclick=()=>{ok=false;$('okN').setAttribute('aria-pressed','true');$('okY').setAttribute('aria-pressed','false');calc();};
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const a=document.createElement('a'); a.href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body)); a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+</body>
+</html>
