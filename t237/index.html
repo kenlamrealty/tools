@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rate Shopping Window</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T37 thêm (không đổi class cũ) ---- */
+.score{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.score b{font-family:var(--display);font-weight:400;font-size:40px;line-height:1;font-variant-numeric:tabular-nums;color:var(--fg)}
+.score span{font-size:13px;color:var(--muted)}
+.rng{width:100%;margin:4px 0 0;accent-color:var(--brass);height:28px;cursor:pointer}
+.ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.total .pay{margin-top:10px;font-size:15px;color:var(--muted)}
+.total .pay b{color:var(--fg);font-size:22px;font-weight:500;font-variant-numeric:tabular-nums}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45;background:var(--brass-soft)}
+.status b{font-weight:500}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.tbl th{font-size:12px;font-weight:500;color:var(--muted);text-align:right;padding:6px 0;border-bottom:1px solid var(--line)}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl td{padding:9px 0;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.tbl td small{color:var(--muted);font-size:11px;display:block;white-space:normal}
+.tbl tr.me td{color:var(--brass);font-weight:600}
+.tbl tr.me td small{color:var(--brass);font-weight:400}
+.tbl td.x{color:var(--warn)}
+.tbl tr.me td.x{color:var(--brass)}
+.tblk{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.tlw{display:grid;gap:12px}
+.tlw h2,.next h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-r{display:flex;align-items:center;gap:10px}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.gcal{font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.task .why a{color:var(--brass)}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+</style>
+<meta name="description" content="Enter the date the first lender pulled your credit. See the 14-day and 45-day windows, the FICO 30-day buffer and the VantageScore 14-day window.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t237/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Rate Shopping Window · Ken Lam Tools">
+<meta property="og:description" content="Enter the date the first lender pulled your credit. See the 14-day and 45-day windows, the FICO 30-day buffer and the VantageScore 14-day window.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t237/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+/* credit group additions (T230–T239) */
+.embed .kl-back{display:none}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:12px 2px;appearance:auto}
+.ctl input[type=date]{font-size:17px;min-height:48px;width:100%;min-width:0;-webkit-appearance:none;appearance:none}
+.total .v.date{font-size:46px;overflow-wrap:anywhere}
+.total .vs{font-size:14px;color:var(--muted);margin-top:6px}
+.line .n{overflow-wrap:anywhere}
+.line .a.ok{color:var(--ok)}
+.line .a.no{color:var(--warn)}
+.tag{display:inline-block;font-size:11px;letter-spacing:.04em;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 7px;margin-left:4px;vertical-align:1px}
+.status.warn{border-left:3px solid var(--warn)}
+.status.good{border-left:3px solid var(--ok)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Shopping lenders: will it hurt my score?</h1>
+    <p class="sub" data-i="sub">Enter the day the first lender pulled your credit. See the last safe day to finish comparing, for FICO and VantageScore.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="d1"><span data-i="l_d1">Date the first lender pulled credit</span></label>
+      <div class="ctl"><input id="d1" type="date"></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="nl"><span data-i="l_nl">Lenders you plan to ask</span></label>
+        <div class="ctl"><input id="nl" type="number" inputmode="numeric" min="1" max="10" step="1" value="3"><span class="post" data-i="u_lenders">lenders</span></div>
+      </div>
+      <div class="field">
+        <label for="d2"><span data-i="l_d2">Last planned pull </span><small data-i="l_opt">(optional)</small></label>
+        <div class="ctl"><input id="d2" type="date"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_total">Finish every pull by</div>
+      <div class="v date" id="safeV">—</div>
+      <div class="vs" id="todayV"></div>
+    </div>
+    <div class="status" id="status"></div>
+    <div>
+      <div class="tblk" data-i="t_title">Key dates</div>
+      <table class="tbl" id="tbl"></table>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_cnt">Pulls inside 14 days count as</b></span><span class="a ok" id="oCnt">1</span></div>
+      <div class="line"><span class="n"><b data-i="n_pts">One hard inquiry usually costs</b> <span data-i="n_pts_s">(FICO)</span></span><span class="a" id="oPts">&lt; 5</span></div>
+      <div class="line"><span class="n"><b data-i="n_soft">Checking your own score</b></span><span class="a ok" data-i="n_soft_v">soft pull, 0 effect</span></div>
+    </div>
+    <div class="note" data-i="note_day">Day 1 = the day of the first pull. We count it that way to stay on the safe side.</div>
+    <div class="note" data-i="note_scope">The window only covers mortgage, auto and student loan inquiries. A credit card application is its own inquiry.</div>
+    <div class="note" data-i="note_vs">Since Sep 9, 2026, any Fannie/Freddie lender may use VantageScore 4.0 instead of Classic FICO. VantageScore groups pulls in a 14-day window, so 14 days is the number to plan around.</div>
+  </section>
+
+  <p class="myth" data-i="myth"><b>Common myth:</b> "Every lender I talk to knocks my score down again." Not if you keep the mortgage pulls close together. Inside 14 days, FICO and VantageScore treat them as one inquiry. Checking your own score is a soft pull and never counts.</p>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">Pick 2–3 lenders before the first pull, so every quote lands inside 14 days.</li>
+      <li data-i="nx2">See which loans your score fits in <a href="/t235/">T235</a>. Two people on the loan? Find the score the lender uses in <a href="/t236/">T236</a>.</li>
+      <li data-i="nx3">Credit frozen? Lift it a few days before the lender pulls (<a href="/t239/">T239</a>).</li>
+      <li data-i="nx4">See what each score band costs per month in <a href="/t37/">T37</a>.</li>
+    </ol>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video guide"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t237/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email these dates to yourself</h2>
+    <p data-i="f_sub">Ken can introduce 2–3 lenders so you can compare quotes inside the window. No spam.</p>
+    <div class="field"><label for="fname" data-i="f_name">Name</label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone" data-i="f_phone">Phone (optional)</label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#rate-shopping" target="_blank" rel="noopener" data-i="ft_lib">Shopping lenders without hurting your score</a> · <a href="https://kenlamrealty.com/library#video-credit" target="_blank" rel="noopener" data-i="ft_vid">Kiến Thức Địa Ốc video</a></span>
+    <span data-i="ft_est">For reference only. Not legal or financial advice, and not a commitment to lend. Real scores are calculated by FICO/VantageScore and the 3 bureaus.</span>
+    <span class="src"><span data-i="ft_src">Sources</span> (05/11/2026):
+      <a href="https://www.businesswire.com/news/home/20230711822181/en/myFICO-How-to-Rate-Shop-and-Minimize-the-Impact-to-Your-FICO-Scores" target="_blank" rel="noopener">myFICO: rate shopping (14/45 days, 30-day buffer)</a> ·
+      <a href="https://vantagescore.com/consumers/blog/thinking-about-applying-for-a-loan-shop-around-to-find-the-best-offer" target="_blank" rel="noopener">VantageScore: 14-day window</a> ·
+      <a href="https://www.experian.com/blogs/ask-experian/how-long-do-hard-inquiries-stay-on-your-credit-report/" target="_blank" rel="noopener">Experian: hard vs soft inquiries</a> ·
+      <a href="https://www.fhfa.gov/policy/credit-scores" target="_blank" rel="noopener">FHFA: credit score models</a> ·
+      <a href="https://www.annualcreditreport.com" target="_blank" rel="noopener">AnnualCreditReport.com</a></span>
+    <span class="who">Ken Lam Realty · Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 05/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số liệu — sửa ở đây (nguồn: /home/claude/credit/FACTS.md mục F, tra 05/11/2026) =====
+   FICO_NEW 45 ngày (FICO đời mới), FICO_OLD 14 ngày (đời cũ), FICO_BUFFER 30 ngày bỏ qua:
+     myFICO qua BusinessWire 11/07/2023 — VERIFIED. Việc điểm mortgage Classic FICO 2/4/5 dùng 14 ngày: ESTIMATE, KEN DUYỆT.
+   VANTAGE 14 ngày rolling: vantagescore.com blog — VERIFIED.
+   INQ_YEARS 2 năm trên report, FICO tính 12 tháng, thường < 5 điểm: Experian — VERIFIED.
+   VS 4.0 mở cho mọi lender Fannie/Freddie từ 09/09/2026: fhfa.gov/policy/credit-scores — VERIFIED.
+   Tự xem điểm = soft inquiry: Experian — VERIFIED.
+   Quy ước: ngày kéo đầu = ngày 1 → ngày chót cửa sổ N ngày = ngày đầu + (N−1). Bảo thủ cho chắc. */
+const RULES={FICO_NEW:45,FICO_OLD:14,FICO_BUFFER:30,VANTAGE:14,SAFE:14,INQ_YEARS:2,FICO_COUNT_MONTHS:12,INQ_PTS:5,MAX_LENDERS:10};
+const UPDATED='05/11/2026';
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const I18N={
+ vi:{title:'Đi hỏi nhiều lender có bị trừ điểm không?',sub:'Nhập ngày lender đầu tiên kéo credit. Ra liền ngày chót để so giá xong, theo FICO và VantageScore.',
+  l_d1:'Ngày lender đầu tiên kéo credit',l_nl:'Định hỏi mấy lender',u_lenders:'lender',l_d2:'Ngày kéo cuối dự tính ',l_opt:'(không bắt buộc)',
+  r_total:'Kéo credit xong hết trước ngày',
+  td_before:'Còn {n} ngày nữa mới tới lần kéo đầu.',td_in:'Hôm nay là ngày {k}/14. Còn {n} ngày trong cửa sổ 14 ngày.',td_last:'Hôm nay là ngày chót của cửa sổ 14 ngày.',
+  td_45:'Cửa sổ 14 ngày đã qua. Cửa sổ 45 ngày của FICO đời mới còn tới {d}.',td_out:'Cả cửa sổ 14 và 45 ngày đều đã qua.',
+  st_none:'Chọn ngày lender đầu tiên kéo credit để ra các mốc ngày.',
+  st_plan:'<b>Dồn cả {n} lender vào 14 ngày, từ {a} tới {b}.</b> Vậy là FICO đời cũ, FICO đời mới và VantageScore đều gom lại thành 1 inquiry. Gợi ý: hỏi hết trong tuần đầu, chừa vài ngày dư phòng lender làm chậm.',
+  st_one:'<b>Chỉ 1 lender thì chỉ 1 inquiry.</b> Nếu đổi ý muốn so thêm, cố hỏi trước {b}.',
+  st_ok:'<b>Ngày kéo cuối {c} nằm trong 14 ngày.</b> An toàn với mọi mô hình điểm.',
+  st_mid:'<b>Ngày kéo cuối {c} quá 14 ngày, còn trong 45 ngày.</b> FICO đời mới vẫn gom thành 1. Nhưng VantageScore và FICO đời cũ có thể tính thêm inquiry. Kéo về trước {b} cho chắc.',
+  st_bad:'<b>Ngày kéo cuối {c} quá 45 ngày.</b> Mô hình nào cũng có thể tính thành inquiry riêng. Mỗi cái thường dưới 5 điểm FICO, nhưng không cần mất. Gom lại trước {b}.',
+  st_neg:'<b>Ngày kéo cuối đang trước ngày kéo đầu.</b> Coi lại 2 ngày đã nhập.',
+  t_title:'Các mốc ngày',th_w:'Mốc',th_d:'Ngày',
+  r_d1:'Lần kéo đầu (ngày 1)',r_safe:'Ngày chót an toàn, mọi mô hình (14 ngày)',r_vs:'VantageScore: cửa sổ 14 ngày',r_old:'FICO đời cũ: 14 ngày',r_old_t:'điểm mortgage Classic FICO, ước tính',
+  r_new:'FICO đời mới: 45 ngày',r_buf:'FICO bỏ qua lần kéo này tới (30 ngày)',r_cnt:'FICO thôi tính inquiry này (12 tháng)',r_off:'Inquiry rời khỏi report (2 năm)',to:' → ',
+  n_cnt:'Kéo trong 14 ngày được tính là',n_cnt_v:'1 inquiry',n_cnt_x:'có thể hơn 1',n_pts:'Mỗi hard inquiry thường mất',n_pts_s:'(FICO)',n_pts_v:'< 5 điểm',n_soft:'Tự xem điểm của mình',n_soft_v:'soft pull, không ảnh hưởng',
+  note_day:'Ngày 1 = ngày lender kéo lần đầu. Tính vậy là tính chặt, cho chắc.',
+  note_scope:'Cửa sổ này chỉ gom inquiry mortgage, auto, student loan. Xin thẻ credit là 1 inquiry riêng, không gom.',
+  note_vs:'Từ 09/09/2026, lender nào bán loan cho Fannie/Freddie cũng được xài VantageScore 4.0 thay Classic FICO. VantageScore gom trong 14 ngày, nên cứ lấy 14 ngày làm mốc.',
+  myth:'<b>Nhiều người hiểu sai:</b> "Hỏi lender nào là bị trừ điểm lần đó." Không phải. Kéo credit mortgage gần nhau trong 14 ngày thì FICO và VantageScore tính như 1 lần. Còn tự xem điểm của mình là soft pull, không bao giờ bị trừ.',
+  nx_title:'Bước tiếp theo',
+  nx1:'Chọn sẵn 2–3 lender trước lần kéo đầu, để báo giá nào cũng nằm trong 14 ngày.',
+  nx2:'Coi điểm mình vay được loại nào ở <a href="/t235/">T235</a>. Hai người đứng tên? Coi lender lấy điểm nào ở <a href="/t236/">T236</a>.',
+  nx3:'Đang freeze credit? Mở tạm vài ngày trước khi lender kéo (<a href="/t239/">T239</a>).',
+  nx4:'Coi mỗi nhóm điểm trả thêm bao nhiêu mỗi tháng ở <a href="/t37/">T37</a>.',
+  gcal:'Nhắc ngày chót trên Google Calendar',cal_t:'Ngày chót so lender (T237)',cal_d:'Kéo credit xong hết hôm nay để gom thành 1 inquiry. tools.kenlamrealty.com/t237/',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video',
+  f_title:'Gửi các mốc ngày này về email',f_sub:'Ken có thể giới thiệu 2–3 lender để so giá trong cửa sổ. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'So lender mà không bị trừ điểm',ft_vid:'Video Kiến Thức Địa Ốc',
+  ft_est:'Thông tin tham khảo, không phải tư vấn pháp lý, tài chính hay cam kết cho vay. Điểm thật do FICO/VantageScore và 3 bureau tính.',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi xem tool T237: lender đầu kéo credit {d1}, định hỏi {n} lender. Ngày chót 14 ngày: {s}. Nhờ Ken giới thiệu lender.',
+  subj:'Cửa sổ so lender — {nm}',
+  body:'Tên: {nm}\nEmail: {em}\nPhone: {ph}\n\nLender đầu kéo credit: {d1}\nSố lender định hỏi: {n}\nNgày kéo cuối dự tính: {d2}\n\nNgày chót an toàn (14 ngày, mọi mô hình): {s}\nFICO đời mới 45 ngày: {f45}\nFICO bỏ qua tới: {buf}\nFICO thôi tính sau 12 tháng: {c12}\nInquiry rời report: {off}\n\n{st}\n\nTham khảo, không phải cam kết cho vay.\nGửi từ tool T237 tools.kenlamrealty.com'},
+ en:{title:'Shopping lenders: will it hurt my score?',sub:'Enter the day the first lender pulled your credit. See the last safe day to finish comparing, for FICO and VantageScore.',
+  l_d1:'Date the first lender pulled credit',l_nl:'Lenders you plan to ask',u_lenders:'lenders',l_d2:'Last planned pull ',l_opt:'(optional)',
+  r_total:'Finish every pull by',
+  td_before:'{n} days until the first pull.',td_in:'Today is day {k} of 14. {n} days left in the 14-day window.',td_last:'Today is the last day of the 14-day window.',
+  td_45:'The 14-day window has passed. The newer FICO 45-day window runs through {d}.',td_out:'Both the 14-day and 45-day windows have passed.',
+  st_none:'Pick the date the first lender pulled your credit to see the dates.',
+  st_plan:'<b>Fit all {n} lenders into 14 days, {a} to {b}.</b> Then older FICO, newer FICO and VantageScore all group them as one inquiry. Tip: ask everyone in the first week and leave a few spare days in case a lender is slow.',
+  st_one:'<b>One lender, one inquiry.</b> If you decide to compare more, try to do it by {b}.',
+  st_ok:'<b>Your last pull on {c} is inside 14 days.</b> Safe for every scoring model.',
+  st_mid:'<b>Your last pull on {c} is past 14 days but inside 45.</b> Newer FICO still groups it as one. VantageScore and older FICO may count extra inquiries. Move it to {b} or earlier to be safe.',
+  st_bad:'<b>Your last pull on {c} is past 45 days.</b> Any model may count it as a separate inquiry. Each usually costs under 5 FICO points, but there is no need to lose them. Group pulls by {b}.',
+  st_neg:'<b>The last pull is before the first pull.</b> Check the two dates.',
+  t_title:'Key dates',th_w:'Milestone',th_d:'Date',
+  r_d1:'First pull (day 1)',r_safe:'Last safe day, every model (14 days)',r_vs:'VantageScore: 14-day window',r_old:'Older FICO: 14 days',r_old_t:'mortgage Classic FICO, estimate',
+  r_new:'Newer FICO: 45 days',r_buf:'FICO ignores this pull through (30 days)',r_cnt:'FICO stops counting it (12 months)',r_off:'Inquiry leaves the report (2 years)',to:' → ',
+  n_cnt:'Pulls inside 14 days count as',n_cnt_v:'1 inquiry',n_cnt_x:'may be more than 1',n_pts:'One hard inquiry usually costs',n_pts_s:'(FICO)',n_pts_v:'< 5 points',n_soft:'Checking your own score',n_soft_v:'soft pull, 0 effect',
+  note_day:'Day 1 = the day of the first pull. We count it that way to stay on the safe side.',
+  note_scope:'The window only covers mortgage, auto and student loan inquiries. A credit card application is its own inquiry.',
+  note_vs:'Since Sep 9, 2026, any Fannie/Freddie lender may use VantageScore 4.0 instead of Classic FICO. VantageScore groups pulls in a 14-day window, so 14 days is the number to plan around.',
+  myth:'<b>Common myth:</b> "Every lender I talk to knocks my score down again." Not if you keep the mortgage pulls close together. Inside 14 days, FICO and VantageScore treat them as one inquiry. Checking your own score is a soft pull and never counts.',
+  nx_title:'Next steps',
+  nx1:'Pick 2–3 lenders before the first pull, so every quote lands inside 14 days.',
+  nx2:'See which loans your score fits in <a href="/t235/">T235</a>. Two people on the loan? Find the score the lender uses in <a href="/t236/">T236</a>.',
+  nx3:'Credit frozen? Lift it a few days before the lender pulls (<a href="/t239/">T239</a>).',
+  nx4:'See what each score band costs per month in <a href="/t37/">T37</a>.',
+  gcal:'Remind me in Google Calendar',cal_t:'Last day to compare lenders (T237)',cal_d:'Finish every credit pull today so they group as one inquiry. tools.kenlamrealty.com/t237/',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch video',
+  f_title:'Email these dates to yourself',f_sub:'Ken can introduce 2–3 lenders so you can compare quotes inside the window. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'Shopping lenders without hurting your score',ft_vid:'Kiến Thức Địa Ốc video',
+  ft_est:'For reference only. Not legal or financial advice, and not a commitment to lend. Real scores are calculated by FICO/VantageScore and the 3 bureaus.',
+  ft_src:'Sources',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I used tool T237: first lender pulled credit {d1}, planning to ask {n} lenders. 14-day deadline: {s}. Can you refer a lender?',
+  subj:'Rate shopping window — {nm}',
+  body:'Name: {nm}\nEmail: {em}\nPhone: {ph}\n\nFirst lender pull: {d1}\nLenders planned: {n}\nLast planned pull: {d2}\n\nLast safe day (14 days, every model): {s}\nNewer FICO 45 days: {f45}\nFICO ignores through: {buf}\nFICO stops counting after 12 months: {c12}\nInquiry leaves report: {off}\n\n{st}\n\nFor reference, not a commitment to lend.\nSent from tool T237 tools.kenlamrealty.com'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+/* Ngày: làm bằng UTC để không lệch DST. Cộng tháng thì kẹp về ngày cuối tháng (31/01 + 1 tháng = 28/02 hoặc 29/02). */
+function parseYMD(s){ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||''); if(!m) return null; const d=new Date(Date.UTC(+m[1],+m[2]-1,+m[3])); return d.getUTCMonth()===+m[2]-1?d:null; }
+const toYMD=d=>d.getUTCFullYear()+'-'+pad(d.getUTCMonth()+1)+'-'+pad(d.getUTCDate());
+const addD=(d,n)=>new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()+n));
+function addM(d,n){ const y=d.getUTCFullYear(),m=d.getUTCMonth()+n,last=new Date(Date.UTC(y,m+1,0)).getUTCDate(); return new Date(Date.UTC(y,m,Math.min(d.getUTCDate(),last))); }
+const dayDiff=(a,b)=>Math.round((b-a)/864e5);
+const fd=d=>!d?'—':(lang==='vi'?pad(d.getUTCDate())+'/'+pad(d.getUTCMonth()+1)+'/'+d.getUTCFullYear():MON[d.getUTCMonth()]+' '+d.getUTCDate()+', '+d.getUTCFullYear());
+function todayUTC(){ const t=new Date(); return new Date(Date.UTC(t.getFullYear(),t.getMonth(),t.getDate())); }
+/* Tính — hàm thuần */
+function windows(d1){
+  return {d1,safe:addD(d1,RULES.SAFE-1),vs:addD(d1,RULES.VANTAGE-1),old:addD(d1,RULES.FICO_OLD-1),f45:addD(d1,RULES.FICO_NEW-1),
+    buf:addD(d1,RULES.FICO_BUFFER-1),c12:addM(d1,RULES.FICO_COUNT_MONTHS),off:addM(d1,RULES.INQ_YEARS*12)};
+}
+const ymdc=d=>d.getUTCFullYear()+pad(d.getUTCMonth()+1)+pad(d.getUTCDate());
+function gcal(text,d,details){ return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(text)+'&dates='+ymdc(d)+'/'+ymdc(addD(d,1))+'&details='+encodeURIComponent(details); }
+
+let last={};
+function calc(){
+  const d=I18N[lang], d1=parseYMD($('d1').value), d2=parseYMD($('d2').value);
+  let n=Math.round(parseFloat($('nl').value)); if(!isFinite(n)||n<1) n=1; if(n>RULES.MAX_LENDERS) n=RULES.MAX_LENDERS;
+  if(!d1){ $('safeV').textContent='—'; $('todayV').textContent=''; $('status').innerHTML=d.st_none; $('tbl').innerHTML=''; last={}; return; }
+  const w=windows(d1), t=todayUTC(), k=dayDiff(d1,t)+1;
+  $('safeV').textContent=fd(w.safe);
+  let td;
+  if(k<1) td=d.td_before.replace('{n}',1-k);
+  else if(k<RULES.SAFE) td=d.td_in.replace('{k}',k).replace('{n}',RULES.SAFE-k);
+  else if(k===RULES.SAFE) td=d.td_last;
+  else if(k<=RULES.FICO_NEW) td=d.td_45.replace('{d}',fd(w.f45));
+  else td=d.td_out;
+  $('todayV').textContent=td;
+  let st, cls='', cnt1=true;
+  if(d2){ const k2=dayDiff(d1,d2)+1;
+    if(k2<1){ st=d.st_neg; cls='warn'; }
+    else if(k2<=RULES.SAFE){ st=d.st_ok; cls='good'; }
+    else if(k2<=RULES.FICO_NEW){ st=d.st_mid; cls='warn'; cnt1=false; }
+    else { st=d.st_bad; cls='warn'; cnt1=false; }
+  } else st=n>1?d.st_plan:d.st_one;
+  st=st.replace('{n}',n).replace('{a}',fd(w.d1)).replace(/\{b\}/g,fd(w.safe)).replace('{c}',fd(d2));
+  $('status').innerHTML=st; $('status').className='status'+(cls?' '+cls:'');
+  $('oCnt').textContent=cnt1?d.n_cnt_v:d.n_cnt_x; $('oCnt').className='a '+(cnt1?'ok':'no');
+  $('oPts').textContent=d.n_pts_v;
+  const rows=[[d.r_d1,fd(w.d1),1],[d.r_safe,fd(w.safe),1],[d.r_vs,fd(w.vs)],[d.r_old,fd(w.old),0,d.r_old_t],
+    [d.r_new,fd(w.f45)],[d.r_buf,fd(w.buf)],[d.r_cnt,fd(w.c12)],[d.r_off,fd(w.off)]];
+  let h='<thead><tr><th>'+esc(d.th_w)+'</th><th>'+esc(d.th_d)+'</th></tr></thead><tbody>';
+  rows.forEach((r,i)=>{ h+='<tr'+(i===1?' class="me"':'')+'><td style="white-space:normal">'+esc(r[0])+(r[3]?' <span class="tag">'+esc(r[3])+'</span>':'')+'</td><td>'+esc(r[1])+'</td></tr>'; });
+  h+='</tbody>';
+  $('tbl').innerHTML=h+'<caption style="caption-side:bottom;text-align:left;padding-top:10px"><a class="gcal" target="_blank" rel="noopener" href="'+esc(gcal(d.cal_t,w.safe,d.cal_d))+'">'+esc(d.gcal)+'</a></caption>';
+  last={d1:fd(w.d1),n,d2:d2?fd(d2):'—',s:fd(w.safe),f45:fd(w.f45),buf:fd(w.buf),c12:fd(w.c12),off:fd(w.off),st:$('status').textContent};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(d.sms.replace(/\{(\w+)\}/g,(m,k)=>last[k]??m));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+$('d1').value=toYMD(todayUTC());
+['d1','nl','d2'].forEach(id=>{ $(id).addEventListener('input',calc); $(id).addEventListener('change',calc); });
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], nm=$('fname').value.trim()||'—', em=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const v=Object.assign({},last,{nm,em,ph});
+  const fill=s=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing). Không gửi dữ liệu đi đâu khác. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+try{ if(new URLSearchParams(location.search).get('embed')==='1') document.documentElement.classList.add('embed'); }catch(e){}
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
