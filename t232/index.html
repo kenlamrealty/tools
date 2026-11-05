@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Closing Disclosure vs. Loan Estimate · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Enter your signing date and a few totals from your Loan Estimate and Closing Disclosure. See the last day you must get the CD, whether fees broke the tolerance limits, and what the lender owes back.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t232/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Closing Disclosure vs. Loan Estimate · Ken Lam Tools">
+<meta property="og:description" content="The 3-day CD deadline, the 0% and 10% tolerance check, the refund the lender owes, and a 5-page CD walkthrough.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t232/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+html.embed .kl-back{display:none}
+html.embed body{padding-top:8px}
+/* T232 additions */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--fg);cursor:pointer}
+.chk input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;flex:none}
+.grp{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:8px}
+.grp .gh{font-size:13px;font-weight:500;color:var(--fg)}
+.grp .gh small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.grp details{font-size:13px;color:var(--muted)}
+.grp details summary{cursor:pointer;color:var(--brass)}
+.grp details ul{margin:6px 0 0;padding-left:18px;display:grid;gap:3px}
+.grp .ctl input{font-size:18px}
+.grp .row2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.grp .ctl{padding:0 8px}
+.mini{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.vd{display:grid;gap:0;border-top:1px solid var(--line)}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.line .n{flex:1 1 auto}
+.line .a.ok{color:var(--ok)}
+.line .a.bad{color:var(--warn)}
+.pill{display:inline-block;font-size:12px;border-radius:999px;padding:2px 9px;margin-left:6px;vertical-align:middle;border:1px solid currentColor}
+.pill.ok{color:var(--ok)}.pill.bad{color:var(--warn)}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px;scroll-margin-top:12px}
+.box h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.box ul,.box ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.box a{color:var(--brass)}
+.dates{display:grid;gap:0;border-top:1px solid var(--line)}
+.cd{display:grid;gap:14px}
+.pg{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 16px 6px;display:grid;gap:4px}
+.pg .ph{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:2px solid var(--brass);padding-bottom:8px;margin-bottom:4px}
+.pg .ph h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.pg .ph span{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+details.li{border-bottom:1px solid var(--line);scroll-margin-top:12px}
+details.li>summary{list-style:none;display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:10px 0;cursor:pointer;font-size:15px}
+details.li>summary::-webkit-details-marker{display:none}
+details.li>summary .n{min-width:0;flex:1 1 auto}
+details.li>summary .n b{font-weight:500}
+details.li>summary .n i{font-style:normal;display:inline-block;min-width:20px;color:var(--brass);font-weight:600}
+details.li>summary .n small{display:block;font-size:12px;color:var(--muted)}
+details.li>summary .a::after{content:'＋';color:var(--brass);font-size:13px}
+details.li[open]>summary .a::after{content:'－'}
+details.li[open]{background:linear-gradient(var(--brass-soft),var(--brass-soft)) no-repeat;background-size:3px 100%}
+.ex{display:grid;gap:8px;padding:0 0 14px 12px;font-size:14px;line-height:1.5}
+.ex p{margin:0}
+.ex .t{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);font-weight:600;margin-bottom:1px}
+.ex .ask{background:var(--brass-soft);border-radius:8px;padding:8px 10px}
+.ex .lk{font-size:12px}
+.ex .lk a{color:var(--brass);text-decoration:none}
+.ex .lk button{border:0;background:none;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;padding:0;margin-left:8px}
+.cl{list-style:none;margin:0;padding:0;display:grid;gap:0;border-top:1px solid var(--line)}
+.cl li{border-bottom:1px solid var(--line);padding:10px 0;scroll-margin-top:12px}
+.cl label{display:flex;gap:10px;align-items:flex-start;font-size:15px;cursor:pointer}
+.cl input{width:20px;height:20px;accent-color:var(--brass);margin:2px 0 0;flex:none}
+.cl small{display:block;font-size:13px;color:var(--muted)}
+.cl input:checked+span b{text-decoration:line-through;text-decoration-color:var(--brass)}
+.prog{font-size:13px;color:var(--muted)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.next a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.lead{font-size:13px;color:var(--muted);margin:0}
+footer .src a{overflow-wrap:anywhere}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Closing Disclosure: read it and check it against your Loan Estimate</h1>
+    <p class="sub" data-i="sub">Enter your signing date and a few totals from both papers. See your CD deadline, whether the lender went over the limits, and what they owe you back.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="close"><span data-i="l_close">Signing / closing date </span><small data-i="l_close_s">(the day you sign the loan papers)</small></label>
+      <div class="ctl"><input id="close" type="date" value="2026-12-15"></div>
+      <label class="chk"><input type="checkbox" id="mailed"><span data-i="l_mail">The CD is sent by mail or email, not handed to me in person</span></label>
+    </div>
+    <div class="grp" id="g0">
+      <div class="gh" data-i="g0_h">1 · Zero-tolerance fees <small>Can't go up at all</small></div>
+      <div class="row2">
+        <div class="field"><label for="z_le"><span class="mini">Loan Estimate</span></label><div class="ctl"><span class="pre">$</span><input id="z_le" type="number" inputmode="numeric" min="0" step="10" value="2720"></div></div>
+        <div class="field"><label for="z_cd"><span class="mini">Closing Disclosure</span></label><div class="ctl"><span class="pre">$</span><input id="z_cd" type="number" inputmode="numeric" min="0" step="10" value="2995"></div></div>
+      </div>
+      <details><summary data-i="g_what">What goes in this box?</summary><ul data-i="g0_list"></ul></details>
+    </div>
+    <div class="grp" id="g10">
+      <div class="gh" data-i="g10_h">2 · 10% group <small>Total can't go up more than 10%</small></div>
+      <div class="row2">
+        <div class="field"><label for="t_le"><span class="mini">Loan Estimate</span></label><div class="ctl"><span class="pre">$</span><input id="t_le" type="number" inputmode="numeric" min="0" step="10" value="2100"></div></div>
+        <div class="field"><label for="t_cd"><span class="mini">Closing Disclosure</span></label><div class="ctl"><span class="pre">$</span><input id="t_cd" type="number" inputmode="numeric" min="0" step="10" value="2450"></div></div>
+      </div>
+      <details><summary data-i="g_what">What goes in this box?</summary><ul data-i="g10_list"></ul></details>
+    </div>
+    <div class="grp" id="gU">
+      <div class="gh" data-i="gU_h">3 · No-limit items <small>Optional. Only needs to be a good-faith estimate</small></div>
+      <div class="row2">
+        <div class="field"><label for="u_le"><span class="mini">Loan Estimate</span></label><div class="ctl"><span class="pre">$</span><input id="u_le" type="number" inputmode="numeric" min="0" step="10" value="11900"></div></div>
+        <div class="field"><label for="u_cd"><span class="mini">Closing Disclosure</span></label><div class="ctl"><span class="pre">$</span><input id="u_cd" type="number" inputmode="numeric" min="0" step="10" value="12400"></div></div>
+      </div>
+      <details><summary data-i="g_what">What goes in this box?</summary><ul data-i="gU_list"></ul></details>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite" id="deadline">
+    <div class="total">
+      <div class="k" data-i="r_by">You must receive the Closing Disclosure by</div>
+      <div class="v" style="font-size:44px"><span id="big">—</span></div>
+      <p class="who2" id="byS" style="margin:6px 0 0;font-size:15px"></p>
+    </div>
+    <div class="vd" id="tolerance">
+      <div class="line"><span class="n"><b data-i="v0">Zero tolerance</b><small id="v0s"></small></span><span class="a" id="v0">$0</span></div>
+      <div class="line"><span class="n"><b data-i="v10">10% group</b><small id="v10s"></small></span><span class="a" id="v10">$0</span></div>
+      <div class="line"><span class="n"><b data-i="vU">No-limit items</b><small id="vUs"></small></span><span class="a" id="vU">$0</span></div>
+      <div class="line"><span class="n"><b data-i="vT">Lender owes you back</b><small id="vTs"></small></span><span class="a" id="vT" style="font-size:22px">$0</span></div>
+    </div>
+    <div class="note" id="verdict"></div>
+  </section>
+
+  <section class="box" id="restart" aria-label="What restarts the wait">
+    <h2 data-i="rs_t">What restarts the 3-day wait</h2>
+    <ol data-i="rs"></ol>
+    <p class="lead" data-i="rs_n"></p>
+  </section>
+
+  <section class="cd" id="cd" aria-label="Closing Disclosure walkthrough"></section>
+  <p class="lead" data-i="cd_disc"></p>
+
+  <section class="box" id="checklist" aria-label="LE to CD checklist">
+    <h2 data-i="ck_t">LE ↔ CD: 10 things to compare</h2>
+    <p class="prog" id="prog"></p>
+    <ul class="cl" id="cl"></ul>
+  </section>
+
+  <video src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px;margin-top:8px" aria-label="How to use this tool"></video>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t232/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this check to yourself</h2>
+    <p data-i="f_sub">Ken will reply and help you go over the CD with your lender. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, text Ken the number below.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_t">Next steps</h2>
+    <ol>
+      <li data-i="nx1"></li><li data-i="nx2"></li><li data-i="nx3"></li><li data-i="nx4"></li>
+    </ol>
+  </section>
+  <p class="myth" data-i="myth"></p>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="#" data-todo="library-closing-disclosure" data-i="ft_lib">How to read a Closing Disclosure</a> · <a href="#" data-todo="video-kien-thuc-closing-disclosure" data-i="ft_vid">Kiến Thức Địa Ốc video</a></span>
+    <span data-i="ft_est"></span>
+    <span class="src"><span data-i="ft_src">Sources (checked 05/11/2026):</span> <a href="https://www.govinfo.gov/content/pkg/CFR-2022-title12-vol9/pdf/CFR-2022-title12-vol9-sec1026-19.pdf" target="_blank" rel="noopener">12 CFR 1026.19 (timing, tolerances, cure)</a> · <a href="https://www.law.cornell.edu/cfr/text/12/1026.38" target="_blank" rel="noopener">12 CFR 1026.38 (CD content)</a> · <a href="https://www.consumerfinance.gov/blog/know-before-you-owe-closing-disclosure/" target="_blank" rel="noopener">CFPB: Closing Disclosure</a> · <a href="https://www.consumerfinance.gov/blog/know-before-you-owe-youll-get-3-days-to-review-your-mortgage-closing-documents/" target="_blank" rel="noopener">CFPB: 3 days to review</a> · <a href="https://www.alston.com/-/media/files/insights/publications/2021/06/217879-juneteenth-disclosureissues.pdf" target="_blank" rel="noopener">Alston &amp; Bird: business day / Juneteenth</a> · <a href="https://www.alta.org/blog/post/how-to-disclose-the-discounted-premium-on-the-integrated-mortgage-disclosure-forms" target="_blank" rel="noopener">ALTA: title premiums on LE/CD</a> · <a href="https://www.govinfo.gov/content/pkg/FR-2026-07-09/pdf/2026-13834.pdf" target="_blank" rel="noopener">CFPB TRID RFI, 09/07/2026</a></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 05/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== RULES — edit here (one place). Looked up 05/11/2026. =====
+   12 CFR 1026.19(f) (govinfo CFR-2022): borrower must RECEIVE the CD no later than 3 business days before consummation;
+     if not delivered in person, it's considered received 3 business days after it is delivered or placed in the mail. (f)(1)(ii)–(iii)
+   Business day (specific definition, §1026.2(a)(6)): every calendar day except Sundays and federal holidays in 5 U.S.C. 6103(a).
+     Saturday COUNTS. Juneteenth since 2021. (Alston & Bird 2021; Orrick 2021.) §1026.2 page itself blocked this pass.
+     HOLIDAYS below = actual dates AND observed weekdays; both treated as non-business days (conservative — KEN DUYỆT with escrow/lender).
+   Re-disclosure + new 3-day wait (f)(2)(ii): APR becomes inaccurate under §1026.22 (up more than 1/8 pt regular, 1/4 pt irregular),
+     loan product changes, prepayment penalty added. Other changes: corrected CD at or before closing, no new wait.
+   Tolerances §1026.19(e)(3): zero = paid to lender/broker/affiliate, services you can't shop for, transfer taxes;
+     10% aggregate = recording fees + third-party services you can shop for when you pick from the lender's written list;
+     no limit (good faith) = prepaid interest, homeowner's insurance premiums, initial escrow deposits, services from providers
+     you chose off the list, property taxes, services the lender doesn't require (e.g. owner's title "optional", home warranty).
+   Cure: refund the excess no later than 60 days after consummation, with a corrected CD. (f)(2)(v)
+   Post-closing corrected CD: event changing amounts paid within 30 days → 30 days (f)(2)(iii); non-numeric clerical → 60 days (f)(2)(iv).
+   CD page layout & letters K/L/M/N follow model form H-25: the rule does not number pages or letter these → shown as "on the form you usually see".
+   NOTE: a lender may lower a fee (e.g. credit) or a changed circumstance may lawfully reset a baseline via a revised LE.
+     This tool compares against whatever LE totals the user enters (should be the LATEST valid LE).
+*/
+const RULES={CD_DAYS:3,MAIL_DAYS:3,TOL10:0.10,CURE_DAYS:60,APR_REG:0.125,APR_IRR:0.25};
+const HOLIDAYS=['2026-01-01','2026-01-19','2026-02-16','2026-05-25','2026-06-19','2026-07-03','2026-07-04','2026-09-07','2026-10-12','2026-11-11','2026-11-26','2026-12-25',
+  '2027-01-01','2027-01-18','2027-02-15','2027-05-31','2027-06-18','2027-06-19','2027-07-04','2027-07-05','2027-09-06','2027-10-11','2027-11-11','2027-11-25','2027-12-24','2027-12-25','2027-12-31'];
+const UPDATED='05/11/2026';
+/*CALC-START*/
+const HSET=new Set(HOLIDAYS);
+function D(s){const [y,m,d]=s.split('-').map(Number);return new Date(Date.UTC(y,m-1,d));}
+function iso(d){return d.toISOString().slice(0,10);}
+function addDays(d,n){return new Date(d.getTime()+n*864e5);}
+function isBiz(d){return d.getUTCDay()!==0&&!HSET.has(iso(d));}
+function subBiz(d,n){let x=d,k=0;while(k<n){x=addDays(x,-1);if(isBiz(x))k++;}return x;}
+/* inp: {close:'YYYY-MM-DD', mailed:bool, zLe,zCd,tLe,tCd,uLe,uCd} */
+function checkCD(inp){
+  const c=D(inp.close), recvBy=subBiz(c,RULES.CD_DAYS), sendBy=inp.mailed?subBiz(recvBy,RULES.MAIL_DAYS):recvBy;
+  const z=Math.max(0,(inp.zCd||0)-(inp.zLe||0));
+  const lim10=(inp.tLe||0)*(1+RULES.TOL10);
+  const t=Math.max(0,(inp.tCd||0)-lim10);
+  const tPct=(inp.tLe||0)>0?((inp.tCd||0)-(inp.tLe||0))/(inp.tLe)*100:0;
+  const u=(inp.uCd||0)-(inp.uLe||0);
+  const refund=z+t, cureBy=addDays(c,RULES.CURE_DAYS);
+  return {close:c,recvBy,sendBy,z,lim10,t,tPct,u,refund,cureBy,closeIsBiz:isBiz(c)};
+}
+if(typeof module!=='undefined'){module.exports={checkCD,subBiz,isBiz,D,iso};}
+/*CALC-END*/
+</script>
+<script>
+/* CD walkthrough: k = kid, a = adult, t = tip (+ q = what to ask) */
+const CD=[
+ {pg:1,items:[
+  {id:'cd-closing-info',en:{n:'Closing Information',s:'Date issued, closing date, disbursement date, settlement agent, file #, property, sale price',k:"The cover of the book: when, where, which house, how much.",a:"Who's running the closing (escrow), the closing date and the date money is sent out (disbursement). Sale price should match your contract.",t:"Check the property address and sale price first. Typos here can hold up recording.",q:"Is the disbursement date the same as my closing date?"},
+   vi:{n:'Closing Information',s:'Ngày ra, ngày close, ngày giải ngân, escrow, số file, căn nhà, giá bán',k:"Bìa cuốn sách: khi nào, ở đâu, căn nào, bao nhiêu tiền.",a:"Ai lo closing (escrow), ngày close và ngày tiền được chuyển đi (disbursement). Giá bán phải giống hợp đồng.",t:"Coi địa chỉ và giá bán trước. Sai chính tả ở đây có thể làm trễ recording.",q:"Ngày disbursement có trùng ngày close không?"}},
+  {id:'cd-transaction-info',en:{n:'Transaction Information',s:'Borrower, seller, lender',k:"The names of everyone at the table.",a:"Your name(s) exactly as on title and the loan, the seller, and the lender.",t:"Name spelled differently than your ID or vesting? Fix it before signing, not after.",q:"Are the names exactly how we'll take title?"},
+   vi:{n:'Transaction Information',s:'Người vay, người bán, lender',k:"Tên của mọi người ngồi chung bàn.",a:"Tên mình đúng như trên title và loan, tên người bán, tên lender.",t:"Tên viết khác ID hay khác cách đứng tên? Sửa trước khi ký, đừng để sau.",q:"Tên có đúng y như cách mình đứng tên nhà không?"}},
+  {id:'cd-loan-info',en:{n:'Loan Information',s:'Loan term, purpose, product, loan type, loan ID #, MIC #',k:"What kind of loan you're getting, like the flavor of the cake.",a:"30-year fixed? Purchase? Conventional, FHA, VA? The MIC # is the mortgage insurance certificate, if you have MI.",t:"If the product changed (say fixed to ARM), the law gives you a new 3-day wait.",q:"Is the loan product exactly what my latest LE said?"},
+   vi:{n:'Loan Information',s:'Thời hạn, mục đích, loại sản phẩm, loại loan, số loan, số MIC',k:"Mình nhận loại loan gì, giống chọn vị bánh.",a:"30 năm cố định? Mua nhà? Conventional, FHA, VA? MIC # là số giấy mortgage insurance, nếu có MI.",t:"Đổi loại loan (vd cố định qua ARM) thì luật cho mình chờ lại 3 ngày.",q:"Loại loan có đúng y như LE mới nhất không?"}},
+  {id:'cd-loan-terms',en:{n:'Loan Terms',s:'Loan amount, rate, monthly P&I, prepayment penalty, balloon',k:"The main promises: how much, what rent, what each month.",a:"Same boxes as page 1 of your LE. Compare them one by one.",t:"A prepayment penalty that wasn't on the LE = new 3-day wait. Rate higher than your lock = call the lender now.",q:"Does the rate match my rate lock confirmation?"},
+   vi:{n:'Loan Terms',s:'Số vay, lãi suất, gốc+lãi tháng, phạt trả sớm, balloon',k:"Mấy lời hứa chính: vay bao nhiêu, tiền thuê bao nhiêu, mỗi tháng bao nhiêu.",a:"Giống mấy ô ở trang 1 của LE. So từng ô.",t:"Xuất hiện prepayment penalty mà LE không có = phải chờ lại 3 ngày. Rate cao hơn rate lock = gọi lender liền.",q:"Rate có đúng với giấy rate lock không?"}},
+  {id:'cd-projected',en:{n:'Projected Payments',s:'P&I, mortgage insurance, escrow, total monthly',k:"Your monthly bill, now with real numbers.",a:"Your payment by year range, with MI and escrow (tax + insurance). Now based on your real insurance policy and tax numbers.",t:"Escrow jumped? Often the insurance quote changed. Ask for the breakdown.",q:"Why is my escrow amount different from the LE?"},
+   vi:{n:'Projected Payments',s:'Gốc+lãi, MI, escrow, tổng mỗi tháng',k:"Bill mỗi tháng, giờ có số thật.",a:"Tiền trả theo từng khoảng năm, có MI và escrow (thuế + bảo hiểm). Giờ dựa trên bảo hiểm thật và số thuế thật.",t:"Escrow tăng vọt? Thường là giá bảo hiểm đổi. Xin bảng chi tiết.",q:"Sao tiền escrow khác LE?"}},
+  {id:'cd-costs-at-closing',en:{n:'Costs at Closing',s:'Closing costs, cash to close',k:"Two big numbers: all the fees, and the money you bring.",a:"Closing Costs (line J, page 2) and Cash to Close (page 3). Compare both to page 1 of your LE.",t:"Cash to close changes with prorations and credits too, not only fees.",q:"What's the exact amount to wire, and when?"},
+   vi:{n:'Costs at Closing',s:'Closing costs, tiền mang tới close',k:"Hai số lớn: tổng phí, và tiền mình mang tới.",a:"Closing Costs (dòng J, trang 2) và Cash to Close (trang 3). So cả hai với trang 1 của LE.",t:"Cash to close còn đổi vì chia thuế/HOA và credits, không chỉ vì phí.",q:"Số chính xác để wire là bao nhiêu, khi nào wire?"}}]},
+ {pg:2,items:[
+  {id:'cd-a',L:'A',en:{n:'Origination Charges',s:'zero tolerance',k:"The bank's own fee. It's not allowed to grow.",a:"Points and lender fees. Zero tolerance against your LE unless a valid changed circumstance or a lock moved points.",t:"Higher than the LE with no revised LE explaining why? That's a refund.",q:"Was there a revised LE that changed section A? Can I see the reason?"},
+   vi:{n:'Origination Charges',s:'zero tolerance',k:"Phí của chính ngân hàng. Không được lớn thêm.",a:"Points và phí lender. Zero tolerance so với LE, trừ khi có changed circumstance hợp lệ hay lock làm đổi points.",t:"Cao hơn LE mà không có LE sửa giải thích? Lender phải hoàn tiền.",q:"Có LE sửa nào làm đổi mục A không? Cho tôi coi lý do."}},
+  {id:'cd-b',L:'B',en:{n:'Services Borrower Did Not Shop For',s:'zero tolerance',k:"Stuff the bank chose for you. Price can't go up.",a:"Appraisal, credit report, flood cert, and anything where you used the lender's pick. Zero tolerance.",t:"Appraisal went up because of a 'rush' or 'complex' fee? Ask if a revised LE was sent in time.",q:"Why did the appraisal fee change?"},
+   vi:{n:'Services Borrower Did Not Shop For',s:'zero tolerance',k:"Mấy thứ ngân hàng chọn giùm. Giá không được tăng.",a:"Appraisal, credit report, flood cert, và những gì lender chọn. Zero tolerance.",t:"Appraisal tăng vì phí 'rush' hay 'complex'? Hỏi có gửi LE sửa đúng hạn không.",q:"Sao phí appraisal đổi?"}},
+  {id:'cd-c',L:'C',en:{n:'Services Borrower Did Shop For',s:'10% group if picked from the lender list',k:"Things you picked. If you used the bank's list, the total can only grow a little.",a:"Title and settlement charges tied to the loan, survey or pest if required. From the lender's list: in the 10% group. Your own pick off the list: no limit.",t:"Many Bay Area buyers don't realize the seller picked title/escrow in the contract. Ask which bucket it lands in.",q:"Did I use a provider from your written list?"},
+   vi:{n:'Services Borrower Did Shop For',s:'nhóm 10% nếu chọn trong list lender',k:"Mấy thứ mình chọn. Dùng list của ngân hàng thì tổng chỉ được tăng chút xíu.",a:"Title và phí escrow liên quan loan, survey hay pest nếu lender đòi. Chọn trong list lender: nhóm 10%. Tự chọn ngoài list: không giới hạn.",t:"Nhiều người mua ở Bay Area không biết title/escrow là do seller chọn trong hợp đồng. Hỏi nó rơi vào nhóm nào.",q:"Bên title tôi dùng có nằm trong list của anh/chị không?"}},
+  {id:'cd-d',L:'D',en:{n:'Total Loan Costs (Borrower-Paid)',s:'A + B + C',k:"All loan fees in one pile.",a:"Sum of A, B and C that you pay, at or before closing.",t:"The CD has extra columns: paid by seller, paid by others. Make sure seller-paid items aren't counted as yours.",q:"Which loan costs did the seller pay?"},
+   vi:{n:'Total Loan Costs (Borrower-Paid)',s:'A + B + C',k:"Gom hết phí loan vô 1 đống.",a:"Tổng A, B, C phần mình trả, lúc hoặc trước khi close.",t:"CD có thêm cột: seller trả, người khác trả. Coi khoản seller trả có bị tính qua mình không.",q:"Phí loan nào seller trả?"}},
+  {id:'cd-e',L:'E',en:{n:'Taxes and Other Government Fees',s:'recording = 10% group · transfer tax = zero',k:"Government stamps. Some can grow a little, some not at all.",a:"Recording fees (10% group) and transfer taxes (zero tolerance). In Santa Clara the county transfer tax is customarily the seller's.",t:"A city transfer tax appearing on your side that wasn't on the LE is a zero-tolerance problem.",q:"Why is there transfer tax on my side?"},
+   vi:{n:'Taxes and Other Government Fees',s:'recording = nhóm 10% · transfer tax = zero',k:"Tem nhà nước. Có cái được tăng chút, có cái không được tăng.",a:"Phí recording (nhóm 10%) và transfer tax (zero tolerance). Ở Santa Clara transfer tax của county theo thông lệ là seller trả.",t:"City transfer tax mọc ra phía mình mà LE không có là lỗi zero tolerance.",q:"Sao có transfer tax ở phía tôi?"}},
+  {id:'cd-f',L:'F',en:{n:'Prepaids',s:'no limit',k:"Paying ahead. It can change because the dates and policies are real now.",a:"Homeowner's insurance premium, prepaid interest (daily interest to month end), MI, property taxes. No tolerance limit, good-faith estimate only.",t:"Closing date moved? Prepaid interest moves with it. It's not a fee increase.",q:"How many days of prepaid interest are on the CD?"},
+   vi:{n:'Prepaids',s:'không giới hạn',k:"Trả trước. Có thể đổi vì giờ ngày và hợp đồng bảo hiểm là thật.",a:"Bảo hiểm nhà, lãi trả trước (lãi từng ngày tới cuối tháng), MI, thuế nhà. Không có giới hạn tolerance, chỉ cần ước tính thiện chí.",t:"Dời ngày close? Lãi trả trước đổi theo. Đó không phải tăng phí.",q:"CD tính mấy ngày lãi trả trước?"}},
+  {id:'cd-g',L:'G',en:{n:'Initial Escrow Payment at Closing',s:'no limit',k:"Starter coins in the tax-and-insurance jar.",a:"Months of tax and insurance deposited to your impound account, plus a cushion (max 1/6 of a year). No limit.",t:"There's an 'aggregate adjustment' line that can be negative. That's normal math.",q:"How many months of tax and insurance are you collecting?"},
+   vi:{n:'Initial Escrow Payment at Closing',s:'không giới hạn',k:"Tiền mồi bỏ vô hũ thuế-bảo hiểm.",a:"Vài tháng thuế và bảo hiểm bỏ vào impound account, cộng phần dư (tối đa 1/6 năm). Không giới hạn.",t:"Có dòng 'aggregate adjustment' có thể là số âm. Đó là phép tính bình thường.",q:"Anh/chị thu mấy tháng thuế và bảo hiểm?"}},
+  {id:'cd-h',L:'H',en:{n:'Other',s:'mostly no limit',k:"House stuff, not loan stuff.",a:"HOA fees, home warranty, inspection, owner's title (marked optional), real estate commissions if any. Things the lender doesn't require have no limit.",t:"Check who pays each H item against your contract. That's where errors hide.",q:"Do these match who pays what in my purchase contract?"},
+   vi:{n:'Other',s:'phần lớn không giới hạn',k:"Đồ của căn nhà, không phải của loan.",a:"Phí HOA, home warranty, inspection, owner's title (ghi optional), commission nếu có. Khoản lender không đòi thì không có giới hạn.",t:"So ai trả từng khoản mục H với hợp đồng. Lỗi hay nằm ở đây.",q:"Mấy khoản này có đúng ai trả theo hợp đồng mua không?"}},
+  {id:'cd-i',L:'I',en:{n:'Total Other Costs (Borrower-Paid)',s:'E + F + G + H',k:"All the non-loan costs in one pile.",a:"E + F + G + H that you pay.",t:"Most of I is your own money for taxes and insurance, not fees.",q:"Which of these went up since the LE, and why?"},
+   vi:{n:'Total Other Costs (Borrower-Paid)',s:'E + F + G + H',k:"Gom chi phí không phải của loan vô 1 đống.",a:"E + F + G + H phần mình trả.",t:"Phần lớn I là tiền của mình để đóng thuế, bảo hiểm, không phải phí.",q:"Khoản nào tăng so với LE, tại sao?"}},
+  {id:'cd-j',L:'J',en:{n:'Total Closing Costs (Borrower-Paid)',s:'D + I − lender credits',k:"The grand total of fees, minus the bank's gift.",a:"D + I minus Lender Credits. If the lender owes a tolerance cure, it usually shows here as a credit for the amount over the legal limit.",t:"Lender credit went DOWN vs. the LE? That's treated like a fee going up (zero tolerance), unless a valid change explains it.",q:"Is there a credit for an increase above the legal limit on this CD?"},
+   vi:{n:'Total Closing Costs (Borrower-Paid)',s:'D + I − lender credits',k:"Tổng cộng phí, trừ phần ngân hàng tặng.",a:"D + I trừ Lender Credits. Nếu lender phải hoàn tiền tolerance, thường thấy ở đây dưới dạng credit cho phần vượt giới hạn.",t:"Lender credit GIẢM so với LE? Coi như phí tăng (zero tolerance), trừ khi có thay đổi hợp lệ.",q:"CD này có credit cho phần vượt giới hạn luật không?"}}]},
+ {pg:3,items:[
+  {id:'cd-ctc',en:{n:'Calculating Cash to Close',s:'Loan Estimate · Final · Did this change?',k:"A side-by-side: what they guessed, what it really is, and 'yes/no, did it change'.",a:"Rows: Total Closing Costs (J), Closing Costs Paid Before Closing, Closing Costs Financed, Down Payment, Deposit, Funds for Borrower, Seller Credits, Adjustments and Other Credits, Cash to Close. Each 'YES' comes with a short reason.",t:"This table does the LE comparison for you. Read every 'YES' line.",q:"Can you walk me through every row marked YES?"},
+   vi:{n:'Calculating Cash to Close',s:'Loan Estimate · Final · Did this change?',k:"Bảng đứng cạnh nhau: họ đoán bao nhiêu, thật bao nhiêu, và 'có/không đổi'.",a:"Các dòng: Total Closing Costs (J), Closing Costs Paid Before Closing, Closing Costs Financed, Down Payment, Deposit, Funds for Borrower, Seller Credits, Adjustments and Other Credits, Cash to Close. Mỗi dòng 'YES' có ghi lý do ngắn.",t:"Bảng này so LE giùm mình. Đọc hết mấy dòng 'YES'.",q:"Anh/chị giải thích giùm từng dòng ghi YES được không?"}},
+  {id:'cd-k',L:'K',en:{n:"Borrower's Transaction: Due from Borrower",s:'on the form you usually see: section K',k:"Everything you owe at the table, added up.",a:"Sale price, closing costs (J), and adjustments like the seller's prepaid property tax or HOA you pay back.",t:"Prorations of tax and HOA show here. Check them with T64.",q:"Which adjustments for taxes and HOA are in K?"},
+   vi:{n:"Borrower's Transaction: Due from Borrower",s:'trên form thường thấy: mục K',k:"Mọi thứ mình nợ lúc close, cộng lại.",a:"Giá mua, closing costs (J), và điều chỉnh như phần thuế nhà hay HOA seller đã đóng trước mà mình trả lại.",t:"Chia thuế và HOA hiện ở đây. Kiểm với T64.",q:"Mục K có những điều chỉnh thuế, HOA nào?"}},
+  {id:'cd-l',L:'L',en:{n:"Borrower's Transaction: Paid Already",s:'on the form you usually see: section L',k:"Money already in the pot for you.",a:"Your deposit (EMD), the loan amount, seller credits, and any unpaid taxes the seller owes you for.",t:"Make sure your EMD is here. Missing EMD = you'd wire too much.",q:"Is my deposit credited in L?"},
+   vi:{n:"Borrower's Transaction: Paid Already",s:'trên form thường thấy: mục L',k:"Tiền đã nằm sẵn trong nồi cho mình.",a:"Tiền cọc (EMD), số tiền vay, seller credit, và thuế seller còn nợ mà trừ cho mình.",t:"Coi tiền cọc có ở đây không. Thiếu EMD = wire dư tiền.",q:"Tiền cọc của tôi có trong mục L chưa?"}},
+  {id:'cd-mn',L:'M/N',en:{n:"Seller's Transaction",s:'on the form you usually see: M due to seller, N due from seller',k:"The seller's side of the same story.",a:"What the seller receives and what comes out of their side: loan payoff, commissions, their share of fees. Some lenders give buyers a CD without the seller columns.",t:"Seller credit to you should show on both sides with the same amount.",q:"Does the seller credit match on both sides?"},
+   vi:{n:"Seller's Transaction",s:'trên form thường thấy: M seller nhận, N seller trả',k:"Phía người bán của cùng câu chuyện.",a:"Seller nhận bao nhiêu và phải trả gì: trả nợ cũ, commission, phần phí của họ. Có lender đưa người mua bản CD không có cột seller.",t:"Seller credit cho mình phải giống nhau ở cả hai phía.",q:"Seller credit hai bên có khớp không?"}}]},
+ {pg:4,items:[
+  {id:'cd-loan-disclosures',en:{n:'Loan Disclosures',s:'assumption, demand feature, late payment, negative amortization, partial payments, security interest',k:"The fine print rules of the loan, in plain boxes.",a:"Can someone assume it? Can the lender demand full payment early? Late fee? Can the balance grow? What happens to partial payments? The home secures the loan.",t:"Partial payments: many servicers hold them until you send the full amount. Pay in full.",q:"What do you do with a partial payment?"},
+   vi:{n:'Loan Disclosures',s:'assumption, demand feature, trả trễ, negative amortization, trả 1 phần, security interest',k:"Luật chữ nhỏ của loan, ghi bằng ô dễ đọc.",a:"Người khác nhận lại loan được không? Lender đòi trả hết sớm được không? Phí trễ? Nợ có tăng lên không? Trả 1 phần thì sao? Căn nhà là vật bảo đảm.",t:"Trả 1 phần: nhiều chỗ giữ lại tới khi đủ số. Trả đủ.",q:"Tôi trả thiếu 1 phần thì anh/chị làm gì?"}},
+  {id:'cd-escrow-account',en:{n:'Escrow Account',s:'"For now" / "In the future"',k:"The tax-and-insurance jar: do you have one, and how much goes in.",a:"If you have an escrow account: yearly escrowed costs, non-escrowed costs, initial payment, monthly payment. If not: what you must pay yourself and any waiver fee.",t:"No escrow means you pay the property tax yourself, twice a year. Put both dates in your calendar.",q:"Is there a fee to waive escrow?"},
+   vi:{n:'Escrow Account',s:'"For now" / "In the future"',k:"Cái hũ thuế-bảo hiểm: có không, bỏ vô bao nhiêu.",a:"Có escrow account: tổng chi mỗi năm trong escrow, khoản ngoài escrow, tiền đầu, tiền mỗi tháng. Không có: mình tự đóng gì, phí waive nếu có.",t:"Không có escrow là mình tự đóng thuế nhà 2 lần mỗi năm. Ghi 2 ngày đó vào lịch.",q:"Bỏ escrow có tốn phí không?"}}]},
+ {pg:5,items:[
+  {id:'cd-loan-calcs',en:{n:'Loan Calculations',s:'total of payments, finance charge, amount financed, APR, TIP',k:"The report card of the loan's full cost.",a:"Total of all payments, the finance charge, amount financed, APR and TIP. APR up more than 1/8 point (1/4 on irregular loans) since the last disclosure = new 3-day wait.",t:"Compare APR to the LE. A drop is fine. A jump needs an answer.",q:"Why did the APR change from my LE?"},
+   vi:{n:'Loan Calculations',s:'tổng tiền trả, finance charge, amount financed, APR, TIP',k:"Bảng điểm cho tổng chi phí của loan.",a:"Tổng mọi lần trả, finance charge, amount financed, APR và TIP. APR tăng hơn 1/8 điểm (1/4 với loan bất thường) so với lần báo trước = chờ lại 3 ngày.",t:"So APR với LE. Giảm thì được. Tăng thì phải hỏi.",q:"Sao APR khác LE?"}},
+  {id:'cd-other-disclosures',en:{n:'Other Disclosures',s:'appraisal, contract details, liability after foreclosure, refinance, tax deductions',k:"More reminders, like the rules on the back of a ticket.",a:"Your right to the appraisal copy, a note to read your note and security instrument, whether you're liable after foreclosure (CA has protections for many purchase loans), refinance isn't guaranteed, and interest deductibility notes.",t:"Liability after foreclosure differs by state and loan. If it matters to you, ask a CA attorney.",q:"Does this say I'm protected or liable after foreclosure?"},
+   vi:{n:'Other Disclosures',s:'appraisal, chi tiết hợp đồng, trách nhiệm sau foreclosure, refinance, khấu trừ thuế',k:"Thêm mấy lời nhắc, giống luật in sau vé.",a:"Quyền nhận bản appraisal, nhắc đọc giấy nợ và giấy thế chấp, mình còn chịu nợ sau foreclosure không, refinance không bảo đảm, ghi chú khấu trừ lãi.",t:"Trách nhiệm sau foreclosure tùy tiểu bang và loại loan. Quan trọng với mình thì hỏi luật sư CA.",q:"Chỗ này ghi tôi được bảo vệ hay còn chịu nợ sau foreclosure?"}},
+  {id:'cd-contacts',en:{n:'Contact Information',s:'lender, broker, real estate brokers (B) and (S), settlement agent',k:"The phone book: who to call for what.",a:"Name, address, NMLS/license ID, contact, email and phone for each party.",t:"Use this page to verify the escrow phone number before you wire. Never use a number from a new email.",q:"Can you confirm escrow's wire instructions by phone?"},
+   vi:{n:'Contact Information',s:'lender, broker, agent bên mua (B) và bên bán (S), escrow',k:"Danh bạ: chuyện gì gọi ai.",a:"Tên, địa chỉ, số NMLS/license, người liên lạc, email, phone của từng bên.",t:"Dùng trang này kiểm số phone escrow trước khi wire. Đừng bao giờ dùng số trong email mới gửi tới.",q:"Gọi xác nhận hướng dẫn wire với escrow được không?"}},
+  {id:'cd-confirm',en:{n:'Confirm Receipt',s:'signing = you got it',k:"Signing only says 'I got the paper'.",a:"Signing confirms you received the CD. It doesn't mean you accept the loan. The 3-day clock is about when you RECEIVED it.",t:"Get it by email early? Open and acknowledge it. Some lenders count the clock from your e-sign receipt.",q:"What date do you have as my CD receipt date?"},
+   vi:{n:'Confirm Receipt',s:'ký = đã nhận',k:"Ký chỉ có nghĩa 'tôi nhận giấy rồi'.",a:"Ký xác nhận đã nhận CD. Không có nghĩa đồng ý loan. Đồng hồ 3 ngày tính theo lúc mình NHẬN.",t:"Nhận qua email sớm? Mở và xác nhận liền. Có lender tính ngày từ lúc mình e-sign đã nhận.",q:"Anh/chị ghi ngày tôi nhận CD là ngày nào?"}}]}
+];
+const CHK={
+ en:[['Loan amount','Same as the LE, unless you changed the down payment.'],['Interest rate','Matches your rate lock confirmation.'],['Monthly principal & interest','Follows from loan + rate. Should match exactly.'],['Loan type & product','Still the same (e.g. 30-yr fixed, Conventional). A change restarts the 3 days.'],['Prepayment penalty & balloon','Still NO. Adding a prepayment penalty restarts the 3 days.'],['Section A (origination)','Not higher than the LE. Zero tolerance.'],['Section B + transfer taxes','Not higher. Zero tolerance.'],['Section C + recording','Total not more than 10% over the LE.'],['APR','Up more than 1/8 point? New 3-day wait. Ask why.'],['Cash to close & names','Deposit and seller credits counted; names and address spelled right.']],
+ vi:[['Số tiền vay','Giống LE, trừ khi mình đổi tiền down.'],['Lãi suất','Đúng với giấy rate lock.'],['Gốc + lãi mỗi tháng','Tính từ số vay + rate. Phải khớp y.'],['Loại loan & sản phẩm','Vẫn y vậy (vd 30 năm cố định, Conventional). Đổi thì chờ lại 3 ngày.'],['Prepayment penalty & balloon','Vẫn là NO. Thêm prepayment penalty thì chờ lại 3 ngày.'],['Mục A (phí lender)','Không cao hơn LE. Zero tolerance.'],['Mục B + transfer tax','Không cao hơn. Zero tolerance.'],['Mục C + recording','Tổng không vượt LE quá 10%.'],['APR','Tăng hơn 1/8 điểm? Chờ lại 3 ngày. Hỏi lý do.'],['Tiền mang tới & tên','Đã trừ tiền cọc và seller credit; tên và địa chỉ đúng chính tả.']]
+};
+const I18N={
+ en:{title:'Closing Disclosure: read it and check it against your Loan Estimate',sub:'Enter your signing date and a few totals from both papers. See your CD deadline, whether the lender went over the limits, and what they owe you back.',
+  l_close:'Signing / closing date ',l_close_s:'(the day you sign the loan papers)',l_mail:'The CD is sent by mail or email, not handed to me in person',
+  g0_h:'1 · Zero-tolerance fees <small>Can\'t go up at all</small>',g10_h:'2 · 10% group <small>Total can\'t go up more than 10%</small>',gU_h:'3 · No-limit items <small>Optional. Only needs to be a good-faith estimate</small>',g_what:'What goes in this box?',
+  g0_list:'<li>Section A: points, origination, underwriting, processing (paid to the lender, broker or affiliate)</li><li>Section B: appraisal, credit report, flood cert, other services you couldn\'t shop for</li><li>Transfer taxes in section E</li><li>Any lender credit that went down counts here too</li>',
+  g10_list:'<li>Recording fees (section E)</li><li>Section C services you could shop for, <b>if</b> you picked a provider from the lender\'s written list: title, settlement, survey, pest if required</li><li>Add the LE amounts for all of these, then the CD amounts</li>',
+  gU_list:'<li>Section F: prepaid interest, homeowner\'s insurance, property taxes</li><li>Section G: initial escrow (impound) deposit</li><li>Section C services you picked yourself, off the lender\'s list</li><li>Things the lender doesn\'t require: owner\'s title (optional), home warranty, HOA fees</li>',
+  r_by:'You must receive the Closing Disclosure by',by_person:'Signing {c}. Saturdays count, Sundays and federal holidays don\'t.',
+  by_mail:'Sent by mail/email: it counts as received 3 business days after it goes out, so the lender should send it by {s}. Signing {c}.',
+  by_sun:' Heads up: your signing date is a Sunday or federal holiday. Double-check it with escrow.',
+  v0:'Zero tolerance',v10:'10% group',vU:'No-limit items',vT:'Lender owes you back',
+  s0_ok:'CD {cd} vs LE {le}: no increase. OK.',s0_bad:'CD {cd} vs LE {le}: up {x}. Over the limit.',
+  s10_ok:'CD {cd} vs LE {le} ({p}%). Limit {lim}. OK.',s10_bad:'CD {cd} vs LE {le} ({p}%). Limit {lim}, over by {x}.',
+  sU:'CD {cd} vs LE {le}: {x}. No legal limit, but ask why.',sU0:'Not entered.',
+  sT:'Must be paid within 60 days after closing, by {d}, with a corrected CD.',sT0:'Nothing owed, based on these totals.',
+  ok_v:'<b>Looks within the limits.</b> The fee groups you entered stay inside the legal tolerances. Still check the 10 lines below.',
+  bad_v:'<b>Over the limit by {r}.</b> Ask the lender for a cure. They can fix it as a credit at closing or refund it within 60 days after closing (by {d}) with a corrected CD. A valid revised LE (changed circumstance, rate lock) can lawfully reset a number, so ask to see it.',
+  rs_t:'What restarts the 3-day wait',
+  rs:'<li><b>APR goes up</b> more than 1/8 of a percentage point (1/4 for irregular loans like many ARMs). APR going down doesn\'t count.</li><li><b>Loan product changes</b>, for example fixed to adjustable.</li><li><b>A prepayment penalty is added.</b></li>',
+  rs_n:'Anything else, like a fee changing, just needs a corrected CD at or before closing. No new wait. After closing: corrected CD within 30 days if something changes what you paid, within 60 days for a non-number typo.',
+  cd_disc:"Our own walkthrough of the 5-page Closing Disclosure, not the official form. Section names follow 12 CFR 1026.38. The rule doesn't number the pages or letter sections K–N; those follow the model form you usually see (H-25).",
+  pgn:'Page {n}',pgt:{1:'Loan terms & summary',2:'Closing Cost Details',3:'Cash to Close & Summaries',4:'Loan Disclosures',5:'Loan Calculations & Contacts'},
+  L_k:'For a 10-year-old',L_a:'For grown-ups',L_t:'Tip / where people get burned',L_q:'Ask your lender or escrow',L_link:'Link to this line',L_copied:'Copied',
+  ck_t:'LE ↔ CD: 10 things to compare',prog:'{n} of 10 checked',
+  nx_t:'Next steps',
+  nx1:'Still at the Loan Estimate stage? Read it line by line: <a href="/t231/">T231</a>. Closing costs city by city: <a href="/t03/">T03</a>.',
+  nx2:'Check the tax and HOA prorations on page 3: <a href="/t64/">T64</a>.',
+  nx3:'Final walk-through and wire checklist before signing: <a href="/t63/">T63</a>.',
+  nx4:'Rates and points: <a href="/t30/">T30</a> · <a href="/t38/">T38</a>. Word list: <a href="/t190/#closing-disclosure">Closing Disclosure</a> · <a href="/t190/#apr">APR</a> · <a href="/t190/#escrow">escrow</a>.',
+  myth:'<b>Many people get this wrong:</b> "Saturday doesn\'t count in the 3 days." It does. For the CD rule, a business day is every day except Sundays and federal holidays. (<a href="https://www.alston.com/-/media/files/insights/publications/2021/06/217879-juneteenth-disclosureissues.pdf" target="_blank" rel="noopener">Alston &amp; Bird on 12 CFR 1026.2(a)(6)</a>)',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this check to yourself',f_sub:'Ken will reply and help you go over the CD with your lender. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, text Ken the number below.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'How to read a Closing Disclosure',ft_vid:'Kiến Thức Địa Ốc video',
+  ft_est:'General information, not legal or lending advice. The tolerance check uses only the totals you type in, compared with your latest valid Loan Estimate. A revised LE for a valid reason can change the starting numbers. Holiday list covers 2026–2027.',
+  ft_src:'Sources (checked 05/11/2026):',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I checked my CD: signing {c}, CD due {by}. Zero-tolerance LE {zl} / CD {zc}, 10% LE {tl} / CD {tc}. Tool says the lender owes {r}. Can you look?',
+  subj:'Closing Disclosure check — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nSigning date: {c}\nCD sent by mail/email: {m}\nMust receive CD by: {by}\n\nZero tolerance: LE {zl} / CD {zc} → over {zx}\n10% group: LE {tl} / CD {tc} (limit {lim}) → over {tx}\nNo-limit items: LE {ul} / CD {uc}\n\nLender owes back: {r}\nCure deadline: {cure}\n\nSent from tool T232 tools.kenlamrealty.com',
+  yes:'yes',no:'no'},
+ vi:{title:'Closing Disclosure: đọc và so với Loan Estimate',sub:'Nhập ngày ký và vài con số tổng trên 2 tờ giấy. Biết liền ngày chót phải có CD, lender có tính lố không, và phải hoàn lại bao nhiêu.',
+  l_close:'Ngày ký / ngày close ',l_close_s:'(ngày ký giấy vay)',l_mail:'CD gửi qua bưu điện hoặc email, không đưa tận tay',
+  g0_h:'1 · Phí zero tolerance <small>Không được tăng đồng nào</small>',g10_h:'2 · Nhóm 10% <small>Tổng không được tăng quá 10%</small>',gU_h:'3 · Khoản không giới hạn <small>Không bắt buộc. Chỉ cần ước tính thiện chí</small>',g_what:'Ô này gồm những gì?',
+  g0_list:'<li>Mục A: points, origination, underwriting, processing (trả cho lender, broker hay công ty con của họ)</li><li>Mục B: appraisal, credit report, flood cert, dịch vụ mình không được tự chọn</li><li>Transfer tax trong mục E</li><li>Lender credit bị giảm cũng tính vào đây</li>',
+  g10_list:'<li>Phí recording (mục E)</li><li>Dịch vụ mục C mình được chọn, <b>nếu</b> chọn trong danh sách lender đưa: title, settlement, survey, pest nếu lender đòi</li><li>Cộng hết số trên LE, rồi cộng hết số trên CD</li>',
+  gU_list:'<li>Mục F: lãi trả trước, bảo hiểm nhà, thuế nhà</li><li>Mục G: tiền đầu vào impound</li><li>Dịch vụ mục C mình tự chọn ngoài list của lender</li><li>Khoản lender không đòi: owner\'s title (optional), home warranty, phí HOA</li>',
+  r_by:'Ngày chót mình phải nhận Closing Disclosure',by_person:'Ký ngày {c}. Thứ Bảy có tính, Chủ nhật và lễ liên bang không tính.',
+  by_mail:'Gửi bưu điện/email: coi như nhận sau 3 ngày làm việc, nên lender phải gửi trước {s}. Ký ngày {c}.',
+  by_sun:' Lưu ý: ngày ký rơi vào Chủ nhật hoặc lễ liên bang. Hỏi lại escrow.',
+  v0:'Zero tolerance',v10:'Nhóm 10%',vU:'Khoản không giới hạn',vT:'Lender phải hoàn lại',
+  s0_ok:'CD {cd} so với LE {le}: không tăng. Được.',s0_bad:'CD {cd} so với LE {le}: tăng {x}. Vượt giới hạn.',
+  s10_ok:'CD {cd} so với LE {le} ({p}%). Giới hạn {lim}. Được.',s10_bad:'CD {cd} so với LE {le} ({p}%). Giới hạn {lim}, vượt {x}.',
+  sU:'CD {cd} so với LE {le}: {x}. Luật không giới hạn, nhưng cứ hỏi lý do.',sU0:'Chưa nhập.',
+  sT:'Phải hoàn trong 60 ngày sau close, trước {d}, kèm CD sửa.',sT0:'Theo mấy số này thì lender không nợ gì.',
+  ok_v:'<b>Coi bộ nằm trong giới hạn.</b> Các nhóm phí mình nhập không vượt tolerance của luật. Vẫn nên dò 10 dòng ở dưới.',
+  bad_v:'<b>Vượt giới hạn {r}.</b> Xin lender "cure". Họ có thể trừ thẳng bằng credit lúc close, hoặc hoàn tiền trong 60 ngày sau close (trước {d}) kèm CD sửa. Nếu có LE sửa hợp lệ (changed circumstance, rate lock) thì số gốc có thể đã đổi, nên xin coi LE đó.',
+  rs_t:'3 thay đổi bắt chờ lại 3 ngày',
+  rs:'<li><b>APR tăng</b> hơn 1/8 điểm % (1/4 với loan bất thường như nhiều loại ARM). APR giảm thì không tính.</li><li><b>Đổi loại loan</b>, ví dụ từ cố định qua lãi thả nổi.</li><li><b>Thêm prepayment penalty.</b></li>',
+  rs_n:'Mấy thay đổi khác, như phí đổi, chỉ cần CD sửa lúc hoặc trước khi close. Không phải chờ lại. Sau close: CD sửa trong 30 ngày nếu số tiền mình trả bị đổi, trong 60 ngày nếu chỉ sai chính tả không phải số.',
+  cd_disc:'Đây là phần giải thích 5 trang Closing Disclosure theo cách của mình, không phải form chính thức. Tên các mục theo 12 CFR 1026.38. Luật không đánh số trang hay đặt chữ K–N; mấy cái đó theo form mẫu thường thấy (H-25).',
+  pgn:'Trang {n}',pgt:{1:'Điều khoản & tóm tắt',2:'Chi tiết closing costs',3:'Tiền mang tới & bảng tổng',4:'Loan Disclosures',5:'Loan Calculations & liên lạc'},
+  L_k:'Nói cho con nít hiểu',L_a:'Nói thật cho người lớn',L_t:'Mẹo / chỗ hay bị hớ',L_q:'Câu nên hỏi lender hoặc escrow',L_link:'Link tới dòng này',L_copied:'Đã copy',
+  ck_t:'LE ↔ CD: 10 chỗ cần so',prog:'Đã dò {n}/10',
+  nx_t:'Bước tiếp theo',
+  nx1:'Còn ở giai đoạn Loan Estimate? Đọc từng dòng: <a href="/t231/">T231</a>. Closing costs theo city: <a href="/t03/">T03</a>.',
+  nx2:'Kiểm phần chia thuế và HOA ở trang 3: <a href="/t64/">T64</a>.',
+  nx3:'Checklist final walk-through và wire tiền trước khi ký: <a href="/t63/">T63</a>.',
+  nx4:'Lãi suất và points: <a href="/t30/">T30</a> · <a href="/t38/">T38</a>. Từ điển: <a href="/t190/#closing-disclosure">Closing Disclosure</a> · <a href="/t190/#apr">APR</a> · <a href="/t190/#escrow">escrow</a>.',
+  myth:'<b>Nhiều người hiểu sai:</b> "Thứ Bảy không tính trong 3 ngày." Có tính đó. Với luật CD, ngày làm việc là mọi ngày trừ Chủ nhật và lễ liên bang. (<a href="https://www.alston.com/-/media/files/insights/publications/2021/06/217879-juneteenth-disclosureissues.pdf" target="_blank" rel="noopener">Alston &amp; Bird về 12 CFR 1026.2(a)(6)</a>)',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi kết quả này về email',f_sub:'Ken nhận được sẽ trả lời và giúp dò CD với lender. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số dưới đây nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Cách đọc Closing Disclosure',ft_vid:'Video Kiến Thức Địa Ốc',
+  ft_est:'Thông tin chung, không phải tư vấn luật hay cho vay. Phần tolerance chỉ dùng mấy số tổng mình nhập, so với LE hợp lệ mới nhất. LE sửa vì lý do hợp lệ có thể đổi số gốc. Danh sách lễ có cho 2026–2027.',
+  ft_src:'Nguồn (tra 05/11/2026):',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa dò CD: ký ngày {c}, phải có CD trước {by}. Zero tolerance LE {zl} / CD {zc}, nhóm 10% LE {tl} / CD {tc}. Tool nói lender phải hoàn {r}. Ken coi giùm được không?',
+  subj:'Dò Closing Disclosure — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nNgày ký: {c}\nCD gửi bưu điện/email: {m}\nPhải nhận CD trước: {by}\n\nZero tolerance: LE {zl} / CD {zc} → vượt {zx}\nNhóm 10%: LE {tl} / CD {tc} (giới hạn {lim}) → vượt {tx}\nKhông giới hạn: LE {ul} / CD {uc}\n\nLender phải hoàn: {r}\nHạn hoàn tiền: {cure}\n\nGửi từ tool T232 tools.kenlamrealty.com',
+  yes:'có',no:'không'}
+};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const sgn=n=>(n>0?'+':'')+fmt(n);
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const fill=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const fdate=d=>{const y=d.getUTCFullYear(),m=d.getUTCMonth()+1,dd=d.getUTCDate();
+  if(lang==='vi'){const w=['Chủ nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'][d.getUTCDay()];return w+' '+String(dd).padStart(2,'0')+'/'+String(m).padStart(2,'0')+'/'+y;}
+  return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric',timeZone:'UTC'});};
+let last={}, ticks={};
+try{ ticks=JSON.parse(localStorage.getItem('kl_t232_ck')||'{}')||{}; }catch(e){ ticks={}; }
+
+function buildCD(){
+  const d=I18N[lang], open=new Set([...document.querySelectorAll('details.li[open]')].map(x=>x.id));
+  let h='';
+  for(const p of CD){
+    h+='<article class="pg"><div class="ph"><h2>'+d.pgt[p.pg]+'</h2><span>'+fill(d.pgn,{n:p.pg})+'</span></div>';
+    for(const it of p.items){ const e=it[lang];
+      h+='<details class="li" id="'+it.id+'"'+(open.has(it.id)?' open':'')+'><summary><span class="n">'+(it.L?'<i>'+it.L+'</i> ':'')+'<b>'+esc(e.n)+'</b><small>'+esc(e.s)+'</small></span><span class="a"></span></summary>'+
+        '<div class="ex"><p><span class="t">'+d.L_k+'</span>'+esc(e.k)+'</p><p><span class="t">'+d.L_a+'</span>'+esc(e.a)+'</p><p><span class="t">'+d.L_t+'</span>'+esc(e.t)+'</p>'+
+        '<p class="ask"><span class="t">'+d.L_q+'</span>“'+esc(e.q)+'”</p><span class="lk"><a href="#'+it.id+'">#'+it.id+'</a><button type="button" data-cp="'+it.id+'">'+d.L_link+'</button></span></div></details>';
+    }
+    h+='</article>';
+  }
+  $('cd').innerHTML=h;
+  $('cl').innerHTML=CHK[lang].map(([b,s],i)=>'<li id="chk-'+(i+1)+'"><label><input type="checkbox" data-ck="'+(i+1)+'"'+(ticks[i+1]?' checked':'')+'><span><b>'+(i+1)+'. '+esc(b)+'</b><small>'+esc(s)+'</small></span></label></li>').join('');
+  prog();
+}
+function prog(){ const n=Object.values(ticks).filter(Boolean).length; $('prog').textContent=fill(I18N[lang].prog,{n}); }
+function calc(){
+  const d=I18N[lang], mailed=$('mailed').checked;
+  const inp={close:$('close').value||'2026-12-15',mailed,zLe:num('z_le'),zCd:num('z_cd'),tLe:num('t_le'),tCd:num('t_cd'),uLe:num('u_le'),uCd:num('u_cd')};
+  const r=checkCD(inp);
+  $('big').textContent=fdate(r.recvBy);
+  $('byS').textContent=(mailed?fill(d.by_mail,{s:fdate(r.sendBy),c:fdate(r.close)}):fill(d.by_person,{c:fdate(r.close)}))+(r.closeIsBiz?'':d.by_sun);
+  const z0=r.z>0.5, t0=r.t>0.5;
+  $('v0').textContent=z0?fmt(r.z):'✓'; $('v0').className='a '+(z0?'bad':'ok');
+  $('v0s').textContent=fill(z0?d.s0_bad:d.s0_ok,{cd:fmt(inp.zCd),le:fmt(inp.zLe),x:fmt(r.z)});
+  $('v10').textContent=t0?fmt(r.t):'✓'; $('v10').className='a '+(t0?'bad':'ok');
+  $('v10s').textContent=fill(t0?d.s10_bad:d.s10_ok,{cd:fmt(inp.tCd),le:fmt(inp.tLe),p:(r.tPct>0?'+':'')+r.tPct.toFixed(1),lim:fmt(r.lim10),x:fmt(r.t)});
+  const uOn=inp.uLe>0||inp.uCd>0;
+  $('vU').textContent=uOn?sgn(r.u):'—'; $('vU').className='a';
+  $('vUs').textContent=uOn?fill(d.sU,{cd:fmt(inp.uCd),le:fmt(inp.uLe),x:sgn(r.u)}):d.sU0;
+  $('vT').textContent=fmt(r.refund); $('vT').className='a '+(r.refund>0.5?'bad':'ok');
+  $('vTs').textContent=r.refund>0.5?fill(d.sT,{d:fdate(r.cureBy)}):d.sT0;
+  $('verdict').innerHTML=r.refund>0.5?fill(d.bad_v,{r:fmt(r.refund),d:fdate(r.cureBy)}):d.ok_v;
+  last={c:fdate(r.close),m:mailed?d.yes:d.no,by:fdate(r.recvBy),zl:fmt(inp.zLe),zc:fmt(inp.zCd),zx:fmt(r.z),tl:fmt(inp.tLe),tc:fmt(inp.tCd),lim:fmt(r.lim10),tx:fmt(r.t),ul:fmt(inp.uLe),uc:fmt(inp.uCd),r:fmt(r.refund),cure:fdate(r.cureBy)};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+  klSend();
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  buildCD(); calc();
+}
+/* embed mode (?embed=1): iframe on kenlamrealty.com, height via postMessage klToolsHeight */
+const EMBED=/[?&]embed=1/.test(location.search);
+let klSend=()=>{};
+if(EMBED){ document.documentElement.classList.add('embed'); let lastH=0;
+  klSend=()=>{ const w=document.querySelector('.wrap'); const h=Math.ceil(w.getBoundingClientRect().bottom+window.scrollY+40); if(Math.abs(h-lastH)<4) return; lastH=h; try{ parent.postMessage({klToolsHeight:h},'*'); }catch(e){} };
+  window.addEventListener('resize',()=>klSend()); new ResizeObserver(()=>klSend()).observe(document.body);
+  document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('a[href]'); if(!a) return; const h=a.getAttribute('href'); if(h.startsWith('#')||a.target==='_blank') return; if(h.startsWith('/')) a.href='https://tools.kenlamrealty.com'+h; a.target='_top'; },true); }
+['close','mailed','z_le','z_cd','t_le','t_cd','u_le','u_cd'].forEach(id=>{$(id).addEventListener('input',calc);$(id).addEventListener('change',calc);});
+$('cl').addEventListener('change',e=>{const c=e.target.closest('[data-ck]'); if(!c) return; ticks[c.dataset.ck]=c.checked; try{localStorage.setItem('kl_t232_ck',JSON.stringify(ticks));}catch(x){} prog();});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus(); klSend();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], o=Object.assign({},last,{n:$('fname').value.trim()||'—',e:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'});
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing), hoặc thay bằng fetch() tới FUB webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,o))+'&body='+encodeURIComponent(fill(d.body,o));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false; klSend();
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+$('cd').addEventListener('click',async e=>{const b=e.target.closest('[data-cp]'); if(!b) return; e.preventDefault();
+  const u=location.origin+location.pathname+'#'+b.dataset.cp; try{await navigator.clipboard.writeText(u);}catch(x){} b.textContent=I18N[lang].L_copied; try{history.replaceState(null,'','#'+b.dataset.cp);}catch(x){} });
+$('cd').addEventListener('toggle',()=>klSend(),true);
+function openHash(){ const h=decodeURIComponent(location.hash.slice(1)); if(!h) return; const el=document.getElementById(h); if(!el) return; if(el.tagName==='DETAILS') el.open=true; setTimeout(()=>el.scrollIntoView({block:'start'}),30); }
+window.addEventListener('hashchange',openHash);
+applyLang(); openHash();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
