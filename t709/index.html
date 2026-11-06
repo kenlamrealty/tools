@@ -1,0 +1,882 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PA Probate Advisory · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+
+/* ===== Thêm cho T42 / T43 / T44 (không đổi class cũ) ===== */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;-webkit-appearance:none;appearance:none;cursor:pointer}
+.ctl .chev{color:var(--muted);font-size:12px;pointer-events:none}
+.ctl input[type=date]{font-size:18px;min-height:48px}
+.ctl input[type=text]{font-size:18px}
+.hint{font-size:12px;color:var(--muted);margin:0;line-height:1.45}
+.hint b{color:var(--fg);font-weight:500}
+.total .of{font-size:14px;color:var(--muted);margin-top:6px}
+.chip{font-size:12px;line-height:1.3;padding:3px 9px;border-radius:999px;border:1px solid var(--line);white-space:nowrap;flex:none;color:var(--muted)}
+.chip.ok{color:var(--ok);border-color:var(--ok)}
+.chip.mid{color:var(--brass);border-color:var(--brass)}
+.chip.no{color:var(--warn);border-color:var(--warn)}
+.grp-h{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);margin:6px 0 0;font-weight:500}
+.myth{font-size:14px;line-height:1.5;border-left:2px solid var(--brass);padding:2px 0 2px 12px;margin:0}
+.myth b{font-weight:500}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:12px}
+.next h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0;line-height:1.15}
+.steps{margin:0;padding:0;list-style:none;display:grid;gap:12px;counter-reset:st}
+.steps li{display:grid;grid-template-columns:26px minmax(0,1fr);gap:10px;font-size:15px;line-height:1.45;counter-increment:st}
+.steps li::before{content:counter(st);font-family:var(--display);font-size:22px;line-height:1;color:var(--brass)}
+.steps small{display:block;color:var(--muted);font-size:13px;margin-top:3px}
+.steps a{color:var(--brass);text-decoration:none}
+.dline{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.dline .n{color:var(--muted);min-width:0}
+.dline .n b{color:var(--fg);font-weight:500}
+.dline .a{font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+.tips{margin:0;padding-left:18px;font-size:14px;line-height:1.5;display:grid;gap:8px;color:var(--fg)}
+.tips li::marker{color:var(--brass)}
+.tips small{display:block;color:var(--muted);font-size:13px}
+.linkbtn{justify-self:start;border:1px solid var(--line);background:transparent;color:var(--brass);font:inherit;font-size:14px;padding:7px 13px;border-radius:999px;cursor:pointer}
+.linkbtn:hover{border-color:var(--brass)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0;line-height:1.15}
+.prog{display:grid;gap:6px;font-size:13px;color:var(--muted)}
+.prog b{color:var(--fg);font-weight:500}
+.gcal{color:var(--brass);text-decoration:none;white-space:nowrap;font-size:13px}
+.gcal:hover{text-decoration:underline}
+footer .src{line-height:1.6}
+.hide{display:none!important}
+.result > *,.inputs > *,.wrap > *,.panel > *{min-width:0}
+
+/* ===== Riêng T43: lịch 2 tháng ===== */
+.best{display:grid;gap:0;border-top:1px solid var(--line)}
+.bd{display:grid;gap:4px;padding:12px 0;border-bottom:1px solid var(--line)}
+.bd .hd{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.bd .dt{font-family:var(--display);font-size:28px;line-height:1.1;font-weight:400}
+.bd .dt small{font-family:var(--body);font-size:14px;color:var(--muted)}
+.bd .d{font-size:13px;color:var(--muted);line-height:1.5}
+.bd .d b{color:var(--fg);font-weight:500}
+.bd.first{background:var(--brass-soft);margin:0 -10px;padding:12px 10px;border-radius:8px;border-bottom-color:transparent}
+.cal-wrap{display:grid;gap:18px}
+.mon h3{font-family:var(--display);font-weight:400;font-size:24px;margin:0 0 8px}
+.grid7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.grid7 .wd{font-size:11px;color:var(--muted);text-align:center;padding:2px 0;letter-spacing:.04em}
+.dc{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:5px 2px 4px;display:grid;justify-items:center;gap:1px;cursor:pointer;font:inherit;color:var(--fg);min-height:58px}
+.dc .s{font-size:16px;font-weight:500;line-height:1.1;font-variant-numeric:tabular-nums}
+.dc .l{font-size:10.5px;color:var(--muted);line-height:1.2;font-variant-numeric:tabular-nums}
+.dc .c{font-size:10px;color:var(--muted);line-height:1.2}
+.dc .m{width:6px;height:6px;border-radius:50%;margin-top:2px;background:transparent}
+.dc.good{background:var(--brass-soft);border-color:var(--brass)}
+.dc.good .m{background:var(--ok)}
+.dc.no .m{background:var(--warn)}
+.dc.no .s{color:var(--warn)}
+.dc.past{opacity:.4}
+.dc.sel{outline:2px solid var(--fg);outline-offset:1px}
+.dc.top3 .s{text-decoration:underline;text-decoration-color:var(--brass);text-underline-offset:3px}
+.dc.blank{visibility:hidden}
+.det{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:8px;font-size:14px;line-height:1.5}
+.det .dt{font-family:var(--display);font-size:24px;line-height:1.15}
+.det .r{color:var(--muted)}
+.det .r b{color:var(--fg);font-weight:500}
+.legend .lg-g{background:var(--brass-soft);border:1px solid var(--brass)}
+.legend .lg-n{background:var(--warn)}
+</style>
+
+<meta name="description" content="C.A.R. Form PA (Probate Advisory) explained simply: what a probate, conservatorship or guardianship seller is exempt from, what they still must disclose, IAEA full vs limited authority. Tool: what this seller still owes the buyer.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t709/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="PA Probate Advisory · Ken Lam Tools">
+<meta property="og:description" content="C.A.R. Form PA (Probate Advisory) explained simply: what a probate, conservatorship or guardianship seller is exempt from, what they still must disclose, IAEA full vs limited authority. Tool: what this seller still owes the buyer.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t709/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/t709/poster.jpg">
+<meta name="twitter:card" content="summary_large_image">
+
+<style>
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line);aspect-ratio:9/16;max-height:78vh;object-fit:contain}
+.eli{font-size:16px;line-height:1.6;margin:0}
+.code{display:inline-block;font-size:12px;letter-spacing:.1em;color:var(--brass);border:1px solid var(--brass);border-radius:999px;padding:2px 9px;margin-bottom:6px}
+.who{width:100%;border-collapse:collapse;font-size:14px;line-height:1.45}
+.who th{text-align:left;vertical-align:top;color:var(--muted);font-weight:500;padding:9px 10px 9px 0;width:30%;border-bottom:1px solid var(--line)}
+.who td{padding:9px 0;border-bottom:1px solid var(--line)}
+.part{display:grid;gap:8px;padding:14px 0;border-top:1px solid var(--line)}
+.part:first-of-type{border-top:0;padding-top:4px}
+.part h3{font-size:16px;font-weight:600;margin:0;line-height:1.35}
+.part .ref{font-size:12px;color:var(--brass);letter-spacing:.06em;text-transform:uppercase}
+.part p{margin:0;font-size:15px;line-height:1.55}
+.part .ex{font-size:14px;color:var(--fg);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.5}
+.part .ex b{font-weight:600}
+.fig{margin:0;border:1px solid var(--line);border-radius:10px;overflow-x:auto;overflow-y:hidden;background:#fff;cursor:zoom-in;-webkit-overflow-scrolling:touch}
+.fig img{display:block;width:100%;min-width:640px;height:auto}
+@media (min-width:700px){.fig img{min-width:0}}
+.step-h{font-family:var(--display);font-weight:400;font-size:26px;margin:0;line-height:1.15}
+.tiers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tc{border:1px solid var(--line);border-radius:10px;padding:10px 8px;display:grid;gap:2px;text-align:center}
+.tc .n{font-family:var(--display);font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
+.tc .l{font-size:12px;color:var(--muted);line-height:1.3}
+.tc.p1 .n{color:var(--warn)} .tc.p2 .n{color:var(--brass)} .tc.p3 .n{color:var(--ok)}
+.verdict{font-family:var(--display);font-size:30px;line-height:1.15;margin:4px 0 0}
+.verdict.ok{color:var(--ok)} .verdict.no{color:var(--warn)}
+.figcap{font-size:12px;color:var(--muted);margin:-2px 0 0}
+#lb{position:fixed;inset:0;background:rgba(0,0,0,.86);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:14px;overflow:auto}
+#lb[hidden]{display:none}
+#lb img{max-width:none;width:min(1000px,180vw);height:auto;background:#fff;border-radius:6px}
+#lb .lbwrap{width:100%;overflow:auto}
+#lbX{align-self:flex-end;border:1px solid #fff;background:transparent;color:#fff;font:inherit;font-size:14px;padding:6px 12px;border-radius:999px;cursor:pointer;margin-bottom:10px}
+.big{font-family:var(--display);font-weight:400;font-size:52px;line-height:1;font-variant-numeric:tabular-nums;margin-top:4px}
+.big.sm{font-size:40px}
+.kv{display:grid;gap:0;border-top:1px solid var(--line)}
+.kv .dline .a{max-width:60%}
+.res-list{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.res-list li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;font-size:14px;line-height:1.45}
+.res-list li small{display:block;color:var(--muted);font-size:13px}
+.vbox{display:grid;gap:10px}
+.warnbox{font-size:14px;line-height:1.5;border-left:3px solid var(--warn);background:var(--brass-soft);padding:10px 12px;border-radius:0 10px 10px 0}
+.okbox{font-size:14px;line-height:1.5;border-left:3px solid var(--ok);background:var(--brass-soft);padding:10px 12px;border-radius:0 10px 10px 0}
+.splits{width:100%;border-collapse:collapse;font-size:14px}
+.splits td{padding:9px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.splits td.a{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;padding-left:10px}
+.splits td small{display:block;color:var(--muted);font-size:12.5px}
+.seg button{min-width:0}
+.seg.col{flex-direction:column}
+.seg.col button{text-align:left;border-bottom:1px solid var(--line)}
+.seg.col button:last-child{border-bottom:0}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">&larr; All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty &middot; Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <span class="code">T709 &middot; C.A.R. PA</span>
+    <h1 data-i="title"></h1>
+    <p class="sub" data-i="sub"></p>
+  </header>
+
+  <section class="panel" aria-label="ELI10">
+    <h2 data-i="eli_h"></h2>
+    <p class="eli" data-i="eli"></p>
+  </section>
+
+  <section class="panel" aria-label="Who and when">
+    <h2 data-i="who_h"></h2>
+    <table class="who"><tbody id="whoT"></tbody></table>
+  </section>
+
+  <section class="panel" aria-label="Form walkthrough">
+    <h2 data-i="parts_h"></h2>
+    <p class="hint" data-i="parts_hint"></p>
+    <div id="parts"></div>
+  </section>
+
+  <section class="inputs" aria-label="Tool">
+    <h2 class="step-h" data-i="tool_h"></h2>
+    <p class="hint" data-i="tool_sub"></p>
+    <div class="field"><label data-i="q1"></label><div class="seg col" id="qType"></div></div>
+    <div class="field"><label data-i="q2"></label><div class="seg" id="qUnits"></div></div>
+    <div class="field"><label data-i="q3"></label><div class="seg" id="qYear"></div></div>
+    <div class="field"><label data-i="q4"></label><div class="seg" id="qFuel"></div></div>
+    <div class="field"><label data-i="q5"></label><div class="seg" id="qRes"></div></div>
+  </section>
+
+  <section class="result" aria-live="polite" id="result"></section>
+
+  <section class="panel" aria-label="Myths">
+    <h2 data-i="myth_h"></h2>
+    <div id="myths" style="display:grid;gap:10px"></div>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="ns_h"></h2>
+    <ol class="steps" id="nextL"></ol>
+  </section>
+
+  <section class="panel" aria-label="Video" id="vidSec">
+    <h2 data-i="vid_h"></h2>
+    <video class="kl-vid" id="vid" controls playsinline preload="none" poster="poster.jpg" src="video.mp4"></video>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email"></button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms"></a>
+    <button class="btn" type="button" id="videoBtn" data-i="b_video"></button>
+  </section>
+
+  <footer>
+    <span class="src"><span data-i="ft_src"></span>
+      <a href="https://www.car.org/transactions/standardforms" target="_blank" rel="noopener">C.A.R. standard forms (PA Reviewed 6/25)</a> &middot;
+      <a href="https://california.public.law/codes/civil_code_section_1102.2" target="_blank" rel="noopener">Civil Code §1102.2 (TDS exemptions)</a> &middot;
+      <a href="https://california.public.law/codes/civil_code_section_1103.1" target="_blank" rel="noopener">Civil Code §1103.1 (NHD exemptions)</a> &middot;
+      <a href="https://california.public.law/codes/probate_code_section_10403" target="_blank" rel="noopener">Probate Code §10403 (limited authority)</a> &middot;
+      <a href="https://california.public.law/codes/probate_code_section_10503" target="_blank" rel="noopener">Probate Code §10503</a> &middot;
+      <a href="https://california.public.law/codes/probate_code_section_10586" target="_blank" rel="noopener">Probate Code §10586 (15-day notice)</a> &middot;
+      <a href="https://california.public.law/codes/probate_code_section_10589" target="_blank" rel="noopener">Probate Code §10589 (objection)</a> &middot;
+      <a href="https://california.public.law/codes/probate_code_section_10308" target="_blank" rel="noopener">Probate Code §10308 (court confirmation)</a> &middot;
+      <a href="https://www.epa.gov/lead/real-estate-disclosures-about-potential-lead-hazards" target="_blank" rel="noopener">EPA lead disclosure (pre-1978)</a> &middot;
+      <a href="https://www.irs.gov/individuals/international-taxpayers/firpta-withholding" target="_blank" rel="noopener">IRS FIRPTA</a> &middot;
+      <a href="https://www.ftb.ca.gov/forms/misc/593.html" target="_blank" rel="noopener">FTB Form 593</a> &middot;
+      <a href="https://www.npms.phmsa.dot.gov/" target="_blank" rel="noopener">NPMS pipeline map</a>
+      <span data-i="src_date"></span></span>
+    <span data-i="ft_dis"></span>
+    <span class="who">Ken Lam &middot; BRG Realty Corp &middot; DRE #01401822 &middot; 408-666-2825 &middot; <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd"></span>: 06/11/2026 &middot; <a href="/" data-i="ft_all"></a></span>
+  </footer>
+</div>
+<div id="lb" hidden><button id="lbX" type="button" data-i="lb_close"></button><div class="lbwrap"><img id="lbImg" alt=""></div></div>
+
+<script>
+/* ===== Rules used by the tool (sources in footer; checked 06/11/2026) ===== */
+const RULE={
+  LEAD_YEAR:1978,        // 42 U.S.C. 4852d / EPA: homes built before 1978 -> lead disclosure + pamphlet + 10-day inspection chance
+  LEAD_DAYS:10,          // C.A.R. PA Requirement 5
+  NOPA_DAYS:15,          // Probate Code 10586: Notice of Proposed Action at least 15 days before the action
+  UNITS_MAX:4            // TDS/NHD/smoke-alarm statement rules are about 1-4 unit residential
+};
+const I18N={
+"en": {
+"lang": "Tiếng Việt",
+"eli_h": "Explained like you are 10",
+"who_h": "Who signs, when to use it, when not",
+"parts_h": "Walk through the form, part by part",
+"parts_hint": "Short clips from the real C.A.R. form: only the key lines, not the whole form; the rest is explained in words. Yellow box = the line to read closely. Swipe sideways on a phone, or tap to zoom.",
+"figcap": "Swipe sideways · tap to zoom",
+"img_alt": "Section of the form:",
+"myth_h": "What many people get wrong",
+"ns_h": "Next steps",
+"vid_h": "45-second video",
+"b_email": "Email Ken my result",
+"b_sms": "Text Ken",
+"b_video": "Watch the 45-sec video",
+"ft_src": "Sources:",
+"src_date": "(checked 06/11/2026)",
+"ft_upd": "Updated",
+"ft_all": "All tools",
+"lb_close": "Close ✕",
+"ft_dis": "For understanding the form only. Not legal or tax advice. Every estate is different: ask the estate attorney, a probate attorney or a CPA before you sign.",
+"wd": [
+"Sun",
+"Mon",
+"Tue",
+"Wed",
+"Thu",
+"Fri",
+"Sat"
+],
+"title": "PA: Probate Advisory — what a court-supervised seller can skip, and what they still owe the buyer",
+"sub": "The 2-page C.A.R. advisory that buyer and seller both sign when a home is sold by an executor, administrator, conservator, guardian or receiver.",
+"eli": "Grandpa passed away and his house has to be sold. Grandpa cannot sign anything now, so the court lets one person, the <b>executor</b>, sell it for the family. That person may never have lived there and may not know about the leaky pipe under the sink. So the law lets them skip a few forms, like the long TDS questionnaire. But they still cannot hide what they <i>do</i> know, and the safety rules (smoke alarms, water-heater straps, lead paint) still apply. The PA is the cheat sheet: skipped this, still must do that.",
+"who": [
+[
+"Who signs",
+"Buyer(s) and Seller. The seller signs as a representative, for example \"Lan N., Executor of the Estate of …\", not as owner."
+],
+[
+"When it is used",
+"Every sale under the California Probate Code: a decedent's estate, conservatorship, guardianship or receivership. It travels with the PA-PA (offer) or the PLA (listing)."
+],
+[
+"When it is NOT the right form",
+"A living-trust sale with no probate (different rules; see the trust note in the tool). Heirs who already received title and now sell as normal owners. A regular sale where the owner is alive and signs."
+],
+[
+"Version",
+"PA Reviewed 6/25. Some form packages still attach the older PA Revised 12/21 — use the current one."
+]
+],
+"parts": [
+{
+"imgs": [],
+"ref": "Opening paragraph",
+"h": "The seller is not the owner — they are a representative",
+"p": "The opening says the seller is \"not the title owner\" but a representative of an estate, conservatorship, guardianship or receivership, and that the sale \"may require a court order\". Many seller duties do not apply, but many others still do. Agents also keep their own duties.",
+"ex": "<b>Example:</b> 1234 Example Lane, San Jose, CA 95100. Chị Lan is the executor of her late mother's estate. Title shows the estate, and Chị Lan signs every page \"as Executor\". Anh Minh (buyer) is buying from the estate, not from Chị Lan personally."
+},
+{
+"imgs": [
+"s01.jpg"
+],
+"ref": "Exemptions 1–4",
+"h": "What the seller can skip",
+"p": "No TDS, no NHD form and no Mello-Roos form (Civil Code §1102.2(b) court-ordered transfers and (d) fiduciary transfers; §1103.1 for the NHD). No earthquake safety guide. No written smoke-alarm statement. But item 4 says even exempt sellers should use the Exempt Seller Disclosure (C.A.R. ESD) — and the contract may require it.",
+"ex": "<b>Example:</b> For 1234 Example Lane, Chị Lan does not fill out the 3-page TDS. She fills out the ESD instead: a short form about what she actually knows — \"the roof leaked in 2023, Mom had it patched\"."
+},
+{
+"imgs": [
+"s02.jpg",
+"s03.jpg"
+],
+"ref": "Requirements 1–4",
+"h": "What the seller still must do (part 1)",
+"p": "Still required: disclose <b>known material facts</b> (fraud rules still apply); disclose hazard zones (earthquake fault, seismic, fire, flood) even without the NHD form; have <b>working smoke alarms</b> (who pays is negotiable); and have the <b>water heater strapped</b>.",
+"ex": "<b>Example:</b> Chị Lan knows the garage flooded last winter. Exempt from the TDS or not, she must tell Anh Minh. Most escrows still order an NHD report anyway, because it is the easiest way to show the hazard zones."
+},
+{
+"imgs": [],
+"ref": "Requirements 5–9",
+"h": "What the seller still must do (part 2)",
+"p": "Built before 1978: the federal lead-paint disclosure, the EPA pamphlet and a 10-day chance to inspect. Carbon monoxide alarms if there is gas heat, a gas appliance, a fireplace or an attached garage. Megan's Law notice. Pipeline notice. And tax withholding still applies: the form warns that for federal purposes an executor can be treated as a non-resident, while for California the estate is a resident if the person who died lived in California.",
+"ex": "<b>Example:</b> 1234 Example Lane was built in 1962, so Anh Minh gets the lead disclosure and 10 days to test. It has a gas furnace and attached garage, so CO alarms must be installed. Escrow will ask Chị Lan for the tax-withholding paperwork (FIRPTA certificate, Form 593)."
+},
+{
+"imgs": [
+"s04.jpg"
+],
+"ref": "Other considerations 1–4A",
+"h": "Local law, death questions, co-ops, and who must approve the sale",
+"p": "Local rules may still apply (San Jose, Santa Clara County…). Questions about how or where the owner died go to the executor. A co-op board may need to approve the buyer. Most important: <b>IAEA authority</b>. With <b>limited</b> authority, the court must confirm the sale (Probate Code §10403 removes real-property sales from limited authority). With <b>full</b> authority, the executor mails a Notice of Proposed Action to heirs — at least 15 days (§10586). No objection: the sale goes ahead without court. Objection: it may go to court (§10589).",
+"ex": "<b>Example:</b> Chị Lan has full IAEA authority. She mails the Notice of Proposed Action on 1/5. Nobody objects by the date in the notice (at least 15 days later), so the sale closes like a normal escrow — no court hearing, no overbid."
+},
+{
+"imgs": [
+"s05.jpg"
+],
+"ref": "4B–4D, Brokers, signatures",
+"h": "No liquidated damages, no mediation, no arbitration — and agents still inspect",
+"p": "Probate court has the final say on disputes and damages, so the liquidated-damages, mediation and arbitration clauses are removed (that is done in the PA-PA). Brokers are not exempt: the listing and buyer's agents still do a visual inspection (AVID) and give agency disclosure for 1–4 units. Buyer and seller both sign that they received and read the PA.",
+"ex": "<b>Example:</b> Ken (as an agent on either side) still walks 1234 Example Lane and writes the AVID: \"water stain on hallway ceiling, cracked tile in bathroom\". Anh Minh and Chị Lan both sign the PA."
+}
+],
+"tool_h": "Tool: what does this probate seller still owe the buyer?",
+"tool_sub": "Answer 5 quick questions. The list updates instantly.",
+"q1": "1. Who is selling?",
+"q2": "2. Residential 1–4 units?",
+"q3": "3. Built before 1978?",
+"q4": "4. Gas heat/appliance, fireplace or attached garage?",
+"q5": "5. Did the person who died (or the conservatee) live in California?",
+"o_type_estate": "Executor / administrator of a deceased owner's estate (probate)",
+"o_type_cons": "Conservator or guardian",
+"o_type_recv": "Court-appointed receiver",
+"o_type_trust": "Trustee of a living trust (no probate)",
+"o_type_heirs": "Heirs who already got title",
+"o_units_y": "Yes",
+"o_units_n": "No (5+ units, land, commercial)",
+"o_year_pre": "Yes",
+"o_year_post": "No",
+"o_year_unk": "Not sure",
+"o_fuel_y": "Yes",
+"o_fuel_n": "No",
+"o_res_y": "Yes",
+"o_res_n": "No",
+"o_res_unk": "Not sure",
+"r_k": "Result",
+"r_notpa": "The PA is not the right form here",
+"r_trust": "A trustee selling outside probate is not selling \"under the Probate Code\", so the PA/PA-PA/PLA package does not fit. TDS exemption for trustees exists (Civil Code §1102.2(d)), <b>but not</b> for an individual trustee of a revocable trust who was a former owner or lived there in the past year. Many trustees still give a TDS. Ask the trust attorney.",
+"r_heirs": "Once the court has distributed the house and the heirs are on title, they sell as normal owners: TDS, SPQ, NHD and the usual RPA rules apply. No court confirmation, no overbid.",
+"r_req": "still required",
+"r_ex": "exempt (skip)",
+"r_nopa": "days notice to heirs if full IAEA",
+"r_req_h": "Still required",
+"r_ex_h": "Seller may skip",
+"chip_req": "Do",
+"chip_ex": "Skip",
+"e_tds": "TDS, NHD form, Mello-Roos form",
+"e_tds_s": "Civil Code §1102.2(b)/(d), §1103.1. The ESD (Exempt Seller Disclosure) is still strongly encouraged.",
+"e_eq": "Earthquake safety guide",
+"e_eq_s": "Homeowner's / Commercial Property Owner's Guide not required.",
+"e_smk": "Written smoke-alarm compliance statement",
+"e_smk_s": "The statement is skipped — the working alarms are not.",
+"q_facts": "Disclose known material facts",
+"q_facts_s": "Leaks, floods, permits, deaths-on-property questions go to the executor. Fraud rules still apply.",
+"q_zone": "Disclose hazard zones",
+"q_zone_s": "Fault, seismic, fire, flood zones. An NHD report is the easy way to do it.",
+"q_smoke": "Working smoke alarms in place",
+"q_smoke_s": "Who pays is negotiable in the contract.",
+"q_wh": "Water heater strapped / braced",
+"q_wh_s": "Seller may use C.A.R. Form WHS.",
+"q_lead": "Lead-based paint disclosure + pamphlet",
+"q_lead_s": "Built before 1978: give known reports, the EPA pamphlet, and a {n}-day chance to inspect.",
+"q_leadu": "Find the year built",
+"q_leadu_s": "If it was built before 1978, the federal lead rules apply. Check the county record or MLS.",
+"q_co": "Carbon monoxide alarms",
+"q_co_s": "Required when there is a fossil-fuel appliance, fireplace or attached garage.",
+"q_meg": "Megan's Law notice",
+"q_meg_s": "Already printed in the RPA.",
+"q_pipe": "Gas pipeline notice",
+"q_pipe_s": "Buyer can check npms.phmsa.dot.gov during the investigation period.",
+"q_tax": "Tax withholding check",
+"q_tax_ca": "California: the estate is treated as a CA resident, so Form 593 usually shows an exemption or the normal 3⅓% rule. Federal: give escrow the FIRPTA (non-foreign) paperwork — the form warns an executor can be treated as a non-resident.",
+"q_tax_out": "The person lived outside California: expect California withholding (Form 593) unless an exemption applies. Federal FIRPTA paperwork still needed. Ask escrow and a CPA early.",
+"q_tax_unk": "Find out where the person lived at death. That decides California withholding (Form 593). Federal FIRPTA paperwork still needed.",
+"q_avid": "Agent visual inspection (AVID)",
+"q_avid_s": "Both agents' duty for 1–4 units. Not waived by probate.",
+"q_agency": "Agency disclosure",
+"q_agency_s": "The usual AD form and agency confirmation.",
+"r_estate_note": "Estate sale: ask the executor today if they have <b>full</b> or <b>limited</b> IAEA authority. Limited = court confirmation and possible overbid. Full = Notice of Proposed Action, at least 15 days, then usually no court.",
+"r_cons_note": "Conservatorship, guardianship or receivership: court confirmation is normally required (PA-PA ¶1C). Plan for a hearing and possible overbid.",
+"sum_head": "T709 PA checklist result",
+"sms_short": "{a} items still required, {b} skipped",
+"myths": [
+[
+"\"Probate = as-is = seller tells me nothing.\"",
+"Wrong. They skip the TDS form, not the truth. Known material facts must still be disclosed."
+],
+[
+"\"No NHD form means no hazard-zone info.\"",
+"The hazard-zone disclosure duty stays. In practice escrow still orders an NHD report."
+],
+[
+"\"The executor is the owner.\"",
+"The estate is the owner. The executor signs as a representative and may need court approval."
+],
+[
+"\"Every probate sale goes to court.\"",
+"No. With full IAEA authority and no objection after the 15-day notice, many sales close without a hearing."
+],
+[
+"\"The PA is the contract.\"",
+"The PA is only an advisory. The deal terms are in the RPA plus the PA-PA (offer) or the PLA (listing)."
+]
+],
+"next": [
+[
+"Making an offer on a probate home? Read the purchase addendum.",
+"T710 · PA-PA Probate Purchase Addendum",
+"/t710/"
+],
+[
+"Listing a probate home? Read the listing addendum.",
+"T474 · PLA Probate Listing Addendum",
+"/t474/"
+],
+[
+"See how much escrow may withhold for taxes.",
+"T325 · Tax withheld when you sell",
+"/t325/"
+],
+[
+"Owner died and it is a mobile home?",
+"T172 · When the owner dies: the mobile home",
+"/t172/"
+],
+[
+"Trust or will? See what probate costs.",
+"T121 · Living trust vs will",
+"/t121/"
+],
+[
+"Read the RPA itself step by step.",
+"T401 · Read the RPA",
+"/t401/"
+],
+[
+"Look up any other C.A.R. form.",
+"T402 · Forms library",
+"/t402/"
+]
+],
+"subj": "T709 PA probate advisory — my checklist",
+"body": "Hi Ken,\n\nI used the T709 PA (Probate Advisory) tool.\n\n{r}\n\nProperty address: \nMy question: \n\nName: \nPhone: ",
+"sms": "Hi Ken, I used the T709 Probate Advisory tool ({r}). Can we talk about a probate property?"
+},
+"vi": {
+"lang": "English",
+"eli_h": "Giải thích kiểu cho em bé 10 tuổi",
+"who_h": "Ai ký, khi nào dùng, khi nào không",
+"parts_h": "Đi qua từng phần của form",
+"parts_hint": "Vài khúc ngắn cắt từ form C.A.R. thật: chỉ những dòng chính, không phải nguyên form; phần còn lại giải thích bằng chữ. Khung vàng = dòng cần đọc kỹ. Trên điện thoại kéo ngang để đọc, hoặc bấm để phóng to.",
+"figcap": "Kéo ngang · bấm để phóng to",
+"img_alt": "Một phần của form:",
+"myth_h": "Nhiều người hiểu sai",
+"ns_h": "Bước tiếp theo",
+"vid_h": "Video 45 giây",
+"b_email": "Gửi kết quả cho Ken qua email",
+"b_sms": "Nhắn tin cho Ken",
+"b_video": "Xem video 45 giây",
+"ft_src": "Nguồn:",
+"src_date": "(tra ngày 06/11/2026)",
+"ft_upd": "Cập nhật",
+"ft_all": "Tất cả tools",
+"lb_close": "Đóng ✕",
+"ft_dis": "Chỉ để hiểu form. Không phải tư vấn luật hay thuế. Mỗi estate một khác: hỏi luật sư của estate, luật sư probate hoặc CPA trước khi ký.",
+"wd": [
+"CN",
+"T2",
+"T3",
+"T4",
+"T5",
+"T6",
+"T7"
+],
+"title": "PA: Bản lưu ý bán nhà qua probate — người bán được miễn gì, vẫn phải làm gì",
+"sub": "Bản 2 trang của C.A.R. mà buyer và seller cùng ký khi nhà được bán bởi executor, administrator, conservator, guardian hay receiver.",
+"eli": "Ông ngoại mất, căn nhà phải bán. Ông không ký được nữa. Nên tòa cho một người, gọi là <b>executor</b>, đứng ra bán thay cả nhà. Người này có khi chưa từng ở căn đó, không biết cái ống nước dưới bồn rửa bị rỉ. Vì vậy luật cho họ bỏ qua vài giấy, như bảng TDS dài mấy trang. Nhưng cái gì <i>đã biết</i> thì vẫn phải nói. Mấy luật an toàn như báo khói, dây đai bình nước nóng, sơn chì vẫn phải theo. Form PA là tờ giấy nhắc bài: chỗ nào được bỏ, chỗ nào vẫn phải làm.",
+"who": [
+[
+"Ai ký",
+"Buyer và Seller. Seller ký với tư cách người đại diện, ví dụ \"Lan N., Executor of the Estate of …\", không phải chủ nhà."
+],
+[
+"Khi nào dùng",
+"Mọi vụ bán theo Probate Code của California: tài sản người đã mất (estate), conservatorship, guardianship, receivership. Đi kèm PA-PA (lúc ra offer) hoặc PLA (lúc ký listing)."
+],
+[
+"Khi nào KHÔNG dùng",
+"Trust bán nhà mà không qua probate (luật khác, coi ghi chú trust trong tool). Người thừa kế đã đứng tên rồi, giờ bán như chủ bình thường. Vụ bán thường, chủ còn sống tự ký."
+],
+[
+"Phiên bản",
+"PA Reviewed 6/25. Có bộ form vẫn đính kèm bản cũ PA Revised 12/21 — nên dùng bản mới."
+]
+],
+"parts": [
+{
+"imgs": [],
+"ref": "Đoạn mở đầu",
+"h": "Người bán không phải chủ nhà — họ là người đại diện",
+"p": "Đoạn đầu nói seller \"không phải chủ đứng tên\" mà là người đại diện cho estate, conservatorship, guardianship hay receivership. Vụ bán \"có thể cần lệnh tòa\". Nhiều nghĩa vụ của seller không áp dụng. Nhưng nhiều nghĩa vụ khác vẫn còn. Agent hai bên cũng có trách nhiệm riêng.",
+"ex": "<b>Ví dụ:</b> 1234 Example Lane, San Jose, CA 95100. Chị Lan là executor của estate mẹ chị. Title ghi tên estate. Chị Lan ký trang nào cũng ghi \"as Executor\". Anh Minh (buyer) mua từ estate, không phải mua của riêng chị Lan."
+},
+{
+"imgs": [
+"s01.jpg"
+],
+"ref": "Miễn trừ 1–4",
+"h": "Người bán được bỏ qua những gì",
+"p": "Không cần TDS, không cần form NHD, không cần form Mello-Roos (Civil Code §1102.2(b) chuyển nhượng theo lệnh tòa và (d) chuyển nhượng do người được ủy thác; §1103.1 cho NHD). Không cần sổ tay an toàn động đất. Không cần giấy cam kết báo khói. Nhưng mục 4 nói: dù được miễn, seller vẫn nên dùng Exempt Seller Disclosure (C.A.R. ESD) — có khi hợp đồng bắt buộc luôn.",
+"ex": "<b>Ví dụ:</b> Với 1234 Example Lane, chị Lan không điền TDS 3 trang. Chị điền ESD: form ngắn, ghi những gì chị thật sự biết — \"mái dột năm 2023, mẹ đã cho vá\"."
+},
+{
+"imgs": [
+"s02.jpg",
+"s03.jpg"
+],
+"ref": "Yêu cầu 1–4",
+"h": "Người bán vẫn phải làm (phần 1)",
+"p": "Vẫn phải: khai <b>những điều quan trọng mình biết</b> (luật gian lận vẫn áp dụng); khai vùng nguy hiểm (đứt gãy động đất, địa chấn, cháy rừng, lụt) dù không có form NHD; có <b>báo khói chạy được</b> (ai trả tiền thì thương lượng); và <b>bình nước nóng phải có đai</b>.",
+"ex": "<b>Ví dụ:</b> Chị Lan biết garage bị ngập mùa đông năm ngoái. Miễn TDS hay không, chị vẫn phải nói cho anh Minh. Đa số escrow vẫn đặt báo cáo NHD, vì đó là cách dễ nhất để khai vùng nguy hiểm."
+},
+{
+"imgs": [],
+"ref": "Yêu cầu 5–9",
+"h": "Người bán vẫn phải làm (phần 2)",
+"p": "Nhà xây trước 1978: khai sơn chì theo luật liên bang, đưa sách hướng dẫn của EPA, cho buyer 10 ngày kiểm tra. Báo khí CO nếu có lò sưởi gas, đồ dùng gas, lò sưởi củi hay garage dính nhà. Thông báo Megan's Law. Thông báo đường ống gas. Và thuế giữ lại vẫn áp dụng: form nhắc là về liên bang, executor có thể bị coi như người không cư trú; còn với California, estate được coi là cư dân nếu người mất sống ở California.",
+"ex": "<b>Ví dụ:</b> 1234 Example Lane xây năm 1962, nên anh Minh nhận giấy khai sơn chì và 10 ngày để thử. Nhà có lò sưởi gas và garage dính nhà, nên phải gắn báo CO. Escrow sẽ xin chị Lan giấy tờ thuế giữ lại (giấy FIRPTA, Form 593)."
+},
+{
+"imgs": [
+"s04.jpg"
+],
+"ref": "Điều khác 1–4A",
+"h": "Luật địa phương, câu hỏi về cái chết, co-op, và ai duyệt vụ bán",
+"p": "Luật thành phố, quận vẫn có thể áp dụng (San Jose, Santa Clara County…). Muốn hỏi người chủ mất thế nào, ở đâu thì hỏi executor. Nhà co-op có thể cần hội đồng duyệt buyer. Quan trọng nhất: quyền <b>IAEA</b>. Quyền <b>hạn chế</b> (limited) thì tòa phải duyệt vụ bán (Probate Code §10403 loại việc bán nhà ra khỏi quyền hạn chế). Quyền <b>đầy đủ</b> (full) thì executor gửi Notice of Proposed Action cho người thừa kế — ít nhất 15 ngày (§10586). Không ai phản đối: bán luôn, không ra tòa. Có người phản đối: có thể phải ra tòa (§10589).",
+"ex": "<b>Ví dụ:</b> Chị Lan có quyền IAEA đầy đủ. Chị gửi Notice of Proposed Action ngày 5/1. Tới ngày ghi trong thư (ít nhất 15 ngày sau) không ai phản đối. Vụ bán close như escrow bình thường — không ra tòa, không bị overbid."
+},
+{
+"imgs": [
+"s05.jpg"
+],
+"ref": "4B–4D, Brokers, chữ ký",
+"h": "Không liquidated damages, không mediation, không arbitration — agent vẫn phải đi coi nhà",
+"p": "Tòa probate có tiếng nói cuối cùng về tranh chấp và bồi thường, nên điều khoản liquidated damages, mediation và arbitration bị bỏ (việc bỏ ghi trong PA-PA). Agent không được miễn: agent bên bán và bên mua vẫn đi coi nhà bằng mắt (AVID) và đưa giấy khai đại diện (agency) cho nhà 1–4 căn. Buyer và seller cùng ký là đã nhận và đọc PA.",
+"ex": "<b>Ví dụ:</b> Ken (làm agent bên nào cũng vậy) vẫn đi hết 1234 Example Lane và ghi AVID: \"vết nước trên trần hành lang, gạch nứt trong phòng tắm\". Anh Minh và chị Lan cùng ký PA."
+}
+],
+"tool_h": "Tool: người bán probate này còn nợ buyer những gì?",
+"tool_sub": "Trả lời 5 câu ngắn. Danh sách đổi ngay.",
+"q1": "1. Ai đứng ra bán?",
+"q2": "2. Nhà ở 1–4 căn?",
+"q3": "3. Xây trước năm 1978?",
+"q4": "4. Có lò sưởi gas/đồ dùng gas, lò sưởi củi hay garage dính nhà?",
+"q5": "5. Người đã mất (hoặc người được giám hộ) có sống ở California không?",
+"o_type_estate": "Executor / administrator của người đã mất (probate)",
+"o_type_cons": "Conservator hoặc guardian (người giám hộ)",
+"o_type_recv": "Receiver do tòa chỉ định",
+"o_type_trust": "Trustee của living trust (không qua probate)",
+"o_type_heirs": "Người thừa kế đã đứng tên",
+"o_units_y": "Có",
+"o_units_n": "Không (5+ căn, đất, thương mại)",
+"o_year_pre": "Có",
+"o_year_post": "Không",
+"o_year_unk": "Không chắc",
+"o_fuel_y": "Có",
+"o_fuel_n": "Không",
+"o_res_y": "Có",
+"o_res_n": "Không",
+"o_res_unk": "Không chắc",
+"r_k": "Kết quả",
+"r_notpa": "Trường hợp này không dùng form PA",
+"r_trust": "Trustee bán ngoài probate thì không phải bán \"theo Probate Code\", nên bộ PA/PA-PA/PLA không hợp. Trustee có được miễn TDS (Civil Code §1102.2(d)), <b>nhưng không</b> áp dụng cho trustee là cá nhân của trust sống (revocable) mà từng là chủ hoặc đã ở căn nhà trong 1 năm qua. Nhiều trustee vẫn đưa TDS. Hỏi luật sư của trust.",
+"r_heirs": "Khi tòa đã chia nhà và người thừa kế đứng tên rồi, họ bán như chủ bình thường: TDS, SPQ, NHD và luật RPA thông thường. Không cần tòa duyệt, không có overbid.",
+"r_req": "việc vẫn phải làm",
+"r_ex": "được miễn (bỏ qua)",
+"r_nopa": "ngày báo cho người thừa kế nếu IAEA đầy đủ",
+"r_req_h": "Vẫn phải làm",
+"r_ex_h": "Được bỏ qua",
+"chip_req": "Làm",
+"chip_ex": "Bỏ",
+"e_tds": "TDS, form NHD, form Mello-Roos",
+"e_tds_s": "Civil Code §1102.2(b)/(d), §1103.1. Vẫn rất nên điền ESD (Exempt Seller Disclosure).",
+"e_eq": "Sổ tay an toàn động đất",
+"e_eq_s": "Không cần đưa Homeowner's / Commercial Property Owner's Guide.",
+"e_smk": "Giấy cam kết báo khói",
+"e_smk_s": "Bỏ tờ giấy — không bỏ cái báo khói.",
+"q_facts": "Khai điều quan trọng mình biết",
+"q_facts_s": "Dột, ngập, permit; hỏi về cái chết thì hỏi executor. Luật gian lận vẫn áp dụng.",
+"q_zone": "Khai vùng nguy hiểm",
+"q_zone_s": "Đứt gãy, địa chấn, cháy, lụt. Báo cáo NHD là cách dễ nhất.",
+"q_smoke": "Có báo khói chạy được",
+"q_smoke_s": "Ai trả tiền thì thương lượng trong hợp đồng.",
+"q_wh": "Bình nước nóng có đai",
+"q_wh_s": "Seller có thể dùng C.A.R. Form WHS.",
+"q_lead": "Khai sơn chì + sách EPA",
+"q_lead_s": "Xây trước 1978: đưa báo cáo đã có, sách của EPA, và {n} ngày để buyer kiểm tra.",
+"q_leadu": "Tìm năm xây nhà",
+"q_leadu_s": "Nếu xây trước 1978 thì luật sơn chì liên bang áp dụng. Coi hồ sơ quận hoặc MLS.",
+"q_co": "Báo khí CO",
+"q_co_s": "Bắt buộc khi có đồ dùng đốt gas/dầu, lò sưởi củi hay garage dính nhà.",
+"q_meg": "Thông báo Megan's Law",
+"q_meg_s": "Đã in sẵn trong RPA.",
+"q_pipe": "Thông báo đường ống gas",
+"q_pipe_s": "Buyer tự coi npms.phmsa.dot.gov trong thời gian kiểm tra nhà.",
+"q_tax": "Kiểm tra thuế giữ lại",
+"q_tax_ca": "California: estate được coi là cư dân CA, nên Form 593 thường ghi miễn hoặc theo luật 3⅓% thông thường. Liên bang: đưa escrow giấy FIRPTA (không phải người nước ngoài) — form nhắc executor có thể bị coi như người không cư trú.",
+"q_tax_out": "Người mất sống ngoài California: dự trù California giữ lại thuế (Form 593) trừ khi được miễn. Vẫn cần giấy FIRPTA liên bang. Hỏi escrow và CPA sớm.",
+"q_tax_unk": "Hỏi rõ lúc mất người đó sống ở đâu. Điều đó quyết định California có giữ thuế không (Form 593). Vẫn cần giấy FIRPTA liên bang.",
+"q_avid": "Agent đi coi nhà bằng mắt (AVID)",
+"q_avid_s": "Trách nhiệm của cả hai agent với nhà 1–4 căn. Probate không miễn.",
+"q_agency": "Giấy khai đại diện (agency)",
+"q_agency_s": "Form AD và phần xác nhận đại diện như thường lệ.",
+"r_estate_note": "Bán nhà của estate: hỏi executor ngay hôm nay là quyền IAEA <b>đầy đủ</b> hay <b>hạn chế</b>. Hạn chế = tòa duyệt, có thể bị overbid. Đầy đủ = gửi Notice of Proposed Action, ít nhất 15 ngày, rồi thường không ra tòa.",
+"r_cons_note": "Conservatorship, guardianship hay receivership: thường bắt buộc tòa duyệt (PA-PA mục 1C). Tính trước phiên tòa và khả năng bị overbid.",
+"sum_head": "Kết quả checklist T709 PA",
+"sms_short": "{a} việc vẫn phải làm, {b} việc được bỏ",
+"myths": [
+[
+"\"Probate là as-is, seller không phải nói gì.\"",
+"Sai. Họ bỏ tờ TDS, không được bỏ sự thật. Điều quan trọng đã biết vẫn phải khai."
+],
+[
+"\"Không có form NHD là không có thông tin vùng nguy hiểm.\"",
+"Nghĩa vụ khai vùng nguy hiểm vẫn còn. Thực tế escrow vẫn đặt báo cáo NHD."
+],
+[
+"\"Executor là chủ nhà.\"",
+"Estate mới là chủ. Executor ký với tư cách đại diện, có khi phải xin tòa duyệt."
+],
+[
+"\"Bán nhà probate lúc nào cũng ra tòa.\"",
+"Không. Có quyền IAEA đầy đủ, gửi thư báo 15 ngày mà không ai phản đối, thì nhiều vụ close không cần phiên tòa."
+],
+[
+"\"PA là hợp đồng.\"",
+"PA chỉ là bản lưu ý. Điều khoản mua bán nằm trong RPA cộng PA-PA (lúc ra offer) hoặc PLA (lúc ký listing)."
+]
+],
+"next": [
+[
+"Ra offer nhà probate? Đọc phụ lục mua nhà.",
+"T710 · PA-PA phụ lục mua nhà probate",
+"/t710/"
+],
+[
+"Nhận listing nhà probate? Đọc phụ lục listing.",
+"T474 · PLA phụ lục listing probate",
+"/t474/"
+],
+[
+"Coi escrow có thể giữ lại bao nhiêu tiền thuế.",
+"T325 · Tiền thuế bị giữ lại lúc bán nhà",
+"/t325/"
+],
+[
+"Người đứng tên mất mà là mobile home?",
+"T172 · Người đứng tên mất: mobile home tính sao",
+"/t172/"
+],
+[
+"Trust hay di chúc? Coi probate tốn bao nhiêu.",
+"T121 · Living trust hay di chúc",
+"/t121/"
+],
+[
+"Đọc hợp đồng RPA từng bước.",
+"T401 · Đọc hợp đồng RPA",
+"/t401/"
+],
+[
+"Tra form C.A.R. khác.",
+"T402 · Thư viện forms",
+"/t402/"
+]
+],
+"subj": "T709 PA probate — checklist của tôi",
+"body": "Chào Ken,\n\nTôi vừa dùng tool T709 PA (Probate Advisory).\n\n{r}\n\nĐịa chỉ nhà: \nCâu hỏi: \n\nTên: \nSố điện thoại: ",
+"sms": "Chào Ken, tôi vừa dùng tool T709 Probate Advisory ({r}). Cho tôi hỏi về một căn nhà probate."
+}
+};
+
+if(typeof document!=='undefined'){
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const D=()=>I18N[lang];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]!==undefined?o[k]:m);
+const money=n=>(n<0?'-':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const num=v=>{const x=parseFloat(String(v).replace(/[^0-9.\-]/g,''));return isFinite(x)?x:NaN;};
+const pad=n=>String(n).padStart(2,'0');
+const parseD=v=>{ if(!/^\d{4}-\d{2}-\d{2}$/.test(v||'')) return null; const [y,m,d]=v.split('-').map(Number); return new Date(y,m-1,d,12); };
+const addD=(d,n)=>{const x=new Date(d.getTime()); x.setDate(x.getDate()+n); return x;};
+const fmtD=d=>{ if(!d) return '—'; const wd=D().wd[d.getDay()]; return lang==='vi'? wd+', '+pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear() : wd+', '+(d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear(); };
+let last={summary:''};
+
+const ST={type:'estate',units:'y',year:'pre',fuel:'y',res:'y'};
+const OPTS={qType:['type',['estate','cons','recv','trust','heirs']],qUnits:['units',['y','n']],qYear:['year',['pre','post','unk']],qFuel:['fuel',['y','n']],qRes:['res',['y','n','unk']]};
+function segs(){ const d=D(); Object.keys(OPTS).forEach(id=>{ const [k,vals]=OPTS[id];
+  $(id).innerHTML=vals.map(v=>'<button type="button" data-v="'+v+'" aria-pressed="'+(ST[k]===v)+'">'+d['o_'+k+'_'+v]+'</button>').join(''); }); }
+function toolLang(){ segs(); }
+function calc(){ const d=D(), r=$('result');
+  const probate=['estate','cons','recv'].includes(ST.type);
+  if(!probate){
+    r.innerHTML='<div class="total"><div class="k">'+d.r_k+'</div><p class="verdict no">'+d.r_notpa+'</p></div><div class="warnbox">'+(ST.type==='trust'?d.r_trust:d.r_heirs)+'</div>';
+    last.summary=d.r_notpa+'\n'+(ST.type==='trust'?d.r_trust:d.r_heirs).replace(/<[^>]+>/g,''); last.short=d.r_notpa; setSms(); return; }
+  const res14=ST.units==='y';
+  const ex=[], req=[];
+  ex.push([d.e_tds,d.e_tds_s]); ex.push([d.e_eq,d.e_eq_s]);
+  if(res14) ex.push([d.e_smk,d.e_smk_s]);
+  req.push([d.q_facts,d.q_facts_s]); req.push([d.q_zone,d.q_zone_s]);
+  if(res14) req.push([d.q_smoke,d.q_smoke_s]);
+  req.push([d.q_wh,d.q_wh_s]);
+  if(ST.year==='pre') req.push([d.q_lead,fmt(d.q_lead_s,{n:RULE.LEAD_DAYS})]);
+  if(ST.year==='unk') req.push([d.q_leadu,d.q_leadu_s]);
+  if(ST.fuel==='y') req.push([d.q_co,d.q_co_s]);
+  req.push([d.q_meg,d.q_meg_s]); req.push([d.q_pipe,d.q_pipe_s]);
+  req.push([d.q_tax, ST.res==='y'?d.q_tax_ca:(ST.res==='n'?d.q_tax_out:d.q_tax_unk)]);
+  if(res14){ req.push([d.q_avid,d.q_avid_s]); req.push([d.q_agency,d.q_agency_s]); }
+  const li=(a,c,t)=>'<li><span class="chip '+c+'">'+t+'</span><span><b>'+a[0]+'</b><small>'+a[1]+'</small></span></li>';
+  r.innerHTML='<div class="tiers"><div class="tc p1"><div class="n">'+req.length+'</div><div class="l">'+d.r_req+'</div></div><div class="tc p3"><div class="n">'+ex.length+'</div><div class="l">'+d.r_ex+'</div></div><div class="tc p2"><div class="n">'+RULE.NOPA_DAYS+'</div><div class="l">'+d.r_nopa+'</div></div></div>'+
+   '<div class="grp-h">'+d.r_req_h+'</div><ul class="res-list">'+req.map(a=>li(a,'no',d.chip_req)).join('')+'</ul>'+
+   '<div class="grp-h">'+d.r_ex_h+'</div><ul class="res-list">'+ex.map(a=>li(a,'ok',d.chip_ex)).join('')+'</ul>'+
+   '<div class="okbox">'+(ST.type==='estate'?d.r_estate_note:d.r_cons_note)+'</div>';
+  last.summary=d.sum_head+'\n'+d.r_req_h+': '+req.map(a=>a[0]).join('; ')+'\n'+d.r_ex_h+': '+ex.map(a=>a[0]).join('; ');
+  last.short=fmt(d.sms_short,{a:req.length,b:ex.length}); setSms();
+}
+
+function renderStatic(){ const d=D();
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  $('whoT').innerHTML=d.who.map(r=>'<tr><th>'+r[0]+'</th><td>'+r[1]+'</td></tr>').join('');
+  $('parts').innerHTML=d.parts.map(p=>'<div class="part"><span class="ref">'+p.ref+'</span><h3>'+p.h+'</h3>'+(p.imgs||[]).map(im=>'<figure class="fig" data-z="'+im+'"><img src="'+im+'" alt="'+esc(d.img_alt+' '+p.ref)+'" loading="lazy" width="860"></figure>').join('')+((p.imgs||[]).length?'<p class="figcap">'+d.figcap+'</p>':'')+'<p>'+p.p+'</p><p class="ex">'+p.ex+'</p></div>').join('');
+  $('myths').innerHTML=d.myths.map(m=>'<p class="myth"><b>'+m[0]+'</b> '+m[1]+'</p>').join('');
+  $('nextL').innerHTML=d.next.map(n=>'<li><span>'+n[0]+'<small><a href="'+n[2]+'">'+n[1]+'</a></small></span></li>').join('');
+}
+function applyLang(){ renderStatic(); if(typeof toolLang==='function') toolLang(); calc(); }
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang(); var a=$('klBack'); if(a) a.innerHTML=lang==='vi'?'&larr; Tất cả tools':'&larr; All tools';};
+$('parts').addEventListener('click',e=>{const f=e.target.closest('[data-z]'); if(!f) return; $('lbImg').src=f.getAttribute('data-z'); $('lb').hidden=false;});
+$('lbX').onclick=()=>{$('lb').hidden=true;};
+$('lb').addEventListener('click',e=>{ if(e.target.id==='lb') $('lb').hidden=true; });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') $('lb').hidden=true; });
+$('videoBtn').onclick=()=>{ $('vidSec').scrollIntoView({behavior:'smooth',block:'start'}); try{ $('vid').play(); }catch(e){} };
+$('emailBtn').onclick=()=>{ const d=D();
+  /* LEAD -> FUB: email to ken@kenlamrealty.com (FUB lead email parsing). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(d.subj)+'&body='+encodeURIComponent(fmt(d.body,{r:last.summary}));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove(); };
+function setSms(){ $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fmt(D().sms,{r:last.short||''})); }
+Object.keys(OPTS).forEach(id=>{ $(id).addEventListener('click',e=>{ const b=e.target.closest('button[data-v]'); if(!b) return; ST[OPTS[id][0]]=b.getAttribute('data-v'); segs(); calc(); }); });
+applyLang();
+if(lang==='vi'){ var a0=$('klBack'); if(a0) a0.innerHTML='&larr; Tất cả tools'; }
+}
+</script>
+</body>
+</html>
