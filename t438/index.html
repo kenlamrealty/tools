@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ITA Giải Nghĩa · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+/* ---- T229 thêm (không đổi class cũ) ---- */
+.ctl input[type=search]{font-size:18px}
+.ctl input[type=search]::-webkit-search-cancel-button{cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-size:13px;padding:7px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);border-color:var(--brass);font-weight:500}
+.terms{display:grid;gap:10px}
+.term{background:var(--panel);border:1px solid var(--line);border-radius:14px;min-width:0;scroll-margin-top:16px}
+.term[open]{border-color:var(--brass)}
+.term.flash{box-shadow:0 0 0 3px var(--brass-soft)}
+.term summary{list-style:none;cursor:pointer;padding:14px 18px;display:grid;gap:2px}
+.term summary::-webkit-details-marker{display:none}
+.term summary .nm{font-family:var(--display);font-size:23px;line-height:1.15;font-weight:500;color:var(--fg)}
+.term summary .al{font-size:12px;color:var(--muted)}
+.term summary .sh{font-size:14px;color:var(--muted);line-height:1.45}
+.term .bd{padding:0 18px 16px;display:grid;gap:10px;font-size:15px;line-height:1.55}
+.term .bd p{margin:0}
+.term .bd .lb{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);font-weight:500;margin-bottom:2px}
+.term .bd .ex{background:var(--brass-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.term .bd .my b{color:var(--warn);font-weight:500}
+.term .bd .ot{font-size:13px;color:var(--muted)}
+.term .bd .ft{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px;color:var(--muted)}
+.term .bd .ft a{color:var(--brass);word-break:break-word}
+.term .bd .ft button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:12px;padding:4px 10px;border-radius:999px;cursor:pointer}
+.empty{font-size:15px;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:16px 18px}
+.empty[hidden]{display:none}
+.expall{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+</style>
+
+<style>
+/* ---- Giải nghĩa Forms (T42x/T43x) thêm, không đổi class cũ ---- */
+.sec{display:grid;gap:12px}
+.sec>h2{font-family:var(--display);font-weight:400;font-size:28px;line-height:1.15;margin:0}
+.sec>.lead{margin:0;font-size:14px;color:var(--muted)}
+.fchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.fchips span{border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:12px;padding:5px 11px;border-radius:999px}
+.seg.wrapseg{flex-wrap:wrap}
+.seg.wrapseg button{flex:1 1 45%;border-bottom:1px solid var(--line)}
+.ckl{display:grid;gap:8px}
+.ckl label{display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.4;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
+.ckl input{width:20px;height:20px;accent-color:var(--brass);margin:0;flex:none}
+.verdict{font-family:var(--display);font-size:30px;line-height:1.15;margin:0}
+.rlist{margin:0;padding-left:20px;display:grid;gap:6px;font-size:15px;line-height:1.5}
+.rlist b{font-weight:500}
+.rh{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);font-weight:500;margin:4px 0 0}
+.mq{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:10px}
+.mq p{margin:0;font-size:15px;line-height:1.5}
+.mq .tf{display:flex;gap:8px}
+.mq .tf button{flex:1;border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:14px;padding:9px;border-radius:10px;cursor:pointer}
+.mq .tf button[aria-pressed="true"]{background:var(--brass-soft);border-color:var(--brass);font-weight:500}
+.mq .ans{font-size:14px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px}
+.mq .ans b{color:var(--fg);font-weight:600}
+.mq .ans[hidden]{display:none}
+.term summary .nm .pn{color:var(--brass);font-family:var(--body);font-size:13px;font-weight:500;letter-spacing:.04em;margin-right:8px;vertical-align:middle}
+.vidh{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.actions .btn{min-width:0;text-align:center}
+.dd .date{word-break:break-word}
+</style>
+<meta name="description" content="C.A.R. Interpreter/Translator Agreement (ITA) explained simply in English and Vietnamese: who can interpret, what they translate, and who relies on whom.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t438/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="ITA Explained · Ken Lam Tools">
+<meta property="og:description" content="The Interpreter/Translator Agreement in plain words, with a checklist before you sign.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t438/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title"></h1>
+    <p class="sub" data-i="sub"></p>
+    <div class="fchips"><span data-i="chip1"></span><span data-i="chip2"></span><span data-i="chip3"></span></div>
+  </header>
+
+  <section class="sec" aria-labelledby="hMine">
+    <h2 id="hMine" data-i="h_mine">What does this form say to me?</h2>
+    <p class="lead" data-i="mine_lead"></p>
+    <div class="inputs">
+      <div class="field"><label><span data-i="l_role">I am the</span></label>
+        <div class="seg" id="role" role="group"><button type="button" data-v="principal" aria-pressed="true" data-i="r_principal">Client</button><button type="button" data-v="interp" aria-pressed="false" data-i="r_interp">Interpreter</button><button type="button" data-v="agent" aria-pressed="false" data-i="r_agent">Agent</button></div></div>
+      <div class="field"><label><span data-i="l_who">Who is interpreting?</span></label>
+        <div class="seg wrapseg" id="who" role="group">
+          <button type="button" data-v="family" aria-pressed="true" data-i="w_family">Family member</button>
+          <button type="button" data-v="friend" aria-pressed="false" data-i="w_friend">Friend or acquaintance</button>
+          <button type="button" data-v="pro" aria-pressed="false" data-i="w_pro">Certified / registered pro</button>
+          <button type="button" data-v="other" aria-pressed="false" data-i="w_other">Someone else</button>
+        </div></div>
+      <div class="row2">
+        <div class="field"><label><span data-i="l_age">Interpreter is 18 or older?</span></label>
+          <div class="seg" id="age" role="group"><button type="button" data-v="yes" aria-pressed="true" data-i="yes">Yes</button><button type="button" data-v="no" aria-pressed="false" data-i="no">No</button></div></div>
+        <div class="field"><label><span data-i="l_paid">Paid for this?</span></label>
+          <div class="seg" id="paid" role="group"><button type="button" data-v="no" aria-pressed="true" data-i="no">No</button><button type="button" data-v="yes" aria-pressed="false" data-i="yes">Yes</button></div></div>
+      </div>
+    </div>
+
+    <div class="result" aria-live="polite">
+      <div class="total"><div class="k" data-i="r_k">Can this person sign as interpreter?</div><p class="verdict" id="verdict"></p></div>
+      <p style="margin:0;font-size:15px" id="why"></p>
+      <p class="rh" data-i="h_fill">What to fill in on the form</p>
+      <ul class="rlist" id="fill"></ul>
+      <p class="rh" data-i="h_rely">Who relies on whom</p>
+      <ul class="rlist" id="rely"></ul>
+      <div class="note" data-i="assume">Based only on the ITA form. Whether a translated copy of a contract is required by law is a separate question: ask Ken or an attorney.</div>
+    </div>
+
+    <div class="tlw"><div class="top"><h2 data-i="h_ck" style="font-family:var(--display);font-weight:400;font-size:26px;margin:0">Checklist before you sign</h2><span class="cnt" id="ckCnt"></span></div>
+      <div class="ckl" id="ck"></div></div>
+
+  </section>
+
+  <section class="sec" aria-labelledby="hParas">
+    <h2 id="hParas" data-i="h_paras">Read it paragraph by paragraph</h2>
+    <p class="lead" data-i="paras_lead"></p>
+    <div class="terms" id="paras"></div>
+    <button type="button" class="expall" id="expAll" data-i="exp_all">Open all</button>
+  </section>
+
+  <section class="sec" aria-labelledby="hMyth">
+    <h2 id="hMyth" data-i="h_myth">What people get wrong</h2>
+    <p class="lead" data-i="myth_lead">True or false? Tap to see the answer.</p>
+    <div class="ckl" id="myths" style="gap:10px"></div>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol id="nextList"></ol>
+  </section>
+
+  <section class="sec" aria-labelledby="hVid">
+    <h2 class="vidh" id="hVid" data-i="vid_title">45-second video</h2>
+    <video class="kl-vid" src="video.mp4" controls playsinline preload="metadata" aria-label="Video"></video>
+  </section>
+
+  <section class="actions">
+    <a class="btn primary" id="emailBtn" href="mailto:ken@kenlamrealty.com" data-i="b_email">Email Ken</a>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Text Ken</a>
+    <a class="btn" id="videoBtn" href="/t438/video.mp4" target="_blank" rel="noopener" data-i="b_video">Watch the 45-second video</a>
+    <a class="btn" href="/t402/" data-i="b_all">Every form, explained</a>
+  </section>
+
+  <footer>
+    <span data-i="ft_cr">Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.</span>
+    <span class="src"><span data-i="ft_src">Source</span>: C.A.R. Form ITA, Interpreter/Translator Agreement, Revised 6/23 (1 page)</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/cong-cu/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== ITA — C.A.R. Form ITA, Revised 6/23 (1 trang). Nguồn: /home/claude/forms/md/ITA_Interpreter___Translator_Agreement.md ===== */
+const FORM_CODE='T438', FORM='ITA';
+const F={
+  PAGES:1,
+  MIN_AGE:18   // ¶2: Interpreter/Translator is at least 18 years old
+};
+const PARAS=[
+ {n:'¶1',vi:['Ai là ai','Thông dịch viên, người được giúp (Principal), căn nhà, broker.','Thông dịch viên khai tên, và ai nhờ mình: “Principal” là buyer, seller, chủ nhà cho thuê (housing provider), tenant hay khác. Ghi căn nhà nếu đã biết, và tên broker đại diện cho Principal.'],
+  en:['Who is who','Interpreter, the person helped (Principal), the property, the broker.','The interpreter gives their name and who appointed them: the “Principal” is a buyer, seller, housing provider, tenant or other. List the property if known, and the broker representing the Principal.']},
+ {n:'¶2',vi:['Thông dịch viên cam kết','Giỏi 2 thứ tiếng, từ 18 tuổi, khai có lấy tiền, có bà con không.','Thông dịch viên nói, đọc, viết <b>giỏi tiếng Anh</b> và “Language 2” (vd tiếng Việt). Principal cho biết mình giỏi Language 2 nhưng <b>không giỏi tiếng Anh</b> và muốn được dịch. Thông dịch viên <b>ít nhất 18 tuổi</b>.','Khai: <b>có lấy tiền không, ai trả</b>; có chứng nhận hay đăng ký với tiểu bang, chính quyền địa phương, hay tòa án không (kèm số); <b>có bà con ruột hay sui gia, vợ chồng với Principal không</b>, nếu không thì quen Principal hay broker thế nào.'],
+  en:['Interpreter’s statements','Fluent in both languages, 18+, paid or not, related or not.','The interpreter speaks, reads and writes <b>English fluently</b> and “Language 2” (e.g. Vietnamese). The Principal says they are fluent in Language 2, <b>not fluent in English</b>, and prefer translation. The interpreter is <b>at least 18</b>.','They state: <b>paid or not, and by whom</b>; certified or registered by the State, a local government or a California court (with number), if any; <b>related by blood or marriage to the Principal or not</b>, and if not, how they know the Principal or broker.']},
+ {n:'¶3',vi:['Dịch những gì','Mọi việc trong giao dịch: nói chuyện, hợp đồng, disclosure, title, giấy loan.','Thông dịch viên dịch <b>mọi việc</b> liên quan giao dịch: giữa Principal và broker, và với agent bên kia, bên kia, lender, inspector, title, escrow. Gồm: nói chuyện, hợp đồng, disclosures, title report, giấy tờ loan, thư từ, addenda.'],
+  en:['What gets translated','Everything in the deal: talks, contracts, disclosures, title, loan papers.','The interpreter translates <b>all events</b> in the transaction: between the Principal and broker, and with the other broker, other party, lenders, inspectors, title and escrow. That includes discussions, contracts, disclosures, title reports, loan documents, letters and addenda.']},
+ {n:'¶4A',vi:['Broker dựa vào thông dịch viên','Broker chỉ tin lời đã dịch. Dịch sai thì không đổ cho broker.','Broker được và phải <b>chỉ dựa vào bản dịch</b> của thông dịch viên khi làm việc với Principal, không dựa vào lời Principal chưa qua dịch. Principal đồng ý <b>không bắt broker chịu trách nhiệm</b> khi broker đã hợp lý tin vào bản dịch sai.'],
+  en:['Broker relies on the interpreter','Broker relies only on translated words. Bad translation is not on the broker.','The broker <b>relies solely on the interpretation</b> for all communication with the Principal, not on untranslated statements. The Principal agrees <b>not to hold the broker responsible</b> for an improper translation the broker reasonably relied on.']},
+ {n:'¶4B',vi:['Principal dựa vào thông dịch viên','Principal chỉ tin lời broker đã được dịch.','Ngược lại, Principal <b>chỉ dựa vào bản dịch</b> khi làm việc với broker, không dựa vào lời hay giấy của broker chưa được dịch.'],
+  en:['Principal relies on the interpreter','The Principal relies only on the broker’s translated words.','In turn, the Principal <b>relies solely on the interpretation</b> for communication with the broker, not on untranslated statements or papers from the broker.']},
+ {n:'¶5',vi:['Xác nhận và chữ ký','Thông dịch viên dịch chính form này, rồi ba bên ký.','Thông dịch viên đã dịch form này cho Principal. <b>Thông dịch viên, Principal, và Broker</b> ký, xác nhận hiểu và đã nhận copy. Thông dịch viên ghi địa chỉ, email, phone, và <b>số bằng lái hay giấy tờ tùy thân</b>. Broker ghi số DRE.'],
+  en:['Acknowledgment and signatures','The interpreter translates this form itself, then three people sign.','The interpreter has translated this agreement for the Principal. <b>Interpreter, Principal and Broker</b> sign, confirming they understand and got a copy. The interpreter lists address, email, phone and <b>driver’s license or ID number</b>. The broker lists DRE numbers.']}
+];
+const MYTHS=[
+ {a:false,vi:['Con tôi 16 tuổi nói tiếng Anh giỏi, cho cháu ký làm thông dịch là được.','¶2: thông dịch viên phải ít nhất 18 tuổi.'],
+  en:['My 16-year-old speaks great English, so they can sign as interpreter.','¶2: the interpreter must be at least 18 years old.']},
+ {a:false,vi:['Người nhà dịch thì không cần khai gì thêm.','¶2: phải khai có bà con ruột hay qua hôn nhân không, và tả quan hệ. Cũng phải khai có lấy tiền không và ai trả.'],
+  en:['A family member can interpret without disclosing anything.','¶2: they must state whether they are related by blood or marriage and describe how. They also state whether they are paid and by whom.']},
+ {a:true,vi:['Ký ITA rồi, nếu dịch sai mà broker đã tin hợp lý, thì không đổ lỗi cho broker được.','Đúng: ¶4A, Principal đồng ý không bắt broker chịu trách nhiệm cho bản dịch sai mà broker đã hợp lý dựa vào.'],
+  en:['After signing ITA, the broker is not responsible for a bad translation they reasonably relied on.','True: ¶4A, the Principal agrees not to hold the broker responsible for improper interpretation the broker reasonably relied on.']}
+];
+const I18N={
+ vi:{title:'ITA: Thỏa thuận thông dịch viên',sub:'Khi khách không rành tiếng Anh, một người dịch giúp suốt giao dịch. Form này ghi người đó là ai, dịch gì, và ai dựa vào lời ai.',
+  chip1:'1 trang',chip2:'Thông dịch viên, khách, broker ký',chip3:'Khách cần dịch suốt giao dịch',
+  mine_lead:'Chọn vai và người đang dịch. Kết quả và checklist hiện liền.',
+  l_role:'Tôi là',r_principal:'Khách (Principal)',r_interp:'Thông dịch viên',r_agent:'Agent',l_who:'Ai đang dịch?',w_family:'Người nhà',w_friend:'Bạn bè, người quen',w_pro:'Người có chứng nhận',w_other:'Người khác',
+  l_age:'Người dịch từ 18 tuổi?',l_paid:'Có lấy tiền?',yes:'Có',no:'Không',r_k:'Người này ký làm thông dịch được không?',
+  h_fill:'Phải điền gì trên form',h_rely:'Ai dựa vào lời ai',
+  assume:'Chỉ dựa trên form ITA. Luật có bắt dịch hợp đồng ra tiếng Việt hay không là chuyện khác: hỏi Ken hay luật sư.',
+  h_ck:'Checklist trước khi ký',ck_cnt:'{a}/{b} xong',
+  v_no:'Không được: phải từ 18 tuổi',v_ok:'Được, nếu khai đủ ¶2',
+  why_no:'¶2 ghi thông dịch viên ít nhất 18 tuổi. Tìm người lớn khác giỏi cả tiếng Anh lẫn tiếng Việt.',
+  why_ok:'Người dịch phải nói, đọc, viết giỏi tiếng Anh và tiếng Việt, và dịch mọi việc trong giao dịch (¶2, ¶3).',
+  f_base:['Tên thông dịch viên và tên Principal (¶1).','Vai của Principal: buyer, seller, housing provider, tenant (¶1).','Language 2: tiếng Việt (¶2).','Địa chỉ, email, phone, số bằng lái hoặc ID của thông dịch viên (¶5).'],
+  f_family:'Đánh “is related” và tả quan hệ: con, cháu, anh chị em… (¶2).',f_notrel:'Đánh “is not related” và tả quen Principal hay broker thế nào (¶2).',
+  f_pro:'Đánh certified/registered, ghi nơi cấp và số chứng nhận (¶2).',f_paid:'Đánh “is being paid” và ghi ai trả (¶2).',f_unpaid:'Đánh “is not being paid” (¶2).',
+  rely:['Broker chỉ dựa vào lời đã dịch khi làm việc với khách (¶4A).','Khách chỉ dựa vào lời broker đã được dịch (¶4A, ¶4B).','Dịch sai mà broker đã hợp lý tin: khách không bắt broker chịu (¶4A).'],
+  ck_r:{principal:['Chọn người mình tin, từ 18 tuổi, giỏi cả hai thứ tiếng.','Nghe người dịch đọc lại chính form ITA (¶5).','Hợp đồng, disclosure, giấy loan: nhờ dịch hết, đừng ký phần chưa hiểu (¶3).','Giữ bản copy đã ký.'],
+   interp:['Chắc mình đủ 18 tuổi và giỏi cả hai thứ tiếng (¶2).','Khai thật: bà con hay không, lấy tiền hay không (¶2).','Dịch mọi việc, kể cả với lender, inspector, title, escrow (¶3).','Mang bằng lái hoặc ID để ghi số (¶5).'],
+   agent:['Cho ký ITA trước khi bàn chuyện quan trọng với khách.','Chỉ dựa vào lời đã dịch (¶4A).','Ghi tên broker, số DRE, và ký (¶5).','Đưa mỗi bên một bản copy.']},
+  next:['Từ điển địa ốc Anh–Việt để hai bên dùng chung chữ: <a href="/t190/">T190</a>.','Hỏi đáp mua bán nhà: <a href="/t191/">T191</a>. Đọc RPA từng bước: <a href="/t401/">T401</a>.','Coi thêm các form khác trong <a href="/t402/">Thư viện Forms</a>.'],
+  mail_subj:'Hỏi về thông dịch viên',mail_hi:'Chào Ken, tôi vừa dùng tool ITA.',mail_end:'Thông tin chung, không phải tư vấn pháp lý.',sms_hi:'Chào Ken, tôi hỏi về ITA:',
+  s_role:'Vai',s_who:'Người dịch',s_age:'Từ 18 tuổi',s_paid:'Lấy tiền',s_res:'Kết quả'},
+ en:{title:'ITA: the Interpreter/Translator Agreement, explained',sub:'When a client is not fluent in English, one person interprets for the whole deal. This form records who that is, what they translate, and who relies on whom.',
+  chip1:'1 page',chip2:'Interpreter, client, broker sign',chip3:'Client needs an interpreter for the deal',
+  mine_lead:'Pick your role and who is interpreting. Results and checklist show right away.',
+  l_role:'I am the',r_principal:'Client (Principal)',r_interp:'Interpreter',r_agent:'Agent',l_who:'Who is interpreting?',w_family:'Family member',w_friend:'Friend or acquaintance',w_pro:'Certified / registered pro',w_other:'Someone else',
+  l_age:'Interpreter is 18 or older?',l_paid:'Paid for this?',yes:'Yes',no:'No',r_k:'Can this person sign as interpreter?',
+  h_fill:'What to fill in on the form',h_rely:'Who relies on whom',
+  assume:'Based only on the ITA form. Whether the law requires a translated copy of a contract is a separate question: ask Ken or an attorney.',
+  h_ck:'Checklist before you sign',ck_cnt:'{a}/{b} done',
+  v_no:'No: must be 18 or older',v_ok:'Yes, if ¶2 is filled in fully',
+  why_no:'¶2 says the interpreter is at least 18 years old. Find another adult fluent in both English and Vietnamese.',
+  why_ok:'The interpreter must speak, read and write English and Vietnamese fluently, and translate everything in the deal (¶2, ¶3).',
+  f_base:['Interpreter’s name and the Principal’s name (¶1).','Principal’s role: buyer, seller, housing provider, tenant (¶1).','Language 2: Vietnamese (¶2).','Interpreter’s address, email, phone, driver’s license or ID number (¶5).'],
+  f_family:'Check “is related” and describe how: child, niece, sibling… (¶2).',f_notrel:'Check “is not related” and describe how they know the Principal or broker (¶2).',
+  f_pro:'Check certified/registered, list the issuer and number (¶2).',f_paid:'Check “is being paid” and say by whom (¶2).',f_unpaid:'Check “is not being paid” (¶2).',
+  rely:['The broker relies only on translated words with the client (¶4A).','The client relies only on the broker’s translated words (¶4A, ¶4B).','Bad translation the broker reasonably relied on: the client does not hold the broker responsible (¶4A).'],
+  ck_r:{principal:['Pick someone you trust, 18+, fluent in both languages.','Have the interpreter read the ITA itself to you (¶5).','Contracts, disclosures, loan papers: get it all translated; do not sign what you do not understand (¶3).','Keep your signed copy.'],
+   interp:['Make sure you are 18+ and fluent in both languages (¶2).','Be truthful: related or not, paid or not (¶2).','Translate everything, including lender, inspector, title and escrow (¶3).','Bring a driver’s license or ID for the number (¶5).'],
+   agent:['Have the ITA signed before important talks with the client.','Rely only on translated words (¶4A).','Fill in broker name, DRE numbers, and sign (¶5).','Give everyone a copy.']},
+  next:['English–Vietnamese real estate dictionary so everyone uses the same words: <a href="/t190/">T190</a>.','Buying and selling Q&amp;A: <a href="/t191/">T191</a>. Read the RPA step by step: <a href="/t401/">T401</a>.','See more forms in the <a href="/t402/">Forms Library</a>.'],
+  mail_subj:'Question about an interpreter',mail_hi:'Hi Ken, I just used the ITA tool.',mail_end:'General info, not legal advice.',sms_hi:'Hi Ken, an ITA question:',
+  s_role:'Role',s_who:'Interpreter',s_age:'18 or older',s_paid:'Paid',s_res:'Result'}
+};
+let role='principal', who='family', age='yes', paid='no', ckDone={};
+function segInit(id,set){ $(id).addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button[data-v]'); if(!b)return;
+  $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); set(b.getAttribute('data-v')); if(id==='role')ckDone={}; renderTool();}); }
+function itaFill(o,t){ const f=t.f_base.slice(); f.push(o.who==='family'?t.f_family:t.f_notrel); if(o.who==='pro') f.push(t.f_pro); f.push(o.paid?t.f_paid:t.f_unpaid); return f; }
+function initTool(){
+  segInit('role',v=>role=v); segInit('who',v=>who=v); segInit('age',v=>age=v); segInit('paid',v=>paid=v);
+  $('ck').addEventListener('change',e=>{const i=e.target.getAttribute('data-c'); if(i===null)return; if(e.target.checked)ckDone[i]=1; else delete ckDone[i]; renderTool();});
+}
+function renderTool(){
+  const t=D(), ok=age==='yes';
+  $('verdict').textContent=ok?t.v_ok:t.v_no; $('why').textContent=ok?t.why_ok:t.why_no;
+  $('fill').innerHTML=itaFill({who,paid:paid==='yes'},t).map(x=>'<li>'+x+'</li>').join('');
+  $('rely').innerHTML=t.rely.map(x=>'<li>'+x+'</li>').join('');
+  const list=t.ck_r[role];
+  $('ck').innerHTML=list.map((x,i)=>'<label><input type="checkbox" data-c="'+i+'"'+(ckDone[i]?' checked':'')+'> <span>'+x+'</span></label>').join('');
+  $('ckCnt').textContent=t.ck_cnt.replace('{a}',Object.keys(ckDone).length).replace('{b}',list.length);
+  setContact([t.s_role+': '+t['r_'+role],t.s_who+': '+t['w_'+who],t.s_age+': '+t[age]+' · '+t.s_paid+': '+t[paid],t.s_res+': '+(ok?t.v_ok:t.v_no)].join('\n'));
+}
+
+
+/* ===== Phần chung cho các trang giải nghĩa form ===== */
+const COMMON={
+ vi:{h_mine:'Form này nói gì với tôi?',h_paras:'Đọc từng đoạn',paras_lead:'Bấm vào từng đoạn. Số đoạn giống y trên form để anh chị dò theo.',
+  h_myth:'Nhiều người hiểu sai',myth_lead:'Đúng hay sai? Bấm để xem đáp án.',t_true:'Đúng',t_false:'Sai',a_ok:'Chính xác.',a_no:'Chưa đúng.',
+  a_is_true:'Câu này ĐÚNG.',a_is_false:'Câu này SAI.',exp_all:'Mở hết',exp_none:'Đóng hết',nx_title:'Bước tiếp theo',vid_title:'Video 45 giây',
+  b_email:'Email Ken',b_sms:'Text Ken',b_video:'Xem video 45 giây',b_all:'Mọi form giải nghĩa',
+  ft_cr:'Form gốc © California Association of REALTORS®. Trang này chỉ giải thích, không thay thế form và không phải tư vấn pháp lý/thuế.',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English'},
+ en:{h_mine:'What does this form say to me?',h_paras:'Read it paragraph by paragraph',paras_lead:'Tap a paragraph. The numbers match the form so you can follow along.',
+  h_myth:'What people get wrong',myth_lead:'True or false? Tap to see the answer.',t_true:'True',t_false:'False',a_ok:'Right.',a_no:'Not quite.',
+  a_is_true:'This is TRUE.',a_is_false:'This is FALSE.',exp_all:'Open all',exp_none:'Close all',nx_title:'Next steps',vid_title:'45-second video',
+  b_email:'Email Ken',b_sms:'Text Ken',b_video:'Watch the 45-second video',b_all:'Every form, explained',
+  ft_cr:'Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.',
+  ft_src:'Source',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt'}
+};
+let lang='en'; try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const D=()=>Object.assign({},COMMON[lang],I18N[lang]);
+const money=n=>'$'+Math.round(n).toLocaleString('en-US');
+/* Ngày: chuỗi YYYY-MM-DD → Date (giờ địa phương), cộng ngày, đẩy qua thứ Hai nếu rơi T7/CN */
+const parseD=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||''); return m?new Date(+m[1],+m[2]-1,+m[3]):null;};
+const addD=(d,n)=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()+n); return x;};
+const wkShift=d=>{let x=addD(d,0); while(x.getDay()===0||x.getDay()===6) x=addD(x,1); return x;};
+const addBiz=(d,n)=>{let x=addD(d,0),k=0; while(k<n){x=addD(x,1); if(x.getDay()!==0&&x.getDay()!==6)k++;} return x;};
+const isoD=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const WD={vi:['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'],en:['Sun','Mon','Tue','Wed','Thu','Fri','Sat']};
+const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const fmtD=d=>lang==='vi'?WD.vi[d.getDay()]+', '+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()
+  :WD.en[d.getDay()]+', '+MO[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
+const todayISO=()=>isoD(new Date());
+
+let openSet={};
+function renderParas(){
+  const d=D();
+  $('paras').innerHTML=PARAS.map((p,i)=>{const t=p[lang];
+    return '<details class="term" data-k="'+i+'"'+(openSet[i]?' open':'')+'><summary><span class="nm"><span class="pn">'+esc(p['n_'+lang]||p.n)+'</span>'+esc(t[0])+'</span>'
+     +'<span class="sh">'+esc(t[1])+'</span></summary><div class="bd">'+t.slice(2).map(x=>'<p>'+x+'</p>').join('')+'</div></details>';}).join('');
+  $('expAll').textContent=PARAS.every((p,i)=>openSet[i])?d.exp_none:d.exp_all;
+}
+$('paras').addEventListener('toggle',e=>{const el=e.target; if(!el.classList||!el.classList.contains('term'))return; const k=el.getAttribute('data-k');
+  if(el.open)openSet[k]=1; else delete openSet[k]; const d=D(); $('expAll').textContent=PARAS.every((p,i)=>openSet[i])?d.exp_none:d.exp_all;},true);
+$('expAll').onclick=()=>{const all=PARAS.every((p,i)=>openSet[i]); PARAS.forEach((p,i)=>{if(all)delete openSet[i]; else openSet[i]=1;}); renderParas();};
+
+let mythPick={};
+function renderMyths(){
+  const d=D();
+  $('myths').innerHTML=MYTHS.map((m,i)=>{const t=m[lang],p=mythPick[i];
+    const ans=p===undefined?'':'<b>'+(p===m.a?d.a_ok:d.a_no)+' '+(m.a?d.a_is_true:d.a_is_false)+'</b> '+t[1];
+    return '<div class="mq"><p>'+esc(t[0])+'</p><div class="tf"><button type="button" data-m="'+i+'" data-v="1" aria-pressed="'+(p===true)+'">'+d.t_true+'</button>'
+     +'<button type="button" data-m="'+i+'" data-v="0" aria-pressed="'+(p===false)+'">'+d.t_false+'</button></div>'
+     +'<div class="ans"'+(p===undefined?' hidden':'')+'>'+ans+'</div></div>';}).join('');
+}
+$('myths').addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button[data-m]'); if(!b)return; mythPick[b.getAttribute('data-m')]=b.getAttribute('data-v')==='1'; renderMyths();});
+
+function setContact(summary){
+  const d=D();
+  const subj=FORM_CODE+' '+FORM+' — '+d.mail_subj;
+  const body=d.mail_hi+'\n\n'+summary+'\n\n'+d.mail_end+'\nhttps://tools.kenlamrealty.com/'+FORM_CODE.toLowerCase()+'/';
+  $('emailBtn').href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(d.sms_hi+' '+summary.split('\n').slice(0,3).join(' · '));
+}
+function applyLang(){
+  const d=D();
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  $('nextList').innerHTML=d.next.map(x=>'<li>'+x+'</li>').join('');
+  renderParas(); renderMyths(); renderTool();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+initTool();
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+try{if(/[?&]embed=1/.test(location.search))a.style.display='none';}catch(e){}
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+
+</body>
+</html>

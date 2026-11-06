@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BDS Giải Nghĩa · Ken Lam Tools</title>
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+/* ---- T229 thêm (không đổi class cũ) ---- */
+.ctl input[type=search]{font-size:18px}
+.ctl input[type=search]::-webkit-search-cancel-button{cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-size:13px;padding:7px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);border-color:var(--brass);font-weight:500}
+.terms{display:grid;gap:10px}
+.term{background:var(--panel);border:1px solid var(--line);border-radius:14px;min-width:0;scroll-margin-top:16px}
+.term[open]{border-color:var(--brass)}
+.term.flash{box-shadow:0 0 0 3px var(--brass-soft)}
+.term summary{list-style:none;cursor:pointer;padding:14px 18px;display:grid;gap:2px}
+.term summary::-webkit-details-marker{display:none}
+.term summary .nm{font-family:var(--display);font-size:23px;line-height:1.15;font-weight:500;color:var(--fg)}
+.term summary .al{font-size:12px;color:var(--muted)}
+.term summary .sh{font-size:14px;color:var(--muted);line-height:1.45}
+.term .bd{padding:0 18px 16px;display:grid;gap:10px;font-size:15px;line-height:1.55}
+.term .bd p{margin:0}
+.term .bd .lb{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);font-weight:500;margin-bottom:2px}
+.term .bd .ex{background:var(--brass-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.term .bd .my b{color:var(--warn);font-weight:500}
+.term .bd .ot{font-size:13px;color:var(--muted)}
+.term .bd .ft{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px;color:var(--muted)}
+.term .bd .ft a{color:var(--brass);word-break:break-word}
+.term .bd .ft button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:12px;padding:4px 10px;border-radius:999px;cursor:pointer}
+.empty{font-size:15px;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:16px 18px}
+.empty[hidden]{display:none}
+.expall{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+
+/* ---- T42x Giải nghĩa forms thêm (không đổi class cũ) ---- */
+[hidden]{display:none!important}
+.metachips{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.metachips span{border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:13px;padding:5px 11px;border-radius:999px}
+.calc,.paras,.myths,.vid{display:grid;gap:12px;min-width:0}
+.calc h2,.paras h2,.myths h2,.vid h2,.result h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0;line-height:1.15}
+.calc .hint{font-size:13px;color:var(--muted);margin:0}
+.chips .chip{min-height:38px}
+.seg{flex-wrap:wrap}
+.seg button{min-width:0}
+.res-h{font-size:12px;color:var(--brass);letter-spacing:.08em;text-transform:uppercase;font-weight:500;margin:6px 0 0}
+.bul{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px;line-height:1.5}
+.bul b{font-weight:500}
+.line .a.big{font-size:16px}
+.line .n{overflow-wrap:anywhere}
+.line .a{text-align:right}
+.tf{display:grid;gap:10px}
+.tf .q{margin:0;font-size:15px;color:var(--fg)}
+.tfb{display:flex;gap:8px}
+.tfb button{flex:1;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit;font-size:14px;padding:9px;border-radius:10px;cursor:pointer}
+.tfb button[aria-pressed="true"]{background:var(--brass-soft);border-color:var(--brass);font-weight:500}
+.tf .ans{margin:0;font-size:14px;color:var(--muted)}
+.tf .ans b{font-weight:500}
+.tf .ans.ok b{color:var(--ok)}
+.tf .ans.no b{color:var(--warn)}
+.actions .btn{text-align:center}
+.task .tt{cursor:default}
+</style>
+<meta name="description" content="BDS, the C.A.R. Business Disclosure Statement, explained simply in English and Vietnamese, with a gross and net profit check from the seller’s own numbers.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t423/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Business Disclosure Statement Explained · Ken Lam Tools">
+<meta property="og:description" content="What a business seller discloses on the BDS, and a quick profit check from paragraph 8.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t423/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools · T423</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">BDS: the business seller’s self-report</h1>
+    <p data-i="sub" class="sub">Like a health form for a shop that is for sale. The owner writes sales, costs, rent, licenses, staff and why they are selling, so a buyer knows what they are looking at.</p>
+    <div class="metachips"><span data-i="m1">3 pages</span><span data-i="m2">Seller fills in and signs · Buyer signs receipt</span><span data-i="m3">When a business is listed or sold</span></div>
+  </header>
+
+  <section class="calc" aria-labelledby="hCalc">
+    <h2 id="hCalc" data-i="h_calc">What does this form say to me?</h2>
+
+    <div class="inputs">
+      <div class="field"><label><span data-i="role">I am the</span></label>
+        <div class="seg" id="role"><button type="button" data-v="s" aria-pressed="true" data-i="seller">Seller</button><button type="button" data-v="b" aria-pressed="false" data-i="buyer">Buyer</button></div></div>
+      <p class="hint" data-i="h_fin">Numbers from paragraph 8 for one year (use the seller's figures).</p>
+      <div class="row2">
+        <div class="field"><label for="sales"><span data-i="l_sales">8A Total sales (year)</span></label><div class="ctl"><span class="pre">$</span><input id="sales" type="number" inputmode="numeric" min="0" value="620000"></div></div>
+        <div class="field"><label for="cogs"><span data-i="l_cogs">8B Cost of goods sold</span></label><div class="ctl"><span class="pre">$</span><input id="cogs" type="number" inputmode="numeric" min="0" value="210000"></div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="exp"><span data-i="l_exp">8E Total expenses</span></label><div class="ctl"><span class="pre">$</span><input id="exp" type="number" inputmode="numeric" min="0" value="300000"></div></div>
+        <div class="field"><label for="rent"><span data-i="l_rent">7A Monthly rent + CAM/NNN</span></label><div class="ctl"><span class="pre">$</span><input id="rent" type="number" inputmode="numeric" min="0" value="7400"></div></div>
+      </div>
+      <div class="field"><label><span data-i="l_sit">This business has</span></label>
+        <div class="chips" id="sit" role="group">
+          <button type="button" class="chip" data-v="abc" aria-pressed="false" data-i="c_abc">ABC liquor license</button>
+          <button type="button" class="chip" data-v="fr" aria-pressed="false" data-i="c_fr">Franchise</button>
+          <button type="button" class="chip" data-v="la" aria-pressed="false" data-i="c_la">Lease not assignable / unsure</button>
+          <button type="button" class="chip" data-v="re" aria-pressed="false" data-i="c_re">Seller owns the building</button>
+        </div></div>
+      <div class="field"><label for="acc"><span data-i="l_acc">BPA acceptance date (optional)</span></label><div class="ctl"><input id="acc" type="date"></div></div>
+    </div>
+  </section>
+
+  <section class="result" id="result" aria-live="polite"></section>
+
+  <section class="paras" aria-labelledby="hParas">
+    <h2 id="hParas" data-i="h_paras">Read it paragraph by paragraph</h2>
+    <div class="terms" id="paras"></div>
+    <button type="button" class="expall" id="expAll">Open all</button>
+  </section>
+
+  <section class="myths" aria-labelledby="hMyth">
+    <h2 id="hMyth" data-i="h_myth">What people get wrong</h2>
+    <div class="terms" id="myths"></div>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">The contract that requires the BDS: read BPA in the <a href="/t402/">T402 Forms Library</a>.</li>
+      <li data-i="nx2">Need a business lawyer or CPA to check the books? <a href="/t122/">T122</a>.</li>
+      <li data-i="nx3">Buying the building too? Compare it like an investor: <a href="/t260/">T260 Max price for a rental</a>.</li>
+    </ol>
+  </section>
+
+  <section class="vid" aria-labelledby="hVid">
+    <h2 id="hVid" data-i="h_vid">45-second video</h2>
+    <video class="kl-vid" src="video.mp4" controls playsinline preload="metadata" aria-label="BDS video"></video>
+  </section>
+
+  <section class="actions">
+    <a class="btn primary" id="emailBtn" href="mailto:ken@kenlamrealty.com" data-i="b_email">Email Ken</a>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Text Ken</a>
+    <a class="btn" id="videoBtn" href="/t423/video.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 45-sec video</a>
+    <a class="btn" id="allBtn" href="/t402/" data-i="b_all">All explained forms</a>
+  </section>
+
+  <footer>
+    <span data-i="ft_note">Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.</span>
+    <span class="src"><span data-i="ft_src">Source</span>: C.A.R. Form BDS, Business Disclosure Statement (Revised 12/23) · C.A.R. Form BPA (Revised 6/26) ¶11F, ¶3M(1)</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/cong-cu/" data-i="ft_all">All tools</a> · <a href="/t402/" data-i="b_all">All explained forms</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số lấy từ C.A.R. Form BDS (Revised 12/23) =====
+   Đoạn 8: số liệu năm nay tới giờ (YTD) + 3 năm trước. C = A − B (lời gộp). F = C − E (lời ròng).
+   Đoạn 7A(1): tiền thuê căn bản/tháng + CAM/NNN trung bình/tháng.
+   Hạn giao BDS khi dùng hợp đồng BPA: BPA đoạn 11F + 3M(1) = 7 ngày sau Acceptance (C.A.R. Form BPA Revised 6/26). */
+const C={YEARS_BACK:3,BPA_DOCS_DAYS:7};
+const FORM_CODE='T423 BDS';
+const PAGE_URL='https://tools.kenlamrealty.com/t423/';
+const I18N={"en": {"lang": "Tiếng Việt", "h_calc": "What does this form say to me?", "h_paras": "Read it paragraph by paragraph", "h_myth": "What people get wrong", "h_vid": "45-second video", "nx_title": "Next steps", "para": "Paragraph", "true": "True", "false": "False", "right": "Right.", "notq": "Not quite.", "is_true": "It is true:", "is_false": "It is false:", "exp_all": "Open all", "exp_none": "Close all", "b_email": "Email Ken", "b_sms": "Text Ken", "b_video": "Watch 45-sec video", "b_all": "All explained forms", "ft_src": "Source", "ft_upd": "Updated", "ft_all": "All tools", "ft_note": "Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.", "nodef": "Dates use the default days printed in the form, if the contract does not change them.", "body_hi": "Hi Ken, I used this page on tools.kenlamrealty.com. Here is what I entered and what it showed:", "body_end": "Please call or text me back. Thank you.", "sms_hi": "Hi Ken, I have a question about form", "role": "I am the", "buyer": "Buyer", "seller": "Seller", "h_rights": "Your rights", "h_duties": "Your duties", "h_dates": "Your dates", "h_money": "Money", "h_check": "Checklist", "tap": "Tap to check off.", "h_answer": "What it means for you", "title": "BDS: the business seller’s self-report", "sub": "Like a health form for a shop that is for sale. The owner writes sales, costs, rent, licenses, staff and why they are selling, so a buyer knows what they are looking at.", "m1": "3 pages", "m2": "Seller fills in and signs · Buyer signs receipt", "m3": "When a business is listed or sold", "h_fin": "Numbers from paragraph 8 for one year (use the seller’s figures).", "l_sales": "8A Total sales (year)", "l_cogs": "8B Cost of goods sold", "l_exp": "8E Total expenses", "l_rent": "7A Monthly rent + CAM/NNN", "l_sit": "This business has", "c_abc": "ABC liquor license", "c_fr": "Franchise", "c_la": "Lease not assignable / unsure", "c_re": "Seller owns the building", "l_acc": "BPA acceptance date (optional)", "r_net": "Net profit (8F = 8C − 8E)", "per_y": "per year", "r_sales": "Total sales", "r_cogs": "Cost of goods sold", "r_gp": "Gross profit (8C = 8A − 8B)", "r_gpm": "{p} of sales", "r_exp": "Total expenses", "r_np": "Net profit", "r_npm": "{p} of sales", "r_rent": "Rent + CAM per year (7A × 12)", "r_rentp": "{p} of sales", "w_loss_h": "Loss.", "w_loss": "With these numbers the business loses money. Ask the seller to explain and show the tax returns.", "w_rent_h": "Check the numbers.", "w_rent": "Yearly rent from paragraph 7A is more than total expenses in 8E. One of them is likely wrong.", "n_math": "This is only arithmetic on the seller’s own figures. Paragraph 1 says the broker did not verify them.", "r_due": "BDS due to buyer under a BPA", "r_due_s": "BPA ¶11F + ¶3M(1): 7 days after Acceptance, if not changed", "rs1": "You choose what to offer and what to exclude (paragraphs 4, 5). The purchase contract decides in the end (2).", "rs2": "The BDS is information only and not part of any agreement (1).", "rb1": "You can rely on the seller’s figures and ask for the documents behind them (1).", "rb2": "The seller warrants the information is accurate and that they own what they are selling, unless stated in writing (3).", "ds1": "Fill in honest numbers you can back up. You agree to give supporting papers on request (1).", "ds2": "Update it if something changes. Your warranty covers the information \"as modified hereafter\" (3).", "ds3": "Sign that you have authority and the information is true to the best of your knowledge.", "db1": "Do not treat it as proof. The broker did not verify the numbers (1).", "db2": "Make sure every item you want is written into the purchase contract, not only checked here (2, 4).", "db3": "Sign that you received and read it.", "cs1": "Gather 3 years of tax returns and sales tax returns", "cs2": "Fill paragraph 8 for year-to-date and the 3 years before", "cs3": "Copy the lease and fill paragraph 7A", "cs4": "Write the reason for sale (9G(6))", "cb1": "Compare paragraph 8 with the tax returns", "cb2": "Compare sales with sales tax returns and POS reports", "cb3": "Call the landlord about rent, term and assignment (7A)", "cb4": "Ask how many hours the owner works (9D)", "x_abc_s": "Note the ABC license type (9B(3)). Transfer may need state approval.", "x_abc_b": "Ask ABC about transfer. Paragraph 9B says it may need approval.", "x_fr": "Get franchisor name, transfer fee and approval rules (9E)", "x_la": "Read the lease: is it assumable or assignable? (7A(4))", "x_re": "If the building is not sold, get the seller’s proposed lease terms (7C)", "subj": "Question about BDS (Business Disclosure Statement)", "nx1": "The contract that requires the BDS: read BPA in the <a href=\"/t402/\">T402 Forms Library</a>.", "nx2": "Need a business lawyer or CPA to check the books? <a href=\"/t122/\">T122</a>.", "nx3": "Buying the building too? Compare it like an investor: <a href=\"/t260/\">T260 Max price for a rental</a>."}, "vi": {"lang": "English", "h_calc": "Form này nói gì với tôi?", "h_paras": "Đọc từng đoạn", "h_myth": "Nhiều người hiểu sai", "h_vid": "Video 45 giây", "nx_title": "Bước tiếp theo", "para": "Đoạn", "true": "Đúng", "false": "Sai", "right": "Chính xác.", "notq": "Chưa đúng.", "is_true": "Câu này đúng:", "is_false": "Câu này sai:", "exp_all": "Mở hết", "exp_none": "Đóng hết", "b_email": "Email Ken", "b_sms": "Nhắn tin Ken", "b_video": "Xem video 45 giây", "b_all": "Mọi form giải nghĩa", "ft_src": "Nguồn", "ft_upd": "Cập nhật", "ft_all": "Tất cả tools", "ft_note": "Form gốc © California Association of REALTORS®. Trang này chỉ giải thích, không thay thế form và không phải tư vấn pháp lý/thuế.", "nodef": "Ngày tính theo số ngày mặc định in trong form, nếu hợp đồng không sửa số ngày.", "body_hi": "Chào Ken, tôi vừa dùng trang này trên tools.kenlamrealty.com. Đây là số tôi nhập và kết quả:", "body_end": "Ken gọi hoặc nhắn lại giúp tôi. Cảm ơn.", "sms_hi": "Chào Ken, tôi muốn hỏi về form", "role": "Tôi là", "buyer": "Người mua", "seller": "Người bán", "h_rights": "Quyền của anh chị", "h_duties": "Việc anh chị phải làm", "h_dates": "Các mốc ngày", "h_money": "Tiền", "h_check": "Checklist", "tap": "Bấm để đánh dấu đã làm.", "h_answer": "Nghĩa là gì với anh chị", "title": "BDS: bản khai khi bán business", "sub": "Như tờ khai sức khỏe của một tiệm đang bán. Chủ tiệm tự ghi doanh thu, chi phí, tiền thuê, giấy phép, nhân viên và lý do bán, để người mua biết mình đang coi cái gì.", "m1": "3 trang", "m2": "Seller điền và ký · Buyer ký nhận", "m3": "Khi rao bán hoặc bán business", "h_fin": "Số liệu đoạn 8 cho một năm (dùng số của Seller).", "l_sales": "8A Doanh thu (năm)", "l_cogs": "8B Giá vốn hàng bán", "l_exp": "8E Tổng chi phí", "l_rent": "7A Tiền thuê + CAM/NNN mỗi tháng", "l_sit": "Tiệm này có", "c_abc": "License bia rượu ABC", "c_fr": "Franchise", "c_la": "Lease không sang được / chưa rõ", "c_re": "Seller sở hữu luôn tòa nhà", "l_acc": "Ngày Acceptance của BPA (không bắt buộc)", "r_net": "Lời ròng (8F = 8C − 8E)", "per_y": "mỗi năm", "r_sales": "Doanh thu", "r_cogs": "Giá vốn hàng bán", "r_gp": "Lời gộp (8C = 8A − 8B)", "r_gpm": "{p} doanh thu", "r_exp": "Tổng chi phí", "r_np": "Lời ròng", "r_npm": "{p} doanh thu", "r_rent": "Tiền thuê + CAM mỗi năm (7A × 12)", "r_rentp": "{p} doanh thu", "w_loss_h": "Lỗ.", "w_loss": "Theo số này tiệm đang lỗ. Hỏi Seller giải thích và xin coi tax return.", "w_rent_h": "Kiểm lại số.", "w_rent": "Tiền thuê cả năm ở 7A lớn hơn tổng chi phí ở 8E. Chắc chắn có một số bị sai.", "n_math": "Đây chỉ là phép cộng trừ trên số Seller tự khai. Đoạn 1 nói broker không kiểm chứng.", "r_due": "Hạn Seller đưa BDS theo BPA", "r_due_s": "BPA đoạn 11F + 3M(1): 7 ngày sau Acceptance, nếu không sửa", "rs1": "Anh chị chọn món nào bán kèm, món nào không (đoạn 4, 5). Hợp đồng mua bán mới là chỗ quyết định (2).", "rs2": "BDS chỉ để thông tin, không phải một phần của thỏa thuận nào (1).", "rb1": "Anh chị được dựa vào số của Seller và xin giấy tờ chứng minh (1).", "rb2": "Seller bảo đảm thông tin đúng và mình sở hữu những gì đem bán, trừ khi ghi khác bằng văn bản (3).", "ds1": "Ghi số thật, có giấy tờ chứng minh. Anh chị đồng ý đưa giấy khi được hỏi (1).", "ds2": "Có gì thay đổi thì cập nhật. Bảo đảm của anh chị áp dụng cả phần sửa sau (3).", "ds3": "Ký xác nhận có quyền ký và thông tin đúng theo hiểu biết tốt nhất.", "db1": "Đừng coi đây là bằng chứng. Broker không kiểm chứng số liệu (1).", "db2": "Món nào muốn mua phải ghi vào hợp đồng mua bán, không chỉ tick ở đây (2, 4).", "db3": "Ký xác nhận đã nhận và đọc.", "cs1": "Gom tax return và sales tax return 3 năm", "cs2": "Điền đoạn 8 cho năm nay tới giờ và 3 năm trước", "cs3": "Copy hợp đồng thuê và điền đoạn 7A", "cs4": "Ghi lý do bán (9G(6))", "cb1": "So đoạn 8 với tax return", "cb2": "So doanh thu với sales tax return và báo cáo POS", "cb3": "Gọi chủ đất hỏi tiền thuê, thời hạn, có sang được không (7A)", "cb4": "Hỏi chủ làm bao nhiêu giờ mỗi tuần (9D)", "x_abc_s": "Ghi loại license ABC (9B(3)). Chuyển license có thể cần tiểu bang duyệt.", "x_abc_b": "Hỏi ABC về thủ tục chuyển. Đoạn 9B nói có thể cần duyệt.", "x_fr": "Lấy tên franchisor, phí chuyển nhượng và điều kiện duyệt (9E)", "x_la": "Đọc lease: có nhận lại hoặc sang được không? (7A(4))", "x_re": "Nếu không bán tòa nhà, xin điều kiện cho thuê Seller đề nghị (7C)", "subj": "Hỏi về BDS (Bản khai bán business)", "nx1": "Hợp đồng bắt Seller đưa BDS: đọc BPA trong <a href=\"/t402/\">T402 Thư viện Forms</a>.", "nx2": "Cần luật sư business hoặc CPA coi sổ sách? <a href=\"/t122/\">T122</a>.", "nx3": "Mua luôn tòa nhà? Tính như nhà đầu tư: <a href=\"/t260/\">T260 Giá tối đa nên trả</a>."}};
+const PARAS=[{"n": "0", "ne": "Top of the form", "nv": "Đầu form", "en": ["Which deal and which business", "Tied to the Business Purchase Agreement (or other), with its date, the business name, address, buyer and seller."], "vi": ["Giao dịch nào, tiệm nào", "Gắn với Business Purchase Agreement (hoặc hợp đồng khác), ngày, tên tiệm, địa chỉ, Buyer, Seller."]}, {"n": "1", "en": ["Intent and purpose", "The BDS helps set the listing price, discloses material facts about how the business runs, and proposes what is included or excluded. It is information only, <b>not part of any agreement</b>. The seller says the figures are the seller’s, wants brokers and buyers to rely on them, has documents and will give them on request. <b>The broker has not verified</b> the information."], "vi": ["Mục đích", "BDS giúp định giá listing, khai sự thật quan trọng về cách tiệm chạy, và đề xuất món nào bán kèm. Chỉ để thông tin, <b>không phải một phần của thỏa thuận nào</b>. Seller nói số liệu là của Seller, muốn broker và người mua dựa vào, có giấy tờ và sẽ đưa khi được hỏi. <b>Broker không kiểm chứng</b> thông tin."]}, {"n": "2", "en": ["Relation to the purchase agreement", "The signed purchase agreement controls what is included or excluded. The broker does not guarantee BDS items end up in the contract."], "vi": ["Quan hệ với hợp đồng mua bán", "Hợp đồng mua bán đã ký mới quyết định món nào có, món nào không. Broker không bảo đảm món ghi trong BDS sẽ có trong hợp đồng."]}, {"n": "3", "en": ["Seller warranty", "The seller warrants the information is accurate, including later changes, and that the seller has good and marketable title to the business and personal property offered, unless stated in writing."], "vi": ["Seller bảo đảm", "Seller bảo đảm thông tin đúng, kể cả phần sửa sau, và có quyền sở hữu hợp lệ với business và đồ đạc đem bán, trừ khi ghi khác bằng văn bản."]}, {"n": "4", "en": ["Items that may be for sale", "Checkboxes: inventory, machinery, furniture and equipment, leases, licenses, signs, phone numbers, websites, social media, customer, vendor and employee lists, goodwill, franchise, trade names, logos, software, gift certificates, non-compete, price allocation, and records (tax returns, sales tax returns, financial statements, POS reports, years from-to). A check does <b>not</b> mean the item is in the price."], "vi": ["Món có thể bán kèm", "Ô tick: tồn kho, máy móc, bàn ghế thiết bị, lease, giấy phép, bảng hiệu, số điện thoại, website, social media, danh sách khách, nhà cung cấp, nhân viên, goodwill, franchise, tên tiệm, logo, phần mềm, gift certificate, không cạnh tranh, chia giá, và giấy tờ (tax return, sales tax return, báo cáo tài chính, báo cáo POS, từ năm tới năm). Tick <b>không có nghĩa</b> món đó nằm trong giá."]}, {"n": "5", "en": ["Items excluded", "What is not offered for sale."], "vi": ["Món không bán", "Những gì không đem bán."]}, {"n": "6", "en": ["Inventory value", "Approximate value of current inventory, including work in progress."], "vi": ["Giá trị tồn kho", "Giá trị ước tính hàng tồn hiện tại, kể cả hàng đang làm dở."]}, {"n": "7", "en": ["Premises", "<b>7A lease:</b> base rent, average CAM or NNN, month-to-month or end date, options, deposit, assumable or assignable, rent increases, percentage rent, landlord contact. <b>7B facility:</b> building and lot size, type (freestanding, strip, in line, mall), anchor tenant, seating, parking. <b>7C:</b> if the seller owns the real property and it is not sold, proposed lease terms."], "vi": ["Mặt bằng", "<b>7A lease:</b> tiền thuê căn bản, CAM/NNN trung bình, month-to-month hay tới ngày nào, option, tiền cọc, có nhận lại/sang được không, tăng giá, percentage rent, liên lạc chủ đất. <b>7B cơ sở:</b> diện tích nhà và đất, loại (freestanding, strip center, in line, mall), anchor tenant, số chỗ ngồi, chỗ đậu xe. <b>7C:</b> nếu Seller sở hữu bất động sản mà không bán, điều kiện cho thuê đề nghị."]}, {"n": "8", "en": ["Financial information", "Year-to-date and the <b>3 years before</b> (or attach Schedule C or P&amp;L): A sales, B cost of goods, C gross profit, D each expense (rent, CAM, utilities, insurance, payroll and more), E total expenses, F net profit. The seller says the books are kept in the normal course and tax returns are the ones filed."], "vi": ["Thông tin tài chính", "Năm nay tới giờ và <b>3 năm trước</b> (hoặc kèm Schedule C hay P&amp;L): A doanh thu, B giá vốn, C lời gộp, D từng khoản chi (tiền thuê, CAM, điện nước, bảo hiểm, lương…), E tổng chi phí, F lời ròng. Seller cam kết sổ sách giữ bình thường và tax return là bản đã nộp."]}, {"n": "9", "en": ["Business information", "<b>A</b> form of ownership. <b>B</b> licenses (city, state, ABC type 41, 47, 48, other); transfer may need regulatory approval. <b>C</b> violation notices. <b>D</b> owner salary or draw and hours per week, or absentee. <b>E</b> franchise, franchisor approval, transfer fee. <b>F</b> value of machinery and of furniture and equipment. <b>G</b> staff, hours, holidays, year established, owner since, reason for sale."], "vi": ["Thông tin business", "<b>A</b> hình thức sở hữu. <b>B</b> giấy phép (city, state, ABC type 41, 47, 48, khác); chuyển có thể cần nhà nước duyệt. <b>C</b> giấy vi phạm. <b>D</b> lương/rút tiền của chủ và số giờ làm mỗi tuần, hoặc chủ vắng mặt. <b>E</b> franchise, franchisor duyệt, phí chuyển. <b>F</b> giá trị máy móc, bàn ghế thiết bị. <b>G</b> nhân viên, giờ mở cửa, ngày lễ, năm thành lập, chủ từ năm nào, lý do bán."]}, {"n": "10", "en": ["Additional disclosures", "Anything else the seller wants to disclose."], "vi": ["Khai thêm", "Bất cứ điều gì khác Seller muốn khai."]}, {"n": "11", "ne": "Signatures", "nv": "Chữ ký", "en": ["Signatures", "Seller signs that they have authority and the information is true to the best of their knowledge. Buyer signs that they received and read it, and that the purchase agreement controls."], "vi": ["Chữ ký", "Seller ký xác nhận có quyền ký và thông tin đúng theo hiểu biết tốt nhất. Buyer ký xác nhận đã nhận, đã đọc, và hợp đồng mua bán mới là cái quyết định."]}];
+const MYTHS=[{"ans": false, "en": ["The BDS is part of the purchase contract.", "Paragraph 1 says it is for information only and not part of any agreement. The seller still warrants it is accurate (paragraph 3)."], "vi": ["BDS là một phần của hợp đồng mua bán.", "Đoạn 1 nói BDS chỉ để thông tin, không phải thỏa thuận. Nhưng Seller vẫn bảo đảm thông tin đúng (đoạn 3)."]}, {"ans": false, "en": ["The listing agent checked the sales numbers.", "Paragraph 1: the broker has not independently verified the information."], "vi": ["Agent bên bán đã kiểm tra số doanh thu.", "Đoạn 1: broker không tự kiểm chứng thông tin."]}, {"ans": true, "en": ["If \"Goodwill\" is checked in paragraph 4, it still might not be in the price.", "Paragraph 4 says a check does not necessarily mean the item is part of the price; the purchase agreement decides (paragraph 2)."], "vi": ["Tick \"Goodwill\" ở đoạn 4 thì vẫn có thể chưa nằm trong giá.", "Đoạn 4 nói tick không nhất thiết là món đó nằm trong giá; hợp đồng mua bán quyết định (đoạn 2)."]}];
+
+let lang='en'; try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const T=k=>{const d=I18N[lang]; return d[k]!==undefined?d[k]:(I18N.en[k]!==undefined?I18N.en[k]:k);};
+const fill=(s,v)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>v[k]!==undefined?v[k]:m);
+const pad=n=>String(n).padStart(2,'0');
+const DOW={en:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],vi:['CN','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy']};
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function pd(s){ if(!/^\d{4}-\d{2}-\d{2}$/.test(s||'')) return null; const a=s.split('-').map(Number); return new Date(Date.UTC(a[0],a[1]-1,a[2])); }
+function ad(t,n){ return new Date(t.getTime()+n*864e5); }
+function wk(t){ const g=t.getUTCDay(); return g===0||g===6; }
+function roll(t){ while(wk(t)) t=ad(t,1); return t; }
+function abiz(t,n){ let k=0; while(k<n){ t=ad(t,1); if(!wk(t)) k++; } return t; }
+function amon(t,n){ const y=t.getUTCFullYear(),m=t.getUTCMonth()+n,d=t.getUTCDate(); const last=new Date(Date.UTC(y,m+1,0)).getUTCDate(); return new Date(Date.UTC(y,m,Math.min(d,last))); }
+function dd(a,b){ return Math.round((b.getTime()-a.getTime())/864e5); }
+function fd(t){ if(!t) return '—'; const d=t.getUTCDate(),m=t.getUTCMonth(),y=t.getUTCFullYear(),w=t.getUTCDay();
+  return lang==='vi'? DOW.vi[w]+', '+pad(d)+'/'+pad(m+1)+'/'+y : DOW.en[w]+', '+MON[m]+' '+d+', '+y; }
+function money(n){ return (n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US'); }
+function num(id){ const el=$(id); if(!el) return 0; const v=parseFloat(String(el.value).replace(/,/g,'')); return isFinite(v)?v:0; }
+function todayISO(){ const n=new Date(); return n.getFullYear()+'-'+pad(n.getMonth()+1)+'-'+pad(n.getDate()); }
+function segv(id){ const b=$(id).querySelector('button[aria-pressed="true"]'); return b?b.getAttribute('data-v'):null; }
+function segOn(id){ $(id).addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('button[data-v]'); if(!b) return;
+  $(id).querySelectorAll('button[data-v]').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); render(); }); }
+function chipsOn(id){ $(id).addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('.chip'); if(!b) return;
+  b.setAttribute('aria-pressed',String(b.getAttribute('aria-pressed')!=='true')); render(); }); }
+function chipOn(id,v){ const b=$(id).querySelector('.chip[data-v="'+v+'"]'); return !!b&&b.getAttribute('aria-pressed')==='true'; }
+function line(label,val,small,cls){ return '<div class="line'+(cls?' '+cls:'')+'"><span class="n"><b>'+label+'</b>'+(small?'<small>'+small+'</small>':'')+'</span><span class="a">'+val+'</span></div>'; }
+let checked={};
+function checklist(items){ return '<div>'+items.map(it=>{ const on=!!checked[it.k];
+  return '<div class="task'+(on?' done':'')+'"><input type="checkbox" data-ck="'+it.k+'" id="ck_'+it.k+'"'+(on?' checked':'')+'><label class="tt" for="ck_'+it.k+'">'+it.t+'</label></div>'; }).join('')+'</div>'; }
+document.addEventListener('change',e=>{ const c=e.target; if(c&&c.dataset&&c.dataset.ck){ checked[c.dataset.ck]=c.checked; const r=c.closest('.task'); if(r) r.classList.toggle('done',c.checked); updActions(); } });
+
+let openSet={};
+function renderParas(){
+  $('paras').innerHTML=PARAS.map((p,i)=>'<details class="term" id="p'+i+'"'+(openSet[i]?' open':'')+'><summary><span class="al">'+esc(p.nv?(lang==='vi'?p.nv:p.ne):T('para')+' '+p.n)+'</span><span class="nm">'+esc(p[lang][0])+'</span></summary><div class="bd"><p>'+p[lang][1]+'</p></div></details>').join('');
+  updExp();
+}
+function updExp(){ $('expAll').textContent=PARAS.some((p,i)=>!openSet[i])?T('exp_all'):T('exp_none'); }
+let mythAns={};
+function renderMyths(){
+  $('myths').innerHTML=MYTHS.map((m,i)=>{ const a=mythAns[i];
+    let h='<div class="myth tf"><p class="q">'+esc(m[lang][0])+'</p><div class="tfb">'
+     +'<button type="button" data-m="'+i+'" data-a="1" aria-pressed="'+(a===true)+'">'+esc(T('true'))+'</button>'
+     +'<button type="button" data-m="'+i+'" data-a="0" aria-pressed="'+(a===false)+'">'+esc(T('false'))+'</button></div>';
+    if(a!==undefined){ const ok=(a===m.ans); h+='<p class="ans '+(ok?'ok':'no')+'"><b>'+esc(T(ok?'right':'notq'))+' '+esc(T(m.ans?'is_true':'is_false'))+'</b> '+esc(m[lang][1])+'</p>'; }
+    return h+'</div>'; }).join('');
+}
+$('myths').addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('button[data-m]'); if(!b) return; mythAns[+b.dataset.m]=b.dataset.a==='1'; renderMyths(); });
+$('paras').addEventListener('toggle',e=>{ const el=e.target; if(!el.classList||!el.classList.contains('term')) return; const i=+el.id.slice(1); if(el.open) openSet[i]=1; else delete openSet[i]; updExp(); },true);
+$('expAll').onclick=()=>{ const any=PARAS.some((p,i)=>!openSet[i]); PARAS.forEach((p,i)=>{ if(any) openSet[i]=1; else delete openSet[i]; }); renderParas(); };
+
+let SUM=[];
+function updActions(){
+  const done=Object.keys(checked).filter(k=>checked[k]);
+  const body=T('body_hi')+'\n\n'+SUM.join('\n')+(done.length?'\n\n✓ '+done.length:'')+'\n\n'+T('body_end')+'\n'+PAGE_URL;
+  $('emailBtn').href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(T('subj'),{})+' ('+FORM_CODE+')')+'&body='+encodeURIComponent(body);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(T('sms_hi')+' '+FORM_CODE+'. '+(SUM[0]||'')+' '+PAGE_URL);
+}
+function applyLang(){
+  document.querySelectorAll('[data-i]').forEach(el=>{ const k=el.getAttribute('data-i'); const v=I18N[lang][k]; if(typeof v==='string') el.innerHTML=v; });
+  document.querySelectorAll('[data-ph]').forEach(el=>{ const v=I18N[lang][el.getAttribute('data-ph')]; if(typeof v==='string') el.setAttribute('placeholder',v); });
+  $('langBtn').textContent=T('lang'); document.documentElement.lang=lang;
+  renderParas(); renderMyths(); render();
+}
+$('langBtn').onclick=()=>{ lang=lang==='vi'?'en':'vi'; try{ localStorage.setItem('kl_lang',lang); }catch(e){} applyLang(); };
+
+
+segOn('role'); chipsOn('sit');
+['sales','cogs','exp','rent','acc'].forEach(id=>$(id).addEventListener('input',render));
+const pct=(a,b)=>{ if(!(b>0)) return '—'; const v=Math.round(a/b*1000)/10; return (v<0?'−':'')+Math.abs(v).toFixed(1)+'%'; };
+function render(){
+  const r=segv('role'), A=num('sales'), B=num('cogs'), E=num('exp'), R=num('rent');
+  const Cg=A-B, F=Cg-E, Ry=R*12;
+  let h='<h2>'+esc(T('h_answer'))+'</h2>';
+  h+='<div class="total"><div class="k">'+esc(T('r_net'))+'</div><div class="v">'+money(F)+' <small>'+esc(T('per_y'))+'</small></div></div>';
+  h+='<div class="lines">'+line(esc(T('r_sales')),money(A),'8A')+line(esc(T('r_cogs')),money(B),'8B')
+    +line(esc(T('r_gp')),money(Cg),esc(fill(T('r_gpm'),{p:pct(Cg,A)})),'sum')
+    +line(esc(T('r_exp')),money(E),'8E')+line(esc(T('r_np')),money(F),esc(fill(T('r_npm'),{p:pct(F,A)})),'sum'+(F<0?' warnl':''))
+    +line(esc(T('r_rent')),money(Ry),esc(fill(T('r_rentp'),{p:pct(Ry,A)})))+'</div>';
+  if(F<0) h+='<div class="status warn"><b>'+esc(T('w_loss_h'))+'</b> '+esc(T('w_loss'))+'</div>';
+  if(E>0&&Ry>E) h+='<div class="status warn"><b>'+esc(T('w_rent_h'))+'</b> '+esc(T('w_rent'))+'</div>';
+  h+='<div class="note">'+esc(T('n_math'))+'</div>';
+  const acc=pd($('acc').value);
+  if(acc){ const due=roll(ad(acc,C.BPA_DOCS_DAYS)); h+='<div class="lines">'+line(esc(T('r_due')),fd(due),esc(T('r_due_s')))+'</div>'; }
+  SUM=[T(r==='s'?'seller':'buyer'),T('r_sales')+': '+money(A),T('r_gp')+': '+money(Cg),T('r_np')+': '+money(F)+' ('+pct(F,A)+')',T('r_rent')+': '+money(Ry)];
+  if(acc) SUM.push(T('r_due')+': '+fd(roll(ad(acc,C.BPA_DOCS_DAYS))));
+  const base=r==='s'?['rs1','rs2']:['rb1','rb2'], du=r==='s'?['ds1','ds2','ds3']:['db1','db2','db3'];
+  h+='<p class="res-h">'+esc(T('h_rights'))+'</p><ul class="bul">'+base.map(k=>'<li>'+T(k)+'</li>').join('')+'</ul>';
+  h+='<p class="res-h">'+esc(T('h_duties'))+'</p><ul class="bul">'+du.map(k=>'<li>'+T(k)+'</li>').join('')+'</ul>';
+  const ck=r==='s'?['cs1','cs2','cs3','cs4']:['cb1','cb2','cb3','cb4'];
+  if(chipOn('sit','abc')) ck.push(r==='s'?'x_abc_s':'x_abc_b');
+  if(chipOn('sit','fr')) ck.push('x_fr');
+  if(chipOn('sit','la')) ck.push('x_la');
+  if(chipOn('sit','re')) ck.push('x_re');
+  h+='<p class="res-h">'+esc(T('h_check'))+' <span class="fx">'+esc(T('tap'))+'</span></p>'+checklist(ck.map(k=>({k:k,t:esc(T(k))})));
+  $('result').innerHTML=h; updActions();
+}
+
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+try{if(/[?&]embed=1/.test(location.search))a.style.display='none';}catch(e){}
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CML-REL Giải Nghĩa · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+/* ---- T229 thêm (không đổi class cũ) ---- */
+.ctl input[type=search]{font-size:18px}
+.ctl input[type=search]::-webkit-search-cancel-button{cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-size:13px;padding:7px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);border-color:var(--brass);font-weight:500}
+.terms{display:grid;gap:10px}
+.term{background:var(--panel);border:1px solid var(--line);border-radius:14px;min-width:0;scroll-margin-top:16px}
+.term[open]{border-color:var(--brass)}
+.term.flash{box-shadow:0 0 0 3px var(--brass-soft)}
+.term summary{list-style:none;cursor:pointer;padding:14px 18px;display:grid;gap:2px}
+.term summary::-webkit-details-marker{display:none}
+.term summary .nm{font-family:var(--display);font-size:23px;line-height:1.15;font-weight:500;color:var(--fg)}
+.term summary .al{font-size:12px;color:var(--muted)}
+.term summary .sh{font-size:14px;color:var(--muted);line-height:1.45}
+.term .bd{padding:0 18px 16px;display:grid;gap:10px;font-size:15px;line-height:1.55}
+.term .bd p{margin:0}
+.term .bd .lb{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);font-weight:500;margin-bottom:2px}
+.term .bd .ex{background:var(--brass-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.term .bd .my b{color:var(--warn);font-weight:500}
+.term .bd .ot{font-size:13px;color:var(--muted)}
+.term .bd .ft{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px;color:var(--muted)}
+.term .bd .ft a{color:var(--brass);word-break:break-word}
+.term .bd .ft button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:12px;padding:4px 10px;border-radius:999px;cursor:pointer}
+.empty{font-size:15px;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:16px 18px}
+.empty[hidden]{display:none}
+.expall{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+</style>
+
+<style>
+/* ---- Nhóm Giải Nghĩa Forms T420–T439 (thêm, không đổi class cũ) ---- */
+.sec{display:grid;gap:12px;min-width:0}
+.sec>h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0;line-height:1.15}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.pill{border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:13px;padding:6px 12px;border-radius:999px;line-height:1.35}
+.pill b{color:var(--fg);font-weight:500}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:12px 2px;min-height:48px}
+.seg{flex-wrap:wrap}
+.seg button{min-width:0;line-height:1.3}
+.more{border:1px dashed var(--line);border-radius:12px;padding:12px 14px;background:transparent}
+.more>summary{cursor:pointer;font-size:14px;color:var(--muted);list-style:none}
+.more>summary::-webkit-details-marker{display:none}
+.more>summary::before{content:'+ ';color:var(--brass)}
+.more[open]>summary::before{content:'− '}
+.more .in{display:grid;gap:14px;margin-top:12px}
+.ans{font-size:16px;line-height:1.55;margin:0}
+.ans b{font-weight:600}
+.ans.warn{color:var(--warn)}
+.sub2{font-family:var(--display);font-weight:400;font-size:22px;margin:4px 0 0;line-height:1.15}
+.dl2{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.dl2 .dd .date{font-size:28px}
+.ul{margin:0;padding-left:20px;display:grid;gap:6px;font-size:15px;line-height:1.5}
+.tasks{display:grid;border-top:1px solid var(--line)}
+.task .tt{cursor:default}
+.myths{display:grid;gap:10px}
+.mq{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:10px;min-width:0}
+.mq .st{font-size:16px;line-height:1.45;margin:0}
+.mq .bt{display:flex;gap:8px}
+.mq .bt button{flex:1;border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:15px;padding:10px;border-radius:10px;cursor:pointer}
+.mq .bt button[aria-pressed="true"]{background:var(--brass-soft);border-color:var(--brass);font-weight:500}
+.mq .rv{font-size:14px;line-height:1.5;color:var(--muted);margin:0}
+.mq .rv b{font-weight:600}
+.mq .rv b.ok{color:var(--ok)}
+.mq .rv b.no{color:var(--warn)}
+.term .bd ul{margin:0;padding-left:18px;display:grid;gap:4px}
+.vid{display:grid;gap:10px}
+.vid h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.big2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.big2 .total .v{font-size:44px}
+</style>
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+
+<meta name="description" content="C.A.R. Form CML-REL (Commercial Release Agreement) explained in plain words, English and Vietnamese: cancel or take a credit, what you give up, and the Civil Code 1542 waiver.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t436/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="CML-REL Commercial Release Agreement Explained · Ken Lam Tools">
+<meta property="og:description" content="C.A.R. Form CML-REL (Commercial Release Agreement) explained in plain words, English and Vietnamese: cancel or take a credit, what you give up, and the Civil Code 1542 waiver.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t436/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title"></h1>
+    <p class="sub" data-i="sub"></p>
+    <div class="pills"><span class="pill" data-i="chip1"></span><span class="pill" data-i="chip2"></span><span class="pill" data-i="chip3"></span></div>
+  </header>
+
+  <section class="sec" aria-labelledby="hTool">
+    <h2 id="hTool" data-i="h_tool"></h2>
+    <div class="inputs">
+      <div class="field"><label><span data-i="l_role">I am the</span></label>
+        <div class="seg" data-seg="role"><button type="button" data-v="buyer" aria-pressed="true" data-i="o_buyer">Buyer</button><button type="button" data-v="seller" data-i="o_seller">Seller</button></div></div>
+      <div class="field"><label><span data-i="l_out">What did you agree (¶1B)?</span></label>
+        <div class="seg" data-seg="out"><button type="button" data-v="credit" aria-pressed="true" data-i="o_credit">Credit, keep the deal</button><button type="button" data-v="cancel" data-i="o_cancel">Cancel the whole deal</button></div></div>
+      <div class="field" id="fScope"><label><span data-i="l_scope">Buyer releases the seller for (¶2B)</span></label>
+        <div class="seg" data-seg="scope"><button type="button" data-v="all" aria-pressed="true" data-i="o_all">ALL listed items</button><button type="button" data-v="some" data-i="o_some">ONLY some items</button></div></div>
+      <div class="row2">
+        <div class="field" id="fPrice"><label for="price"><span data-i="l_price">Purchase price</span></label><div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="decimal" min="0" value="2000000"></div></div>
+        <div class="field" id="fCredit"><label for="credit"><span data-i="l_credit">Seller credit (¶1B(2))</span></label><div class="ctl"><span class="pre">$</span><input id="credit" type="number" inputmode="decimal" min="0" value="35000"></div></div>
+      </div>
+      <div class="field"><label for="items"><span data-i="l_items">How many items did the inspection find (¶1A)?</span></label><div class="ctl"><input id="items" type="number" inputmode="numeric" min="0" value="3"></div></div>
+
+    </div>
+  </section>
+
+  <section class="result" id="res" aria-live="polite"></section>
+
+  <section class="sec" aria-labelledby="hParas">
+    <h2 id="hParas" data-i="h_paras"></h2>
+    <p class="fx" data-i="paras_note"></p>
+    <div class="terms" id="paras"></div>
+    <button type="button" class="expall" id="expAll"></button>
+  </section>
+
+  <section class="sec" aria-labelledby="hMyths">
+    <h2 id="hMyths" data-i="h_myths"></h2>
+    <div class="myths" id="myths"></div>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title"></h2>
+    <ol>
+      <li data-i="nx1"></li>
+      <li data-i="nx2"></li>
+      <li data-i="nx3"></li>
+
+    </ol>
+  </section>
+
+  <section class="vid" aria-labelledby="hVid">
+    <h2 id="hVid" data-i="h_vid"></h2>
+    <video class="kl-vid" src="video.mp4" controls playsinline preload="metadata"></video>
+  </section>
+
+  <section class="actions">
+    <a class="btn primary" id="emailBtn" href="mailto:ken@kenlamrealty.com" data-i="b_email"></a>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms"></a>
+    <a class="btn" id="videoBtn" href="/t436/video.mp4" target="_blank" rel="noopener" data-i="b_video"></a>
+    <a class="btn" href="/t402/" data-i="b_all"></a>
+  </section>
+
+  <footer>
+    <span data-i="ft_car"></span>
+    <span class="src"><span data-i="ft_src"></span>: C.A.R. Form CML-REL, Commercial Release Agreement, Revised 12/23</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd"></span>: 06/11/2026 · <a href="/cong-cu/" data-i="ft_all"></a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== T436 · C.A.R. Form CML-REL, Commercial Release Agreement, Revised 12/23 (2 trang) =====
+   Form không có số ngày mặc định. Con số duy nhất là tiền credit hai bên điền ở ¶1B(2). */
+const META={code:'T436',form:'CML-REL',slug:'t436'};
+const D={
+  ITEM_LINES:4,           // ¶1A: 4 dòng ghi Items; hơn nữa thì dùng phụ lục C.A.R. Form ADM (¶1A(5))
+  CREDIT_AT:'COE'         // ¶1B(2): credit trừ vào giá mua lúc Close of Escrow
+};
+
+const TX={
+ vi:{
+  title:'CML-REL: Thỏa thuận buông khiếu nại khi mua bán thương mại',
+  sub:'Nói 1 câu: sau khi buyer kiểm tra thấy lỗi, hai bên ghi lại cách giải quyết (hủy, hay seller bớt tiền) rồi hứa không kiện nhau nữa về những chuyện đó.',
+  chip1:'<b>2 trang</b> · Revised 12/23',chip2:'<b>Ai ký:</b> Buyer + Seller, ký tắt chỗ bỏ quyền §1542',chip3:'<b>Khi nào gặp:</b> sau inspection trong deal thương mại, business, nhà cho thuê 2–4 căn',
+  l_role:'Tôi là',o_buyer:'Buyer',o_seller:'Seller',
+  l_out:'Hai bên đồng ý gì (¶1B)?',o_credit:'Seller bớt tiền, tiếp tục mua',o_cancel:'Hủy toàn bộ hợp đồng',
+  l_scope:'Buyer buông khiếu nại cho seller về (¶2B)',o_all:'TẤT CẢ lỗi đã ghi',o_some:'CHỈ vài lỗi',
+  l_price:'Giá mua',l_credit:'Tiền seller bớt (¶1B(2))',l_items:'Inspection tìm ra bao nhiêu lỗi (¶1A)?',
+  k_net:'Giá sau khi trừ credit',k_cancel:'Hợp đồng',v_cancel:'Hủy hết',
+  ln_price:'Giá mua',ln_credit:'Seller credit lúc close escrow',ln_net:'Giá còn lại',ln_pct:'Credit bằng',
+  credit_note:'¶1B(2): credit được trừ vào giá mua <b>lúc Close of Escrow</b>, không phải tiền mặt đưa trước. Có thể áp cho tất cả lỗi ở ¶1A hay chỉ vài lỗi ghi ra. (ngoài form) Đi vay thì hỏi lender coi credit có bị giới hạn không.',
+  cancel_note:'¶1B(1) + ¶2A: hai bên buông nhau khỏi <b>mọi nghĩa vụ</b> của hợp đồng mua, coi như hợp đồng hết hiệu lực. Form này <b>không nói</b> tiền cọc đi đâu. Coi lại hợp đồng mua và giấy hủy escrow cho chuyện tiền cọc.',
+  items_more:'Hơn 4 lỗi: ghi tiếp vào phụ lục form ADM (¶1A(5)).',
+  h_give:'Bạn bỏ quyền gì khi ký',
+  give_b_all:'Bạn (buyer) không còn kiện seller về <b>{n} lỗi</b> đã ghi ở ¶1A, dù sau này lỗi đó hóa ra tệ hơn bạn nghĩ.',
+  give_b_some:'Bạn (buyer) chỉ buông khiếu nại về <b>những lỗi ghi ở ¶2B(2)</b>. Lỗi nào không ghi thì quyền vẫn còn. Ghi cho thật rõ.',
+  give_s:'Bạn (seller) được buyer buông khiếu nại về các lỗi đã ghi. Nếu chính bạn buông khiếu nại cho buyer, phải đánh dấu và ghi ở ¶2C (hoặc ¶2D nếu hai bên cùng buông).',
+  give_cancel:'Cả hai bên buông nhau khỏi mọi nghĩa vụ của hợp đồng (¶2A).',
+  give_all:['Buông cho cả agent, broker, nhân viên, luật sư, người thừa kế, người kế nhiệm của bên kia (¶2E).','Gồm mọi loại khiếu nại: tiền, phí luật sư, thiệt hại… <b>biết hay chưa biết</b>, nghi hay chưa nghi (¶2E).','Ký tắt ¶3 là bỏ quyền theo Civil Code §1542: sau này phát hiện chuyện mới về đúng những gì đã buông thì cũng không đòi lại được.'],
+  h_check:'Trước khi ký, coi kỹ',
+  ck:['¶1A: ghi từng lỗi rõ ràng, cụ thể (vị trí, báo cáo nào, trang nào).','¶1B: đánh đúng ô: hủy, credit cho tất cả lỗi, hay chỉ vài lỗi.','¶2: đánh đúng loại release: toàn bộ (A), buyer (B, TẤT CẢ hay CHỈ), seller (C), hai bên (D).','¶3: chỉ ký tắt khi hiểu mình bỏ quyền với cả chuyện chưa biết.','Form nhắc in hoa: hỏi luật sư trước khi ký. Broker không tư vấn luật.','Sửa gì sau này phải bằng văn bản, mọi bên ký, ghi rõ là sửa đổi (¶8).'],
+  subj:'{code} {form} — hỏi về release sau inspection',
+  tx_role:{buyer:'Buyer',seller:'Seller'},tx_out:{credit:'Credit, tiếp tục mua',cancel:'Hủy toàn bộ'},tx_scope:{all:'Tất cả lỗi',some:'Chỉ vài lỗi'},
+  tx:'Tôi là: {role}\nĐồng ý: {out}\nBuông khiếu nại: {scope}\nSố lỗi: {items}\nGiá mua: {price}\nCredit: {credit} ({pct})\nGiá sau credit: {net}',
+  sms:'{out}, giá {price}, credit {credit}.',
+  nx1:'Chưa biết nên xin credit bao nhiêu sau inspection? Tham khảo <a href="/t72/">T72</a>.',
+  nx2:'Form nhắc in hoa: hỏi luật sư trước khi ký. Khi nào cần: <a href="/t120/">T120</a>. Tìm luật sư: <a href="/t122/">T122</a>.',
+  nx3:'Coi các form khác đã giải nghĩa trong <a href="/t402/">Thư viện Forms (T402)</a>.'
+ },
+ en:{
+  title:'CML-REL: Commercial Release Agreement, in plain words',
+  sub:'In one line: after the buyer\'s inspection finds problems, both sides write down the fix (cancel, or a seller credit) and promise not to sue each other over those things.',
+  chip1:'<b>2 pages</b> · Revised 12/23',chip2:'<b>Who signs:</b> Buyer + Seller, initials on the §1542 waiver',chip3:'<b>When:</b> after inspections in a commercial, business or 2–4 unit income deal',
+  l_role:'I am the',o_buyer:'Buyer',o_seller:'Seller',
+  l_out:'What did you agree (¶1B)?',o_credit:'Credit, keep the deal',o_cancel:'Cancel the whole deal',
+  l_scope:'Buyer releases the seller for (¶2B)',o_all:'ALL listed items',o_some:'ONLY some items',
+  l_price:'Purchase price',l_credit:'Seller credit (¶1B(2))',l_items:'How many items did the inspection find (¶1A)?',
+  k_net:'Price after the credit',k_cancel:'The contract',v_cancel:'Cancelled',
+  ln_price:'Purchase price',ln_credit:'Seller credit at close of escrow',ln_net:'Net price',ln_pct:'Credit equals',
+  credit_note:'¶1B(2): the credit goes toward the purchase price <b>at Close of Escrow</b>; it is not cash up front. It can cover all ¶1A items or only listed ones. (outside the form) With a loan, ask the lender whether credits are capped.',
+  cancel_note:'¶1B(1) + ¶2A: both sides release each other from <b>every obligation</b> of the purchase agreement, which ends. This form <b>does not say</b> where the deposit goes. Check the purchase agreement and the escrow cancellation for that.',
+  items_more:'More than 4 items: list the rest on Form ADM (¶1A(5)).',
+  h_give:'What you give up by signing',
+  give_b_all:'You (buyer) can no longer sue the seller over the <b>{n} items</b> listed in ¶1A, even if they turn out worse than you thought.',
+  give_b_some:'You (buyer) release only the <b>items written in ¶2B(2)</b>. Anything not written stays open. Spell them out.',
+  give_s:'You (seller) are released by the buyer for the listed items. If you also release the buyer, check and fill in ¶2C (or ¶2D for mutual).',
+  give_cancel:'Both sides release each other from every obligation of the contract (¶2A).',
+  give_all:['The release covers the other side\'s agents, brokers, employees, lawyers, heirs and successors too (¶2E).','It covers every kind of claim: money, attorney fees, damages… <b>known or unknown</b>, suspected or not (¶2E).','Initialing ¶3 waives Civil Code §1542: if you later learn something new about what you released, you still can\'t come back.'],
+  h_check:'Before you sign, check',
+  ck:['¶1A: list each item clearly (where, which report, which page).','¶1B: the right box: cancel, credit for all items, or only some.','¶2: the right kind of release: entire (A), buyer (B, ALL or ONLY), seller (C), mutual (D).','¶3: initial only if you understand you are giving up unknown claims too.','The form says in capitals: see a lawyer first. Brokers don\'t give legal advice.','Later changes must be in writing, signed by all, and say they are an amendment (¶8).'],
+  subj:'{code} {form} — question about a release after inspection',
+  tx_role:{buyer:'Buyer',seller:'Seller'},tx_out:{credit:'Credit, keep the deal',cancel:'Cancel the whole deal'},tx_scope:{all:'All items',some:'Only some items'},
+  tx:'I am: {role}\nAgreed: {out}\nRelease: {scope}\nItems: {items}\nPrice: {price}\nCredit: {credit} ({pct})\nPrice after credit: {net}',
+  sms:'{out}, price {price}, credit {credit}.',
+  nx1:'Not sure what credit to ask for after inspection? See <a href="/t72/">T72</a>.',
+  nx2:'The form says in capitals to see a lawyer first. When you need one: <a href="/t120/">T120</a>. Find one: <a href="/t122/">T122</a>.',
+  nx3:'See the other explained forms in the <a href="/t402/">Forms Library (T402)</a>.'
+ }
+};
+
+const PARAS=[
+ {n:{vi:'Đầu form',en:'Top of form'},vi:['Gắn với deal nào','Đánh dấu hợp đồng gốc: CPA (thương mại), BPA (business), RIPA (nhà cho thuê 2–4 căn) hay khác, ghi ngày và tên Buyer, Seller.'],
+  en:['Which deal','Check the original contract: CPA (commercial), BPA (business), RIPA (2–4 unit income) or other, with its date and the Buyer and Seller names.']},
+ {n:'¶1A',vi:['Lỗi tìm thấy','Buyer đã kiểm tra tài sản (hay business). Ghi từng lỗi ("Items") trên 4 dòng; nhiều hơn thì dùng phụ lục ADM.'],
+  en:['What was found','Buyer has investigated the property (or business). List each problem ("Items") on 4 lines; more go on Form ADM.']},
+ {n:'¶1B',vi:['Hai bên đồng ý gì','Đánh dấu bao nhiêu ô cũng được: (1) <b>hủy toàn bộ</b> hợp đồng; (2) seller <b>credit</b> một số tiền, trừ vào giá mua lúc close escrow, cho tất cả lỗi hay chỉ vài lỗi; (3)–(5) thỏa thuận khác.'],
+  en:['What was agreed','Check any that apply: (1) <b>cancel the whole</b> contract; (2) a seller <b>credit</b> toward the price at close of escrow, for all items or only some; (3)–(5) anything else.']},
+ {n:'¶2A',vi:['Buông toàn bộ hợp đồng','Nếu đánh dấu: hai bên buông nhau khỏi mọi nghĩa vụ, hợp đồng hết hiệu lực.'],
+  en:['Release of the entire agreement','If checked: both sides are freed from every obligation and the contract has no further effect.']},
+ {n:'¶2B',vi:['Buyer buông khiếu nại','(1) buyer buông cho seller về <b>TẤT CẢ</b> lỗi ở ¶1A; hoặc (2) <b>CHỈ</b> những lỗi ghi ra.'],
+  en:['Buyer\'s release','(1) buyer releases the seller for <b>ALL</b> items in ¶1A; or (2) <b>ONLY</b> the items written in.']},
+ {n:'¶2C–2D',vi:['Seller buông, hai bên cùng buông','C: seller buông khiếu nại cho buyer về những gì ghi ra. D: hai bên cùng buông nhau về những gì ghi ra.'],
+  en:['Seller\'s release, mutual release','C: seller releases the buyer for what is written in. D: both release each other for what is written in.']},
+ {n:'¶2E',vi:['Phạm vi buông','Rất rộng: bên buông, cùng agent, broker, nhân viên, luật sư, người thừa kế… buông <b>vĩnh viễn</b> cho bên kia và người của họ, về mọi loại khiếu nại, <b>biết hay chưa biết</b>, liên quan tới hợp đồng hay lỗi đã buông.'],
+  en:['How far it reaches','Very wide: the releasing side, with its agents, brokers, employees, lawyers, heirs…, <b>forever</b> releases the other side and its people from every kind of claim, <b>known or unknown</b>, tied to the released contract or items.']},
+ {n:'¶3',vi:['Bỏ quyền §1542','Bình thường, luật California (Civil Code §1542) nói release không áp cho chuyện mình chưa biết lúc ký. Ký tắt ở đây là <b>bỏ luôn quyền đó</b> cho những gì đã buông. Form nói hai bên đã được khuyên hỏi luật sư.'],
+  en:['Waiving §1542','Normally California Civil Code §1542 says a general release doesn\'t cover claims you didn\'t know about when you signed. Initialing here <b>gives that up</b> for what was released. The form says both sides were advised to get a lawyer.']},
+ {n:'¶4–7',vi:['Bản ký, phí luật sư, giấy tờ thêm, luật','Ký nhiều bản riêng vẫn là một. Kiện nhau thì bên thắng được phí luật sư. Hai bên ký thêm giấy tờ cần để làm đúng thỏa thuận. Luật California.'],
+  en:['Counterparts, fees, further papers, law','Separate signed copies count as one. The winner of a dispute gets attorney fees. Both sign any extra papers needed to carry it out. California law.']},
+ {n:'¶8–9',vi:['Sửa đổi, toàn bộ thỏa thuận','Sửa gì phải bằng văn bản, mọi bên ký, và ghi rõ là sửa đổi. Form này thay mọi thỏa thuận trước đó về cùng chuyện. Rồi Seller, Buyer ký.'],
+  en:['Changes, entire agreement','Changes must be in writing, signed by all, and say they are an amendment. This replaces earlier understandings on the same subject. Then Seller and Buyer sign.']}
+];
+
+const MYTHS=[
+ {a:false,vi:['Release chỉ áp cho lỗi mình đã biết lúc ký.','¶2E + ¶3: buông cả chuyện chưa biết, chưa nghi, về đúng những gì đã buông. Đó là lý do có chỗ ký tắt bỏ quyền §1542.'],
+  en:['A release only covers problems you knew about when you signed.','¶2E + ¶3: it covers unknown and unsuspected claims about what was released. That is why the §1542 waiver needs initials.']},
+ {a:false,vi:['Seller credit là tiền mặt seller đưa buyer liền khi ký.','¶1B(2): credit trừ vào giá mua lúc Close of Escrow.'],
+  en:['The seller credit is cash handed to the buyer when signing.','¶1B(2): the credit is applied to the purchase price at Close of Escrow.']},
+ {a:false,vi:['Ký xong vẫn sửa lại được bằng lời nói qua điện thoại.','¶8: sửa đổi phải bằng văn bản, mọi bên ký, ghi rõ là sửa đổi.'],
+  en:['After signing, you can change it with a phone call.','¶8: any change must be in writing, signed by all, and say it is an amendment.']}
+];
+
+function calc(){
+  const d=I18N[lang], role=S.role, out=S.out, scope=S.scope;
+  const price=num('price'), credit=num('credit'), items=Math.floor(num('items'));
+  const cr=out==='credit';
+  $('fCredit').style.display=cr?'':'none'; $('fPrice').style.display=cr?'':'none'; $('fScope').style.display=cr?'':'none';
+  const net=Math.max(0,price-credit), pct=price>0?(credit/price*100):0, pcts=pct.toFixed(2)+'%';
+  let h='';
+  if(cr){
+    h+=H.big(d.k_net,money(net,true));
+    h+=H.lines([[d.ln_price,money(price,true)],[d.ln_credit,'−'+money(credit,true)],[d.ln_net,money(net,true),'sum'],[d.ln_pct,pcts]]);
+    h+=H.note(d.credit_note);
+  } else {
+    h+=H.big(d.k_cancel,d.v_cancel);
+    h+=H.p(d.cancel_note,'warn');
+  }
+  if(items>D.ITEM_LINES) h+=H.p(d.items_more);
+  h+=H.h3(d.h_give);
+  const first=!cr?d.give_cancel:(role==='buyer'?(scope==='all'?fill(d.give_b_all,{n:items}):d.give_b_some):d.give_s);
+  h+=H.ul([first].concat(d.give_all));
+  h+=H.h3(d.h_check)+H.tasks('ck',d.ck);
+  const v={role:d.tx_role[role],out:d.tx_out[out],scope:cr?d.tx_scope[scope]:'—',items:items,price:money(price,true),credit:cr?money(credit,true):'—',pct:cr?pcts:'—',net:cr?money(net,true):'—'};
+  return {html:h,text:fill(d.tx,v),sms:fill(d.sms,v)};
+}
+
+
+/* ===== Phần chung nhóm Giải Nghĩa Forms ===== */
+const COMMON={
+ vi:{lang:'English',h_tool:'Form này nói gì với tôi?',h_paras:'Đọc từng đoạn',
+  paras_note:'Lời dễ hiểu của Ken, theo đúng số đoạn trên form. Không phải nguyên văn form.',
+  exp_all:'Mở hết',exp_none:'Đóng hết',h_myths:'Nhiều người hiểu sai',m_true:'Đúng',m_false:'Sai',
+  m_ok:'Chuẩn.',m_no:'Chưa đúng.',m_is_t:'Đáp án: Đúng.',m_is_f:'Đáp án: Sai.',
+  nx_title:'Bước tiếp theo',h_vid:'Video 45 giây',b_email:'Email cho Ken',b_sms:'Nhắn tin cho Ken',b_video:'Xem video 45 giây',b_all:'Mọi form giải nghĩa',
+  ft_car:'Form gốc © California Association of REALTORS®. Trang này chỉ giải thích, không thay thế form và không phải tư vấn pháp lý/thuế.',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',
+  mail_hi:'Chào Ken,\n\nTôi vừa dùng tool {code} ({form}) trên tools.kenlamrealty.com. Kết quả của tôi:\n\n',
+  mail_end:'\n\nCho tôi hỏi thêm.\n\nTên:\nPhone:\n\nhttps://tools.kenlamrealty.com/{slug}/',
+  sms_hi:'Chào Ken, tôi đang xem tool {code} ({form}). ',
+  wd:['CN','T2','T3','T4','T5','T6','T7']},
+ en:{lang:'Tiếng Việt',h_tool:'What does this form mean for me?',h_paras:'Read it paragraph by paragraph',
+  paras_note:'Ken\'s plain-words version, using the paragraph numbers on the form. Not the form\'s exact wording.',
+  exp_all:'Open all',exp_none:'Close all',h_myths:'Common mistakes',m_true:'True',m_false:'False',
+  m_ok:'Right.',m_no:'Not quite.',m_is_t:'Answer: True.',m_is_f:'Answer: False.',
+  nx_title:'Next steps',h_vid:'45-second video',b_email:'Email Ken',b_sms:'Text Ken',b_video:'Watch the 45-sec video',b_all:'All explained forms',
+  ft_car:'Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.',
+  ft_src:'Source',ft_upd:'Updated',ft_all:'All tools',
+  mail_hi:'Hi Ken,\n\nI just used tool {code} ({form}) on tools.kenlamrealty.com. My result:\n\n',
+  mail_end:'\n\nI have a question.\n\nName:\nPhone:\n\nhttps://tools.kenlamrealty.com/{slug}/',
+  sms_hi:'Hi Ken, I am looking at tool {code} ({form}). ',
+  wd:['Sun','Mon','Tue','Wed','Thu','Fri','Sat']}
+};
+const I18N={vi:Object.assign({},COMMON.vi,TX.vi),en:Object.assign({},COMMON.en,TX.en)};
+let lang='en'; try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const t=k=>{const v=I18N[lang][k]; return v==null?k:v;};
+const fill=(s,v)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>v[k]!=null?v[k]:m);
+const money=(x,c)=>{const f=c&&Math.round(Math.abs(x)*100)%100!==0; return (x<0?'-':'')+'$'+Math.abs(x).toLocaleString('en-US',{minimumFractionDigits:f?2:0,maximumFractionDigits:f?2:0});};
+const num=id=>{const el=$(id); if(!el) return 0; const v=parseFloat(String(el.value).replace(/,/g,'')); return isFinite(v)&&v>0?v:0;};
+const pad=n=>String(n).padStart(2,'0');
+function pd(s){const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||''); return m?new Date(+m[1],+m[2]-1,+m[3]):null;}
+function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function addDays(d,n){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()+n); return x;}
+function addMonths(d,n){const x=new Date(d.getFullYear(),d.getMonth()+n,1); const last=new Date(x.getFullYear(),x.getMonth()+1,0).getDate(); x.setDate(Math.min(d.getDate(),last)); return x;}
+/* Ngày làm việc: bỏ thứ Bảy, Chủ Nhật. Chưa trừ ngày lễ. */
+function addBiz(d,n){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); let k=Math.abs(n); const s=n<0?-1:1; while(k>0){x.setDate(x.getDate()+s); const w=x.getDay(); if(w!==0&&w!==6) k--;} return x;}
+function fd(d){if(!d) return '—'; const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; const w=t('wd')[d.getDay()];
+  return lang==='vi'? w+', '+pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear() : w+', '+M[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();}
+function today(){const n=new Date(); return new Date(n.getFullYear(),n.getMonth(),n.getDate());}
+const H={
+ big:(k,v,s)=>'<div class="total"><div class="k">'+k+'</div><div class="v">'+v+(s?' <small>'+s+'</small>':'')+'</div></div>',
+ lines:a=>'<div class="lines">'+a.filter(Boolean).map(r=>'<div class="line '+(r[2]||'')+'"><span class="n">'+r[0]+'</span><span class="a">'+r[1]+'</span></div>').join('')+'</div>',
+ dd:(ti,d,p)=>'<div class="dd"><div class="hd"><span class="t">'+ti+'</span></div><div class="date">'+fd(d)+'</div>'+(p?'<p>'+p+'</p>':'')+'</div>',
+ h3:s=>'<h3 class="sub2">'+s+'</h3>',
+ p:(s,c)=>'<p class="ans'+(c?' '+c:'')+'">'+s+'</p>',
+ ul:a=>'<ul class="ul">'+a.filter(Boolean).map(x=>'<li>'+x+'</li>').join('')+'</ul>',
+ note:s=>'<div class="note">'+s+'</div>',
+ tasks:(id,a)=>'<div class="tasks">'+a.filter(Boolean).map((x,i)=>{const k=id+'_'+i, on=!!CK[k];
+   return '<label class="task'+(on?' done':'')+'"><input type="checkbox" data-ck="'+k+'"'+(on?' checked':'')+'><span class="tt">'+x+'</span></label>';}).join('')+'</div>'
+};
+const CK={};
+const S={};
+document.querySelectorAll('.seg[data-seg]').forEach(g=>{
+  const k=g.getAttribute('data-seg'); const p=g.querySelector('button[aria-pressed="true"]')||g.querySelector('button');
+  S[k]=p.getAttribute('data-v');
+  g.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===p)));
+  g.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button'); if(!b) return; S[k]=b.getAttribute('data-v');
+    g.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); render();});
+});
+document.querySelectorAll('input,select').forEach(el=>{ if(el.closest('#res')) return; el.addEventListener('input',render); el.addEventListener('change',render); });
+$('res').addEventListener('change',e=>{const c=e.target; if(!c.getAttribute||!c.getAttribute('data-ck')) return; const k=c.getAttribute('data-ck');
+  if(c.checked) CK[k]=1; else delete CK[k]; c.closest('.task').classList.toggle('done',c.checked);});
+let openP={};
+function renderParas(){
+  $('paras').innerHTML=PARAS.map((p,i)=>{const x=p[lang];
+    return '<details class="term" data-p="'+i+'"'+(openP[i]?' open':'')+'><summary><span class="al">'+esc(typeof p.n==='object'?p.n[lang]:p.n)+'</span><span class="nm">'+x[0]+'</span></summary><div class="bd">'+x[1]+'</div></details>';}).join('');
+  updExp();
+}
+function updExp(){ const all=PARAS.every((p,i)=>openP[i]); $('expAll').textContent=all?t('exp_none'):t('exp_all'); }
+$('paras').addEventListener('toggle',e=>{const el=e.target; if(!el.getAttribute||el.getAttribute('data-p')==null) return; const i=el.getAttribute('data-p'); if(el.open) openP[i]=1; else delete openP[i]; updExp();},true);
+$('expAll').onclick=()=>{const all=PARAS.every((p,i)=>openP[i]); openP={}; if(!all) PARAS.forEach((p,i)=>openP[i]=1); renderParas();};
+const MA={};
+function renderMyths(){
+  $('myths').innerHTML=MYTHS.map((m,i)=>{const x=m[lang], a=MA[i];
+    let rv=''; if(a!=null){ const right=(a===String(m.a)); rv='<p class="rv"><b class="'+(right?'ok':'no')+'">'+(right?t('m_ok'):t('m_no'))+'</b> '+(m.a?t('m_is_t'):t('m_is_f'))+' '+x[1]+'</p>'; }
+    return '<div class="mq"><p class="st">'+x[0]+'</p><div class="bt" role="group"><button type="button" data-m="'+i+'" data-a="true" aria-pressed="'+(a==='true')+'">'+t('m_true')+'</button><button type="button" data-m="'+i+'" data-a="false" aria-pressed="'+(a==='false')+'">'+t('m_false')+'</button></div>'+rv+'</div>';}).join('');
+}
+$('myths').addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button[data-m]'); if(!b) return; MA[b.getAttribute('data-m')]=b.getAttribute('data-a'); renderMyths();});
+function render(){
+  const r=calc();
+  $('res').innerHTML=r.html;
+  const v={code:META.code,form:META.form,slug:META.slug};
+  $('emailBtn').href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(t('subj'),v))+'&body='+encodeURIComponent(fill(t('mail_hi'),v)+r.text+fill(t('mail_end'),v));
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(t('sms_hi'),v)+(r.sms||''));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  document.querySelectorAll('[data-ph]').forEach(el=>{const k=el.getAttribute('data-ph'); if(typeof d[k]==='string') el.setAttribute('placeholder',d[k]);});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  renderParas(); renderMyths(); render();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+if(typeof init==='function') init();
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+try{if(/[?&]embed=1/.test(location.search))a.style.display='none';}catch(e){}
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+
+</body>
+</html>

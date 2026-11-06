@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CML-LEC Giải Nghĩa · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+/* ---- T229 thêm (không đổi class cũ) ---- */
+.ctl input[type=search]{font-size:18px}
+.ctl input[type=search]::-webkit-search-cancel-button{cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-size:13px;padding:7px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);border-color:var(--brass);font-weight:500}
+.terms{display:grid;gap:10px}
+.term{background:var(--panel);border:1px solid var(--line);border-radius:14px;min-width:0;scroll-margin-top:16px}
+.term[open]{border-color:var(--brass)}
+.term.flash{box-shadow:0 0 0 3px var(--brass-soft)}
+.term summary{list-style:none;cursor:pointer;padding:14px 18px;display:grid;gap:2px}
+.term summary::-webkit-details-marker{display:none}
+.term summary .nm{font-family:var(--display);font-size:23px;line-height:1.15;font-weight:500;color:var(--fg)}
+.term summary .al{font-size:12px;color:var(--muted)}
+.term summary .sh{font-size:14px;color:var(--muted);line-height:1.45}
+.term .bd{padding:0 18px 16px;display:grid;gap:10px;font-size:15px;line-height:1.55}
+.term .bd p{margin:0}
+.term .bd .lb{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);font-weight:500;margin-bottom:2px}
+.term .bd .ex{background:var(--brass-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.term .bd .my b{color:var(--warn);font-weight:500}
+.term .bd .ot{font-size:13px;color:var(--muted)}
+.term .bd .ft{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px;color:var(--muted)}
+.term .bd .ft a{color:var(--brass);word-break:break-word}
+.term .bd .ft button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:12px;padding:4px 10px;border-radius:999px;cursor:pointer}
+.empty{font-size:15px;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:16px 18px}
+.empty[hidden]{display:none}
+.expall{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+
+/* ---- T42x Giải nghĩa forms thêm (không đổi class cũ) ---- */
+.chipsr{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chipsr span{border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:13px;padding:6px 12px;border-radius:999px}
+.seg.w{flex-wrap:wrap}
+.seg.w button{flex:1 1 auto;min-width:0}
+.ctl{min-width:0}
+.ctl select{flex:1 1 0;min-width:0;width:0;text-overflow:ellipsis;border:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;padding:12px 4px}
+.ctl select option{color:#2B2925}
+.hide{display:none!important}
+.big{font-family:var(--display);font-weight:400;font-size:44px;line-height:1.05;font-variant-numeric:tabular-nums;color:var(--fg);overflow-wrap:anywhere}
+.big small{font-family:var(--body);font-size:15px;color:var(--muted)}
+.rh{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);font-weight:500;margin:0}
+.rblock{display:grid;gap:6px}
+.rlist{margin:0;padding-left:18px;display:grid;gap:6px;font-size:15px;line-height:1.5}
+.rp{margin:0;font-size:15px;line-height:1.55}
+.dates{display:grid;gap:10px}
+.dd .date{font-size:30px}
+.checks{display:grid}
+.task span.tt{cursor:pointer}
+.quiz{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:10px}
+.quiz p{margin:0;font-size:15px;line-height:1.5}
+.quiz .qb{display:flex;gap:8px;flex-wrap:wrap}
+.quiz .qb button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:14px;padding:7px 18px;border-radius:999px;cursor:pointer}
+.quiz .qb button[aria-pressed="true"]{border-color:var(--brass);background:var(--brass-soft)}
+.quiz .ans{font-size:14px;line-height:1.5;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px}
+.quiz .ans[hidden]{display:none}
+.quiz .ans b{color:var(--fg);font-weight:500}
+.term .bd p b{font-weight:500}
+.vidh{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+</style>
+<meta name="description" content="C.A.R. Form CML-LEC explained simply: the building owner's consent that lets a buyer run environmental tests on leased commercial property and see the information. English and Vietnamese.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t435/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="CML-LEC Explained · Ken Lam Tools">
+<meta property="og:description" content="Commercial Landlord's Environmental Consent, explained like you're 10: when you need it, who signs, what the landlord agrees to.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t435/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title"></h1>
+    <p class="sub" data-i="sub"></p>
+    <div class="chipsr"><span data-i="chip1"></span><span data-i="chip2"></span><span data-i="chip3"></span></div>
+  </header>
+
+  <h2 class="vidh" data-i="h_tool">What does this form say to me?</h2>
+  <section class="inputs" id="inputs" aria-label="Your situation">
+    <div class="field"><label><span data-i="l_role">I am the</span></label>
+      <div class="seg w" data-k="role"><button type="button" data-v="ll" aria-pressed="true" data-i="r_ll">Landlord</button><button type="button" data-v="se" aria-pressed="false" data-i="r_se">Seller (tenant)</button><button type="button" data-v="bu" aria-pressed="false" data-i="r_bu">Buyer</button><button type="button" data-v="ag" aria-pressed="false" data-i="r_ag">Agent</button></div></div>
+    <div class="field"><label><span data-i="l_leased">Is any leased property in this deal?</span></label>
+      <div class="seg w" data-k="leased"><button type="button" data-v="y" aria-pressed="true" data-i="yes">Yes</button><button type="button" data-v="n" aria-pressed="false" data-i="no">No</button></div></div>
+    <div class="field"><label><span data-i="l_type">The landlord is</span></label>
+      <div class="seg w" data-k="ltype"><button type="button" data-v="ind" aria-pressed="true" data-i="t_ind">A person</button><button type="button" data-v="ent" aria-pressed="false" data-i="t_ent">A company / trust</button></div></div>
+    <div class="field"><label for="stage"><span data-i="l_stage">Where we are</span></label>
+      <div class="ctl"><select id="stage">
+        <option value="pre" data-i="g_pre">Signing the NDA (CML-CNDA) and environmental addendum (CML-EIA)</option>
+        <option value="crew" data-i="g_crew">Buyer wants to send the environmental crew in</option>
+        <option value="nosign" data-i="g_nosign">The landlord has not signed yet</option>
+      </select></div></div>
+  </section>
+
+  <section class="result" aria-live="polite" id="result"></section>
+
+
+  <section class="dl" aria-label="Paragraphs">
+    <h2 data-i="h_paras">Read it paragraph by paragraph</h2>
+    <p class="sub" data-i="paras_note"></p>
+    <div class="terms" id="paras"></div>
+    <button type="button" class="expall" id="expAll" data-i="exp_all">Open all</button>
+  </section>
+
+  <section class="dl" aria-label="Myths">
+    <h2 data-i="h_myth">What people get wrong</h2>
+    <div class="terms" id="myths"></div>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol><li data-i="nx1"></li><li data-i="nx2"></li><li data-i="nx3"></li></ol>
+  </section>
+
+  <section class="dl" aria-label="Video">
+    <h2 data-i="h_video">45-second video</h2>
+    <video class="kl-vid" src="video.mp4" controls playsinline preload="metadata" aria-label="45-second video"></video>
+  </section>
+
+  <section class="actions">
+    <a class="btn primary" id="emailBtn" href="mailto:ken@kenlamrealty.com" data-i="b_email">Email Ken my result</a>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Text Ken</a>
+    <a class="btn" id="videoBtn" href="/t435/video.mp4" target="_blank" rel="noopener" data-i="b_video">Watch the 45-sec video</a>
+    <a class="btn" id="allBtn" href="/t402/" data-i="b_all">All explained forms</a>
+  </section>
+
+  <footer>
+    <span data-i="ft_cr"></span>
+    <span class="src"><span data-i="ft_src">Source</span>: C.A.R. Form CML-LEC, Commercial – Landlord’s Environmental Consent, Revised 12/23 (1 page)</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/cong-cu/" data-i="ft_all">All tools</a> · <a href="/t402/" data-i="ft_lib">All forms</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== T435 · CML-LEC · lấy từ form (C.A.R. Form CML-LEC, Revised 12/23, 1 trang) =====
+   "Complete only if leased property involved in transaction."
+   Landlord (chủ đất/chủ building) theo Lease ghi trong CML-CNDA (có ngày), đồng ý: (i) CML-EIA; (ii) giao mọi "Information"
+   về property Landlord sở hữu hoặc cho thuê; (iii) đồng ý và cùng cấp "License" mà Seller cấp cho Buyer.
+   Định nghĩa lấy từ CML-CNDA và CML-EIA. Ký: cá nhân (2 dòng) HOẶC entity (tên, loại entity, By, Name, Its/chức vụ).
+   Notice Information: địa chỉ, điện thoại, email, text.
+   Form không có số ngày, số tiền mặc định nào.
+   Liên quan (form khác, chỉ nhắc): CML-EIA có ô "nếu có leased property thì Buyer không được vào theo License cho tới khi Landlord ký CML-LEC";
+   CML-EIA đoạn 7: báo trước không ít hơn 5 business days trước khi bắt đầu Work. */
+const CODE='T435', FORM='CML-LEC', TPATH='t435';
+const RULES={ONLY_IF_LEASED:true, EIA_NOTICE_BUSINESS_DAYS:5 /* CML-EIA đoạn 7, form đi kèm */};
+const L={
+ en:{title:'CML-LEC: the landlord’s OK for environmental testing',
+  sub:'When the business or property you are buying sits on land someone else owns and leases out, that owner has to say "yes, you may come test it and see the information." This one page is that yes.',
+  chip1:'1 page',chip2:'Signed by: the landlord (building owner)',chip3:'When: only if leased property is in the deal',
+  l_role:'I am the',r_ll:'Landlord',r_se:'Seller (tenant)',r_bu:'Buyer',r_ag:'Agent',
+  l_leased:'Is any leased property in this deal?',yes:'Yes',no:'No',l_type:'The landlord is',t_ind:'A person',t_ent:'A company / trust',
+  l_stage:'Where we are',g_pre:'Signing the NDA (CML-CNDA) and environmental addendum (CML-EIA)',g_crew:'Buyer wants to send the environmental crew in',g_nosign:'The landlord has not signed yet',
+  k_ans:'Short answer',k_agree:'What the landlord agrees to',k_rights:'Your rights',k_duty:'What you must do',k_check:'Checklist (tap to tick)',
+  paras_note:'CML-LEC has no paragraph numbers. Parts follow the order on the form; (i), (ii), (iii) are the form’s own labels.',
+  subj:'landlord environmental consent',sms_q:'I have a question about a landlord environmental consent (CML-LEC).',
+  nx1:'Get the CML-CNDA date and the lease right first; this page points back to them.',
+  nx2:'Buying the building itself? Read the commercial purchase contract in <a href="/t437/">T437 (CPA)</a>.',
+  nx3:'Environmental issues can be big money. Find a real estate lawyer in <a href="/t122/">T122</a>, or text Ken.'},
+ vi:{title:'CML-LEC: Chủ đất đồng ý cho kiểm tra môi trường',
+  sub:'Khi business hay tài sản mình mua nằm trên đất/building của người khác đang cho thuê, người chủ đó phải nói "được, cứ vào kiểm tra và xem thông tin". Tờ một trang này chính là chữ "được" đó.',
+  chip1:'1 trang',chip2:'Ai ký: chủ đất / chủ building (Landlord)',chip3:'Khi nào: chỉ khi giao dịch có phần đất/nhà đang thuê',
+  l_role:'Tôi là',r_ll:'Chủ đất (Landlord)',r_se:'Người bán (đang thuê)',r_bu:'Người mua',r_ag:'Agent',
+  l_leased:'Giao dịch có phần đất/nhà đang thuê không?',yes:'Có',no:'Không',l_type:'Chủ đất là',t_ind:'Cá nhân',t_ent:'Công ty / trust',
+  l_stage:'Đang ở bước nào',g_pre:'Đang ký NDA (CML-CNDA) và phụ lục môi trường (CML-EIA)',g_crew:'Người mua muốn cho đội kiểm tra môi trường vào',g_nosign:'Chủ đất chưa ký',
+  k_ans:'Trả lời ngắn',k_agree:'Chủ đất đồng ý những gì',k_rights:'Quyền của anh/chị',k_duty:'Việc anh/chị phải làm',k_check:'Checklist (bấm để tick)',
+  paras_note:'Form CML-LEC không đánh số đoạn. Các phần theo thứ tự trên form; (i), (ii), (iii) là ký hiệu của chính form.',
+  subj:'chủ đất đồng ý kiểm tra môi trường',sms_q:'Em có câu hỏi về giấy chủ đất đồng ý kiểm tra môi trường (CML-LEC).',
+  nx1:'Làm đúng ngày ký CML-CNDA và hợp đồng thuê trước; tờ này dẫn ngược về hai giấy đó.',
+  nx2:'Mua luôn cái building? Đọc hợp đồng mua tài sản thương mại ở <a href="/t437/">T437 (CPA)</a>.',
+  nx3:'Chuyện môi trường có thể tốn rất nhiều tiền. Tìm luật sư địa ốc ở <a href="/t122/">T122</a>, hoặc nhắn Ken.'}
+};
+function renderResult(){
+  const v=lang, role=S.role, st=$('stage').value, leased=S.leased==='y', ent=S.ltype==='ent';
+  let big, p1;
+  if(!leased){
+    big=v==='vi'?'Không cần CML-LEC.':'You do not need CML-LEC.';
+    p1=v==='vi'?'Đầu form ghi: chỉ điền khi giao dịch có phần tài sản đang cho thuê (leased property). Không có thì bỏ qua tờ này.':'The top of the form says: complete only if leased property is involved. No leased property, no CML-LEC.';
+  } else if(st==='pre'){
+    big=v==='vi'?'Cần. Ký cùng lúc với CNDA và EIA.':'Yes. Sign it alongside the CNDA and EIA.';
+    p1=v==='vi'?'Tờ này ghi ngày của CML-CNDA và dùng định nghĩa trong CML-CNDA và CML-EIA. Ba giấy đi chung với nhau.':'This page names the CML-CNDA by its date and uses the definitions in the CML-CNDA and CML-EIA. The three papers travel together.';
+  } else if(st==='crew'){
+    big=v==='vi'?'Chưa có chữ ký chủ đất thì chưa vào.':'No landlord signature, no entry.';
+    p1=v==='vi'?'Form CML-EIA đi kèm có ô ghi: nếu có leased property, người mua và đội kiểm tra không được vào theo License cho tới khi chủ đất ký CML-LEC. EIA đoạn 7 còn đòi báo trước ít nhất 5 business days trước khi làm.':'The CML-EIA that goes with it has a box saying: with leased property, the buyer and its environmental crew may not enter under the License until the landlord signs CML-LEC. EIA paragraph 7 also asks for at least 5 business days’ notice before work starts.';
+  } else {
+    big=v==='vi'?'Hỏi chủ đất ký trước khi tính tiếp.':'Get the landlord to sign before you plan more.';
+    p1=v==='vi'?'Không có (i) đồng ý EIA, (ii) cho giao thông tin, (iii) cùng cấp License thì người mua khó kiểm tra phần đất/nhà đang thuê. Form không bắt chủ đất phải ký.':'Without (i) consent to the EIA, (ii) consent to share the information, and (iii) joining the License, the buyer cannot easily test the leased part. Nothing in the form forces the landlord to sign.';
+  }
+  const agree=v==='vi'?['(i) Đồng ý với Phụ lục vấn đề môi trường (CML-EIA).','(ii) Đồng ý cho giao mọi "Information" liên quan tới tài sản mà chủ đất sở hữu hoặc cho thuê.','(iii) Đồng ý và cùng đứng tên cấp "License" (giấy phép tạm vào tài sản) mà người bán cấp cho người mua.']
+                     :['(i) Consents to the Environmental Issues Addendum (CML-EIA).','(ii) Consents to delivery of any "Information" about property the landlord owns or leases.','(iii) Consents to and joins in the "License" (temporary permission to enter) that the seller grants the buyer.'];
+  let duty, rights, ck;
+  if(role==='ll'){
+    rights=v==='vi'?['Biết trước ai vào, làm gì: các điều kiện nằm trong CML-CNDA và CML-EIA mà tờ này dẫn tới.','Form không bắt mình ký; ký là tự nguyện.']:['Know who comes in and what they do: the terms are in the CML-CNDA and CML-EIA this page points to.','Nothing in the form forces you to sign.'];
+    duty=ent?(v==='vi'?['Ghi đúng tên công ty/trust và loại entity.','Người ký ghi "By", tên in, và chức vụ ("Its").','Điền thông tin nhận thông báo: địa chỉ, điện thoại, email, số text.']:['Write the full entity name and type of entity.','The signer fills in "By", printed name, and title ("Its").','Fill in notice information: address, phone, email, text.'])
+             :(v==='vi'?['Ký tên ở dòng "Landlord" (có 2 dòng nếu hai người đứng tên).','Điền thông tin nhận thông báo: địa chỉ, điện thoại, email, số text.']:['Sign on the "Landlord" line (two lines if two owners).','Fill in notice information: address, phone, email, text.']);
+  } else {
+    rights=role==='bu'?(v==='vi'?['Khi chủ đất đã ký, người mua có thêm sự đồng ý của chủ đất để vào kiểm tra theo License và nhận thông tin.']:['Once the landlord signs, the buyer also has the landlord’s consent to enter under the License and receive the information.'])
+          :(v==='vi'?['Có chữ ký chủ đất thì người bán (đang thuê) được giao thông tin về phần đất/nhà thuê cho người mua.']:['With the landlord’s signature, the seller (who rents the space) may share information about the leased property with the buyer.']);
+    duty=v==='vi'?['Đưa chủ đất đủ bộ: CML-CNDA (có ngày) + CML-EIA + CML-LEC.','Coi lại ô "nếu có leased property" trong CML-EIA đã đánh dấu chưa.','Chờ chữ ký chủ đất rồi mới cho đội kiểm tra vào.']
+                  :['Give the landlord the full set: CML-CNDA (with its date) + CML-EIA + CML-LEC.','Check whether the "leased property" box in the CML-EIA is checked.','Wait for the landlord’s signature before the crew goes in.'];
+  }
+  ck=v==='vi'?[['l1','Ghi ngày CML-CNDA'],['l2',ent?'Tên entity, loại entity, By / Name / Its':'Tên chủ đất (1 hoặc 2 người)'],['l3','Địa chỉ, điện thoại, email, text nhận thông báo'],['l4','Ô leased property trong CML-EIA'],['l5','Bản có chữ ký gửi cho mọi bên']]
+             :[['l1','CML-CNDA date filled in'],['l2',ent?'Entity name, entity type, By / Name / Its':'Landlord name(s), one or two'],['l3','Notice address, phone, email, text'],['l4','Leased-property box in the CML-EIA'],['l5','Signed copy sent to everyone']];
+  $('result').innerHTML='<div class="total"><div class="k">'+t('k_ans')+'</div><div class="big" style="font-size:32px">'+big+'</div></div><p class="rp">'+p1+'</p>'
+    +(leased?block(t('k_agree'),ul(agree))+block(t('k_rights'),ul(rights))+block(t('k_duty'),ul(duty))+block(t('k_check'),checks(ck)):'')
+    +'<div class="note">'+(v==='vi'?'Ký tờ này là <b>đồng ý</b>, không phải cam kết tài sản sạch. Form không có câu nào chủ đất bảo đảm tình trạng môi trường.':'Signing is <b>consent</b>, not a promise that the property is clean. The form has no statement about environmental condition.')+'</div>';
+}
+function summary(){
+  const v=lang, sel=$('stage');
+  return (v==='vi'?'Tôi là: ':'I am: ')+t({ll:'r_ll',se:'r_se',bu:'r_bu',ag:'r_ag'}[S.role])+'\n'+(v==='vi'?'Có leased property: ':'Leased property: ')+t(S.leased==='y'?'yes':'no')+'\n'+(v==='vi'?'Chủ đất: ':'Landlord: ')+t(S.ltype==='ent'?'t_ent':'t_ind')+'\n'+(v==='vi'?'Bước: ':'Stage: ')+sel.options[sel.selectedIndex].text;
+}
+const PARAS=[
+ {n:{en:'Top',vi:'Đầu form'},en:['Only if leased property is involved','The header says: complete this only if leased property is part of the deal. Example: the seller is a tenant on someone else’s land, and that lease goes to the buyer.'],vi:['Chỉ khi có tài sản đang thuê','Đầu form ghi: chỉ điền khi giao dịch có phần tài sản đang cho thuê. Ví dụ: người bán đang thuê đất của người khác, và hợp đồng thuê đó chuyển qua người mua.']},
+ {n:{en:'Opening',vi:'Mở đầu'},en:['Who signs and which lease','The signer is the Landlord under the lease described in the Confidentiality and Non-Disclosure Agreement (CML-CNDA), identified by its date.'],vi:['Ai ký, hợp đồng thuê nào','Người ký là Landlord (chủ đất) của hợp đồng thuê được ghi trong thỏa thuận bảo mật CML-CNDA, xác định bằng ngày ký của CNDA.']},
+ {n:'(i)',en:['Consent to the EIA','The landlord agrees to the Environmental Issues Addendum (CML-EIA) that comes before this page.'],vi:['Đồng ý với EIA','Chủ đất đồng ý với Phụ lục vấn đề môi trường (CML-EIA) đi trước tờ này.']},
+ {n:'(ii)',en:['Consent to share the information','The landlord agrees that "Information" about property the landlord owns or leases may be delivered.'],vi:['Đồng ý cho giao thông tin','Chủ đất đồng ý cho giao "Information" (thông tin) về tài sản mà chủ đất sở hữu hoặc cho thuê.']},
+ {n:'(iii)',en:['Joins the License','The landlord agrees to and joins in the "License" (temporary permission to enter) that the seller gives the buyer.'],vi:['Cùng cấp License','Chủ đất đồng ý và cùng đứng tên cấp "License" (giấy phép tạm vào tài sản) mà người bán cấp cho người mua.']},
+ {n:{en:'Definitions',vi:'Định nghĩa'},en:['Same words, same meaning','Words like "Information" and "License" mean what the CML-CNDA and CML-EIA say they mean.'],vi:['Cùng chữ, cùng nghĩa','Các chữ như "Information", "License" mang nghĩa như trong CML-CNDA và CML-EIA.']},
+ {n:{en:'Signature',vi:'Chữ ký'},en:['Person or company','If the landlord is a person: one or two signature lines. If it is an entity: entity name, type of entity, then "By" (signature), "Name" and "Its" (title).'],vi:['Cá nhân hay công ty','Chủ đất là cá nhân: một hoặc hai dòng ký. Là entity: tên entity, loại entity, rồi "By" (chữ ký), "Name" (tên) và "Its" (chức vụ).']},
+ {n:{en:'Notice',vi:'Thông báo'},en:['Where to reach the landlord','Address, phone, email and text number for notices.'],vi:['Liên lạc chủ đất ở đâu','Địa chỉ, điện thoại, email và số text để gửi thông báo.']}
+];
+const MYTHS=[
+ {a:false,en:['Every commercial purchase needs a CML-LEC.','Only when leased property is involved. The header says so.'],vi:['Mua bán thương mại nào cũng cần CML-LEC.','Chỉ khi có tài sản đang cho thuê trong giao dịch. Đầu form ghi rõ.']},
+ {a:false,en:['When the landlord signs CML-LEC, the landlord promises the land is clean.','It is consent only: to the EIA, to sharing information, and to the License. There is no promise about condition.'],vi:['Chủ đất ký CML-LEC là cam kết đất sạch.','Chỉ là đồng ý: với EIA, cho giao thông tin, và cấp License. Không có lời hứa nào về tình trạng đất.']},
+ {a:true,en:['If the landlord is an LLC, the person signing should write their title.','The entity block asks for "By", "Name" and "Its" (title).'],vi:['Chủ đất là LLC thì người ký nên ghi chức vụ.','Phần entity có ô "By", "Name" và "Its" (chức vụ).']}
+];
+
+/* ===== Phần chung cho nhóm "Giải nghĩa Forms" (T420–T439) ===== */
+const BASE={
+ en:{h_tool:'What does this form say to me?',h_paras:'Read it paragraph by paragraph',h_myth:'What people get wrong',nx_title:'Next steps',h_video:'45-second video',
+  exp_all:'Open all',exp_none:'Close all',q_true:'True',q_false:'False',q_right:'Right.',q_wrong:'Not quite.',q_is_true:'It is true.',q_is_false:'It is false.',
+  b_email:'Email Ken my result',b_sms:'Text Ken',b_video:'Watch the 45-sec video',b_all:'All explained forms',
+  ft_cr:'Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.',
+  ft_src:'Source',ft_upd:'Updated',ft_all:'All tools',ft_lib:'All forms',lang:'Tiếng Việt',
+  if_note:'If the contract does not change the number of days.',sms_hi:'Hi Ken, I used tool {code} ({form}) on tools.kenlamrealty.com. ',
+  mail_tail:'General explanation only, not legal advice.\nSent from tool {code} · https://tools.kenlamrealty.com/{t}/'},
+ vi:{h_tool:'Form này nói gì với tôi?',h_paras:'Đọc từng đoạn',h_myth:'Nhiều người hiểu sai',nx_title:'Bước tiếp theo',h_video:'Video 45 giây',
+  exp_all:'Mở hết',exp_none:'Đóng hết',q_true:'Đúng',q_false:'Sai',q_right:'Chính xác.',q_wrong:'Chưa đúng.',q_is_true:'Câu này ĐÚNG.',q_is_false:'Câu này SAI.',
+  b_email:'Email kết quả cho Ken',b_sms:'Nhắn tin cho Ken',b_video:'Xem video 45 giây',b_all:'Mọi form giải nghĩa',
+  ft_cr:'Form gốc © California Association of REALTORS®. Trang này chỉ giải thích, không thay thế form và không phải tư vấn pháp lý/thuế.',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',ft_lib:'Mọi form',lang:'English',
+  if_note:'Nếu hợp đồng không sửa số ngày.',sms_hi:'Chào anh Ken, em vừa dùng tool {code} ({form}) trên tools.kenlamrealty.com. ',
+  mail_tail:'Chỉ là giải thích chung, không phải tư vấn pháp lý.\nGửi từ tool {code} · https://tools.kenlamrealty.com/{t}/'}
+};
+const I18N={en:Object.assign({},BASE.en,L.en),vi:Object.assign({},BASE.vi,L.vi)};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const t=k=>{const v=I18N[lang][k]; return v==null?k:v;};
+const fill=(s,o)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>o[k]!=null?o[k]:m);
+const money=n=>(n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const num=id=>{const el=$(id); if(!el) return 0; const v=parseFloat(String(el.value).replace(/[^0-9.\-]/g,'')); return isFinite(v)?v:0;};
+const pad=n=>String(n).padStart(2,'0');
+const WD={en:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],vi:['CN','T2','T3','T4','T5','T6','T7']};
+const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function pd(s){ if(!s) return null; const a=String(s).split('-').map(Number); if(a.length!==3||!a[0]||!a[1]||!a[2]) return null; const d=new Date(a[0],a[1]-1,a[2]); return isNaN(d)?null:d; }
+function addD(d,n){ const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()+n); return x; }
+function fd(d){ if(!d) return '—'; return lang==='vi'? WD.vi[d.getDay()]+', '+pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear() : WD.en[d.getDay()]+', '+MO[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear(); }
+function fds(d){ if(!d) return '—'; return lang==='vi'? pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear() : (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear(); }
+
+/* seg buttons: <div class="seg" data-k="role"><button data-v="x" aria-pressed="true"> */
+const S={};
+document.querySelectorAll('.seg[data-k]').forEach(g=>{
+  const k=g.getAttribute('data-k'); const on=g.querySelector('button[aria-pressed="true"]')||g.querySelector('button');
+  S[k]=on.getAttribute('data-v');
+  g.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; S[k]=b.getAttribute('data-v');
+    g.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); update(); });
+});
+/* checklist state survives re-render */
+const CK={};
+document.addEventListener('change',e=>{ const c=e.target; if(c&&c.getAttribute&&c.hasAttribute('data-ck')){ CK[c.getAttribute('data-ck')]=c.checked; const r=c.closest('.task'); if(r) r.classList.toggle('done',c.checked); }});
+function checks(items){ return '<div class="checks">'+items.map(([id,txt])=>'<label class="task'+(CK[id]?' done':'')+'"><input type="checkbox" data-ck="'+id+'"'+(CK[id]?' checked':'')+'><span class="tt">'+txt+'</span></label>').join('')+'</div>'; }
+function block(h,inner){ return '<div class="rblock"><p class="rh">'+h+'</p>'+inner+'</div>'; }
+function ul(a){ return '<ul class="rlist">'+a.map(x=>'<li>'+x+'</li>').join('')+'</ul>'; }
+function dcard(title,date,note,left){ return '<div class="dd"><div class="hd"><span class="t">'+title+'</span>'+(left?'<span class="left">'+left+'</span>':'')+'</div><div class="date">'+date+'</div>'+(note?'<p>'+note+'</p>':'')+'</div>'; }
+
+const openP={}, quizA={};
+function renderParas(){
+  $('paras').innerHTML=PARAS.map((p,i)=>'<details class="term" id="para-'+i+'"'+(openP[i]?' open':'')+'><summary><span class="nm">'+esc(typeof p.n==='string'?p.n:p.n[lang])+'</span><span class="sh">'+p[lang][0]+'</span></summary><div class="bd"><p>'+p[lang][1]+'</p></div></details>').join('');
+  syncExp();
+}
+function syncExp(){ const any=PARAS.some((p,i)=>!openP[i]); $('expAll').textContent=any?t('exp_all'):t('exp_none'); }
+$('paras').addEventListener('toggle',e=>{ const el=e.target; if(!el.id||el.id.indexOf('para-')!==0) return; const i=+el.id.slice(5); if(el.open) openP[i]=1; else delete openP[i]; syncExp(); },true);
+$('expAll').onclick=()=>{ const any=PARAS.some((p,i)=>!openP[i]); PARAS.forEach((p,i)=>{ if(any) openP[i]=1; else delete openP[i]; }); renderParas(); };
+function renderMyths(){
+  $('myths').innerHTML=MYTHS.map((m,i)=>{
+    const a=quizA[i]; let ans='';
+    if(a!=null){ const right=(a===1)===m.a; ans='<b>'+(right?t('q_right'):t('q_wrong'))+' '+(m.a?t('q_is_true'):t('q_is_false'))+'</b> '+m[lang][1]; }
+    return '<div class="quiz"><p>'+m[lang][0]+'</p><div class="qb"><button type="button" data-q="'+i+'" data-a="1" aria-pressed="'+(a===1)+'">'+t('q_true')+'</button><button type="button" data-q="'+i+'" data-a="0" aria-pressed="'+(a===0)+'">'+t('q_false')+'</button></div><div class="ans" id="qa'+i+'"'+(a==null?' hidden':'')+'>'+ans+'</div></div>';
+  }).join('');
+}
+$('myths').addEventListener('click',e=>{ const b=e.target.closest('button[data-q]'); if(!b) return; quizA[+b.getAttribute('data-q')]=+b.getAttribute('data-a'); renderMyths(); });
+
+function setLinks(){
+  const o={code:CODE,form:FORM,t:TPATH};
+  const sum=summary();
+  const subj=CODE+' '+FORM+' — '+t('subj');
+  const body=sum+'\n\n'+fill(t('mail_tail'),o);
+  $('emailBtn').href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(t('sms_hi'),o)+t('sms_q'));
+}
+function update(){ renderResult(); setLinks(); }
+const inp=$('inputs'); if(inp){ inp.addEventListener('input',update); inp.addEventListener('change',update); }
+function applyLang(){
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); const v=I18N[lang][k]; if(typeof v==='string') el.innerHTML=v;});
+  document.querySelectorAll('[data-ph]').forEach(el=>{const v=I18N[lang][el.getAttribute('data-ph')]; if(typeof v==='string') el.placeholder=v;});
+  $('langBtn').textContent=t('lang'); document.documentElement.lang=lang;
+  renderParas(); renderMyths(); update();
+}
+$('langBtn').onclick=()=>{ lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang(); };
+applyLang();
+
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+try{if(/[?&]embed=1/.test(location.search))a.style.display='none';}catch(e){}
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+
+</body>
+</html>

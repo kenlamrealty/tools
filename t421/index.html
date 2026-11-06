@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ARB Giải Nghĩa · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+/* ---- T229 thêm (không đổi class cũ) ---- */
+.ctl input[type=search]{font-size:18px}
+.ctl input[type=search]::-webkit-search-cancel-button{cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-size:13px;padding:7px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);border-color:var(--brass);font-weight:500}
+.terms{display:grid;gap:10px}
+.term{background:var(--panel);border:1px solid var(--line);border-radius:14px;min-width:0;scroll-margin-top:16px}
+.term[open]{border-color:var(--brass)}
+.term.flash{box-shadow:0 0 0 3px var(--brass-soft)}
+.term summary{list-style:none;cursor:pointer;padding:14px 18px;display:grid;gap:2px}
+.term summary::-webkit-details-marker{display:none}
+.term summary .nm{font-family:var(--display);font-size:23px;line-height:1.15;font-weight:500;color:var(--fg)}
+.term summary .al{font-size:12px;color:var(--muted)}
+.term summary .sh{font-size:14px;color:var(--muted);line-height:1.45}
+.term .bd{padding:0 18px 16px;display:grid;gap:10px;font-size:15px;line-height:1.55}
+.term .bd p{margin:0}
+.term .bd .lb{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);font-weight:500;margin-bottom:2px}
+.term .bd .ex{background:var(--brass-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.term .bd .my b{color:var(--warn);font-weight:500}
+.term .bd .ot{font-size:13px;color:var(--muted)}
+.term .bd .ft{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px;color:var(--muted)}
+.term .bd .ft a{color:var(--brass);word-break:break-word}
+.term .bd .ft button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:12px;padding:4px 10px;border-radius:999px;cursor:pointer}
+.empty{font-size:15px;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:16px 18px}
+.empty[hidden]{display:none}
+.expall{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+</style>
+
+<style>
+/* ---- Giải nghĩa Forms (T42x/T43x) thêm, không đổi class cũ ---- */
+.sec{display:grid;gap:12px}
+.sec>h2{font-family:var(--display);font-weight:400;font-size:28px;line-height:1.15;margin:0}
+.sec>.lead{margin:0;font-size:14px;color:var(--muted)}
+.fchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.fchips span{border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:12px;padding:5px 11px;border-radius:999px}
+.seg.wrapseg{flex-wrap:wrap}
+.seg.wrapseg button{flex:1 1 45%;border-bottom:1px solid var(--line)}
+.ckl{display:grid;gap:8px}
+.ckl label{display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.4;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
+.ckl input{width:20px;height:20px;accent-color:var(--brass);margin:0;flex:none}
+.verdict{font-family:var(--display);font-size:30px;line-height:1.15;margin:0}
+.rlist{margin:0;padding-left:20px;display:grid;gap:6px;font-size:15px;line-height:1.5}
+.rlist b{font-weight:500}
+.rh{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);font-weight:500;margin:4px 0 0}
+.mq{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:10px}
+.mq p{margin:0;font-size:15px;line-height:1.5}
+.mq .tf{display:flex;gap:8px}
+.mq .tf button{flex:1;border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:14px;padding:9px;border-radius:10px;cursor:pointer}
+.mq .tf button[aria-pressed="true"]{background:var(--brass-soft);border-color:var(--brass);font-weight:500}
+.mq .ans{font-size:14px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px}
+.mq .ans b{color:var(--fg);font-weight:600}
+.mq .ans[hidden]{display:none}
+.term summary .nm .pn{color:var(--brass);font-family:var(--body);font-size:13px;font-weight:500;letter-spacing:.04em;margin-right:8px;vertical-align:middle}
+.vidh{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.actions .btn{min-width:0;text-align:center}
+.dd .date{word-break:break-word}
+</style>
+<meta name="description" content="C.A.R. Arbitration Agreement (ARB) explained simply in English and Vietnamese: what goes to an arbitrator instead of court, what is excluded, and who is bound.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t421/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="ARB Explained · Ken Lam Tools">
+<meta property="og:description" content="The Arbitration Agreement in plain words: arbitrator instead of judge and jury, exclusions, agents.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t421/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title"></h1>
+    <p class="sub" data-i="sub"></p>
+    <div class="fchips"><span data-i="chip1"></span><span data-i="chip2"></span><span data-i="chip3"></span></div>
+  </header>
+
+  <section class="sec" aria-labelledby="hMine">
+    <h2 id="hMine" data-i="h_mine">What does this form say to me?</h2>
+    <p class="lead" data-i="mine_lead"></p>
+    <div class="inputs">
+      <div class="field"><label><span data-i="l_role">I am the</span></label>
+        <div class="seg" id="role" role="group"><button type="button" data-v="buyer" aria-pressed="true" data-i="r_buyer">Buyer</button><button type="button" data-v="seller" aria-pressed="false" data-i="r_seller">Seller</button><button type="button" data-v="agent" aria-pressed="false" data-i="r_agent">Agent</button></div></div>
+      <div class="field"><label><span data-i="l_signed">Who signed this ARB form?</span></label>
+        <div class="ckl"><label><input type="checkbox" id="sMe" checked> <span data-i="c_me">Me</span></label>
+        <label><input type="checkbox" id="sOther" checked> <span data-i="c_other">The other side of the dispute</span></label>
+        <label><input type="checkbox" id="sAgent"> <span data-i="c_agent">The agent (signed, or agreed in writing)</span></label></div></div>
+      <div class="field"><label><span data-i="l_type">What is the dispute about?</span></label>
+        <div class="seg wrapseg" id="dtype" role="group">
+          <button type="button" data-v="contract" aria-pressed="true" data-i="d_contract">Deposit or the contract</button>
+          <button type="button" data-v="defect" aria-pressed="false" data-i="d_defect">Defects found after closing</button>
+          <button type="button" data-v="agent" aria-pressed="false" data-i="d_agent">A claim against an agent</button>
+          <button type="button" data-v="small" aria-pressed="false" data-i="d_small">Small claims amount</button>
+          <button type="button" data-v="ud" aria-pressed="false" data-i="d_ud">Eviction (unlawful detainer)</button>
+          <button type="button" data-v="fc" aria-pressed="false" data-i="d_fc">Foreclosure / deed of trust</button>
+          <button type="button" data-v="probate" aria-pressed="false" data-i="d_probate">Probate or bankruptcy</button>
+          <button type="button" data-v="lien" aria-pressed="false" data-i="d_lien">Mechanic’s lien</button>
+        </div></div>
+      <div class="field"><label><span data-i="l_med">Did you already try mediation?</span></label>
+        <div class="seg" id="med" role="group"><button type="button" data-v="no" aria-pressed="true" data-i="m_no">Not yet</button><button type="button" data-v="yes" aria-pressed="false" data-i="m_yes">Yes, it failed</button></div></div>
+    </div>
+
+    <div class="result" aria-live="polite">
+      <div class="total"><div class="k" data-i="r_where">Where this dispute goes</div><p class="verdict" id="verdict"></p></div>
+      <p style="margin:0;font-size:15px" id="why"></p>
+      <div class="note" data-i="assume">Based only on the ARB form’s own words. Your purchase or listing contract may have its own mediation and arbitration clauses. Ask a California real estate attorney before you act.</div>
+    </div>
+
+    <div class="tlw"><div class="top"><h2 data-i="h_ck" style="font-family:var(--display);font-weight:400;font-size:26px;margin:0">Checklist before you sign</h2><span class="cnt" id="ckCnt"></span></div>
+      <div class="ckl" id="ck"></div></div>
+
+  </section>
+
+  <section class="sec" aria-labelledby="hParas">
+    <h2 id="hParas" data-i="h_paras">Read it paragraph by paragraph</h2>
+    <p class="lead" data-i="paras_lead"></p>
+    <div class="terms" id="paras"></div>
+    <button type="button" class="expall" id="expAll" data-i="exp_all">Open all</button>
+  </section>
+
+  <section class="sec" aria-labelledby="hMyth">
+    <h2 id="hMyth" data-i="h_myth">What people get wrong</h2>
+    <p class="lead" data-i="myth_lead">True or false? Tap to see the answer.</p>
+    <div class="ckl" id="myths" style="gap:10px"></div>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol id="nextList"></ol>
+  </section>
+
+  <section class="sec" aria-labelledby="hVid">
+    <h2 class="vidh" id="hVid" data-i="vid_title">45-second video</h2>
+    <video class="kl-vid" src="video.mp4" controls playsinline preload="metadata" aria-label="Video"></video>
+  </section>
+
+  <section class="actions">
+    <a class="btn primary" id="emailBtn" href="mailto:ken@kenlamrealty.com" data-i="b_email">Email Ken</a>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Text Ken</a>
+    <a class="btn" id="videoBtn" href="/t421/video.mp4" target="_blank" rel="noopener" data-i="b_video">Watch the 45-second video</a>
+    <a class="btn" href="/t402/" data-i="b_all">Every form, explained</a>
+  </section>
+
+  <footer>
+    <span data-i="ft_cr">Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.</span>
+    <span class="src"><span data-i="ft_src">Source</span>: C.A.R. Form ARB, Arbitration Agreement, Revised 6/23 (1 page)</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/cong-cu/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== ARB — C.A.R. Form ARB, Revised 6/23 (1 trang). Nguồn: /home/claude/forms/md/ARB_Arbitration_Agreement.md =====
+   Form không có số ngày. Các số / điều kiện cố định: */
+const FORM_CODE='T421', FORM='ARB';
+const F={
+  PAGES:1,
+  ARBITRATOR_MIN_YEARS:5,       // ¶1: retired judge/justice, or attorney with at least 5 years transactional real estate Law experience
+  EXCLUDED:['small','ud','fc','probate'], // ¶2: probate, small claims, bankruptcy court; unlawful detainer; foreclosure / deed of trust / installment land sale (Civil Code § 2985)
+  PRESERVED:['lien']            // ¶3: statute-of-limitations filing, provisional remedies (with stay request), mechanic’s lien do not waive arbitration
+};
+const PARAS=[
+ {n:'Đầu form',n_en:'Top',vi:['Địa chỉ nhà','Ghi căn nhà mà tranh chấp liên quan.','Form chỉ có một dòng địa chỉ. Không có số tiền, không có số ngày.'],
+  en:['Property address','The property the dispute is about.','There is only one address line. No dollar amounts, no deadlines.']},
+ {n:'¶1',vi:['Tranh chấp đi trọng tài','Không giải quyết được bằng hòa giải thì đưa ra trọng tài, ràng buộc.','Những người ký đồng ý: tranh chấp về hợp đồng mua (Purchase Agreement), listing, hợp đồng đại diện buyer, hay loại khác có đánh dấu, <b>mà hòa giải không xong</b>, thì do <b>trọng tài trung lập, có tính ràng buộc</b> quyết (“binding arbitration”).','Trọng tài là <b>thẩm phán về hưu, hoặc luật sư có ít nhất 5 năm</b> kinh nghiệm luật giao dịch nhà đất, trừ khi hai bên chọn người khác. Thủ tục ép đi trọng tài theo Federal Arbitration Act. Hai bên có quyền discovery theo CCP § 1283.05. Phán quyết có thể đưa vào tòa để thi hành.','Agent chưa ký form này cũng có thể tham gia, nếu agent đồng ý bằng giấy trước hoặc ngay sau khi có tranh chấp.'],
+  en:['Disputes go to arbitration','If mediation does not settle it, a binding arbitrator decides.','The signers agree that disputes from the Purchase Agreement, Listing Agreement, Buyer Representation Agreement, or another checked agreement, <b>that are not settled through mediation</b>, are decided by <b>neutral, binding arbitration</b>.','The arbitrator is a <b>retired judge or justice, or an attorney with at least 5 years</b> of transactional real estate law experience, unless the parties pick someone else. Motions to compel follow the Federal Arbitration Act. Discovery is allowed under CCP § 1283.05. The award can be entered as a court judgment.','An agent who did not sign can be included if the agent agrees in writing before or soon after the claim is made.']},
+ {n:'¶2',vi:['Những việc KHÔNG đi trọng tài','Small claims, probate, phá sản, đuổi nhà, foreclosure.','Ba nhóm được loại ra: (i) việc thuộc tòa probate, <b>small claims</b>, hay phá sản; (ii) kiện đuổi nhà (<b>unlawful detainer</b>); (iii) foreclosure hay kiện để thi hành deed of trust, mortgage, hợp đồng mua đất trả góp (Civil Code § 2985).'],
+  en:['What does NOT go to arbitration','Small claims, probate, bankruptcy, evictions, foreclosure.','Three groups are excluded: (i) matters for probate, <b>small claims</b> or bankruptcy court; (ii) an eviction (<b>unlawful detainer</b>); (iii) foreclosure or actions to enforce a deed of trust, mortgage or installment land sale contract (Civil Code § 2985).']},
+ {n:'¶3',vi:['Nộp đơn để giữ quyền','Nộp để khỏi trễ thời hiệu, nộp lis pendens, mechanic’s lien: không mất quyền trọng tài.','Mấy việc này <b>không bị coi là bỏ trọng tài</b>: nộp đơn ra tòa để khỏi lố thời hiệu kiện; nộp để record notice of pending action, xin phong tỏa, receiver, injunction (phải xin tòa tạm ngưng chờ trọng tài ngay lúc đó); và nộp mechanic’s lien.'],
+  en:['Filing to protect your rights','Filing to beat the statute of limitations, a lis pendens, a mechanic’s lien: arbitration is not waived.','These <b>do not waive</b> arbitration: filing in court to preserve a statute of limitations; filing to record a notice of pending action, or for attachment, receivership, injunction (with a request to stay the case pending arbitration at the same time); and filing a mechanic’s lien.']},
+ {n:'¶4',vi:['Agent','Agent chưa ký thì không bị ép đi trọng tài.','Agent không ký form thì <b>không bắt buộc</b> phải đi trọng tài, trừ khi đồng ý bằng giấy. Agent có tham gia mà chưa ký thì cũng không thành một bên của thỏa thuận.'],
+  en:['Agents','An agent who did not sign cannot be forced to arbitrate.','Agents who did not sign are <b>not obligated</b> to arbitrate unless they agree in writing. An agent who joins without signing is not a party to this agreement.']},
+ {n:'¶5',vi:['Lời cảnh báo và chữ ký','Ký là bỏ quyền ra tòa, bỏ bồi thẩm đoàn, hạn chế kháng cáo.','Đoạn in hoa nói rõ: ký là <b>bỏ quyền đưa ra tòa hay bồi thẩm đoàn (jury)</b>, và bỏ quyền discovery và kháng cáo trừ khi ¶1 có ghi. Đã ký mà sau đó không chịu đi trọng tài thì có thể bị ép theo luật. <b>Ký là tự nguyện.</b>','Bên dưới có 4 dòng ký; mỗi dòng đánh dấu Seller, Buyer hay Broker/Agent, kèm ngày.'],
+  en:['The warning and signatures','Signing gives up court, jury, and most appeal rights.','The capitalized notice says: signing means <b>giving up the right to a court or jury trial</b>, and discovery and appeal rights unless ¶1 includes them. Refusing to arbitrate later can lead to being compelled by law. <b>Signing is voluntary.</b>','There are 4 signature lines; each marks Seller, Buyer or Broker/Agent, with a date.']}
+];
+const MYTHS=[
+ {a:false,vi:['Ký ARB rồi thì không cần hòa giải nữa, đi thẳng trọng tài.','¶1 chỉ đưa ra trọng tài những tranh chấp “không giải quyết được bằng hòa giải”. Hòa giải vẫn đi trước.'],
+  en:['Once you sign ARB you skip mediation and go straight to arbitration.','¶1 only covers disputes “not settled through mediation”. Mediation still comes first.']},
+ {a:false,vi:['Ký ARB thì chủ nhà không được ra tòa đuổi tenant nữa.','Kiện đuổi nhà (unlawful detainer) bị loại khỏi trọng tài ở ¶2, nên vẫn ra tòa như thường.'],
+  en:['After signing ARB a landlord can no longer go to court to evict.','Unlawful detainer actions are excluded in ¶2, so they still go to court.']},
+ {a:true,vi:['Agent không ký ARB thì không bị bắt phải đi trọng tài.','Đúng: ¶4 nói agent chưa ký không bị ép, trừ khi tự đồng ý bằng giấy.'],
+  en:['An agent who did not sign ARB cannot be forced into arbitration.','True: ¶4 says an agent who did not sign is not compelled unless they agree in writing.']}
+];
+const I18N={
+ vi:{title:'ARB: Thỏa thuận trọng tài (không ra tòa)',sub:'Ký form này là hai bên đồng ý: nếu cãi nhau mà hòa giải không xong, thì một trọng tài quyết, không ra tòa, không có bồi thẩm đoàn.',
+  chip1:'1 trang',chip2:'Buyer, Seller, Agent ký',chip3:'Kèm hợp đồng mua, listing, hay hợp đồng buyer',
+  mine_lead:'Chọn vai, ai đã ký, và chuyện đang tranh chấp. Câu trả lời hiện liền.',
+  l_role:'Tôi là',r_buyer:'Buyer',r_seller:'Seller',r_agent:'Agent',l_signed:'Ai đã ký form ARB này?',c_me:'Tôi',c_other:'Bên kia trong tranh chấp',c_agent:'Agent (đã ký, hoặc đồng ý bằng giấy)',
+  l_type:'Tranh chấp về chuyện gì?',d_contract:'Tiền cọc hay hợp đồng',d_defect:'Hư hỏng phát hiện sau close',d_agent:'Khiếu nại agent',d_small:'Số tiền small claims',d_ud:'Đuổi nhà (unlawful detainer)',d_fc:'Foreclosure / deed of trust',d_probate:'Probate hay phá sản',d_lien:'Mechanic’s lien',
+  l_med:'Đã thử hòa giải chưa?',m_no:'Chưa',m_yes:'Rồi, không xong',r_where:'Tranh chấp này đi đâu',
+  assume:'Chỉ dựa trên chữ của form ARB. Hợp đồng mua hay listing có thể có điều khoản hòa giải, trọng tài riêng. Hỏi luật sư nhà đất California trước khi làm.',
+  h_ck:'Checklist trước khi ký',ck_cnt:'{a}/{b} xong',
+  v_arb:'Trọng tài ràng buộc',v_med:'Hòa giải trước, rồi trọng tài',v_court:'Ra tòa, không đi trọng tài',v_notbound:'ARB này chưa ràng buộc hai bên',v_lien:'Nộp lien được, không mất quyền trọng tài',v_agentno:'Agent không bị ép đi trọng tài',
+  w_arb:'Cả hai bên đã ký. Hòa giải không xong thì trọng tài (thẩm phán về hưu hoặc luật sư ≥ 5 năm) quyết, và kết quả đưa vào tòa thi hành được (¶1).',
+  w_med:'Cả hai đã ký, nhưng ARB chỉ áp dụng cho tranh chấp hòa giải không xong (¶1). Thử hòa giải trước.',
+  w_court:'Loại này nằm trong danh sách loại trừ ở ¶2, nên đi đúng tòa của nó (small claims, probate, phá sản, đuổi nhà, foreclosure).',
+  w_notbound:'Form chỉ ràng buộc người đã ký (¶1, ¶5). Thiếu chữ ký của một bên thì ARB này không áp dụng; tranh chấp theo hợp đồng gốc của anh chị (ngoài form ARB).',
+  w_lien:'¶3: nộp mechanic’s lien không bị coi là bỏ trọng tài. Phần tranh chấp chính vẫn theo ARB nếu hai bên đã ký.',
+  w_agentno:'¶1 và ¶4: agent chưa ký và chưa đồng ý bằng giấy thì không bắt buộc đi trọng tài, và không phải một bên của thỏa thuận.',
+  ck:['Đọc kỹ đoạn in hoa ¶5: bỏ quyền ra tòa và bồi thẩm đoàn.','Coi ô nào được đánh dấu ở ¶1: Purchase Agreement, Listing, Buyer Representation, hay Other.','Ghi đúng địa chỉ nhà ở đầu form.','Đánh dấu đúng vai (Seller, Buyer, Broker/Agent) cạnh chữ ký, ghi ngày.','Nhớ: hòa giải vẫn đi trước trọng tài.','Muốn agent cùng bị ràng buộc: agent phải ký, hoặc đồng ý bằng giấy.','Không chắc thì hỏi luật sư trước. Ký là tự nguyện.'],
+  next:['Khi nào cần luật sư: <a href="/t120/">T120</a>. Tìm luật sư nhà đất: <a href="/t122/">T122</a>.','Đọc đoạn hòa giải, trọng tài trong hợp đồng mua nhà (RPA): <a href="/t401/">T401</a>.','Coi thêm các form khác trong <a href="/t402/">Thư viện Forms</a>.'],
+  mail_subj:'Hỏi về thỏa thuận trọng tài',mail_hi:'Chào Ken, tôi vừa dùng tool ARB.',mail_end:'Thông tin chung, không phải tư vấn pháp lý.',sms_hi:'Chào Ken, tôi hỏi về ARB:',
+  s_role:'Vai',s_type:'Tranh chấp',s_res:'Kết quả tool',s_signed:'Đã ký',yes:'có',no:'chưa'},
+ en:{title:'ARB: the Arbitration Agreement, explained',sub:'Signing it means: if you disagree and mediation fails, an arbitrator decides. No court, no jury.',
+  chip1:'1 page',chip2:'Buyer, Seller, Agent sign',chip3:'Added to a purchase, listing or buyer agreement',
+  mine_lead:'Pick your role, who signed, and what the dispute is about. The answer shows right away.',
+  l_role:'I am the',r_buyer:'Buyer',r_seller:'Seller',r_agent:'Agent',l_signed:'Who signed this ARB form?',c_me:'Me',c_other:'The other side of the dispute',c_agent:'The agent (signed, or agreed in writing)',
+  l_type:'What is the dispute about?',d_contract:'Deposit or the contract',d_defect:'Defects found after closing',d_agent:'A claim against an agent',d_small:'Small claims amount',d_ud:'Eviction (unlawful detainer)',d_fc:'Foreclosure / deed of trust',d_probate:'Probate or bankruptcy',d_lien:'Mechanic’s lien',
+  l_med:'Did you already try mediation?',m_no:'Not yet',m_yes:'Yes, it failed',r_where:'Where this dispute goes',
+  assume:'Based only on the ARB form’s own words. Your purchase or listing contract may have its own mediation and arbitration clauses. Ask a California real estate attorney before you act.',
+  h_ck:'Checklist before you sign',ck_cnt:'{a}/{b} done',
+  v_arb:'Binding arbitration',v_med:'Mediation first, then arbitration',v_court:'Court, not arbitration',v_notbound:'This ARB does not bind both sides yet',v_lien:'Lien allowed, arbitration not waived',v_agentno:'Agent is not forced to arbitrate',
+  w_arb:'Both sides signed. If mediation fails, an arbitrator (retired judge or attorney with 5+ years) decides, and the award can be entered in court (¶1).',
+  w_med:'Both signed, but ARB only covers disputes not settled through mediation (¶1). Try mediation first.',
+  w_court:'This type is excluded in ¶2, so it goes to its own court (small claims, probate, bankruptcy, eviction, foreclosure).',
+  w_notbound:'The form binds only the people who sign it (¶1, ¶5). Without both sides’ signatures this ARB does not apply; the dispute follows your underlying contract (outside the ARB form).',
+  w_lien:'¶3: filing a mechanic’s lien does not waive arbitration. The main dispute still follows ARB if both sides signed.',
+  w_agentno:'¶1 and ¶4: an agent who did not sign or agree in writing is not obligated to arbitrate and is not a party.',
+  ck:['Read the capitalized notice in ¶5: you give up court and jury.','Check which box is marked in ¶1: Purchase Agreement, Listing, Buyer Representation, or Other.','Write the correct property address at the top.','Mark your role (Seller, Buyer, Broker/Agent) next to your signature, with the date.','Remember: mediation still comes before arbitration.','Want the agent bound too? The agent must sign or agree in writing.','Not sure? Ask an attorney first. Signing is voluntary.'],
+  next:['When you need a lawyer: <a href="/t120/">T120</a>. Find a real estate lawyer: <a href="/t122/">T122</a>.','Read the mediation and arbitration part of the home purchase contract (RPA): <a href="/t401/">T401</a>.','See more forms in the <a href="/t402/">Forms Library</a>.'],
+  mail_subj:'Question about an arbitration agreement',mail_hi:'Hi Ken, I just used the ARB tool.',mail_end:'General info, not legal advice.',sms_hi:'Hi Ken, an ARB question:',
+  s_role:'Role',s_type:'Dispute',s_res:'Tool result',s_signed:'Signed',yes:'yes',no:'no'}
+};
+let role='buyer', dtype='contract', med='no', ckDone={};
+function segInit(id,set){ $(id).addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button[data-v]'); if(!b)return;
+  $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); set(b.getAttribute('data-v')); renderTool();}); }
+/* Logic thuần theo chữ form — export cho test */
+function arbDecide(o){ // o: {type, me, other, agent, med, role}
+  if(F.EXCLUDED.includes(o.type)) return 'court';
+  if(o.type==='lien') return 'lien';
+  if(o.type==='agent' && !o.agent) return 'agentno';
+  if(!(o.me&&o.other)) return 'notbound';
+  if(o.role==='agent' && !o.me) return 'agentno';
+  return o.med?'arb':'med';
+}
+function initTool(){
+  segInit('role',v=>role=v); segInit('dtype',v=>dtype=v); segInit('med',v=>med=v);
+  ['sMe','sOther','sAgent'].forEach(id=>$(id).addEventListener('change',renderTool));
+  $('ck').addEventListener('change',e=>{const i=e.target.getAttribute('data-c'); if(i===null)return; if(e.target.checked)ckDone[i]=1; else delete ckDone[i]; renderTool();});
+}
+function renderTool(){
+  const t=D();
+  const res=arbDecide({type:dtype,me:$('sMe').checked,other:$('sOther').checked,agent:$('sAgent').checked,med:med==='yes',role});
+  $('verdict').textContent=t['v_'+res]; $('why').textContent=t['w_'+res];
+  $('ck').innerHTML=t.ck.map((x,i)=>'<label><input type="checkbox" data-c="'+i+'"'+(ckDone[i]?' checked':'')+'> <span>'+x+'</span></label>').join('');
+  $('ckCnt').textContent=t.ck_cnt.replace('{a}',Object.keys(ckDone).length).replace('{b}',t.ck.length);
+  const yn=v=>v?t.yes:t.no;
+  setContact([t.s_role+': '+t['r_'+role],t.s_type+': '+t['d_'+dtype],
+    t.s_signed+': '+t.c_me+' '+yn($('sMe').checked)+', '+t.c_other+' '+yn($('sOther').checked)+', Agent '+yn($('sAgent').checked),
+    t.s_res+': '+t['v_'+res]].join('\n'));
+}
+
+
+/* ===== Phần chung cho các trang giải nghĩa form ===== */
+const COMMON={
+ vi:{h_mine:'Form này nói gì với tôi?',h_paras:'Đọc từng đoạn',paras_lead:'Bấm vào từng đoạn. Số đoạn giống y trên form để anh chị dò theo.',
+  h_myth:'Nhiều người hiểu sai',myth_lead:'Đúng hay sai? Bấm để xem đáp án.',t_true:'Đúng',t_false:'Sai',a_ok:'Chính xác.',a_no:'Chưa đúng.',
+  a_is_true:'Câu này ĐÚNG.',a_is_false:'Câu này SAI.',exp_all:'Mở hết',exp_none:'Đóng hết',nx_title:'Bước tiếp theo',vid_title:'Video 45 giây',
+  b_email:'Email Ken',b_sms:'Text Ken',b_video:'Xem video 45 giây',b_all:'Mọi form giải nghĩa',
+  ft_cr:'Form gốc © California Association of REALTORS®. Trang này chỉ giải thích, không thay thế form và không phải tư vấn pháp lý/thuế.',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English'},
+ en:{h_mine:'What does this form say to me?',h_paras:'Read it paragraph by paragraph',paras_lead:'Tap a paragraph. The numbers match the form so you can follow along.',
+  h_myth:'What people get wrong',myth_lead:'True or false? Tap to see the answer.',t_true:'True',t_false:'False',a_ok:'Right.',a_no:'Not quite.',
+  a_is_true:'This is TRUE.',a_is_false:'This is FALSE.',exp_all:'Open all',exp_none:'Close all',nx_title:'Next steps',vid_title:'45-second video',
+  b_email:'Email Ken',b_sms:'Text Ken',b_video:'Watch the 45-second video',b_all:'Every form, explained',
+  ft_cr:'Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.',
+  ft_src:'Source',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt'}
+};
+let lang='en'; try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const D=()=>Object.assign({},COMMON[lang],I18N[lang]);
+const money=n=>'$'+Math.round(n).toLocaleString('en-US');
+/* Ngày: chuỗi YYYY-MM-DD → Date (giờ địa phương), cộng ngày, đẩy qua thứ Hai nếu rơi T7/CN */
+const parseD=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||''); return m?new Date(+m[1],+m[2]-1,+m[3]):null;};
+const addD=(d,n)=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()+n); return x;};
+const wkShift=d=>{let x=addD(d,0); while(x.getDay()===0||x.getDay()===6) x=addD(x,1); return x;};
+const addBiz=(d,n)=>{let x=addD(d,0),k=0; while(k<n){x=addD(x,1); if(x.getDay()!==0&&x.getDay()!==6)k++;} return x;};
+const isoD=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const WD={vi:['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'],en:['Sun','Mon','Tue','Wed','Thu','Fri','Sat']};
+const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const fmtD=d=>lang==='vi'?WD.vi[d.getDay()]+', '+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()
+  :WD.en[d.getDay()]+', '+MO[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
+const todayISO=()=>isoD(new Date());
+
+let openSet={};
+function renderParas(){
+  const d=D();
+  $('paras').innerHTML=PARAS.map((p,i)=>{const t=p[lang];
+    return '<details class="term" data-k="'+i+'"'+(openSet[i]?' open':'')+'><summary><span class="nm"><span class="pn">'+esc(p['n_'+lang]||p.n)+'</span>'+esc(t[0])+'</span>'
+     +'<span class="sh">'+esc(t[1])+'</span></summary><div class="bd">'+t.slice(2).map(x=>'<p>'+x+'</p>').join('')+'</div></details>';}).join('');
+  $('expAll').textContent=PARAS.every((p,i)=>openSet[i])?d.exp_none:d.exp_all;
+}
+$('paras').addEventListener('toggle',e=>{const el=e.target; if(!el.classList||!el.classList.contains('term'))return; const k=el.getAttribute('data-k');
+  if(el.open)openSet[k]=1; else delete openSet[k]; const d=D(); $('expAll').textContent=PARAS.every((p,i)=>openSet[i])?d.exp_none:d.exp_all;},true);
+$('expAll').onclick=()=>{const all=PARAS.every((p,i)=>openSet[i]); PARAS.forEach((p,i)=>{if(all)delete openSet[i]; else openSet[i]=1;}); renderParas();};
+
+let mythPick={};
+function renderMyths(){
+  const d=D();
+  $('myths').innerHTML=MYTHS.map((m,i)=>{const t=m[lang],p=mythPick[i];
+    const ans=p===undefined?'':'<b>'+(p===m.a?d.a_ok:d.a_no)+' '+(m.a?d.a_is_true:d.a_is_false)+'</b> '+t[1];
+    return '<div class="mq"><p>'+esc(t[0])+'</p><div class="tf"><button type="button" data-m="'+i+'" data-v="1" aria-pressed="'+(p===true)+'">'+d.t_true+'</button>'
+     +'<button type="button" data-m="'+i+'" data-v="0" aria-pressed="'+(p===false)+'">'+d.t_false+'</button></div>'
+     +'<div class="ans"'+(p===undefined?' hidden':'')+'>'+ans+'</div></div>';}).join('');
+}
+$('myths').addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button[data-m]'); if(!b)return; mythPick[b.getAttribute('data-m')]=b.getAttribute('data-v')==='1'; renderMyths();});
+
+function setContact(summary){
+  const d=D();
+  const subj=FORM_CODE+' '+FORM+' — '+d.mail_subj;
+  const body=d.mail_hi+'\n\n'+summary+'\n\n'+d.mail_end+'\nhttps://tools.kenlamrealty.com/'+FORM_CODE.toLowerCase()+'/';
+  $('emailBtn').href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(d.sms_hi+' '+summary.split('\n').slice(0,3).join(' · '));
+}
+function applyLang(){
+  const d=D();
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  $('nextList').innerHTML=d.next.map(x=>'<li>'+x+'</li>').join('');
+  renderParas(); renderMyths(); renderTool();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+initTool();
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+try{if(/[?&]embed=1/.test(location.search))a.style.display='none';}catch(e){}
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+
+</body>
+</html>

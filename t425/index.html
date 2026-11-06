@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BOS Giải Nghĩa · Ken Lam Tools</title>
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+/* ---- T229 thêm (không đổi class cũ) ---- */
+.ctl input[type=search]{font-size:18px}
+.ctl input[type=search]::-webkit-search-cancel-button{cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-size:13px;padding:7px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);border-color:var(--brass);font-weight:500}
+.terms{display:grid;gap:10px}
+.term{background:var(--panel);border:1px solid var(--line);border-radius:14px;min-width:0;scroll-margin-top:16px}
+.term[open]{border-color:var(--brass)}
+.term.flash{box-shadow:0 0 0 3px var(--brass-soft)}
+.term summary{list-style:none;cursor:pointer;padding:14px 18px;display:grid;gap:2px}
+.term summary::-webkit-details-marker{display:none}
+.term summary .nm{font-family:var(--display);font-size:23px;line-height:1.15;font-weight:500;color:var(--fg)}
+.term summary .al{font-size:12px;color:var(--muted)}
+.term summary .sh{font-size:14px;color:var(--muted);line-height:1.45}
+.term .bd{padding:0 18px 16px;display:grid;gap:10px;font-size:15px;line-height:1.55}
+.term .bd p{margin:0}
+.term .bd .lb{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);font-weight:500;margin-bottom:2px}
+.term .bd .ex{background:var(--brass-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.term .bd .my b{color:var(--warn);font-weight:500}
+.term .bd .ot{font-size:13px;color:var(--muted)}
+.term .bd .ft{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px;color:var(--muted)}
+.term .bd .ft a{color:var(--brass);word-break:break-word}
+.term .bd .ft button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:12px;padding:4px 10px;border-radius:999px;cursor:pointer}
+.empty{font-size:15px;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:16px 18px}
+.empty[hidden]{display:none}
+.expall{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+
+/* ---- T42x Giải nghĩa forms thêm (không đổi class cũ) ---- */
+[hidden]{display:none!important}
+.metachips{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.metachips span{border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:13px;padding:5px 11px;border-radius:999px}
+.calc,.paras,.myths,.vid{display:grid;gap:12px;min-width:0}
+.calc h2,.paras h2,.myths h2,.vid h2,.result h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0;line-height:1.15}
+.calc .hint{font-size:13px;color:var(--muted);margin:0}
+.chips .chip{min-height:38px}
+.seg{flex-wrap:wrap}
+.seg button{min-width:0}
+.res-h{font-size:12px;color:var(--brass);letter-spacing:.08em;text-transform:uppercase;font-weight:500;margin:6px 0 0}
+.bul{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px;line-height:1.5}
+.bul b{font-weight:500}
+.line .a.big{font-size:16px}
+.line .n{overflow-wrap:anywhere}
+.line .a{text-align:right}
+.tf{display:grid;gap:10px}
+.tf .q{margin:0;font-size:15px;color:var(--fg)}
+.tfb{display:flex;gap:8px}
+.tfb button{flex:1;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit;font-size:14px;padding:9px;border-radius:10px;cursor:pointer}
+.tfb button[aria-pressed="true"]{background:var(--brass-soft);border-color:var(--brass);font-weight:500}
+.tf .ans{margin:0;font-size:14px;color:var(--muted)}
+.tf .ans b{font-weight:500}
+.tf .ans.ok b{color:var(--ok)}
+.tf .ans.no b{color:var(--warn)}
+.actions .btn{text-align:center}
+.task .tt{cursor:default}
+</style>
+<meta name="description" content="BOS, the C.A.R. Bill of Sale, explained simply in English and Vietnamese: what moves, what the seller promises, as-is, and when the promises end.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t425/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Bill of Sale Explained · Ken Lam Tools">
+<meta property="og:description" content="What a Bill of Sale moves, what the seller promises, and the date those promises end.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t425/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools · T425</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">BOS: Bill of Sale, the receipt for the stuff</h1>
+    <p data-i="sub" class="sub">A deed moves the land and building. A Bill of Sale moves the things: machines, chairs, washers, fridges. It also says what the seller promises about them.</p>
+    <div class="metachips"><span data-i="m1">2 pages + notary page</span><span data-i="m2">Seller + Buyer sign</span><span data-i="m3">At closing, with a CPA, BPA or RIPA</span></div>
+  </header>
+
+  <section class="calc" aria-labelledby="hCalc">
+    <h2 id="hCalc" data-i="h_calc">What does this form say to me?</h2>
+
+    <div class="inputs">
+      <div class="field"><label><span data-i="role">I am the</span></label>
+        <div class="seg" id="role"><button type="button" data-v="b" aria-pressed="true" data-i="buyer">Buyer</button><button type="button" data-v="s" aria-pressed="false" data-i="seller">Seller</button></div></div>
+      <div class="field"><label><span data-i="l_deal">What is being sold with the furniture and equipment?</span></label>
+        <div class="seg" id="deal"><button type="button" data-v="re" aria-pressed="true" data-i="deal_re">Real property (grant deed)</button><button type="button" data-v="biz" aria-pressed="false" data-i="deal_biz">Business only (no deed)</button></div></div>
+      <div class="row2">
+        <div class="field"><label for="edate"><span id="lEdate" data-i="l_ed_re">Date the grant deed records</span></label><div class="ctl"><input id="edate" type="date"></div></div>
+        <div class="field"><label for="price"><span data-i="l_price">Price for the items (if written in ¶1)</span></label><div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" min="0" placeholder="0"></div></div>
+      </div>
+      <div class="field"><label><span data-i="l_surv">Promises last (paragraph 4D)</span></label>
+        <div class="seg" id="surv"><button type="button" data-v="6" aria-pressed="true" data-i="s6">6 months</button><button type="button" data-v="12" aria-pressed="false" data-i="s12">12 months</button><button type="button" data-v="o" aria-pressed="false" data-i="so">Other</button></div></div>
+      <div class="field" id="fOther"><label for="omonths"><span data-i="l_om">Other: number of months</span></label><div class="ctl"><input id="omonths" type="number" inputmode="numeric" min="0" value="3"><span class="post" data-i="months">months</span></div></div>
+      <div class="row2">
+        <div class="field"><label><span data-i="l_title">Ownership promises (4A)</span></label>
+          <div class="seg" id="own"><button type="button" data-v="1" aria-pressed="true" data-i="own1">4A(1) Yes</button><button type="button" data-v="2" aria-pressed="false" data-i="own2">4A(2) None</button></div></div>
+        <div class="field"><label><span data-i="l_cond">Working condition (4B)</span></label>
+          <div class="seg" id="cond"><button type="button" data-v="1" aria-pressed="true" data-i="cond1">4B(1) As is</button><button type="button" data-v="2" aria-pressed="false" data-i="cond2">4B(2) Warranty</button></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" id="result" aria-live="polite"></section>
+
+  <section class="paras" aria-labelledby="hParas">
+    <h2 id="hParas" data-i="h_paras">Read it paragraph by paragraph</h2>
+    <div class="terms" id="paras"></div>
+    <button type="button" class="expall" id="expAll">Open all</button>
+  </section>
+
+  <section class="myths" aria-labelledby="hMyth">
+    <h2 id="hMyth" data-i="h_myth">What people get wrong</h2>
+    <div class="terms" id="myths"></div>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">Selling a business? Read the contract that calls for this Bill of Sale: <a href="/t402/">T402 Forms Library</a> (BPA, CPA, RIPA).</li>
+      <li data-i="nx2">Buying a rental with appliances? Run the numbers in <a href="/t146/">T146 Rental Cash Flow</a> and check the building with <a href="/t267/">T267</a>.</li>
+      <li data-i="nx3">Not sure you need a lawyer? <a href="/t120/">T120</a>.</li>
+    </ol>
+  </section>
+
+  <section class="vid" aria-labelledby="hVid">
+    <h2 id="hVid" data-i="h_vid">45-second video</h2>
+    <video class="kl-vid" src="video.mp4" controls playsinline preload="metadata" aria-label="BOS video"></video>
+  </section>
+
+  <section class="actions">
+    <a class="btn primary" id="emailBtn" href="mailto:ken@kenlamrealty.com" data-i="b_email">Email Ken</a>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Text Ken</a>
+    <a class="btn" id="videoBtn" href="/t425/video.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 45-sec video</a>
+    <a class="btn" id="allBtn" href="/t402/" data-i="b_all">All explained forms</a>
+  </section>
+
+  <footer>
+    <span data-i="ft_note">Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.</span>
+    <span class="src"><span data-i="ft_src">Source</span>: C.A.R. Form BOS, Bill of Sale (Revised 12/23) · C.A.R. Form NA, Notary Acknowledgement (4/09)</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/cong-cu/" data-i="ft_all">All tools</a> · <a href="/t402/" data-i="b_all">All explained forms</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số mặc định lấy từ C.A.R. Form BOS (Revised 12/23) =====
+   Đoạn 4D: cam kết còn hiệu lực 6 tháng, 12 tháng, hoặc khác — form KHÔNG chọn sẵn ô nào (tool mặc định hiển thị 6 để minh họa).
+   Đoạn 5: Effective Date = ngày grant deed được ghi (recorded) ở county; không có deed thì = ngày Seller nhận tiền bán.
+   Đoạn 4A(1) là mặc định (Seller cam kết sở hữu sạch) trừ khi tick 4A(2). Đoạn 4B(1) là mặc định ("as is") trừ khi tick 4B(2). */
+const C={SURV_A:6,SURV_B:12};
+const FORM_CODE='T425 BOS';
+const PAGE_URL='https://tools.kenlamrealty.com/t425/';
+const I18N={"en": {"lang": "Tiếng Việt", "h_calc": "What does this form say to me?", "h_paras": "Read it paragraph by paragraph", "h_myth": "What people get wrong", "h_vid": "45-second video", "nx_title": "Next steps", "para": "Paragraph", "true": "True", "false": "False", "right": "Right.", "notq": "Not quite.", "is_true": "It is true:", "is_false": "It is false:", "exp_all": "Open all", "exp_none": "Close all", "b_email": "Email Ken", "b_sms": "Text Ken", "b_video": "Watch 45-sec video", "b_all": "All explained forms", "ft_src": "Source", "ft_upd": "Updated", "ft_all": "All tools", "ft_note": "Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.", "nodef": "Dates use the default days printed in the form, if the contract does not change them.", "body_hi": "Hi Ken, I used this page on tools.kenlamrealty.com. Here is what I entered and what it showed:", "body_end": "Please call or text me back. Thank you.", "sms_hi": "Hi Ken, I have a question about form", "role": "I am the", "buyer": "Buyer", "seller": "Seller", "h_rights": "Your rights", "h_duties": "Your duties", "h_dates": "Your dates", "h_money": "Money", "h_check": "Checklist", "tap": "Tap to check off.", "h_answer": "What it means for you", "title": "BOS: Bill of Sale, the receipt for the stuff", "sub": "A deed moves the land and building. A Bill of Sale moves the things: machines, chairs, washers, fridges. It also says what the seller promises about them.", "m1": "2 pages + notary page", "m2": "Seller + Buyer sign", "m3": "At closing, with a CPA, BPA or RIPA", "l_deal": "What is being sold with the furniture and equipment?", "deal_re": "Real property (grant deed)", "deal_biz": "Business only (no deed)", "l_ed_re": "Date the grant deed records", "l_ed_biz": "Date the seller gets the sale money", "l_price": "Price for the items (if written in ¶1)", "l_surv": "Promises last (paragraph 4D)", "s6": "6 months", "s12": "12 months", "so": "Other", "l_om": "Other: number of months", "months": "months", "l_title": "Ownership promises (4A)", "own1": "4A(1) Yes", "own2": "4A(2) None", "l_cond": "Working condition (4B)", "cond1": "4B(1) As is", "cond2": "4B(2) Warranty", "need_e": "Enter the Effective Date to see when the promises end.", "r_end": "Seller’s promises end", "r_eff": "Effective Date", "r_eff_re": "Paragraph 5: deed recorded", "r_eff_biz": "Paragraph 5: no deed, so the day the seller gets paid", "r_surv": "Promises last", "r_m": "{n} months", "p4d": "Paragraph 4D", "r_days": "That is", "r_d": "{n} days", "r_price": "Price in paragraph 1", "p1": "Optional", "w_none_h": "Heads up.", "w_none": "With 4A(2) and 4B(1) together, the seller promises nothing about who owns the items or how they work. The buyer takes all the risk.", "h_prom": "What the seller promises", "pr_own1": "<b>4A(1):</b> not sold to anyone else, not pledged, owned free and clear of liens and leases, except what is listed in 4A(1)(D).", "pr_own2": "<b>4A(2):</b> no promise at all about ownership, liens or prior sales.", "pr_cond1": "<b>4B(1):</b> \"as is\" and \"with all faults\". No promise the items work or fit your use. Repairs are on the buyer.", "pr_cond2": "<b>4B(2):</b> only the written warranties in 4B(2). Everything else is still as is.", "pr_disc": "<b>4C:</b> anything the seller writes about the items (broken, leased, financed).", "rb1": "Get title to all personal property the seller used with the property or business, not only the items on the list (1, 2).", "rb2": "If an ownership promise in 4A(1) turns out false before the promises end, you can raise it with the seller.", "rb2w": "If a written warranty in 4B(2) or an ownership promise in 4A(1) is broken before the promises end, you can raise it with the seller.", "rs1": "With 4B(1) the items go \"as is\". You do not promise they work.", "rs2": "Your promises end after the 4D period.", "db1": "Check every item before closing. After closing, repairs are yours unless 4B(2) says otherwise.", "db2": "Sign and keep a copy.", "ds1": "Make sure nothing is financed, leased or pledged, or list it in 4A(1)(D) or 4C.", "ds1n": "With 4A(2) you make no ownership promise, but still list known problems in 4C.", "ds2": "Get notary if 6 is checked (Civil Code §1189 form attached).", "ds3": "Write where the items are (paragraph 3).", "c1": "List every item, with serial numbers if you have them (paragraph 2)", "c2": "Write the location of the items (paragraph 3)", "c3": "Ask which items are leased, financed or have a lien", "c4": "Choose 6, 12 or other months in 4D", "c5": "Decide if a notary is needed (paragraph 6)", "n1": "Month math: if the end month is shorter (for example Aug 31 + 6 months), the date moves to the last day of that month. The form leaves 4D unchecked; this page shows 6 months as an example. General info, not legal advice.", "subj": "Question about Bill of Sale (BOS)", "nx1": "Selling a business? Read the contract that calls for this Bill of Sale: <a href=\"/t402/\">T402 Forms Library</a> (BPA, CPA, RIPA).", "nx2": "Buying a rental with appliances? Run the numbers in <a href=\"/t146/\">T146 Rental Cash Flow</a> and check the building with <a href=\"/t267/\">T267</a>.", "nx3": "Not sure you need a lawyer? <a href=\"/t120/\">T120</a>."}, "vi": {"lang": "English", "h_calc": "Form này nói gì với tôi?", "h_paras": "Đọc từng đoạn", "h_myth": "Nhiều người hiểu sai", "h_vid": "Video 45 giây", "nx_title": "Bước tiếp theo", "para": "Đoạn", "true": "Đúng", "false": "Sai", "right": "Chính xác.", "notq": "Chưa đúng.", "is_true": "Câu này đúng:", "is_false": "Câu này sai:", "exp_all": "Mở hết", "exp_none": "Đóng hết", "b_email": "Email Ken", "b_sms": "Nhắn tin Ken", "b_video": "Xem video 45 giây", "b_all": "Mọi form giải nghĩa", "ft_src": "Nguồn", "ft_upd": "Cập nhật", "ft_all": "Tất cả tools", "ft_note": "Form gốc © California Association of REALTORS®. Trang này chỉ giải thích, không thay thế form và không phải tư vấn pháp lý/thuế.", "nodef": "Ngày tính theo số ngày mặc định in trong form, nếu hợp đồng không sửa số ngày.", "body_hi": "Chào Ken, tôi vừa dùng trang này trên tools.kenlamrealty.com. Đây là số tôi nhập và kết quả:", "body_end": "Ken gọi hoặc nhắn lại giúp tôi. Cảm ơn.", "sms_hi": "Chào Ken, tôi muốn hỏi về form", "role": "Tôi là", "buyer": "Người mua", "seller": "Người bán", "h_rights": "Quyền của anh chị", "h_duties": "Việc anh chị phải làm", "h_dates": "Các mốc ngày", "h_money": "Tiền", "h_check": "Checklist", "tap": "Bấm để đánh dấu đã làm.", "h_answer": "Nghĩa là gì với anh chị", "title": "BOS: Bill of Sale, giấy bán đồ đạc", "sub": "Deed chuyển đất và nhà. Bill of Sale chuyển đồ: máy móc, ghế, máy giặt, tủ lạnh. Nó cũng ghi Seller hứa gì về mấy món đó.", "m1": "2 trang + trang notary", "m2": "Seller + Buyer ký", "m3": "Lúc close, kèm CPA, BPA hoặc RIPA", "l_deal": "Bán kèm đồ đạc với cái gì?", "deal_re": "Bất động sản (có grant deed)", "deal_biz": "Chỉ business (không deed)", "l_ed_re": "Ngày grant deed được ghi", "l_ed_biz": "Ngày Seller nhận tiền bán", "l_price": "Giá đồ đạc (nếu ghi ở đoạn 1)", "l_surv": "Cam kết còn hiệu lực (đoạn 4D)", "s6": "6 tháng", "s12": "12 tháng", "so": "Khác", "l_om": "Khác: số tháng", "months": "tháng", "l_title": "Cam kết sở hữu (4A)", "own1": "4A(1) Có", "own2": "4A(2) Không", "l_cond": "Tình trạng chạy (4B)", "cond1": "4B(1) As is", "cond2": "4B(2) Bảo hành", "need_e": "Nhập Effective Date để biết ngày hết cam kết.", "r_end": "Cam kết của Seller hết hạn", "r_eff": "Effective Date", "r_eff_re": "Đoạn 5: ngày ghi deed", "r_eff_biz": "Đoạn 5: không có deed nên tính ngày Seller nhận tiền", "r_surv": "Cam kết kéo dài", "r_m": "{n} tháng", "p4d": "Đoạn 4D", "r_days": "Tức là", "r_d": "{n} ngày", "r_price": "Giá ghi ở đoạn 1", "p1": "Không bắt buộc", "w_none_h": "Lưu ý.", "w_none": "Chọn 4A(2) cùng 4B(1) thì Seller không hứa gì về chủ sở hữu lẫn tình trạng đồ. Buyer chịu hết rủi ro.", "h_prom": "Seller hứa gì", "pr_own1": "<b>4A(1):</b> chưa bán cho ai, chưa đem cầm, sở hữu sạch — không lien, không đang thuê — trừ món ghi ở 4A(1)(D).", "pr_own2": "<b>4A(2):</b> không hứa gì về chủ sở hữu, lien hay việc đã bán trước đó.", "pr_cond1": "<b>4B(1):</b> \"as is\" và \"with all faults\". Không hứa đồ chạy tốt hay hợp việc anh chị dùng. Sửa chữa là việc của Buyer.", "pr_cond2": "<b>4B(2):</b> chỉ các bảo hành viết ở 4B(2). Phần còn lại vẫn là as is.", "pr_disc": "<b>4C:</b> những gì Seller khai về đồ (hư, đang thuê, đang trả góp).", "rb1": "Nhận quyền với mọi đồ đạc Seller dùng cho bất động sản hay business, không chỉ món trong danh sách (đoạn 1, 2).", "rb2": "Nếu cam kết sở hữu ở 4A(1) sai trước khi hết hạn cam kết, anh chị có cơ sở nêu với Seller.", "rb2w": "Nếu bảo hành ở 4B(2) hoặc cam kết sở hữu ở 4A(1) bị vi phạm trước khi hết hạn cam kết, anh chị có cơ sở nêu với Seller.", "rs1": "Với 4B(1), đồ giao \"as is\". Anh chị không hứa đồ chạy tốt.", "rs2": "Cam kết của anh chị hết sau thời hạn 4D.", "db1": "Kiểm từng món trước khi close. Sau close, sửa là việc của anh chị trừ khi 4B(2) ghi khác.", "db2": "Ký và giữ bản copy.", "ds1": "Bảo đảm không món nào đang trả góp, đang thuê hay đem cầm — nếu có thì ghi vào 4A(1)(D) hoặc 4C.", "ds1n": "Với 4A(2) anh chị không hứa về sở hữu, nhưng vẫn nên khai lỗi đã biết ở 4C.", "ds2": "Làm notary nếu tick đoạn 6 (kèm mẫu theo Civil Code §1189).", "ds3": "Ghi đồ để ở đâu (đoạn 3).", "c1": "Liệt kê từng món, có số serial càng tốt (đoạn 2)", "c2": "Ghi nơi để đồ (đoạn 3)", "c3": "Hỏi món nào đang thuê, trả góp hoặc bị lien", "c4": "Chọn 6, 12 hoặc số tháng khác ở 4D", "c5": "Quyết định có cần notary không (đoạn 6)", "n1": "Cách cộng tháng: nếu tháng cuối ngắn hơn (vd 31/08 + 6 tháng) thì lấy ngày cuối của tháng đó. Form để trống 4D; trang này lấy 6 tháng làm ví dụ. Thông tin chung, không phải tư vấn pháp lý.", "subj": "Hỏi về Bill of Sale (BOS)", "nx1": "Bán business? Đọc hợp đồng gọi tới Bill of Sale này: <a href=\"/t402/\">T402 Thư viện Forms</a> (BPA, CPA, RIPA).", "nx2": "Mua nhà cho thuê kèm máy giặt, tủ lạnh? Tính dòng tiền ở <a href=\"/t146/\">T146</a> và kiểm tòa nhà với <a href=\"/t267/\">T267</a>.", "nx3": "Không biết có cần luật sư không? <a href=\"/t120/\">T120</a>."}};
+const PARAS=[{"n": "0", "ne": "Top of the form", "nv": "Đầu form", "en": ["Which deal this is for", "Check the main contract: Commercial Purchase Agreement, Business Purchase Agreement, Residential Income Property Purchase Agreement, or other. Write the date, buyer, seller and the property (city, county), or the business being sold."], "vi": ["Giấy này cho giao dịch nào", "Tick hợp đồng gốc: mua thương mại (CPA), mua business (BPA), mua nhà cho thuê (RIPA) hoặc khác. Ghi ngày, Buyer, Seller và bất động sản (city, county), hoặc business được bán."]}, {"n": "1", "en": ["Transfer", "For value received (or a dollar amount, if checked), the seller transfers to the buyer all rights in the personal property the seller uses with the property or business."], "vi": ["Chuyển giao", "Vì đã nhận giá trị (hoặc số tiền ghi, nếu tick), Seller chuyển cho Buyer mọi quyền với đồ đạc Seller đang dùng cho bất động sản hay business đó."]}, {"n": "2", "en": ["Inventory list", "The list of items. It says \"includes, but is not limited to\", so the list gives examples; it is not the whole transfer."], "vi": ["Danh sách đồ", "Danh sách đồ đạc. Form ghi \"gồm nhưng không giới hạn ở\", nên danh sách là ví dụ, không phải toàn bộ."]}, {"n": "3", "en": ["Location", "Where the items are, unless written otherwise."], "vi": ["Nơi để đồ", "Đồ đạc nằm ở đâu, nếu không ghi khác."]}, {"n": "4A", "en": ["Ownership promises", "<b>(1)</b> Default: as of the Effective Date, the seller has not sold or transferred the items, has not pledged them and will not, and owns them free and clear of liens, leases and other burdens, except what is written in (D). <b>(2)</b> If checked: no ownership promises."], "vi": ["Cam kết sở hữu", "<b>(1)</b> Mặc định: tính tới Effective Date, Seller chưa bán/chuyển đồ, chưa và sẽ không đem cầm, sở hữu sạch không lien, không đang thuê, trừ món ghi ở (D). <b>(2)</b> Nếu tick: không cam kết gì về sở hữu."]}, {"n": "4B", "en": ["Working condition", "<b>(1)</b> Default: \"as is\" and \"with all faults\", no warranty of merchantability or fitness. The buyer takes the risk and pays for service and repair. <b>(2)</b> If checked: the seller writes specific warranties."], "vi": ["Tình trạng chạy", "<b>(1)</b> Mặc định: \"as is\" và \"with all faults\", không bảo hành chạy tốt hay hợp mục đích. Buyer chịu rủi ro và trả tiền sửa. <b>(2)</b> Nếu tick: Seller ghi bảo hành cụ thể."]}, {"n": "4C", "en": ["Disclosures", "Lines for the seller to disclose anything about the items."], "vi": ["Khai báo", "Chỗ để Seller khai về đồ đạc."]}, {"n": "4D", "en": ["How long promises last", "Check <b>6 months</b>, <b>12 months</b> or other, counted from the Effective Date. No box is checked in advance."], "vi": ["Cam kết kéo dài bao lâu", "Tick <b>6 tháng</b>, <b>12 tháng</b> hoặc khác, tính từ Effective Date. Form không chọn sẵn ô nào."]}, {"n": "5", "en": ["Effective Date", "The day the grant deed to the buyer is recorded in the county. If there is no grant deed, the day the seller received the sale money."], "vi": ["Effective Date", "Ngày grant deed sang tên Buyer được ghi ở county. Nếu không có grant deed, là ngày Seller nhận tiền bán."]}, {"n": "6", "en": ["Notary", "If checked, the seller’s signature is notarized, with the notary certificate required by Civil Code §1189 (the form cites it). The attached NA page is that certificate."], "vi": ["Notary", "Nếu tick, chữ ký Seller có notary, kèm giấy xác nhận theo Civil Code §1189 (form trích). Trang NA đi kèm là mẫu đó."]}, {"n": "7", "ne": "Signatures", "nv": "Chữ ký", "en": ["Signatures", "Seller and buyer sign, confirming they read, understand and received a copy."], "vi": ["Chữ ký", "Seller và Buyer ký, xác nhận đã đọc, hiểu và nhận bản copy."]}];
+const MYTHS=[{"ans": false, "en": ["Signing a Bill of Sale means the seller guarantees the machines work.", "Paragraph 4B(1) is the default: \"as is\" and \"with all faults\", unless 4B(2) is checked with written warranties."], "vi": ["Ký Bill of Sale là Seller bảo đảm máy móc chạy tốt.", "Đoạn 4B(1) là mặc định: \"as is\", \"with all faults\", trừ khi tick 4B(2) và ghi bảo hành."]}, {"ans": true, "en": ["Unless 4A(2) is checked, the seller promises the items are free of liens.", "Paragraph 4A(1)(C): owned free and clear of liens, leases and other burdens, except exceptions written in (D)."], "vi": ["Nếu không tick 4A(2), Seller cam kết đồ không bị lien.", "Đoạn 4A(1)(C): sở hữu sạch, không lien, không đang thuê, trừ ngoại lệ ghi ở (D)."]}, {"ans": false, "en": ["A Bill of Sale always has to be notarized.", "Paragraph 6 is a checkbox. Notary is used only if it is checked."], "vi": ["Bill of Sale lúc nào cũng phải có notary.", "Đoạn 6 là ô tick. Chỉ làm notary nếu tick."]}];
+
+let lang='en'; try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const T=k=>{const d=I18N[lang]; return d[k]!==undefined?d[k]:(I18N.en[k]!==undefined?I18N.en[k]:k);};
+const fill=(s,v)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>v[k]!==undefined?v[k]:m);
+const pad=n=>String(n).padStart(2,'0');
+const DOW={en:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],vi:['CN','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy']};
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function pd(s){ if(!/^\d{4}-\d{2}-\d{2}$/.test(s||'')) return null; const a=s.split('-').map(Number); return new Date(Date.UTC(a[0],a[1]-1,a[2])); }
+function ad(t,n){ return new Date(t.getTime()+n*864e5); }
+function wk(t){ const g=t.getUTCDay(); return g===0||g===6; }
+function roll(t){ while(wk(t)) t=ad(t,1); return t; }
+function abiz(t,n){ let k=0; while(k<n){ t=ad(t,1); if(!wk(t)) k++; } return t; }
+function amon(t,n){ const y=t.getUTCFullYear(),m=t.getUTCMonth()+n,d=t.getUTCDate(); const last=new Date(Date.UTC(y,m+1,0)).getUTCDate(); return new Date(Date.UTC(y,m,Math.min(d,last))); }
+function dd(a,b){ return Math.round((b.getTime()-a.getTime())/864e5); }
+function fd(t){ if(!t) return '—'; const d=t.getUTCDate(),m=t.getUTCMonth(),y=t.getUTCFullYear(),w=t.getUTCDay();
+  return lang==='vi'? DOW.vi[w]+', '+pad(d)+'/'+pad(m+1)+'/'+y : DOW.en[w]+', '+MON[m]+' '+d+', '+y; }
+function money(n){ return (n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US'); }
+function num(id){ const el=$(id); if(!el) return 0; const v=parseFloat(String(el.value).replace(/,/g,'')); return isFinite(v)?v:0; }
+function todayISO(){ const n=new Date(); return n.getFullYear()+'-'+pad(n.getMonth()+1)+'-'+pad(n.getDate()); }
+function segv(id){ const b=$(id).querySelector('button[aria-pressed="true"]'); return b?b.getAttribute('data-v'):null; }
+function segOn(id){ $(id).addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('button[data-v]'); if(!b) return;
+  $(id).querySelectorAll('button[data-v]').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); render(); }); }
+function chipsOn(id){ $(id).addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('.chip'); if(!b) return;
+  b.setAttribute('aria-pressed',String(b.getAttribute('aria-pressed')!=='true')); render(); }); }
+function chipOn(id,v){ const b=$(id).querySelector('.chip[data-v="'+v+'"]'); return !!b&&b.getAttribute('aria-pressed')==='true'; }
+function line(label,val,small,cls){ return '<div class="line'+(cls?' '+cls:'')+'"><span class="n"><b>'+label+'</b>'+(small?'<small>'+small+'</small>':'')+'</span><span class="a">'+val+'</span></div>'; }
+let checked={};
+function checklist(items){ return '<div>'+items.map(it=>{ const on=!!checked[it.k];
+  return '<div class="task'+(on?' done':'')+'"><input type="checkbox" data-ck="'+it.k+'" id="ck_'+it.k+'"'+(on?' checked':'')+'><label class="tt" for="ck_'+it.k+'">'+it.t+'</label></div>'; }).join('')+'</div>'; }
+document.addEventListener('change',e=>{ const c=e.target; if(c&&c.dataset&&c.dataset.ck){ checked[c.dataset.ck]=c.checked; const r=c.closest('.task'); if(r) r.classList.toggle('done',c.checked); updActions(); } });
+
+let openSet={};
+function renderParas(){
+  $('paras').innerHTML=PARAS.map((p,i)=>'<details class="term" id="p'+i+'"'+(openSet[i]?' open':'')+'><summary><span class="al">'+esc(p.nv?(lang==='vi'?p.nv:p.ne):T('para')+' '+p.n)+'</span><span class="nm">'+esc(p[lang][0])+'</span></summary><div class="bd"><p>'+p[lang][1]+'</p></div></details>').join('');
+  updExp();
+}
+function updExp(){ $('expAll').textContent=PARAS.some((p,i)=>!openSet[i])?T('exp_all'):T('exp_none'); }
+let mythAns={};
+function renderMyths(){
+  $('myths').innerHTML=MYTHS.map((m,i)=>{ const a=mythAns[i];
+    let h='<div class="myth tf"><p class="q">'+esc(m[lang][0])+'</p><div class="tfb">'
+     +'<button type="button" data-m="'+i+'" data-a="1" aria-pressed="'+(a===true)+'">'+esc(T('true'))+'</button>'
+     +'<button type="button" data-m="'+i+'" data-a="0" aria-pressed="'+(a===false)+'">'+esc(T('false'))+'</button></div>';
+    if(a!==undefined){ const ok=(a===m.ans); h+='<p class="ans '+(ok?'ok':'no')+'"><b>'+esc(T(ok?'right':'notq'))+' '+esc(T(m.ans?'is_true':'is_false'))+'</b> '+esc(m[lang][1])+'</p>'; }
+    return h+'</div>'; }).join('');
+}
+$('myths').addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('button[data-m]'); if(!b) return; mythAns[+b.dataset.m]=b.dataset.a==='1'; renderMyths(); });
+$('paras').addEventListener('toggle',e=>{ const el=e.target; if(!el.classList||!el.classList.contains('term')) return; const i=+el.id.slice(1); if(el.open) openSet[i]=1; else delete openSet[i]; updExp(); },true);
+$('expAll').onclick=()=>{ const any=PARAS.some((p,i)=>!openSet[i]); PARAS.forEach((p,i)=>{ if(any) openSet[i]=1; else delete openSet[i]; }); renderParas(); };
+
+let SUM=[];
+function updActions(){
+  const done=Object.keys(checked).filter(k=>checked[k]);
+  const body=T('body_hi')+'\n\n'+SUM.join('\n')+(done.length?'\n\n✓ '+done.length:'')+'\n\n'+T('body_end')+'\n'+PAGE_URL;
+  $('emailBtn').href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(T('subj'),{})+' ('+FORM_CODE+')')+'&body='+encodeURIComponent(body);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(T('sms_hi')+' '+FORM_CODE+'. '+(SUM[0]||'')+' '+PAGE_URL);
+}
+function applyLang(){
+  document.querySelectorAll('[data-i]').forEach(el=>{ const k=el.getAttribute('data-i'); const v=I18N[lang][k]; if(typeof v==='string') el.innerHTML=v; });
+  document.querySelectorAll('[data-ph]').forEach(el=>{ const v=I18N[lang][el.getAttribute('data-ph')]; if(typeof v==='string') el.setAttribute('placeholder',v); });
+  $('langBtn').textContent=T('lang'); document.documentElement.lang=lang;
+  renderParas(); renderMyths(); render();
+}
+$('langBtn').onclick=()=>{ lang=lang==='vi'?'en':'vi'; try{ localStorage.setItem('kl_lang',lang); }catch(e){} applyLang(); };
+
+
+segOn('role'); segOn('deal'); segOn('surv'); segOn('own'); segOn('cond');
+['edate','price','omonths'].forEach(id=>$(id).addEventListener('input',render));
+$('edate').value=todayISO();
+function render(){
+  const r=segv('role'), deal=segv('deal'), sv=segv('surv'), own=segv('own'), cond=segv('cond');
+  $('lEdate').setAttribute('data-i',deal==='re'?'l_ed_re':'l_ed_biz'); $('lEdate').textContent=T(deal==='re'?'l_ed_re':'l_ed_biz');
+  $('fOther').hidden=sv!=='o';
+  const m=sv==='o'?Math.max(0,Math.round(num('omonths'))):(sv==='6'?C.SURV_A:C.SURV_B);
+  const e=pd($('edate').value), price=num('price');
+  let h='<h2>'+esc(T('h_answer'))+'</h2>'; SUM=[];
+  if(!e){ h+='<p class="note">'+esc(T('need_e'))+'</p>'; }
+  else{
+    const end=amon(e,m);
+    h+='<div class="total"><div class="k">'+esc(T('r_end'))+'</div><div class="v" style="font-size:40px">'+fd(end)+'</div></div>';
+    h+='<div class="lines">'+line(esc(T('r_eff')),fd(e),esc(T(deal==='re'?'r_eff_re':'r_eff_biz')))
+      +line(esc(T('r_surv')),esc(fill(T('r_m'),{n:m})),esc(T('p4d')))
+      +line(esc(T('r_days')),esc(fill(T('r_d'),{n:dd(e,end)})),'')
+      +(price>0?line(esc(T('r_price')),money(price),esc(T('p1'))):'')+'</div>';
+    if(own==='2'&&cond==='1') h+='<div class="status warn"><b>'+esc(T('w_none_h'))+'</b> '+esc(T('w_none'))+'</div>';
+    SUM.push(T('r_eff')+': '+fd(e),T('r_end')+': '+fd(end)+' ('+m+')');
+  }
+  SUM.unshift(T(r==='b'?'buyer':'seller')+' · 4A('+own+') · 4B('+cond+') · 4D '+m);
+  const P=[own==='1'?'pr_own1':'pr_own2',cond==='1'?'pr_cond1':'pr_cond2','pr_disc'];
+  h+='<p class="res-h">'+esc(T('h_prom'))+'</p><ul class="bul">'+P.map(k=>'<li>'+T(k)+'</li>').join('')+'</ul>';
+  const R=r==='b'?['rb1',cond==='2'?'rb2w':'rb2']:['rs1','rs2'], Du=r==='b'?['db1','db2']:[own==='1'?'ds1':'ds1n','ds2','ds3'];
+  h+='<p class="res-h">'+esc(T('h_rights'))+'</p><ul class="bul">'+R.map(k=>'<li>'+T(k)+'</li>').join('')+'</ul>';
+  h+='<p class="res-h">'+esc(T('h_duties'))+'</p><ul class="bul">'+Du.map(k=>'<li>'+T(k)+'</li>').join('')+'</ul>';
+  h+='<p class="res-h">'+esc(T('h_check'))+' <span class="fx">'+esc(T('tap'))+'</span></p>'+checklist(['c1','c2','c3','c4','c5'].map(k=>({k:k,t:esc(T(k))})));
+  h+='<div class="note">'+esc(T('n1'))+'</div>';
+  $('result').innerHTML=h; updActions();
+}
+
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+try{if(/[?&]embed=1/.test(location.search))a.style.display='none';}catch(e){}
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

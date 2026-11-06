@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BBD Giải Nghĩa · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+/* ---- T229 thêm (không đổi class cũ) ---- */
+.ctl input[type=search]{font-size:18px}
+.ctl input[type=search]::-webkit-search-cancel-button{cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-size:13px;padding:7px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);border-color:var(--brass);font-weight:500}
+.terms{display:grid;gap:10px}
+.term{background:var(--panel);border:1px solid var(--line);border-radius:14px;min-width:0;scroll-margin-top:16px}
+.term[open]{border-color:var(--brass)}
+.term.flash{box-shadow:0 0 0 3px var(--brass-soft)}
+.term summary{list-style:none;cursor:pointer;padding:14px 18px;display:grid;gap:2px}
+.term summary::-webkit-details-marker{display:none}
+.term summary .nm{font-family:var(--display);font-size:23px;line-height:1.15;font-weight:500;color:var(--fg)}
+.term summary .al{font-size:12px;color:var(--muted)}
+.term summary .sh{font-size:14px;color:var(--muted);line-height:1.45}
+.term .bd{padding:0 18px 16px;display:grid;gap:10px;font-size:15px;line-height:1.55}
+.term .bd p{margin:0}
+.term .bd .lb{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);font-weight:500;margin-bottom:2px}
+.term .bd .ex{background:var(--brass-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.term .bd .my b{color:var(--warn);font-weight:500}
+.term .bd .ot{font-size:13px;color:var(--muted)}
+.term .bd .ft{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px;color:var(--muted)}
+.term .bd .ft a{color:var(--brass);word-break:break-word}
+.term .bd .ft button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:12px;padding:4px 10px;border-radius:999px;cursor:pointer}
+.empty{font-size:15px;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:16px 18px}
+.empty[hidden]{display:none}
+.expall{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+</style>
+
+<style>
+/* ---- Giải nghĩa Forms (T42x/T43x) thêm, không đổi class cũ ---- */
+.sec{display:grid;gap:12px}
+.sec>h2{font-family:var(--display);font-weight:400;font-size:28px;line-height:1.15;margin:0}
+.sec>.lead{margin:0;font-size:14px;color:var(--muted)}
+.fchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.fchips span{border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:12px;padding:5px 11px;border-radius:999px}
+.seg.wrapseg{flex-wrap:wrap}
+.seg.wrapseg button{flex:1 1 45%;border-bottom:1px solid var(--line)}
+.ckl{display:grid;gap:8px}
+.ckl label{display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.4;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
+.ckl input{width:20px;height:20px;accent-color:var(--brass);margin:0;flex:none}
+.verdict{font-family:var(--display);font-size:30px;line-height:1.15;margin:0}
+.rlist{margin:0;padding-left:20px;display:grid;gap:6px;font-size:15px;line-height:1.5}
+.rlist b{font-weight:500}
+.rh{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);font-weight:500;margin:4px 0 0}
+.mq{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:10px}
+.mq p{margin:0;font-size:15px;line-height:1.5}
+.mq .tf{display:flex;gap:8px}
+.mq .tf button{flex:1;border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:14px;padding:9px;border-radius:10px;cursor:pointer}
+.mq .tf button[aria-pressed="true"]{background:var(--brass-soft);border-color:var(--brass);font-weight:500}
+.mq .ans{font-size:14px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px}
+.mq .ans b{color:var(--fg);font-weight:600}
+.mq .ans[hidden]{display:none}
+.term summary .nm .pn{color:var(--brass);font-family:var(--body);font-size:13px;font-weight:500;letter-spacing:.04em;margin-right:8px;vertical-align:middle}
+.vidh{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.actions .btn{min-width:0;text-align:center}
+.dd .date{word-break:break-word}
+</style>
+<meta name="description" content="C.A.R. Bed Bug Disclosure (BBD) explained simply in English and Vietnamese: what tenants must report, the 2-business-day notice from the housing provider, and a checklist.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t422/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="BBD Explained · Ken Lam Tools">
+<meta property="og:description" content="The Bed Bug Disclosure for rentals in plain words, with a tenant and landlord checklist.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t422/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title"></h1>
+    <p class="sub" data-i="sub"></p>
+    <div class="fchips"><span data-i="chip1"></span><span data-i="chip2"></span><span data-i="chip3"></span></div>
+  </header>
+
+  <section class="sec" aria-labelledby="hMine">
+    <h2 id="hMine" data-i="h_mine">What does this form say to me?</h2>
+    <p class="lead" data-i="mine_lead"></p>
+    <div class="inputs">
+      <div class="field"><label><span data-i="l_role">I am the</span></label>
+        <div class="seg" id="role" role="group"><button type="button" data-v="tenant" aria-pressed="true" data-i="r_tenant">Tenant</button><button type="button" data-v="landlord" aria-pressed="false" data-i="r_landlord">Housing provider</button></div></div>
+      <div class="field"><label><span data-i="l_sit">What is happening?</span></label>
+        <div class="seg wrapseg" id="sit" role="group">
+          <button type="button" data-v="sign" aria-pressed="true" data-i="s_sign">Signing a new lease</button>
+          <button type="button" data-v="signs" aria-pressed="false" data-i="s_signs">I see signs of bed bugs</button>
+          <button type="button" data-v="report" aria-pressed="false" data-i="s_report">Pest company sent findings</button>
+          <button type="button" data-v="common" aria-pressed="false" data-i="s_common">Confirmed in a common area</button>
+        </div></div>
+      <div class="field" id="fDate"><label for="fd"><span data-i="l_fd">Date the housing provider received the pest findings</span></label><div class="ctl"><input id="fd" type="date"></div></div>
+    </div>
+
+    <div class="result" aria-live="polite">
+      <div class="total"><div class="k" data-i="r_k">What the form says to do</div><p class="verdict" id="verdict"></p></div>
+      <p style="margin:0;font-size:15px" id="why"></p>
+      <div class="dl" id="dline"></div>
+      <div class="note" data-i="assume">Business days skip Saturday and Sunday. Legal holidays are not subtracted here: check the calendar. Based only on the BBD form.</div>
+    </div>
+
+    <div class="tlw"><div class="top"><h2 data-i="h_ck" style="font-family:var(--display);font-weight:400;font-size:26px;margin:0">Your checklist</h2><span class="cnt" id="ckCnt"></span></div>
+      <div class="ckl" id="ck"></div></div>
+
+  </section>
+
+  <section class="sec" aria-labelledby="hParas">
+    <h2 id="hParas" data-i="h_paras">Read it paragraph by paragraph</h2>
+    <p class="lead" data-i="paras_lead"></p>
+    <div class="terms" id="paras"></div>
+    <button type="button" class="expall" id="expAll" data-i="exp_all">Open all</button>
+  </section>
+
+  <section class="sec" aria-labelledby="hMyth">
+    <h2 id="hMyth" data-i="h_myth">What people get wrong</h2>
+    <p class="lead" data-i="myth_lead">True or false? Tap to see the answer.</p>
+    <div class="ckl" id="myths" style="gap:10px"></div>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol id="nextList"></ol>
+  </section>
+
+  <section class="sec" aria-labelledby="hVid">
+    <h2 class="vidh" id="hVid" data-i="vid_title">45-second video</h2>
+    <video class="kl-vid" src="video.mp4" controls playsinline preload="metadata" aria-label="Video"></video>
+  </section>
+
+  <section class="actions">
+    <a class="btn primary" id="emailBtn" href="mailto:ken@kenlamrealty.com" data-i="b_email">Email Ken</a>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Text Ken</a>
+    <a class="btn" id="videoBtn" href="/t422/video.mp4" target="_blank" rel="noopener" data-i="b_video">Watch the 45-second video</a>
+    <a class="btn" href="/t402/" data-i="b_all">Every form, explained</a>
+  </section>
+
+  <footer>
+    <span data-i="ft_cr">Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.</span>
+    <span class="src"><span data-i="ft_src">Source</span>: C.A.R. Form BBD, Bed Bug Disclosure (Civil Code § 1954.603), Revised 6/23 (1 page)</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/cong-cu/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== BBD — C.A.R. Form BBD, Revised 6/23 (1 trang), Civil Code § 1954.603. Nguồn: /home/claude/forms/md/BBD_Bed_Bug_Disclosure.md ===== */
+const FORM_CODE='T422', FORM='BBD';
+const F={
+  PAGES:1,
+  NOTIFY_BIZ_DAYS:2,   // ¶8: Housing Provider notifies tenants of inspected units' findings within 2 business days of receipt of findings
+  ADULT_IN:'1/4',      // ¶1: adult about 1/4 inch
+  YOUNG_IN:'1/16',     // ¶1: young about 1/16 inch
+  LIFE_MONTHS:10,      // ¶2: lives about 10 months
+  EGGS_PER_DAY:'1–5',  // ¶2
+  ADULT_DAYS:21        // ¶2: adulthood in about 21 days
+};
+const PARAS=[
+ {n:'Đầu form',n_en:'Top',vi:['Gắn vào hợp đồng thuê nào','Lease, month-to-month, hay Lease After Sale.','Form này trở thành một phần của hợp đồng thuê nhà ở (Residential Lease hay Month-to-Month), hoặc Residential Lease After Sale, hoặc loại khác. Ghi ngày hợp đồng, địa chỉ, tên Tenant và “Housing Provider” (chủ nhà).'],
+  en:['Which rental agreement it attaches to','Lease, month-to-month, or Lease After Sale.','It becomes part of a Residential Lease or Month-to-Month Rental Agreement, a Residential Lease After Sale, or another agreement. Fill in the date, address, Tenant and “Housing Provider” (landlord).']},
+ {n:'¶1',vi:['Rệp giường trông ra sao','6 chân, con lớn cỡ 1/4 inch, không bay.','Rệp có 6 chân. Con lớn mình dẹp, dài khoảng <b>1/4 inch</b> (cỡ hạt táo), màu đỏ nâu tới màu đồng. Con nhỏ chỉ khoảng <b>1/16 inch</b>, gần như không màu. Hút máu xong thì phồng lên, đỏ tươi. Rệp <b>không bay</b>; bò hoặc bám theo đồ đạc, người, thú cưng.'],
+  en:['What bed bugs look like','6 legs, adults about 1/4 inch, they do not fly.','Six legs. Adults are flat, about <b>1/4 inch</b> long, red-brown to copper. Young ones are about <b>1/16 inch</b> and almost colorless. After feeding they swell and turn bright red. They <b>do not fly</b>; they crawl or ride on things, people or animals.']},
+ {n:'¶2–3',vi:['Sống bao lâu, đẻ bao nhiêu','Sống khoảng 10 tháng, mỗi ngày đẻ 1–5 trứng, nhịn đói nhiều tháng.','Trung bình sống khoảng <b>10 tháng</b>. Con cái đẻ <b>1 tới 5 trứng mỗi ngày</b>. Khoảng <b>21 ngày</b> là thành con lớn. Không ăn cũng sống được nhiều tháng (¶3), nên căn bỏ trống chưa chắc đã sạch.'],
+  en:['How long they live, how fast they spread','About 10 months, 1–5 eggs a day, months without food.','An average bed bug lives about <b>10 months</b>. Females lay <b>1 to 5 eggs a day</b>. Adulthood in about <b>21 days</b>. They survive months without feeding (¶3), so an empty unit is not automatically clean.']},
+ {n:'¶4',vi:['Vết cắn','Cắn ban đêm, nhiều người không biết mình bị cắn.','Rệp thường ăn ban đêm nên đa số bị cắn lúc ngủ mà không hay. Mỗi người phản ứng khác nhau; vết đỏ có khi nhiều ngày sau mới thấy, có khi không thấy.'],
+  en:['Bites','They feed at night; many people never notice.','They usually feed at night, so most people are bitten asleep and do not know it. Reactions vary; red welts may show up days later, or never.']},
+ {n:'¶5',vi:['Dấu hiệu có rệp','Đốm phân nâu đỏ, xác lột, trứng trắng, vết cắn, mùi ngọt.','Đốm nhỏ màu đỏ tới nâu đỏ trên nệm, khung giường, ga, ghế, tường. Xác lột, trứng trắng dính, vỏ trứng. Vết cắn ngứa ở chân, tay. Chỗ nhiều quá có <b>mùi ngọt</b> đặc trưng. Có người bị cắn mà không nổi vết.'],
+  en:['Signs of an infestation','Red-brown spots, shed skins, white eggs, bites, a sweet smell.','Small red to red-brown spots on mattresses, bed frames, linens, furniture, walls. Shed skins, white sticky eggs, empty shells. Itchy bites on legs and arms. Heavy infestations can have a <b>sweet odor</b>. Some people show no marks at all.']},
+ {n:'¶6',vi:['Tìm hiểu thêm','Trang web EPA và National Pest Management Association.','Form chỉ tới trang web của U.S. Environmental Protection Agency (EPA) và National Pest Management Association.'],
+  en:['More information','EPA and National Pest Management Association websites.','The form points to the U.S. Environmental Protection Agency (EPA) and the National Pest Management Association websites.']},
+ {n:'¶7',vi:['Việc của tenant','Nghi có rệp thì báo chủ nhà và hợp tác cho kiểm tra, xử lý.','Tenant nghi có rệp thì <b>báo chủ nhà hoặc người quản lý</b> theo địa chỉ, email hay số phone ghi trong hợp đồng thuê, và <b>hợp tác</b> cho kiểm tra và xử lý.'],
+  en:['The tenant’s job','Report suspected bed bugs and cooperate with inspection and treatment.','A tenant who suspects bed bugs <b>reports to the housing provider or property manager</b> at the mailing address, email or phone in the agreement, and <b>cooperates</b> with inspection and treatment.']},
+ {n:'¶8',vi:['Việc của chủ nhà','Báo kết quả kiểm tra trong 2 ngày làm việc.','Căn nào được công ty diệt côn trùng kiểm tra thì chủ nhà <b>báo kết quả cho tenant căn đó trong 2 ngày làm việc</b> sau khi nhận kết quả. Có rệp ở <b>khu vực chung</b> (hành lang, phòng giặt) thì báo cho <b>mọi tenant</b>.'],
+  en:['The housing provider’s job','Share inspection findings within 2 business days.','For any unit inspected by a pest control operator, the housing provider <b>tells those tenants the findings within 2 business days</b> of receiving them. Confirmed infestations in <b>common areas</b> (halls, laundry) go to <b>all tenants</b>.']},
+ {n:'Cam kết',n_en:'Release',vi:['Tenant miễn trách cho chủ nhà','Nếu rệp có vì tenant không làm theo form này.','Tenant đồng ý không đòi chủ nhà (và nhân viên, agent) bồi thường cho thiệt hại do rệp <b>khi nguyên nhân là tenant không làm đúng form này</b> (vd biết mà không báo). Rồi hai bên ký, ghi ngày, xác nhận đã nhận bản copy.'],
+  en:['Tenant release of the housing provider','When bed bugs result from the tenant not following this form.','The tenant releases and indemnifies the housing provider (and staff, agents) for bed bug claims <b>caused by the tenant’s failure to comply with this disclosure</b> (for example, knowing and not reporting). Then both sign, date, and confirm they got a copy.']}
+];
+const MYTHS=[
+ {a:false,vi:['Rệp giường bay từ căn này qua căn kia.','¶1: rệp không bay. Chúng bò, hoặc bám theo đồ đạc, người, thú cưng.'],
+  en:['Bed bugs fly from one unit to another.','¶1: bed bugs do not fly. They crawl or are carried on objects, people or animals.']},
+ {a:false,vi:['Không thấy vết cắn trên người thì chắc chắn nhà không có rệp.','¶4 và ¶5: phản ứng mỗi người khác nhau; có người bị cắn mà không nổi vết. Phải coi dấu hiệu trên nệm, giường.'],
+  en:['No bite marks means no bed bugs.','¶4 and ¶5: reactions vary; some people show no marks even after being bitten. Check mattresses and bed frames.']},
+ {a:true,vi:['Chủ nhà phải báo kết quả kiểm tra rệp cho tenant trong 2 ngày làm việc.','Đúng: ¶8, tính từ lúc chủ nhà nhận kết quả của công ty diệt côn trùng.'],
+  en:['The housing provider must share bed bug inspection findings within 2 business days.','True: ¶8, counted from when the housing provider receives the pest operator’s findings.']}
+];
+const CK={
+ vi:{tenant:{sign:['Đọc dấu hiệu có rệp ở ¶5 trước khi dọn đồ vào.','Coi trong hợp đồng thuê: địa chỉ, email, phone để báo chủ nhà (¶7).','Ký, ghi ngày, giữ bản copy.'],
+   signs:['Chụp hình đốm, xác lột, trứng (¶5).','Báo chủ nhà hoặc quản lý ngay, bằng cách ghi trong hợp đồng (¶7). Nên báo bằng email hay tin nhắn để có giấy tờ.','Hợp tác cho kiểm tra và xử lý (¶7).','Đừng mang nệm, ghế qua chỗ khác: rệp bám theo đồ (¶1).'],
+   report:['Chủ nhà phải báo kết quả cho anh chị trong 2 ngày làm việc (¶8).','Hỏi kết quả bằng giấy nếu chưa nhận.','Tiếp tục hợp tác xử lý (¶7).'],
+   common:['Chủ nhà phải báo cho mọi tenant khi có rệp ở khu vực chung (¶8).','Coi kỹ giường, ghế nhà mình theo ¶5.','Có dấu hiệu thì báo chủ nhà (¶7).']},
+  landlord:{sign:['Đưa BBD kèm hợp đồng thuê, ghi đủ tên, địa chỉ, ngày.','Ghi rõ địa chỉ, email, phone nhận báo cáo trong hợp đồng (¶7).','Hai bên ký, đưa tenant bản copy.'],
+   signs:['Nhận báo cáo của tenant, ghi lại ngày giờ.','Gọi công ty diệt côn trùng có license kiểm tra.','Nhận kết quả xong: đếm 2 ngày làm việc để báo tenant (¶8).'],
+   report:['Báo kết quả cho tenant các căn được kiểm tra trong 2 ngày làm việc (¶8).','Báo bằng giấy, giữ bản lưu.','Lên lịch xử lý, nhờ tenant hợp tác (¶7).'],
+   common:['Báo cho MỌI tenant khi có rệp ở khu vực chung (¶8).','Xử lý khu vực chung.','Giữ bản lưu thông báo.']}},
+ en:{tenant:{sign:['Read the signs in ¶5 before moving your things in.','Find the address, email or phone for reporting in your agreement (¶7).','Sign, date, keep your copy.'],
+   signs:['Take photos of spots, shed skins, eggs (¶5).','Report to the housing provider or manager right away, using the contact in the agreement (¶7). Email or text keeps a record.','Cooperate with inspection and treatment (¶7).','Do not move mattresses or furniture elsewhere: bed bugs ride along (¶1).'],
+   report:['The housing provider must share the findings within 2 business days (¶8).','Ask in writing if you have not received them.','Keep cooperating with treatment (¶7).'],
+   common:['The housing provider must notify all tenants of a common-area infestation (¶8).','Check your own bed and furniture using ¶5.','Report any signs (¶7).']},
+  landlord:{sign:['Attach BBD to the lease with names, address and date filled in.','Put the reporting address, email and phone in the agreement (¶7).','Both sign; give the tenant a copy.'],
+   signs:['Log the tenant’s report with date and time.','Have a licensed pest control operator inspect.','Once findings arrive: 2 business days to tell the tenants (¶8).'],
+   report:['Give findings to tenants of inspected units within 2 business days (¶8).','Do it in writing and keep a copy.','Schedule treatment and ask tenants to cooperate (¶7).'],
+   common:['Notify ALL tenants of a common-area infestation (¶8).','Treat the common area.','Keep copies of notices.']}}
+};
+const I18N={
+ vi:{title:'BBD: Thông báo rệp giường cho người thuê',sub:'Một trang giấy dạy nhận ra rệp giường, và chia việc: tenant thấy là báo, chủ nhà có kết quả là báo lại trong 2 ngày làm việc.',
+  chip1:'1 trang',chip2:'Tenant + chủ nhà ký',chip3:'Lúc ký hợp đồng thuê nhà',
+  mine_lead:'Chọn vai và chuyện đang xảy ra. Câu trả lời và checklist hiện liền.',
+  l_role:'Tôi là',r_tenant:'Người thuê',r_landlord:'Chủ nhà',l_sit:'Chuyện gì đang xảy ra?',s_sign:'Đang ký hợp đồng thuê',s_signs:'Tôi thấy dấu hiệu có rệp',s_report:'Công ty diệt côn trùng gửi kết quả',s_common:'Có rệp ở khu vực chung',
+  l_fd:'Ngày chủ nhà nhận kết quả kiểm tra',r_k:'Form bảo làm gì',
+  assume:'Ngày làm việc bỏ thứ Bảy, Chủ Nhật. Trang này chưa trừ ngày lễ: coi lịch lại. Chỉ dựa trên form BBD.',
+  h_ck:'Checklist của anh chị',ck_cnt:'{a}/{b} xong',
+  v:{tenant:{sign:'Đọc, ký, giữ bản copy',signs:'Báo chủ nhà ngay (¶7)',report:'Chờ kết quả trong 2 ngày làm việc',common:'Chủ nhà phải báo mọi tenant'},
+     landlord:{sign:'Kèm BBD vào hợp đồng thuê',signs:'Cho kiểm tra, tenant phải hợp tác',report:'Báo tenant trong 2 ngày làm việc',common:'Báo cho mọi tenant (¶8)'}},
+  w:{sign:'BBD trở thành một phần của hợp đồng thuê. Hai bên ký và xác nhận đã nhận bản copy.',signs:'¶7: tenant báo chủ nhà hoặc quản lý theo địa chỉ, email, phone trong hợp đồng, rồi hợp tác cho kiểm tra và xử lý.',
+     report:'¶8: căn được kiểm tra thì chủ nhà báo kết quả cho tenant căn đó trong 2 ngày làm việc sau khi nhận.',common:'¶8: rệp được xác nhận ở khu vực chung thì mọi tenant đều được báo.'},
+  dl_t:'Hạn chủ nhà báo kết quả',dl_p:'2 ngày làm việc sau ngày nhận kết quả {d} (¶8).',
+  next:['Luật chủ nhà và người thuê ở California: <a href="/t53/">T53</a>.','Checklist dọn vào, dọn ra (chụp hình tình trạng nhà): <a href="/t54/">T54</a>.','Coi thêm các form khác trong <a href="/t402/">Thư viện Forms</a>.'],
+  mail_subj:'Hỏi về thông báo rệp giường',mail_hi:'Chào Ken, tôi vừa dùng tool BBD.',mail_end:'Thông tin chung, không phải tư vấn pháp lý.',sms_hi:'Chào Ken, tôi hỏi về BBD:',
+  s_role:'Vai',s_sit:'Tình huống',s_res:'Form bảo',s_dl:'Hạn báo kết quả'},
+ en:{title:'BBD: the Bed Bug Disclosure, explained',sub:'One page that teaches you to spot bed bugs and splits the jobs: the tenant reports, the housing provider shares findings within 2 business days.',
+  chip1:'1 page',chip2:'Tenant + housing provider sign',chip3:'When signing a rental agreement',
+  mine_lead:'Pick your role and what is happening. The answer and checklist show right away.',
+  l_role:'I am the',r_tenant:'Tenant',r_landlord:'Housing provider',l_sit:'What is happening?',s_sign:'Signing a new lease',s_signs:'I see signs of bed bugs',s_report:'Pest company sent findings',s_common:'Confirmed in a common area',
+  l_fd:'Date the housing provider received the pest findings',r_k:'What the form says to do',
+  assume:'Business days skip Saturday and Sunday. Legal holidays are not subtracted here: check the calendar. Based only on the BBD form.',
+  h_ck:'Your checklist',ck_cnt:'{a}/{b} done',
+  v:{tenant:{sign:'Read, sign, keep a copy',signs:'Report it now (¶7)',report:'Findings due within 2 business days',common:'All tenants must be told'},
+     landlord:{sign:'Attach BBD to the lease',signs:'Inspect; tenant must cooperate',report:'Tell tenants within 2 business days',common:'Notify every tenant (¶8)'}},
+  w:{sign:'BBD becomes part of the rental agreement. Both sign and confirm they received a copy.',signs:'¶7: the tenant reports to the housing provider or manager at the address, email or phone in the agreement, then cooperates with inspection and treatment.',
+     report:'¶8: for inspected units, the housing provider shares the findings with those tenants within 2 business days of receiving them.',common:'¶8: a confirmed infestation in a common area is reported to all tenants.'},
+  dl_t:'Deadline to share findings',dl_p:'2 business days after findings received on {d} (¶8).',
+  next:['California landlord and tenant rules: <a href="/t53/">T53</a>.','Move-in and move-out checklist (photos of condition): <a href="/t54/">T54</a>.','See more forms in the <a href="/t402/">Forms Library</a>.'],
+  mail_subj:'Question about the bed bug disclosure',mail_hi:'Hi Ken, I just used the BBD tool.',mail_end:'General info, not legal advice.',sms_hi:'Hi Ken, a BBD question:',
+  s_role:'Role',s_sit:'Situation',s_res:'Form says',s_dl:'Findings deadline'}
+};
+let role='tenant', sit='sign', ckDone={};
+function segInit(id,set){ $(id).addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button[data-v]'); if(!b)return;
+  $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); set(b.getAttribute('data-v')); ckDone={}; renderTool();}); }
+function bbdDeadline(iso){const d=parseD(iso); return d?addBiz(d,F.NOTIFY_BIZ_DAYS):null;}
+function initTool(){
+  $('fd').value=todayISO();
+  segInit('role',v=>role=v); segInit('sit',v=>sit=v);
+  ['input','change'].forEach(ev=>$('fd').addEventListener(ev,renderTool));
+  $('ck').addEventListener('change',e=>{const i=e.target.getAttribute('data-c'); if(i===null)return; if(e.target.checked)ckDone[i]=1; else delete ckDone[i]; renderTool();});
+}
+function renderTool(){
+  const t=D(), list=CK[lang][role][sit];
+  $('verdict').textContent=t.v[role][sit]; $('why').textContent=t.w[sit];
+  $('fDate').style.display=sit==='report'?'':'none';
+  let dl=null;
+  if(sit==='report'){ const f=parseD($('fd').value); dl=bbdDeadline($('fd').value);
+    $('dline').innerHTML=dl?'<div class="dd"><div class="hd"><span class="t">'+t.dl_t+'</span></div><div class="date" id="bbdDate">'+fmtD(dl)+'</div><p>'+t.dl_p.replace('{d}',fmtD(f))+'</p></div>':''; }
+  else $('dline').innerHTML='';
+  $('ck').innerHTML=list.map((x,i)=>'<label><input type="checkbox" data-c="'+i+'"'+(ckDone[i]?' checked':'')+'> <span>'+x+'</span></label>').join('');
+  $('ckCnt').textContent=t.ck_cnt.replace('{a}',Object.keys(ckDone).length).replace('{b}',list.length);
+  setContact([t.s_role+': '+t['r_'+role],t.s_sit+': '+t['s_'+sit],t.s_res+': '+t.v[role][sit]].concat(dl?[t.s_dl+': '+fmtD(dl)]:[]).join('\n'));
+}
+
+
+/* ===== Phần chung cho các trang giải nghĩa form ===== */
+const COMMON={
+ vi:{h_mine:'Form này nói gì với tôi?',h_paras:'Đọc từng đoạn',paras_lead:'Bấm vào từng đoạn. Số đoạn giống y trên form để anh chị dò theo.',
+  h_myth:'Nhiều người hiểu sai',myth_lead:'Đúng hay sai? Bấm để xem đáp án.',t_true:'Đúng',t_false:'Sai',a_ok:'Chính xác.',a_no:'Chưa đúng.',
+  a_is_true:'Câu này ĐÚNG.',a_is_false:'Câu này SAI.',exp_all:'Mở hết',exp_none:'Đóng hết',nx_title:'Bước tiếp theo',vid_title:'Video 45 giây',
+  b_email:'Email Ken',b_sms:'Text Ken',b_video:'Xem video 45 giây',b_all:'Mọi form giải nghĩa',
+  ft_cr:'Form gốc © California Association of REALTORS®. Trang này chỉ giải thích, không thay thế form và không phải tư vấn pháp lý/thuế.',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English'},
+ en:{h_mine:'What does this form say to me?',h_paras:'Read it paragraph by paragraph',paras_lead:'Tap a paragraph. The numbers match the form so you can follow along.',
+  h_myth:'What people get wrong',myth_lead:'True or false? Tap to see the answer.',t_true:'True',t_false:'False',a_ok:'Right.',a_no:'Not quite.',
+  a_is_true:'This is TRUE.',a_is_false:'This is FALSE.',exp_all:'Open all',exp_none:'Close all',nx_title:'Next steps',vid_title:'45-second video',
+  b_email:'Email Ken',b_sms:'Text Ken',b_video:'Watch the 45-second video',b_all:'Every form, explained',
+  ft_cr:'Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.',
+  ft_src:'Source',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt'}
+};
+let lang='en'; try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const D=()=>Object.assign({},COMMON[lang],I18N[lang]);
+const money=n=>'$'+Math.round(n).toLocaleString('en-US');
+/* Ngày: chuỗi YYYY-MM-DD → Date (giờ địa phương), cộng ngày, đẩy qua thứ Hai nếu rơi T7/CN */
+const parseD=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||''); return m?new Date(+m[1],+m[2]-1,+m[3]):null;};
+const addD=(d,n)=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()+n); return x;};
+const wkShift=d=>{let x=addD(d,0); while(x.getDay()===0||x.getDay()===6) x=addD(x,1); return x;};
+const addBiz=(d,n)=>{let x=addD(d,0),k=0; while(k<n){x=addD(x,1); if(x.getDay()!==0&&x.getDay()!==6)k++;} return x;};
+const isoD=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const WD={vi:['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'],en:['Sun','Mon','Tue','Wed','Thu','Fri','Sat']};
+const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const fmtD=d=>lang==='vi'?WD.vi[d.getDay()]+', '+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()
+  :WD.en[d.getDay()]+', '+MO[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
+const todayISO=()=>isoD(new Date());
+
+let openSet={};
+function renderParas(){
+  const d=D();
+  $('paras').innerHTML=PARAS.map((p,i)=>{const t=p[lang];
+    return '<details class="term" data-k="'+i+'"'+(openSet[i]?' open':'')+'><summary><span class="nm"><span class="pn">'+esc(p['n_'+lang]||p.n)+'</span>'+esc(t[0])+'</span>'
+     +'<span class="sh">'+esc(t[1])+'</span></summary><div class="bd">'+t.slice(2).map(x=>'<p>'+x+'</p>').join('')+'</div></details>';}).join('');
+  $('expAll').textContent=PARAS.every((p,i)=>openSet[i])?d.exp_none:d.exp_all;
+}
+$('paras').addEventListener('toggle',e=>{const el=e.target; if(!el.classList||!el.classList.contains('term'))return; const k=el.getAttribute('data-k');
+  if(el.open)openSet[k]=1; else delete openSet[k]; const d=D(); $('expAll').textContent=PARAS.every((p,i)=>openSet[i])?d.exp_none:d.exp_all;},true);
+$('expAll').onclick=()=>{const all=PARAS.every((p,i)=>openSet[i]); PARAS.forEach((p,i)=>{if(all)delete openSet[i]; else openSet[i]=1;}); renderParas();};
+
+let mythPick={};
+function renderMyths(){
+  const d=D();
+  $('myths').innerHTML=MYTHS.map((m,i)=>{const t=m[lang],p=mythPick[i];
+    const ans=p===undefined?'':'<b>'+(p===m.a?d.a_ok:d.a_no)+' '+(m.a?d.a_is_true:d.a_is_false)+'</b> '+t[1];
+    return '<div class="mq"><p>'+esc(t[0])+'</p><div class="tf"><button type="button" data-m="'+i+'" data-v="1" aria-pressed="'+(p===true)+'">'+d.t_true+'</button>'
+     +'<button type="button" data-m="'+i+'" data-v="0" aria-pressed="'+(p===false)+'">'+d.t_false+'</button></div>'
+     +'<div class="ans"'+(p===undefined?' hidden':'')+'>'+ans+'</div></div>';}).join('');
+}
+$('myths').addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button[data-m]'); if(!b)return; mythPick[b.getAttribute('data-m')]=b.getAttribute('data-v')==='1'; renderMyths();});
+
+function setContact(summary){
+  const d=D();
+  const subj=FORM_CODE+' '+FORM+' — '+d.mail_subj;
+  const body=d.mail_hi+'\n\n'+summary+'\n\n'+d.mail_end+'\nhttps://tools.kenlamrealty.com/'+FORM_CODE.toLowerCase()+'/';
+  $('emailBtn').href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(d.sms_hi+' '+summary.split('\n').slice(0,3).join(' · '));
+}
+function applyLang(){
+  const d=D();
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  $('nextList').innerHTML=d.next.map(x=>'<li>'+x+'</li>').join('');
+  renderParas(); renderMyths(); renderTool();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+initTool();
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+try{if(/[?&]embed=1/.test(location.search))a.style.display='none';}catch(e){}
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+
+</body>
+</html>

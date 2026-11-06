@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BPA Giải Nghĩa · Ken Lam Tools</title>
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+/* ---- T229 thêm (không đổi class cũ) ---- */
+.ctl input[type=search]{font-size:18px}
+.ctl input[type=search]::-webkit-search-cancel-button{cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-size:13px;padding:7px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);border-color:var(--brass);font-weight:500}
+.terms{display:grid;gap:10px}
+.term{background:var(--panel);border:1px solid var(--line);border-radius:14px;min-width:0;scroll-margin-top:16px}
+.term[open]{border-color:var(--brass)}
+.term.flash{box-shadow:0 0 0 3px var(--brass-soft)}
+.term summary{list-style:none;cursor:pointer;padding:14px 18px;display:grid;gap:2px}
+.term summary::-webkit-details-marker{display:none}
+.term summary .nm{font-family:var(--display);font-size:23px;line-height:1.15;font-weight:500;color:var(--fg)}
+.term summary .al{font-size:12px;color:var(--muted)}
+.term summary .sh{font-size:14px;color:var(--muted);line-height:1.45}
+.term .bd{padding:0 18px 16px;display:grid;gap:10px;font-size:15px;line-height:1.55}
+.term .bd p{margin:0}
+.term .bd .lb{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);font-weight:500;margin-bottom:2px}
+.term .bd .ex{background:var(--brass-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.term .bd .my b{color:var(--warn);font-weight:500}
+.term .bd .ot{font-size:13px;color:var(--muted)}
+.term .bd .ft{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px;color:var(--muted)}
+.term .bd .ft a{color:var(--brass);word-break:break-word}
+.term .bd .ft button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:12px;padding:4px 10px;border-radius:999px;cursor:pointer}
+.empty{font-size:15px;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:16px 18px}
+.empty[hidden]{display:none}
+.expall{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+
+/* ---- T42x Giải nghĩa forms thêm (không đổi class cũ) ---- */
+[hidden]{display:none!important}
+.metachips{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.metachips span{border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:13px;padding:5px 11px;border-radius:999px}
+.calc,.paras,.myths,.vid{display:grid;gap:12px;min-width:0}
+.calc h2,.paras h2,.myths h2,.vid h2,.result h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0;line-height:1.15}
+.calc .hint{font-size:13px;color:var(--muted);margin:0}
+.chips .chip{min-height:38px}
+.seg{flex-wrap:wrap}
+.seg button{min-width:0}
+.res-h{font-size:12px;color:var(--brass);letter-spacing:.08em;text-transform:uppercase;font-weight:500;margin:6px 0 0}
+.bul{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px;line-height:1.5}
+.bul b{font-weight:500}
+.line .a.big{font-size:16px}
+.line .n{overflow-wrap:anywhere}
+.line .a{text-align:right}
+.tf{display:grid;gap:10px}
+.tf .q{margin:0;font-size:15px;color:var(--fg)}
+.tfb{display:flex;gap:8px}
+.tfb button{flex:1;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit;font-size:14px;padding:9px;border-radius:10px;cursor:pointer}
+.tfb button[aria-pressed="true"]{background:var(--brass-soft);border-color:var(--brass);font-weight:500}
+.tf .ans{margin:0;font-size:14px;color:var(--muted)}
+.tf .ans b{font-weight:500}
+.tf .ans.ok b{color:var(--ok)}
+.tf .ans.no b{color:var(--warn)}
+.actions .btn{text-align:center}
+.task .tt{cursor:default}
+</style>
+<meta name="description" content="BPA, the C.A.R. Business Purchase Agreement, explained simply in English and Vietnamese: deposit, inventory, lease, licenses, non-compete, bulk sale and every default deadline as real dates.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t426/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Business Purchase Agreement Explained · Ken Lam Tools">
+<meta property="og:description" content="Buying a nail salon or pho shop? See every BPA deadline as a real date, plus deposit and inventory math.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t426/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools · T426</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">BPA: buying a business (nail salon, pho shop…)</h1>
+    <p data-i="sub" class="sub">The contract to buy a shop that is already running: the equipment, the name, the customers, the inventory and the right to stay in the space. Not the building.</p>
+    <div class="metachips"><span data-i="m1">15 pages</span><span data-i="m2">Buyer signs the offer · Seller accepts</span><span data-i="m3">When you buy or sell a business</span></div>
+  </header>
+
+  <section class="calc" aria-labelledby="hCalc">
+    <h2 id="hCalc" data-i="h_calc">What does this form say to me?</h2>
+
+    <div class="inputs">
+      <div class="field"><label><span data-i="role">I am the</span></label>
+        <div class="seg" id="role"><button type="button" data-v="b" aria-pressed="true" data-i="buyer">Buyer</button><button type="button" data-v="s" aria-pressed="false" data-i="seller">Seller</button></div></div>
+      <div class="row2">
+        <div class="field"><label for="acc"><span data-i="l_acc">Acceptance date</span></label><div class="ctl"><input id="acc" type="date"></div></div>
+        <div class="field"><label for="coed"><span data-i="l_coed">Close of escrow (3C)</span> <small class="fx" data-i="l_coed_s">form leaves blank</small></label><div class="ctl"><input id="coed" type="number" inputmode="numeric" min="1" value="60"><span class="post" data-i="d_after">days after</span></div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="price"><span data-i="l_price">Purchase price (3A)</span></label><div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" min="0" value="180000"></div></div>
+        <div class="field"><label for="dep"><span data-i="l_dep">Initial deposit (3E(1))</span></label><div class="ctl"><span class="pre">$</span><input id="dep" type="number" inputmode="numeric" min="0" value="18000"></div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="inv"><span data-i="l_inv">Inventory estimate (3B(1))</span></label><div class="ctl"><span class="pre">$</span><input id="inv" type="number" inputmode="numeric" min="0" value="12000"></div></div>
+        <div class="field"><label><span data-i="l_invin">Inventory is</span></label>
+          <div class="seg" id="invin"><button type="button" data-v="in" aria-pressed="true" data-i="inv_in">In the price</button><button type="button" data-v="out" aria-pressed="false" data-i="inv_out">On top</button></div></div>
+      </div>
+      <div class="field"><label for="invc"><span data-i="l_invc">Inventory count result (3B(2)), if done</span></label><div class="ctl"><span class="pre">$</span><input id="invc" type="number" inputmode="numeric" min="0" placeholder="0"></div></div>
+      <div class="field"><label><span data-i="l_fin">How the buyer pays (3F)</span></label>
+        <div class="seg" id="fin"><button type="button" data-v="cash" aria-pressed="false" data-i="f_cash">All cash</button><button type="button" data-v="sba" aria-pressed="true" data-i="f_sba">SBA loan</button><button type="button" data-v="sf" aria-pressed="false" data-i="f_sf">Seller financing</button></div></div>
+      <div class="field"><label><span data-i="l_sit">This deal includes (tap all that apply)</span></label>
+        <div class="chips" id="sit" role="group">
+          <button type="button" class="chip" data-v="lease" aria-pressed="true" data-i="c_lease">Lease from landlord</button>
+          <button type="button" class="chip" data-v="lic" aria-pressed="false" data-i="c_lic">Licenses / permits</button>
+          <button type="button" class="chip" data-v="abc" aria-pressed="false" data-i="c_abc">ABC liquor license</button>
+          <button type="button" class="chip" data-v="fr" aria-pressed="false" data-i="c_fr">Franchise</button>
+          <button type="button" class="chip" data-v="env" aria-pressed="false" data-i="c_env">Environmental (Phase 1)</button>
+          <button type="button" class="chip" data-v="re" aria-pressed="false" data-i="c_re">Buying the building too (1C)</button>
+        </div></div>
+    </div>
+  </section>
+
+  <section class="result" id="result" aria-live="polite"></section>
+
+  <section class="paras" aria-labelledby="hParas">
+    <h2 id="hParas" data-i="h_paras">Read it paragraph by paragraph</h2>
+    <div class="terms" id="paras"></div>
+    <button type="button" class="expall" id="expAll">Open all</button>
+  </section>
+
+  <section class="myths" aria-labelledby="hMyth">
+    <h2 id="hMyth" data-i="h_myth">What people get wrong</h2>
+    <div class="terms" id="myths"></div>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">Ask the seller for the Business Disclosure Statement first. See what it shows in <a href="/t423/">T423 BDS</a>.</li>
+      <li data-i="nx2">At close the equipment moves by Bill of Sale: <a href="/t425/">T425 BOS</a>. Buying a home instead? <a href="/t401/">T401 RPA</a>.</li>
+      <li data-i="nx3">Get a business lawyer and CPA on the team: <a href="/t122/">T122</a>. Worried about the deposit? <a href="/t08/">T08</a>.</li>
+    </ol>
+  </section>
+
+  <section class="vid" aria-labelledby="hVid">
+    <h2 id="hVid" data-i="h_vid">45-second video</h2>
+    <video class="kl-vid" src="video.mp4" controls playsinline preload="metadata" aria-label="BPA video"></video>
+  </section>
+
+  <section class="actions">
+    <a class="btn primary" id="emailBtn" href="mailto:ken@kenlamrealty.com" data-i="b_email">Email Ken</a>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Text Ken</a>
+    <a class="btn" id="videoBtn" href="/t426/video.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 45-sec video</a>
+    <a class="btn" id="allBtn" href="/t402/" data-i="b_all">All explained forms</a>
+  </section>
+
+  <footer>
+    <span data-i="ft_note">Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.</span>
+    <span class="src"><span data-i="ft_src">Source</span>: C.A.R. Form BPA, Business Purchase Agreement and Joint Escrow Instructions (Revised 6/26)</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/cong-cu/" data-i="ft_all">All tools</a> · <a href="/t402/" data-i="b_all">All explained forms</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số ngày mặc định lấy từ C.A.R. Form BPA (Revised 6/26) — đổi ở đây nếu C.A.R. sửa form =====
+   3D  Offer hết hạn: 3 ngày lịch sau khi Buyer ký xong (5PM)            3E(1) Deposit: 3 NGÀY LÀM VIỆC sau Acceptance, wire
+   3E(2) Deposit tăng: khi gỡ hết contingency                               3J(1)(2) Chứng minh tiền: 3 ngày
+   3J(3) Thư lender (Letter of Intent): 30 ngày (KEN DUYỆT: đọc từ bảng trang 2)   3K Assignment request: 17 ngày
+   3L(1) Loan 60 · 3L(2) Appraisal 60 · 3L(3) Điều tra 30, quyền vào tiệm 45 (KHÔNG phải contingency)
+   3L(4) Môi trường 30 (KEN DUYỆT) · 3L(5) Giấy Seller 30 hoặc 10 ngày sau khi nhận (8L(2) ghi 5 ngày — form tự mâu thuẫn)
+   3L(6) Mua nhà đất: tới COE · 3L(7) Lease 45, nộp đơn 15 · 3L(8) Giấy phép tới COE, nộp hồ sơ 30
+   3L(9) Franchise: hợp đồng 30, franchisor chấp nhận tới COE · 3L(10) Đồ thuê/lien 30 hoặc 5 ngày sau khi nhận
+   3M(1) Seller giao giấy 7 · 3M(2) Ký general provisions escrow 5 ngày sau khi nhận · 3M(3) Quyền ký 3
+   3B(1) Danh sách tồn kho 10 ngày sau Acceptance · 3B(2) Đếm tồn kho 10 ngày trước COE
+   3R / 17 Giấy vi phạm: sửa trước COE (hoặc 5 ngày trước COE) · 10C(1)(A) Sửa point-of-sale: 5 ngày trước COE
+   3S(1) Chỉ việc: 7 ngày sau COE · 15E NBP/NSP: ít nhất 2 ngày · 15G DCE: ít nhất 3 ngày · 24 Chia theo tháng 30 ngày
+   37I(4) Hạn rơi thứ Bảy/Chủ nhật/lễ → dời qua ngày làm việc kế (tool chỉ dời thứ Bảy/Chủ nhật, không tính lễ)
+   3C COE: form để trống — người dùng nhập. */
+const C={OFFER_EXP:3,DEP_BIZ:3,VERIFY:3,AUTH:3,DOCS:7,INV_LIST:10,LEASE_APP:15,ASSIGN:17,LETTER:30,INVEST:30,ENV:30,SDOCS:30,SDOCS_AFTER:10,
+  LIENS:30,LIENS_AFTER:5,LIC_APP:30,FRAN:30,ACCESS:45,LEASE:45,LOAN:60,APPR:60,INV_COUNT_BEFORE:10,POS_BEFORE:5,CONSULT_AFTER:7,NBP:2,DCE:3};
+const FORM_CODE='T426 BPA';
+const PAGE_URL='https://tools.kenlamrealty.com/t426/';
+const I18N={"en": {"lang": "Tiếng Việt", "h_calc": "What does this form say to me?", "h_paras": "Read it paragraph by paragraph", "h_myth": "What people get wrong", "h_vid": "45-second video", "nx_title": "Next steps", "para": "Paragraph", "true": "True", "false": "False", "right": "Right.", "notq": "Not quite.", "is_true": "It is true:", "is_false": "It is false:", "exp_all": "Open all", "exp_none": "Close all", "b_email": "Email Ken", "b_sms": "Text Ken", "b_video": "Watch 45-sec video", "b_all": "All explained forms", "ft_src": "Source", "ft_upd": "Updated", "ft_all": "All tools", "ft_note": "Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.", "nodef": "Dates use the default days printed in the form, if the contract does not change them.", "body_hi": "Hi Ken, I used this page on tools.kenlamrealty.com. Here is what I entered and what it showed:", "body_end": "Please call or text me back. Thank you.", "sms_hi": "Hi Ken, I have a question about form", "role": "I am the", "buyer": "Buyer", "seller": "Seller", "h_rights": "Your rights", "h_duties": "Your duties", "h_dates": "Your dates (from Acceptance)", "h_money": "Money", "h_check": "Checklist", "tap": "Tap to check off.", "h_answer": "What it means for you", "title": "BPA: buying a business (nail salon, pho shop…)", "sub": "The contract to buy a shop that is already running: the equipment, the name, the customers, the inventory and the right to stay in the space. Not the building.", "m1": "15 pages", "m2": "Buyer signs the offer · Seller accepts", "m3": "When you buy or sell a business", "l_acc": "Acceptance date", "l_coed": "Close of escrow (3C)", "l_coed_s": "form leaves blank", "d_after": "days after", "l_price": "Purchase price (3A)", "l_dep": "Initial deposit (3E(1))", "l_inv": "Inventory estimate (3B(1))", "l_invin": "Inventory is", "inv_in": "In the price", "inv_out": "On top", "l_invc": "Inventory count result (3B(2)), if done", "l_fin": "How the buyer pays (3F)", "f_cash": "All cash", "f_sba": "SBA loan", "f_sf": "Seller financing", "l_sit": "This deal includes (tap all that apply)", "c_lease": "Lease from landlord", "c_lic": "Licenses / permits", "c_abc": "ABC liquor license", "c_fr": "Franchise", "c_env": "Environmental (Phase 1)", "c_re": "Buying the building too (1C)", "r_total": "Total price", "r_price": "Purchase price", "r_inv": "Inventory estimate", "r_inv_in": "Inside the price (default, 9B(6)(A))", "r_inv_out": "Added on top (3B(1) \"IS NOT\")", "r_dep": "Initial deposit", "r_dep_s": "{p} of total · paid to escrow", "r_rest": "Rest due by close", "r_rest_cash": "All cash: verify funds in 3 days (3J(1))", "r_rest_loan": "Down payment + loan(s), 3F–3G", "r_invc": "Inventory counted at", "r_adj_up": "Count is higher: buyer owes", "r_adj_up_s": "9B(6)(C): pay cash, or seller financing, or seller takes back goods", "r_adj_dn": "Count is lower: seller credits buyer", "r_adj_dn_s": "9B(6)(C): credit for the difference", "need_acc": "Enter the Acceptance date to see every deadline.", "r_acc": "Acceptance", "d_dep": "Initial deposit to escrow, by wire", "d_cash": "Proof of all-cash funds", "d_down": "Proof of down payment and closing costs", "d_auth": "Proof of authority to sign", "d_docs": "Seller delivers documents (incl. BDS)", "d_invl": "Seller gives itemized inventory list", "d_leaseapp": "Buyer submits lease application", "d_assign": "Last day to ask to assign the contract", "d_letter": "Lender letter of intent", "d_invest": "Remove or cancel: investigation of business", "d_env": "Remove or cancel: environmental", "d_sdocs": "Remove or cancel: seller documents", "d_liens": "Remove or cancel: leased or liened items", "d_licapp": "Submit license / permit applications", "d_fran": "Remove or cancel: franchise agreement terms", "d_access": "Informational access to the shop ends", "d_lease": "Remove or cancel: lease", "d_loan": "Remove or cancel: loan", "d_appr": "Remove or cancel: appraisal", "d_count": "Inventory count (by a 3rd party unless changed)", "d_pos": "Required point-of-sale repairs done", "d_coe": "Close of escrow", "d_consult": "Free consulting and training ends", "s_biz": "3 business days (Sat/Sun skipped, holidays not counted here)", "s_auth": "only if signing for a trust, LLC, corporation…", "s_docs": "7 days", "s_invl": "if no estimate was agreed", "s_cont": "contingency", "s_env": "plus 5 days after you get the survey", "s_sdocs": "or 10 days after delivery, whichever is later", "s_liens": "or 5 days after delivery, whichever is later", "s_access": "NOT a contingency, no extra right to cancel", "s_noloan": "unless \"No loan contingency\" is checked", "s_noappr": "unless \"No appraisal contingency\" is checked", "s_before": "counted back from close", "s_coe": "the day the bills of sale are delivered", "s_consult": "up to the hours written in 3S(1)", "t_h": "Runs through close of escrow:", "t_lic": "licenses and permits (3L(8))", "t_fran": "franchisor accepts the buyer (3L(9))", "t_re": "buying the real property (3L(6))", "t_abc": "escrow will not close until ABC approves the transfer (8H(2))", "w_late_h": "Fix the contract.", "w_late": "{n} contingency date(s) fall after your close date. Shorten them or move the close date.", "rb1": "Investigate the business for 30 days and cancel through a contingency if it is not right (3L(3), 8, 15D).", "rb2": "The seller must keep running the shop the same way and keep the goodwill during escrow (7D).", "rb3": "At close you get keys, passwords, alarm codes and the POS system with access (7C).", "rb4": "You buy no debts of the business unless checked in 3N(3).", "rb5": "Free consulting from the seller after close (18) and a non-compete for the years and miles in 3S(2) (19).", "rs1": "If the buyer misses a deadline, send a Notice to Buyer to Perform (at least 2 days), then you may cancel (15C, 15E).", "rs2": "If you both initialed paragraph 40, you keep the deposit actually paid if the buyer defaults.", "rs3": "You may keep marketing for backup offers after Acceptance (38).", "rs4": "You may contact the buyer’s lender about loan status (5C(5)).", "db1": "Wire the deposit within 3 business days and prove your funds within 3 days (3E(1), 3J).", "db2": "Remove each contingency in writing or cancel, on time (8L, 15B). Removing it means you accept it.", "db3": "Do not drill or cut, and do not call a government inspector, without the seller’s written OK (12B).", "db4": "Give the seller free copies of your reports (not the appraisal) (12C), fix any damage and carry insurance (12D).", "db5": "Keep pursuing the financing you wrote. Not getting other financing does not excuse you (6C).", "ds1": "Within 7 days give the documents checked in 3Q, the BDS, a proposed price allocation (BP-APP), violation notices and known material facts, including insurance claims in the past 5 years (11).", "ds2": "Say which items are leased, financed or have a lien, with the papers (9B(2)).", "ds3": "Run the business as before until close (7D). Remove anything not sold by close (7A).", "ds4": "Give escrow tax clearances from CDTFA, EDD or FTB; no money is released before that (20). Follow the bulk sale rules (21).", "ds5": "Report and pay sales tax on furniture, fixtures and equipment to CDTFA (10B). Consult and do not compete as agreed (18, 19).", "ds_abc": "Follow the Alcoholic Beverage Control Act for the license transfer (8H(2)).", "c1": "Fill in 3S(2): non-compete years and miles (blank in the form)", "c2": "Fill in 3S(1): consulting hours", "c3": "Check 3P(9) UCC search and 3P(10) bulk transfer: who pays", "cl_abc": "Check the ABC license in 3N(1), or it is not included (9B(1))", "cl_lease": "Call the landlord early about assignment, rent and term", "c4": "Ask for 3 years of tax returns, sales tax returns and POS reports (3Q)", "c5": "Talk to a lawyer before initialing paragraphs 40 and 42", "n1": "Dates that land on Saturday or Sunday move to Monday (37I(4)); legal holidays are not checked here. Days before close are not moved.", "subj": "Question about BPA (business purchase)", "nx1": "Ask the seller for the Business Disclosure Statement first. See what it shows in <a href=\"/t423/\">T423 BDS</a>.", "nx2": "At close the equipment moves by Bill of Sale: <a href=\"/t425/\">T425 BOS</a>. Buying a home instead? <a href=\"/t401/\">T401 RPA</a>.", "nx3": "Get a business lawyer and CPA on the team: <a href=\"/t122/\">T122</a>. Worried about the deposit? <a href=\"/t08/\">T08</a>."}, "vi": {"lang": "English", "h_calc": "Form này nói gì với tôi?", "h_paras": "Đọc từng đoạn", "h_myth": "Nhiều người hiểu sai", "h_vid": "Video 45 giây", "nx_title": "Bước tiếp theo", "para": "Đoạn", "true": "Đúng", "false": "Sai", "right": "Chính xác.", "notq": "Chưa đúng.", "is_true": "Câu này đúng:", "is_false": "Câu này sai:", "exp_all": "Mở hết", "exp_none": "Đóng hết", "b_email": "Email Ken", "b_sms": "Nhắn tin Ken", "b_video": "Xem video 45 giây", "b_all": "Mọi form giải nghĩa", "ft_src": "Nguồn", "ft_upd": "Cập nhật", "ft_all": "Tất cả tools", "ft_note": "Form gốc © California Association of REALTORS®. Trang này chỉ giải thích, không thay thế form và không phải tư vấn pháp lý/thuế.", "nodef": "Ngày tính theo số ngày mặc định in trong form, nếu hợp đồng không sửa số ngày.", "body_hi": "Chào Ken, tôi vừa dùng trang này trên tools.kenlamrealty.com. Đây là số tôi nhập và kết quả:", "body_end": "Ken gọi hoặc nhắn lại giúp tôi. Cảm ơn.", "sms_hi": "Chào Ken, tôi muốn hỏi về form", "role": "Tôi là", "buyer": "Người mua", "seller": "Người bán", "h_rights": "Quyền của anh chị", "h_duties": "Việc anh chị phải làm", "h_dates": "Các mốc ngày (tính từ Acceptance)", "h_money": "Tiền", "h_check": "Checklist", "tap": "Bấm để đánh dấu đã làm.", "h_answer": "Nghĩa là gì với anh chị", "title": "BPA: hợp đồng mua business (tiệm nail, tiệm phở…)", "sub": "Hợp đồng mua một tiệm đang chạy: đồ nghề, tên tiệm, khách quen, hàng tồn và quyền ở lại mặt bằng. Không phải mua tòa nhà.", "m1": "15 trang", "m2": "Buyer ký offer · Seller chấp nhận", "m3": "Khi mua hoặc bán business", "l_acc": "Ngày Acceptance", "l_coed": "Ngày close (3C)", "l_coed_s": "form để trống", "d_after": "ngày sau", "l_price": "Giá mua (3A)", "l_dep": "Deposit đầu (3E(1))", "l_inv": "Tồn kho ước tính (3B(1))", "l_invin": "Tồn kho", "inv_in": "Nằm trong giá", "inv_out": "Cộng thêm", "l_invc": "Kết quả đếm tồn kho (3B(2)), nếu đã đếm", "l_fin": "Buyer trả bằng gì (3F)", "f_cash": "Tiền mặt", "f_sba": "Loan SBA", "f_sf": "Seller cho vay", "l_sit": "Giao dịch có (bấm chọn hết món đúng)", "c_lease": "Lease với chủ đất", "c_lic": "Giấy phép", "c_abc": "License bia rượu ABC", "c_fr": "Franchise", "c_env": "Môi trường (Phase 1)", "c_re": "Mua luôn tòa nhà (1C)", "r_total": "Tổng giá", "r_price": "Giá mua", "r_inv": "Tồn kho ước tính", "r_inv_in": "Nằm trong giá (mặc định, 9B(6)(A))", "r_inv_out": "Cộng thêm vào giá (3B(1) \"IS NOT\")", "r_dep": "Deposit đầu", "r_dep_s": "{p} tổng giá · nộp cho escrow", "r_rest": "Phần còn lại trước khi close", "r_rest_cash": "Tiền mặt: chứng minh tiền trong 3 ngày (3J(1))", "r_rest_loan": "Down payment + loan, 3F–3G", "r_invc": "Tồn kho đếm được", "r_adj_up": "Đếm cao hơn: Buyer trả thêm", "r_adj_up_s": "9B(6)(C): trả tiền mặt, hoặc Seller cho vay, hoặc Seller lấy lại hàng", "r_adj_dn": "Đếm thấp hơn: Seller credit cho Buyer", "r_adj_dn_s": "9B(6)(C): credit phần chênh lệch", "need_acc": "Nhập ngày Acceptance để thấy mọi hạn chót.", "r_acc": "Acceptance", "d_dep": "Deposit đầu vào escrow, bằng wire", "d_cash": "Chứng minh đủ tiền mặt", "d_down": "Chứng minh tiền down payment + closing", "d_auth": "Bằng chứng quyền ký", "d_docs": "Seller giao giấy tờ (gồm BDS)", "d_invl": "Seller đưa danh sách tồn kho chi tiết", "d_leaseapp": "Buyer nộp đơn thuê", "d_assign": "Hạn chót xin chuyển hợp đồng", "d_letter": "Thư Letter of Intent của lender", "d_invest": "Gỡ hoặc hủy: điều tra business", "d_env": "Gỡ hoặc hủy: môi trường", "d_sdocs": "Gỡ hoặc hủy: giấy tờ Seller", "d_liens": "Gỡ hoặc hủy: đồ thuê, đồ bị lien", "d_licapp": "Nộp hồ sơ giấy phép", "d_fran": "Gỡ hoặc hủy: điều khoản franchise", "d_access": "Hết quyền vào tiệm để tìm hiểu", "d_lease": "Gỡ hoặc hủy: lease", "d_loan": "Gỡ hoặc hủy: loan", "d_appr": "Gỡ hoặc hủy: appraisal", "d_count": "Đếm tồn kho (bên thứ ba, nếu không sửa)", "d_pos": "Xong sửa chữa bắt buộc (point of sale)", "d_coe": "Close escrow", "d_consult": "Hết thời gian chủ cũ chỉ việc miễn phí", "s_biz": "3 ngày làm việc (bỏ thứ Bảy, Chủ nhật; chưa trừ ngày lễ)", "s_auth": "chỉ khi ký thay trust, LLC, corporation…", "s_docs": "7 ngày", "s_invl": "nếu chưa thống nhất số ước tính", "s_cont": "contingency", "s_env": "cộng 5 ngày sau khi nhận survey", "s_sdocs": "hoặc 10 ngày sau khi nhận giấy, ngày nào trễ hơn", "s_liens": "hoặc 5 ngày sau khi nhận giấy, ngày nào trễ hơn", "s_access": "KHÔNG phải contingency, không thêm quyền hủy", "s_noloan": "trừ khi tick \"No loan contingency\"", "s_noappr": "trừ khi tick \"No appraisal contingency\"", "s_before": "đếm lùi từ ngày close", "s_coe": "ngày giao Bill of Sale", "s_consult": "tối đa số giờ ghi ở 3S(1)", "t_h": "Kéo dài tới ngày close:", "t_lic": "giấy phép (3L(8))", "t_fran": "franchisor chấp nhận Buyer (3L(9))", "t_re": "mua bất động sản (3L(6))", "t_abc": "escrow không close tới khi ABC duyệt chuyển license (8H(2))", "w_late_h": "Sửa hợp đồng.", "w_late": "Có {n} hạn contingency rơi sau ngày close. Rút ngắn lại hoặc dời ngày close.", "rb1": "Điều tra tiệm 30 ngày, thấy không ổn thì hủy theo contingency (3L(3), 8, 15D).", "rb2": "Trong escrow, Seller phải chạy tiệm như cũ và giữ khách (7D).", "rb3": "Ngày close nhận chìa khóa, mật khẩu, mã alarm và hệ thống POS kèm cách vào (7C).", "rb4": "Không nhận nợ nào của tiệm, trừ món tick ở 3N(3).", "rb5": "Chủ cũ chỉ việc miễn phí sau close (18) và không cạnh tranh theo số năm, số dặm ở 3S(2) (19).", "rs1": "Buyer trễ hạn thì gửi Notice to Buyer to Perform (ít nhất 2 ngày), sau đó mới được hủy (15C, 15E).", "rs2": "Nếu hai bên đã ký tắt đoạn 40, Buyer bỏ ngang thì anh chị giữ deposit đã thực nộp.", "rs3": "Được tiếp tục rao để nhận backup offer sau Acceptance (38).", "rs4": "Được hỏi lender của Buyer về tình trạng loan (5C(5)).", "db1": "Wire deposit trong 3 ngày làm việc, chứng minh tiền trong 3 ngày (3E(1), 3J).", "db2": "Gỡ từng contingency bằng văn bản hoặc hủy, đúng hạn (8L, 15B). Gỡ là chấp nhận.", "db3": "Không khoan đục, không gọi thanh tra nhà nước, nếu Seller chưa đồng ý bằng văn bản (12B).", "db4": "Đưa Seller bản copy report miễn phí (trừ appraisal) (12C), sửa hư hại và có bảo hiểm (12D).", "db5": "Tiếp tục xin đúng loại tiền vay đã ghi. Không vay được kiểu khác không phải lý do để khỏi mua (6C).", "ds1": "Trong 7 ngày đưa giấy tờ tick ở 3Q, BDS, đề nghị chia giá (BP-APP), giấy vi phạm và sự thật quan trọng, gồm claim bảo hiểm 5 năm qua (11).", "ds2": "Nói món nào đang thuê, trả góp hoặc bị lien, kèm giấy tờ (9B(2)).", "ds3": "Chạy tiệm như cũ tới ngày close (7D). Dọn đồ không bán trước close (7A).", "ds4": "Đưa escrow giấy clearance của CDTFA, EDD hoặc FTB; chưa có thì chưa giải ngân (20). Làm đúng thủ tục bulk sale (21).", "ds5": "Khai và nộp sales tax trên bàn ghế, máy móc cho CDTFA (10B). Chỉ việc và không cạnh tranh như đã ghi (18, 19).", "ds_abc": "Làm đúng Alcoholic Beverage Control Act khi chuyển license (8H(2)).", "c1": "Điền 3S(2): số năm và số dặm không cạnh tranh (form để trống)", "c2": "Điền 3S(1): số giờ chỉ việc", "c3": "Xem 3P(9) UCC search và 3P(10) bulk transfer: ai trả", "cl_abc": "Tick license ABC ở 3N(1), không thì không có trong giá (9B(1))", "cl_lease": "Gọi chủ đất sớm: sang lease, tiền thuê, thời hạn", "c4": "Xin 3 năm tax return, sales tax return và báo cáo POS (3Q)", "c5": "Hỏi luật sư trước khi ký tắt đoạn 40 và 42", "n1": "Hạn rơi thứ Bảy hoặc Chủ nhật được dời qua thứ Hai (37I(4)); trang này chưa tính ngày lễ. Các mốc trước ngày close không dời.", "subj": "Hỏi về BPA (mua business)", "nx1": "Xin Seller bản Business Disclosure Statement trước. Coi nó nói gì ở <a href=\"/t423/\">T423 BDS</a>.", "nx2": "Lúc close, đồ nghề chuyển bằng Bill of Sale: <a href=\"/t425/\">T425 BOS</a>. Mua nhà ở thì xem <a href=\"/t401/\">T401 RPA</a>.", "nx3": "Có luật sư business và CPA trong đội: <a href=\"/t122/\">T122</a>. Lo mất deposit? <a href=\"/t08/\">T08</a>."}};
+const PARAS=[{"n": "1", "en": ["Offer", "Who is buying (person, corporation, partnership, LLC) and the business name (DBA) and address. Mailing address may differ from the real city: check. <b>1C</b>: if checked, the deal depends on buying the building at the same close, with a separate <b>CPA</b>. Agents are not parties."], "vi": ["Offer", "Ai mua (cá nhân, corporation, partnership, LLC) và tên tiệm (DBA), địa chỉ. Địa chỉ bưu điện có thể khác city thật: tự kiểm. <b>1C</b>: nếu tick, việc mua phụ thuộc vào mua được tòa nhà, close cùng lúc, bằng hợp đồng <b>CPA</b> riêng. Agent không phải là bên ký."]}, {"n": "2", "en": ["Agency", "Confirms who each agent works for (seller, buyer or both). Each side gets the AD disclosure."], "vi": ["Agency", "Xác nhận agent làm cho ai (bên bán, bên mua hay cả hai). Mỗi bên nhận form AD."]}, {"n": "3A–3H", "en": ["Price, inventory, close, deposit, loans", "Price (3A). Inventory has an estimate; it is <b>in the price</b> unless \"IS NOT\" is checked; list within <b>10 days</b>, count by a <b>3rd party</b> within <b>10 days before close</b> (3B). Close date is blank (3C). Offer expires <b>3 calendar days</b> after buyer signs, 5PM (3D). Deposit by wire within <b>3 business days</b>; increase at removal of all contingencies (3E). First loan is <b>SBA</b> by default; extra financed amount is <b>seller financing</b> by default (3F). Seller credit goes to closing costs (3H)."], "vi": ["Giá, tồn kho, close, deposit, loan", "Giá (3A). Tồn kho có số ước tính; mặc định <b>nằm trong giá</b> trừ khi tick \"IS NOT\"; danh sách trong <b>10 ngày</b>, <b>bên thứ ba</b> đếm trong <b>10 ngày trước close</b> (3B). Ngày close để trống (3C). Offer hết hạn <b>3 ngày lịch</b> sau khi Buyer ký, 5PM (3D). Deposit wire trong <b>3 ngày làm việc</b>; tăng khi gỡ hết contingency (3E). Loan thứ nhất mặc định <b>SBA</b>; phần vay thêm mặc định <b>Seller cho vay</b> (3F). Seller credit dùng cho closing costs (3H)."]}, {"n": "3J–3K", "en": ["Proof of money, assignment", "Proof of all cash or down payment: with the offer or within <b>3 days</b>. Lender letter of intent: <b>30 days</b>. Request to assign the contract: <b>17 days</b>."], "vi": ["Chứng minh tiền, chuyển hợp đồng", "Chứng minh đủ tiền mặt hoặc down payment: kèm offer hoặc trong <b>3 ngày</b>. Thư Letter of Intent của lender: <b>30 ngày</b>. Xin chuyển hợp đồng cho người khác: <b>17 ngày</b>."]}, {"n": "3L", "en": ["Contingencies and days", "Loan <b>60</b>, appraisal <b>60</b>, investigation <b>30</b> (shop access for information <b>45</b>, not a contingency), environmental <b>30</b> if checked, seller documents <b>30</b> or 10 days after delivery, building purchase through close, lease <b>45</b> (apply within <b>15</b>), licenses through close (apply within <b>30</b>), franchise terms <b>30</b> and franchisor OK through close, leased or liened items <b>30</b> or 5 days after delivery."], "vi": ["Contingency và số ngày", "Loan <b>60</b>, appraisal <b>60</b>, điều tra <b>30</b> (vào tiệm tìm hiểu <b>45</b>, không phải contingency), môi trường <b>30</b> nếu tick, giấy Seller <b>30</b> hoặc 10 ngày sau khi nhận, mua tòa nhà tới close, lease <b>45</b> (nộp đơn trong <b>15</b>), giấy phép tới close (nộp trong <b>30</b>), điều khoản franchise <b>30</b> và franchisor chấp nhận tới close, đồ thuê/lien <b>30</b> hoặc 5 ngày sau khi nhận."]}, {"n": "3M–3T", "en": ["Documents, assets, costs, after close", "Seller documents <b>7 days</b>; escrow papers signed <b>5 days</b> after delivery; proof of authority <b>3 days</b> (3M). Assets included and excluded; buyer takes <b>no debts</b> unless checked (3N). Who pays each cost; \"Both\" means split equally (3P). Documents seller must give (3Q). Violations cured by close, or 5 days before (3R). Consulting <b>7 days</b> after close, up to ___ hours; non-compete ___ years, ___ miles (3S)."], "vi": ["Giấy tờ, tài sản, chi phí, sau close", "Seller giao giấy <b>7 ngày</b>; ký giấy escrow <b>5 ngày</b> sau khi nhận; bằng chứng quyền ký <b>3 ngày</b> (3M). Tài sản mua và không mua; Buyer <b>không nhận nợ</b> trừ món tick (3N). Ai trả phí gì; \"Both\" là chia đôi (3P). Giấy Seller phải đưa (3Q). Giấy vi phạm sửa trước close, hoặc 5 ngày trước (3R). Chỉ việc <b>7 ngày</b> sau close, tối đa ___ giờ; không cạnh tranh ___ năm, ___ dặm (3S)."]}, {"n": "4–6", "en": ["Addenda, deposit and financing", "Check the attached forms (4). A bigger deposit needs a new liquidated damages form <b>DID</b> (5A(2)). Any \"non-refundable deposit\" clause is invalid unless it meets the Civil Code (5A(3)). Loans are secured by business assets with a UCC-1; any part above asset value becomes unsecured (5C(3)). Seller may ask the buyer’s lender for status; buyer updates contact in <b>1 day</b> (5C(5)). Buyer must pursue the financing written (6C)."], "vi": ["Phụ lục, deposit, tiền vay", "Tick các form kèm (4). Deposit tăng phải ký form liquidated damages mới <b>DID</b> (5A(2)). Điều khoản \"deposit không hoàn lại\" vô hiệu nếu không đạt Civil Code (5A(3)). Loan được bảo đảm bằng tài sản tiệm kèm UCC-1; phần vượt giá trị tài sản thành nợ không thế chấp (5C(3)). Seller được hỏi lender của Buyer; Buyer cập nhật liên lạc trong <b>1 ngày</b> (5C(5)). Buyer phải theo đúng cách vay đã ghi (6C)."]}, {"n": "7", "en": ["Closing and possession", "Delivered \"As-Is\" as of Acceptance, except inventory. Items not sold must be removed by close; otherwise abandoned and the buyer may remove them after a <b>3-day</b> notice. Warranties that can be assigned go to the buyer. At close: keys, passwords, alarm codes and the <b>POS system</b>. During escrow the seller runs the business the same way."], "vi": ["Close và giao tiệm", "Giao \"As-Is\" như lúc Acceptance, trừ tồn kho. Đồ không bán phải dọn trước close; không dọn coi như bỏ, Buyer báo trước <b>3 ngày</b> rồi tự dọn. Bảo hành chuyển được thì chuyển cho Buyer. Ngày close: chìa khóa, mật khẩu, mã alarm và <b>hệ thống POS</b>. Trong escrow Seller chạy tiệm như cũ."]}, {"n": "8", "en": ["Contingencies", "Loan, appraisal (by a licensed or certified appraiser), investigation, environmental, seller documents, real property, lease, licenses, franchise, leased or liened items. Insurance is part of the investigation contingency. With a liquor license, escrow will not close until <b>ABC approves</b>. Removing a contingency without the documents gives up that right. Missed deadline: the seller must send a Notice to Buyer to Perform before canceling."], "vi": ["Contingency", "Loan, appraisal (appraiser có license/certified), điều tra, môi trường, giấy Seller, bất động sản, lease, giấy phép, franchise, đồ thuê/lien. Bảo hiểm thuộc contingency điều tra. Có license rượu thì escrow không close tới khi <b>ABC duyệt</b>. Gỡ contingency khi chưa có giấy là tự bỏ quyền. Trễ hạn: Seller phải gửi Notice to Buyer to Perform trước khi hủy."]}, {"n": "9", "en": ["Assets in and out", "Items listed in MLS or flyers are not in the price unless written here or in 3N. The buyer buys <b>all business assets</b> (equipment, names, logos, phone numbers, websites, social media, customer lists, goodwill…) <b>except cash</b> and <b>except the ABC license</b> unless checked in 3N. Delivered free of liens by <b>Bill of Sale</b>, no warranty of condition. Inventory count higher: buyer pays more (cash, seller financing, or seller takes goods back). Lower: seller credits the buyer."], "vi": ["Tài sản mua và không mua", "Món ghi trên MLS hay flyer không nằm trong giá trừ khi ghi ở đây hoặc 3N. Buyer mua <b>mọi tài sản của tiệm</b> (đồ nghề, tên, logo, số điện thoại, website, social media, danh sách khách, goodwill…) <b>trừ tiền mặt</b> và <b>trừ license ABC</b> nếu không tick ở 3N. Giao sạch lien bằng <b>Bill of Sale</b>, không bảo hành tình trạng. Đếm tồn kho cao hơn: Buyer trả thêm (tiền mặt, Seller cho vay, hoặc Seller lấy lại hàng). Thấp hơn: Seller credit cho Buyer."]}, {"n": "10", "en": ["Costs", "Paying for a report is not paying for the repair. Seller reports and pays sales tax on furniture, fixtures and equipment to <b>CDTFA</b>. Required point-of-sale repairs are done <b>5 days before close</b>."], "vi": ["Chi phí", "Trả tiền làm report không phải là trả tiền sửa. Seller khai và nộp sales tax trên bàn ghế, máy móc cho <b>CDTFA</b>. Sửa chữa bắt buộc (point of sale) phải xong <b>5 ngày trước close</b>."]}, {"n": "11–13", "en": ["Seller disclosures, buyer investigation, environment", "Seller gives the 3Q documents, says what is owned or leased, confirms books and tax returns are real, gives a price allocation (BP-APP), violation notices, known material facts including <b>insurance claims in the past 5 years</b>, and the <b>BDS</b>, plus updates. Buyer investigates at own cost, no invasive tests without consent, gives the seller copies of reports within the 3L(3) time or <b>3 days</b> after receipt, repairs damage, carries insurance. Phase 1 is paid by the party in 3P(3); buyer has <b>5 days</b> after the survey to remove it."], "vi": ["Seller khai, Buyer điều tra, môi trường", "Seller đưa giấy 3Q, nói món nào sở hữu hay đi thuê, xác nhận sổ sách và tax return là thật, đưa đề nghị chia giá (BP-APP), giấy vi phạm, sự thật quan trọng gồm <b>claim bảo hiểm 5 năm qua</b>, và <b>BDS</b>, kèm cập nhật. Buyer tự điều tra, tự trả tiền, không làm hư khi chưa được phép, đưa Seller copy report trong hạn 3L(3) hoặc <b>3 ngày</b> sau khi nhận, sửa hư hại, có bảo hiểm. Phase 1 do bên ở 3P(3) trả; Buyer có <b>5 ngày</b> sau khi nhận survey để gỡ."]}, {"n": "14–15", "en": ["Title, deadlines, canceling", "How you take title has tax and legal effects. Deadlines change only in writing. Remove or cancel in writing (CR or CC). Notice to Perform gives at least <b>2 days</b>. Before canceling for failure to close, send a Demand to Close Escrow with at least <b>3 days</b>. On a proper cancel, both sign to release the deposit, less fees paid."], "vi": ["Đứng tên, hạn chót, hủy", "Cách đứng tên có hậu quả thuế và pháp lý. Hạn chót chỉ đổi bằng văn bản. Gỡ hoặc hủy bằng văn bản (CR hoặc CC). Notice to Perform cho ít nhất <b>2 ngày</b>. Trước khi hủy vì bên kia không close, gửi Demand to Close Escrow ít nhất <b>3 ngày</b>. Hủy đúng luật thì hai bên ký trả deposit, trừ phí đã chi."]}, {"n": "16–19", "en": ["Repairs, violations, consulting, non-compete", "Repairs follow the law, with receipts. If the seller agreed to cure a violation but cannot by close (or 5 days before), the buyer may cancel and get the deposit plus report and appraisal costs back, or close as is. The seller shows the buyer the shop’s methods, <b>free</b>, for the time and hours in 3S(1), but does not teach the trade from zero. The seller will not run or work for a similar or competing business within the years and miles in 3S(2), while the buyer runs the shop there."], "vi": ["Sửa chữa, vi phạm, chỉ việc, không cạnh tranh", "Sửa đúng luật, có hóa đơn. Nếu Seller nhận sửa giấy vi phạm mà không kịp trước close (hoặc 5 ngày trước), Buyer được hủy và lấy lại deposit cộng tiền report, appraisal, hoặc close nguyên trạng. Chủ cũ chỉ cách làm riêng của tiệm, <b>miễn phí</b>, theo thời gian và số giờ ở 3S(1), nhưng không dạy nghề từ đầu. Seller không mở hay làm cho tiệm giống hoặc cạnh tranh trong số năm, số dặm ở 3S(2), khi Buyer còn chạy tiệm ở đó."]}, {"n": "20–24", "en": ["Tax clearance, bulk sale, liens, prorations", "Seller gives escrow clearance papers from <b>CDTFA, EDD, FTB</b>; no money is released before that. Seller follows Bulk Sales (UCC Division 6) and, with a liquor license, B&amp;P §24074. If 3P(9) is checked, escrow runs a <b>UCC search</b>. Seller promises stay true through close and after. Business taxes, rent, CAM and similar items are prorated at close on a <b>30-day month</b>."], "vi": ["Thuế, bulk sale, lien, chia chi phí", "Seller đưa escrow giấy clearance của <b>CDTFA, EDD, FTB</b>; chưa có thì chưa giải ngân. Seller làm đúng Bulk Sales (UCC Division 6) và, nếu có license rượu, B&amp;P §24074. Nếu tick 3P(9), escrow làm <b>UCC search</b>. Lời cam kết của Seller đúng tới close và sau đó. Thuế business, tiền thuê, CAM… chia theo ngày close, tính tháng <b>30 ngày</b>."]}, {"n": "25–36", "en": ["Agents, escrow, assignment, ADA, risk", "Pay agents by separate agreement; agents do not value the business or give tax or legal advice. Escrow gets the contract within <b>3 days</b>; fees paid within <b>3 days</b> when asked. MLS keeps photos at least <b>3 years</b>. Winner gets attorney fees. Buyer may assign to a wholly-owned entity or trust; otherwise the seller must consent; give escrow the assignment within <b>1 day</b>. ADA compliance can cost a lot. Seller carries the risk of loss until ownership transfers. Signers for an entity prove authority in <b>3 days</b>."], "vi": ["Agent, escrow, chuyển hợp đồng, ADA, rủi ro", "Trả agent theo hợp đồng riêng; agent không định giá tiệm, không tư vấn thuế/luật. Escrow nhận hợp đồng trong <b>3 ngày</b>; phí trả trong <b>3 ngày</b> khi được yêu cầu. MLS giữ hình ít nhất <b>3 năm</b>. Thắng kiện được đòi phí luật sư. Buyer được chuyển hợp đồng cho công ty/trust 100% của mình; người khác phải có Seller đồng ý; đưa escrow giấy chuyển trong <b>1 ngày</b>. Tuân thủ ADA có thể tốn nhiều tiền. Seller chịu rủi ro mất mát tới khi chuyển quyền sở hữu. Người ký thay công ty chứng minh quyền ký trong <b>3 ngày</b>."]}, {"n": "37", "en": ["Definitions and counting days", "\"Days\" are calendar days; deposit delivery uses business days. <b>Close of Escrow</b> here means the day the bills of sale are delivered. The event day is Day 0. A deadline on Saturday, Sunday or a legal holiday moves to the next working day."], "vi": ["Định nghĩa và cách đếm ngày", "\"Days\" là ngày lịch; riêng nộp deposit tính ngày làm việc. <b>Close of Escrow</b> ở đây là ngày giao Bill of Sale. Ngày xảy ra sự việc là Day 0. Hạn rơi thứ Bảy, Chủ nhật, ngày lễ thì dời qua ngày làm việc kế."]}, {"n": "38–39", "en": ["Offer terms, time is of the essence", "The seller may accept other offers until Acceptance is communicated, and seek backups after. A buyer who defaults may owe broker compensation. Time is of the essence; changes only in writing signed by both."], "vi": ["Điều khoản offer, đúng hạn", "Seller được nhận offer khác tới khi báo Acceptance, và nhận backup sau đó. Buyer bỏ ngang có thể phải trả hoa hồng broker. Hạn là hạn thật; chỉ sửa bằng văn bản hai bên ký."]}, {"n": "40", "en": ["Liquidated Damages", "If both initial: when the buyer defaults, the seller keeps the <b>deposit actually paid</b>. Release of money needs both signatures, a court or an arbitrator. An increased deposit needs form <b>DID</b>."], "vi": ["Liquidated Damages (mất deposit)", "Nếu hai bên ký tắt: Buyer bỏ ngang thì Seller giữ <b>deposit đã thực nộp</b>. Rút tiền cần chữ ký hai bên, tòa hoặc trọng tài. Deposit tăng phải ký form <b>DID</b>."]}, {"n": "41–42", "en": ["Mediation and arbitration", "Mediate first (C.A.R. Dispute Resolution Center or another), costs split. Skipping mediation loses the right to attorney fees. This applies even if arbitration is not initialed. Arbitration, if initialed, is binding, before a retired judge or an attorney with at least <b>5 years</b> of business law experience; you give up court and jury."], "vi": ["Hòa giải và trọng tài", "Hòa giải trước (C.A.R. Dispute Resolution Center hoặc nơi khác), chia đôi phí. Bỏ qua hòa giải thì mất quyền đòi phí luật sư. Áp dụng dù không ký tắt trọng tài. Trọng tài, nếu ký tắt, là bắt buộc, do thẩm phán nghỉ hưu hoặc luật sư có ít nhất <b>5 năm</b> kinh nghiệm luật business; bỏ quyền ra tòa và bồi thẩm đoàn."]}, {"n": "43–44", "en": ["Offer and acceptance", "If not signed and delivered by the 3D time, the offer is revoked and the deposit returned. Entity buyers or sellers write the full name and the authorized signer. The seller accepts, counters (SCO/SMCO) or takes it as a backup (BUO)."], "vi": ["Offer và chấp nhận", "Không ký và giao lại trước giờ ở 3D thì offer coi như rút, trả deposit. Buyer/Seller là công ty, trust… ghi tên đầy đủ và người ký thay. Seller chấp nhận, counter (SCO/SMCO) hoặc nhận làm backup (BUO)."]}];
+const MYTHS=[{"ans": false, "en": ["Buying the shop automatically includes its liquor license.", "Paragraph 9B(1) leaves out the ABC license unless it is checked in 3N(1). And escrow will not close until ABC approves the transfer (8H(2))."], "vi": ["Mua tiệm là tự động có luôn license bia rượu.", "Đoạn 9B(1) loại license ABC ra trừ khi tick ở 3N(1). Và escrow không close tới khi ABC duyệt chuyển (8H(2))."]}, {"ans": false, "en": ["The 45 days of access to the shop give the buyer 45 days to cancel.", "Paragraph 3L(3): access for information is NOT a contingency and adds no right to cancel. The investigation contingency is 30 days."], "vi": ["45 ngày được vào tiệm là 45 ngày để hủy.", "Đoạn 3L(3): vào tiệm để tìm hiểu KHÔNG phải contingency, không thêm quyền hủy. Contingency điều tra là 30 ngày."]}, {"ans": true, "en": ["If the inventory count comes in lower than the estimate, the seller credits the buyer the difference.", "Paragraph 9B(6)(C) says so. If it is higher, the buyer pays more, or the seller finances it, or takes goods back."], "vi": ["Đếm tồn kho thấp hơn số ước tính thì Seller credit cho Buyer phần chênh.", "Đoạn 9B(6)(C) ghi vậy. Nếu cao hơn thì Buyer trả thêm, hoặc Seller cho vay, hoặc Seller lấy lại hàng."]}];
+
+let lang='en'; try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const T=k=>{const d=I18N[lang]; return d[k]!==undefined?d[k]:(I18N.en[k]!==undefined?I18N.en[k]:k);};
+const fill=(s,v)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>v[k]!==undefined?v[k]:m);
+const pad=n=>String(n).padStart(2,'0');
+const DOW={en:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],vi:['CN','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy']};
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function pd(s){ if(!/^\d{4}-\d{2}-\d{2}$/.test(s||'')) return null; const a=s.split('-').map(Number); return new Date(Date.UTC(a[0],a[1]-1,a[2])); }
+function ad(t,n){ return new Date(t.getTime()+n*864e5); }
+function wk(t){ const g=t.getUTCDay(); return g===0||g===6; }
+function roll(t){ while(wk(t)) t=ad(t,1); return t; }
+function abiz(t,n){ let k=0; while(k<n){ t=ad(t,1); if(!wk(t)) k++; } return t; }
+function amon(t,n){ const y=t.getUTCFullYear(),m=t.getUTCMonth()+n,d=t.getUTCDate(); const last=new Date(Date.UTC(y,m+1,0)).getUTCDate(); return new Date(Date.UTC(y,m,Math.min(d,last))); }
+function dd(a,b){ return Math.round((b.getTime()-a.getTime())/864e5); }
+function fd(t){ if(!t) return '—'; const d=t.getUTCDate(),m=t.getUTCMonth(),y=t.getUTCFullYear(),w=t.getUTCDay();
+  return lang==='vi'? DOW.vi[w]+', '+pad(d)+'/'+pad(m+1)+'/'+y : DOW.en[w]+', '+MON[m]+' '+d+', '+y; }
+function money(n){ return (n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US'); }
+function num(id){ const el=$(id); if(!el) return 0; const v=parseFloat(String(el.value).replace(/,/g,'')); return isFinite(v)?v:0; }
+function todayISO(){ const n=new Date(); return n.getFullYear()+'-'+pad(n.getMonth()+1)+'-'+pad(n.getDate()); }
+function segv(id){ const b=$(id).querySelector('button[aria-pressed="true"]'); return b?b.getAttribute('data-v'):null; }
+function segOn(id){ $(id).addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('button[data-v]'); if(!b) return;
+  $(id).querySelectorAll('button[data-v]').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); render(); }); }
+function chipsOn(id){ $(id).addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('.chip'); if(!b) return;
+  b.setAttribute('aria-pressed',String(b.getAttribute('aria-pressed')!=='true')); render(); }); }
+function chipOn(id,v){ const b=$(id).querySelector('.chip[data-v="'+v+'"]'); return !!b&&b.getAttribute('aria-pressed')==='true'; }
+function line(label,val,small,cls){ return '<div class="line'+(cls?' '+cls:'')+'"><span class="n"><b>'+label+'</b>'+(small?'<small>'+small+'</small>':'')+'</span><span class="a">'+val+'</span></div>'; }
+let checked={};
+function checklist(items){ return '<div>'+items.map(it=>{ const on=!!checked[it.k];
+  return '<div class="task'+(on?' done':'')+'"><input type="checkbox" data-ck="'+it.k+'" id="ck_'+it.k+'"'+(on?' checked':'')+'><label class="tt" for="ck_'+it.k+'">'+it.t+'</label></div>'; }).join('')+'</div>'; }
+document.addEventListener('change',e=>{ const c=e.target; if(c&&c.dataset&&c.dataset.ck){ checked[c.dataset.ck]=c.checked; const r=c.closest('.task'); if(r) r.classList.toggle('done',c.checked); updActions(); } });
+
+let openSet={};
+function renderParas(){
+  $('paras').innerHTML=PARAS.map((p,i)=>'<details class="term" id="p'+i+'"'+(openSet[i]?' open':'')+'><summary><span class="al">'+esc(p.nv?(lang==='vi'?p.nv:p.ne):T('para')+' '+p.n)+'</span><span class="nm">'+esc(p[lang][0])+'</span></summary><div class="bd"><p>'+p[lang][1]+'</p></div></details>').join('');
+  updExp();
+}
+function updExp(){ $('expAll').textContent=PARAS.some((p,i)=>!openSet[i])?T('exp_all'):T('exp_none'); }
+let mythAns={};
+function renderMyths(){
+  $('myths').innerHTML=MYTHS.map((m,i)=>{ const a=mythAns[i];
+    let h='<div class="myth tf"><p class="q">'+esc(m[lang][0])+'</p><div class="tfb">'
+     +'<button type="button" data-m="'+i+'" data-a="1" aria-pressed="'+(a===true)+'">'+esc(T('true'))+'</button>'
+     +'<button type="button" data-m="'+i+'" data-a="0" aria-pressed="'+(a===false)+'">'+esc(T('false'))+'</button></div>';
+    if(a!==undefined){ const ok=(a===m.ans); h+='<p class="ans '+(ok?'ok':'no')+'"><b>'+esc(T(ok?'right':'notq'))+' '+esc(T(m.ans?'is_true':'is_false'))+'</b> '+esc(m[lang][1])+'</p>'; }
+    return h+'</div>'; }).join('');
+}
+$('myths').addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('button[data-m]'); if(!b) return; mythAns[+b.dataset.m]=b.dataset.a==='1'; renderMyths(); });
+$('paras').addEventListener('toggle',e=>{ const el=e.target; if(!el.classList||!el.classList.contains('term')) return; const i=+el.id.slice(1); if(el.open) openSet[i]=1; else delete openSet[i]; updExp(); },true);
+$('expAll').onclick=()=>{ const any=PARAS.some((p,i)=>!openSet[i]); PARAS.forEach((p,i)=>{ if(any) openSet[i]=1; else delete openSet[i]; }); renderParas(); };
+
+let SUM=[];
+function updActions(){
+  const done=Object.keys(checked).filter(k=>checked[k]);
+  const body=T('body_hi')+'\n\n'+SUM.join('\n')+(done.length?'\n\n✓ '+done.length:'')+'\n\n'+T('body_end')+'\n'+PAGE_URL;
+  $('emailBtn').href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(T('subj'),{})+' ('+FORM_CODE+')')+'&body='+encodeURIComponent(body);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(T('sms_hi')+' '+FORM_CODE+'. '+(SUM[0]||'')+' '+PAGE_URL);
+}
+function applyLang(){
+  document.querySelectorAll('[data-i]').forEach(el=>{ const k=el.getAttribute('data-i'); const v=I18N[lang][k]; if(typeof v==='string') el.innerHTML=v; });
+  document.querySelectorAll('[data-ph]').forEach(el=>{ const v=I18N[lang][el.getAttribute('data-ph')]; if(typeof v==='string') el.setAttribute('placeholder',v); });
+  $('langBtn').textContent=T('lang'); document.documentElement.lang=lang;
+  renderParas(); renderMyths(); render();
+}
+$('langBtn').onclick=()=>{ lang=lang==='vi'?'en':'vi'; try{ localStorage.setItem('kl_lang',lang); }catch(e){} applyLang(); };
+
+
+segOn('role'); segOn('invin'); segOn('fin'); chipsOn('sit');
+['acc','coed','price','dep','inv','invc'].forEach(id=>$(id).addEventListener('input',render));
+$('acc').value=todayISO();
+function render(){
+  const r=segv('role'), fin=segv('fin'), invin=segv('invin');
+  const acc=pd($('acc').value), coed=Math.max(1,Math.round(num('coed'))||1);
+  const price=num('price'), dep=num('dep'), inv=num('inv'), invc=num('invc');
+  const on=v=>chipOn('sit',v);
+  const total=price+(invin==='out'?inv:0);
+  let h='<h2>'+esc(T('h_answer'))+'</h2>'; SUM=[];
+  h+='<div class="total"><div class="k">'+esc(T('r_total'))+'</div><div class="v">'+money(total)+'</div></div>';
+  h+='<div class="lines">'+line(esc(T('r_price')),money(price),'3A')
+    +line(esc(T('r_inv')),(invin==='out'?'+ ':'')+money(inv),esc(T(invin==='out'?'r_inv_out':'r_inv_in')))
+    +line(esc(T('r_dep')),money(dep),esc(fill(T('r_dep_s'),{p:total>0?(Math.round(dep/total*1000)/10).toFixed(1)+'%':'—'})))
+    +line(esc(T('r_rest')),money(total-dep),esc(T(fin==='cash'?'r_rest_cash':'r_rest_loan')),'sum');
+  let adj=0;
+  if(invc>0){ adj=invc-inv;
+    h+=line(esc(T('r_invc')),money(invc),'3B(2)')+line(esc(T(adj>=0?'r_adj_up':'r_adj_dn')),money(Math.abs(adj)),esc(T(adj>=0?'r_adj_up_s':'r_adj_dn_s')),adj<0?'':'warnl'); }
+  h+='</div>';
+  SUM.push(T(r==='b'?'buyer':'seller')+' · '+T('r_total')+': '+money(total)+' · '+T('r_dep')+': '+money(dep));
+  if(invc>0) SUM.push(T(adj>=0?'r_adj_up':'r_adj_dn')+': '+money(Math.abs(adj)));
+  if(!acc){ h+='<p class="note">'+esc(T('need_acc'))+'</p>'; }
+  else{
+    const coe=roll(ad(acc,coed));
+    const it=[];
+    const A=(k,days,ref,sm)=>it.push({k:k,t:roll(ad(acc,days)),ref:ref,sm:sm});
+    it.push({k:'d_dep',t:abiz(acc,C.DEP_BIZ),ref:'3E(1)',sm:'s_biz'});
+    A(fin==='cash'?'d_cash':'d_down',C.VERIFY,fin==='cash'?'3J(1)':'3J(2)');
+    A('d_auth',C.AUTH,'3M(3) · 36','s_auth');
+    A('d_docs',C.DOCS,'3M(1) · 11 · 15A','s_docs');
+    A('d_invl',C.INV_LIST,'3B(1) · 9B(6)(B)','s_invl');
+    if(on('lease')) A('d_leaseapp',C.LEASE_APP,'3L(7) · 8G');
+    A('d_assign',C.ASSIGN,'3K · 30');
+    if(fin==='sba') A('d_letter',C.LETTER,'3J(3) · 6B');
+    A('d_invest',C.INVEST,'3L(3) · 8C · 12','s_cont');
+    if(on('env')) A('d_env',C.ENV,'3L(4) · 13B','s_env');
+    A('d_sdocs',C.SDOCS,'3L(5) · 8E','s_sdocs');
+    A('d_liens',C.LIENS,'3L(10) · 8J','s_liens');
+    if(on('lic')||on('abc')) A('d_licapp',C.LIC_APP,'3L(8) · 8H');
+    if(on('fr')) A('d_fran',C.FRAN,'3L(9) · 8I','s_cont');
+    A('d_access',C.ACCESS,'3L(3)','s_access');
+    if(on('lease')) A('d_lease',C.LEASE,'3L(7) · 8G','s_cont');
+    if(fin!=='cash'){ A('d_loan',C.LOAN,'3L(1) · 8A','s_noloan'); A('d_appr',C.APPR,'3L(2) · 8B','s_noappr'); }
+    it.push({k:'d_count',t:ad(coe,-C.INV_COUNT_BEFORE),ref:'3B(2)',sm:'s_before'});
+    it.push({k:'d_pos',t:ad(coe,-C.POS_BEFORE),ref:'10C(1)(A) · 3R · 17',sm:'s_before'});
+    it.push({k:'d_coe',t:coe,ref:'3C · 37G',sm:'s_coe'});
+    it.push({k:'d_consult',t:ad(coe,C.CONSULT_AFTER),ref:'3S(1) · 18',sm:'s_consult'});
+    it.sort((a,b)=>a.t-b.t);
+    const late=it.filter(x=>/^d_(invest|env|sdocs|liens|fran|lease|loan|appr)$/.test(x.k)&&x.t>coe);
+    h+='<p class="res-h">'+esc(T('h_dates'))+'</p><div class="lines">'+it.map(x=>line(esc(T(x.k)),fd(x.t),esc(x.ref+(x.sm?' · '+T(x.sm):'')),(x.k==='d_coe'?'sum':'')+(late.includes(x)?' warnl':''))).join('')+'</div>';
+    const thru=[]; if(on('lic')||on('abc')) thru.push(T('t_lic')); if(on('fr')) thru.push(T('t_fran')); if(on('re')) thru.push(T('t_re')); if(on('abc')) thru.push(T('t_abc'));
+    if(thru.length) h+='<div class="status ok"><b>'+esc(T('t_h'))+'</b> '+esc(thru.join(' · '))+'</div>';
+    if(late.length) h+='<div class="status warn"><b>'+esc(T('w_late_h'))+'</b> '+esc(fill(T('w_late'),{n:late.length}))+'</div>';
+    SUM.push(T('r_acc')+': '+fd(acc));
+    it.forEach(x=>SUM.push(T(x.k)+' ('+x.ref+'): '+fd(x.t)));
+  }
+  const R=r==='b'?['rb1','rb2','rb3','rb4','rb5']:['rs1','rs2','rs3','rs4'];
+  const Du=r==='b'?['db1','db2','db3','db4','db5']:['ds1','ds2','ds3','ds4','ds5'];
+  if(r==='s'&&on('abc')) Du.push('ds_abc');
+  h+='<p class="res-h">'+esc(T('h_rights'))+'</p><ul class="bul">'+R.map(k=>'<li>'+T(k)+'</li>').join('')+'</ul>';
+  h+='<p class="res-h">'+esc(T('h_duties'))+'</p><ul class="bul">'+Du.map(k=>'<li>'+T(k)+'</li>').join('')+'</ul>';
+  const ck=['c1','c2','c3']; if(on('abc')) ck.push('cl_abc'); if(on('lease')) ck.push('cl_lease'); ck.push('c4','c5');
+  h+='<p class="res-h">'+esc(T('h_check'))+' <span class="fx">'+esc(T('tap'))+'</span></p>'+checklist(ck.map(k=>({k:k,t:esc(T(k))})));
+  h+='<div class="note">'+esc(T('nodef'))+' '+esc(T('n1'))+'</div>';
+  $('result').innerHTML=h; updActions();
+}
+
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+try{if(/[?&]embed=1/.test(location.search))a.style.display='none';}catch(e){}
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

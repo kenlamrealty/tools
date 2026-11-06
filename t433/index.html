@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CML-CNDA Giải Nghĩa · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+/* ---- T229 thêm (không đổi class cũ) ---- */
+.ctl input[type=search]{font-size:18px}
+.ctl input[type=search]::-webkit-search-cancel-button{cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-size:13px;padding:7px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);border-color:var(--brass);font-weight:500}
+.terms{display:grid;gap:10px}
+.term{background:var(--panel);border:1px solid var(--line);border-radius:14px;min-width:0;scroll-margin-top:16px}
+.term[open]{border-color:var(--brass)}
+.term.flash{box-shadow:0 0 0 3px var(--brass-soft)}
+.term summary{list-style:none;cursor:pointer;padding:14px 18px;display:grid;gap:2px}
+.term summary::-webkit-details-marker{display:none}
+.term summary .nm{font-family:var(--display);font-size:23px;line-height:1.15;font-weight:500;color:var(--fg)}
+.term summary .al{font-size:12px;color:var(--muted)}
+.term summary .sh{font-size:14px;color:var(--muted);line-height:1.45}
+.term .bd{padding:0 18px 16px;display:grid;gap:10px;font-size:15px;line-height:1.55}
+.term .bd p{margin:0}
+.term .bd .lb{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);font-weight:500;margin-bottom:2px}
+.term .bd .ex{background:var(--brass-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.term .bd .my b{color:var(--warn);font-weight:500}
+.term .bd .ot{font-size:13px;color:var(--muted)}
+.term .bd .ft{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px;color:var(--muted)}
+.term .bd .ft a{color:var(--brass);word-break:break-word}
+.term .bd .ft button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:12px;padding:4px 10px;border-radius:999px;cursor:pointer}
+.empty{font-size:15px;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:16px 18px}
+.empty[hidden]{display:none}
+.expall{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+</style>
+
+<style>
+/* ---- Nhóm Giải Nghĩa Forms T420–T439 (thêm, không đổi class cũ) ---- */
+.sec{display:grid;gap:12px;min-width:0}
+.sec>h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0;line-height:1.15}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.pill{border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:13px;padding:6px 12px;border-radius:999px;line-height:1.35}
+.pill b{color:var(--fg);font-weight:500}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:12px 2px;min-height:48px}
+.seg{flex-wrap:wrap}
+.seg button{min-width:0;line-height:1.3}
+.more{border:1px dashed var(--line);border-radius:12px;padding:12px 14px;background:transparent}
+.more>summary{cursor:pointer;font-size:14px;color:var(--muted);list-style:none}
+.more>summary::-webkit-details-marker{display:none}
+.more>summary::before{content:'+ ';color:var(--brass)}
+.more[open]>summary::before{content:'− '}
+.more .in{display:grid;gap:14px;margin-top:12px}
+.ans{font-size:16px;line-height:1.55;margin:0}
+.ans b{font-weight:600}
+.ans.warn{color:var(--warn)}
+.sub2{font-family:var(--display);font-weight:400;font-size:22px;margin:4px 0 0;line-height:1.15}
+.dl2{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.dl2 .dd .date{font-size:28px}
+.ul{margin:0;padding-left:20px;display:grid;gap:6px;font-size:15px;line-height:1.5}
+.tasks{display:grid;border-top:1px solid var(--line)}
+.task .tt{cursor:default}
+.myths{display:grid;gap:10px}
+.mq{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:10px;min-width:0}
+.mq .st{font-size:16px;line-height:1.45;margin:0}
+.mq .bt{display:flex;gap:8px}
+.mq .bt button{flex:1;border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:15px;padding:10px;border-radius:10px;cursor:pointer}
+.mq .bt button[aria-pressed="true"]{background:var(--brass-soft);border-color:var(--brass);font-weight:500}
+.mq .rv{font-size:14px;line-height:1.5;color:var(--muted);margin:0}
+.mq .rv b{font-weight:600}
+.mq .rv b.ok{color:var(--ok)}
+.mq .rv b.no{color:var(--warn)}
+.term .bd ul{margin:0;padding-left:18px;display:grid;gap:4px}
+.vid{display:grid;gap:10px}
+.vid h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.big2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.big2 .total .v{font-size:44px}
+</style>
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+
+<meta name="description" content="C.A.R. Form CML-CNDA (Commercial Confidentiality and Non-Disclosure Agreement) explained in plain words, English and Vietnamese: who you may tell, the 30-day rule for oral info, returning copies.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t433/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="CML-CNDA Commercial NDA Explained · Ken Lam Tools">
+<meta property="og:description" content="C.A.R. Form CML-CNDA (Commercial Confidentiality and Non-Disclosure Agreement) explained in plain words, English and Vietnamese: who you may tell, the 30-day rule for oral info, returning copies.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t433/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title"></h1>
+    <p class="sub" data-i="sub"></p>
+    <div class="pills"><span class="pill" data-i="chip1"></span><span class="pill" data-i="chip2"></span><span class="pill" data-i="chip3"></span></div>
+  </header>
+
+  <section class="sec" aria-labelledby="hTool">
+    <h2 id="hTool" data-i="h_tool"></h2>
+    <div class="inputs">
+      <div class="field"><label><span data-i="l_role">I am the party who</span></label>
+        <div class="seg" data-seg="role"><button type="button" data-v="recv" aria-pressed="true" data-i="o_recv">Receives the info</button><button type="button" data-v="give" data-i="o_give">Gives the info</button></div></div>
+      <div class="field"><label for="who"><span data-i="l_who">Who might hear about it?</span></label>
+        <div class="ctl"><select id="who">
+          <option value="adv" data-i="w_adv">Lender, CPA, attorney, appraiser, escrow, agent</option>
+          <option value="team" data-i="w_team">A partner, officer or employee of the buying company</option>
+          <option value="friend" data-i="w_friend">A friend or relative not working on the deal</option>
+          <option value="social" data-i="w_social">Facebook, a group chat, the press</option>
+          <option value="biz" data-i="w_biz">Tenants, customers, suppliers or competitors</option>
+          <option value="gov" data-i="w_gov">A city or government office</option>
+          <option value="court" data-i="w_court">A subpoena or court order</option>
+          <option value="public" data-i="w_public">It was already public</option>
+        </select></div></div>
+      <div class="field"><label><span data-i="l_deal">Where is the deal now?</span></label>
+        <div class="seg" data-seg="deal"><button type="button" data-v="live" aria-pressed="true" data-i="o_live">Still talking / in escrow</button><button type="button" data-v="dead" data-i="o_dead">Deal fell apart</button></div></div>
+      <div class="field"><label for="oral"><span data-i="l_oral">Date something was shared out loud (call, tour)</span></label><div class="ctl"><input id="oral" type="date"></div></div>
+      <details class="more" id="more"><summary data-i="l_more">Indemnity bill (optional, ¶5E)</summary><div class="in">
+        <div class="row2">
+          <div class="field"><label for="amt"><span data-i="l_amt">Amount demanded in writing</span></label><div class="ctl"><span class="pre">$</span><input id="amt" type="number" inputmode="decimal" min="0" value="0"></div></div>
+          <div class="field"><label for="dem"><span data-i="l_dem">Written demand date</span></label><div class="ctl"><input id="dem" type="date"></div></div>
+        </div>
+        <div class="field"><label for="pay"><span data-i="l_pay">Date it gets paid</span></label><div class="ctl"><input id="pay" type="date"></div></div>
+      </div></details>
+
+    </div>
+  </section>
+
+  <section class="result" id="res" aria-live="polite"></section>
+
+  <section class="sec" aria-labelledby="hParas">
+    <h2 id="hParas" data-i="h_paras"></h2>
+    <p class="fx" data-i="paras_note"></p>
+    <div class="terms" id="paras"></div>
+    <button type="button" class="expall" id="expAll"></button>
+  </section>
+
+  <section class="sec" aria-labelledby="hMyths">
+    <h2 id="hMyths" data-i="h_myths"></h2>
+    <div class="myths" id="myths"></div>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title"></h2>
+    <ol>
+      <li data-i="nx1"></li>
+      <li data-i="nx2"></li>
+      <li data-i="nx3"></li>
+
+    </ol>
+  </section>
+
+  <section class="vid" aria-labelledby="hVid">
+    <h2 id="hVid" data-i="h_vid"></h2>
+    <video class="kl-vid" src="video.mp4" controls playsinline preload="metadata"></video>
+  </section>
+
+  <section class="actions">
+    <a class="btn primary" id="emailBtn" href="mailto:ken@kenlamrealty.com" data-i="b_email"></a>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms"></a>
+    <a class="btn" id="videoBtn" href="/t433/video.mp4" target="_blank" rel="noopener" data-i="b_video"></a>
+    <a class="btn" href="/t402/" data-i="b_all"></a>
+  </section>
+
+  <footer>
+    <span data-i="ft_car"></span>
+    <span class="src"><span data-i="ft_src"></span>: C.A.R. Form CML-CNDA, Commercial Confidentiality and Non-Disclosure Agreement, Revised 12/23</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd"></span>: 06/11/2026 · <a href="/cong-cu/" data-i="ft_all"></a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== T433 · C.A.R. Form CML-CNDA, Commercial Confidentiality and Non-Disclosure Agreement, Revised 12/23 (4 trang) =====
+   Không dùng cho nhà 1–4 căn. Mọi số mặc định lấy từ form. */
+const META={code:'T433',form:'CML-CNDA',slug:'t433'};
+const D={
+  ORAL_WRITEUP_DAYS:30,   // ¶1B: thông tin nói miệng chỉ tính là bí mật nếu nói rõ lúc đó + tóm tắt bằng giấy ghi "Confidential Information" trong 30 ngày
+  DEFENSE_DAYS:30,        // ¶5D: bên bồi thường có 30 ngày nhận lo phần bào chữa sau thông báo bằng văn bản
+  PAY_DAYS:10,            // ¶5E: không trả trong 10 ngày sau đòi bằng văn bản = "Default Date"
+  INTEREST:0.10,          // ¶5E: lãi 10%/năm (hoặc thấp hơn nếu luật bắt) từ Default Date
+  MAIL_DAYS:7             // ¶6 Notices (a): thư registered/certified có hiệu lực 7 ngày sau khi gửi
+};
+
+const TX={
+ vi:{
+  title:'CML-CNDA: Thỏa thuận bảo mật khi mua bán thương mại',
+  sub:'Nói 1 câu: bên nhận giấy tờ của bên kia (sổ sách, hợp đồng thuê, báo cáo) hứa giữ kín, chỉ dùng để xem có mua bán không, và không kể cho người ngoài.',
+  chip1:'<b>4 trang</b> · Revised 12/23',chip2:'<b>Ai ký:</b> Buyer + Seller, broker hai bên ký xác nhận',chip3:'<b>Khi nào gặp:</b> trước khi seller đưa sổ sách tòa nhà hay business (không dùng cho nhà 1–4 căn)',
+  l_role:'Tôi là bên',o_recv:'Nhận thông tin',o_give:'Đưa thông tin',
+  l_who:'Ai có thể nghe chuyện này?',
+  w_adv:'Lender, CPA, luật sư, thẩm định, escrow, agent',w_team:'Thành viên, quản lý hay nhân viên công ty mua',w_friend:'Bạn bè, người nhà không làm deal',
+  w_social:'Facebook, group chat, báo chí',w_biz:'Người thuê, khách hàng, nhà cung cấp, đối thủ',w_gov:'Thành phố hay cơ quan nhà nước',w_court:'Trát tòa (subpoena) hay lệnh tòa',w_public:'Chuyện đó vốn đã công khai',
+  l_deal:'Deal đang ở đâu?',o_live:'Đang bàn / đang escrow',o_dead:'Deal đã đổ',
+  l_oral:'Ngày có thông tin được nói miệng (gọi điện, đi coi)',
+  l_more:'Hóa đơn bồi thường (không bắt buộc, ¶5E)',l_amt:'Số tiền đòi bằng văn bản',l_dem:'Ngày gửi giấy đòi',l_pay:'Ngày trả tiền',
+  k_ans:'Trả lời ngắn',
+  a_yes:'Được, nếu cần cho deal',a_no:'Không, nếu chưa có giấy đồng ý',a_out:'Không còn là bí mật',a_court:'Được, nhưng báo bên kia liền',
+  who_you:'Bạn',who_them:'Bên nhận',
+  ex:{adv:'{w} chỉ được cho Representatives biết, tức là lender, CPA, luật sư, thẩm định, escrow, agent… mà <b>cần biết để xem xét deal</b>, và phải nói với họ đây là bí mật. Họ làm lộ thì bên nhận chịu trách nhiệm (¶1B, ¶4B).',
+   team:'Thành viên, quản lý, cổ đông, nhân viên, công ty liên kết đều nằm trong "Representatives". Vẫn phải là người <b>cần biết</b> cho deal và được dặn giữ kín (¶1B, ¶4B).',
+   friend:'Người ngoài deal không phải Representatives. Kể cho họ là vi phạm, trừ khi bên đưa thông tin đồng ý <b>bằng văn bản</b> trước (¶4B).',
+   social:'Cấm đăng, bình luận, thông cáo báo chí về deal hay về bên kia cho tới khi deal xong, nếu không có giấy đồng ý (¶4F). Kể cả một tấm hình trong group.',
+   biz:'Cấm nói chuyện với người thuê, khách hàng, nhà cung cấp, đối thủ của bên kia về deal khi chưa có giấy đồng ý (¶4F). Chỉ được nói chuyện bình thường không dính tới thông tin bí mật.',
+   gov:'¶4F cấm liên lạc cả cơ quan nhà nước về deal hay tài sản khi chưa có giấy đồng ý, trừ khi luật bắt buộc (¶4E). Muốn hỏi thành phố về zoning, permit? Xin chữ ký đồng ý trước.',
+   court:'Bị luật bắt phải khai (trát tòa, lệnh tòa): báo bên đưa thông tin <b>ngay</b> để họ xin lệnh bảo vệ. Cần ý kiến bằng văn bản của luật sư, và cố xin cho phần khai được giữ kín (¶4E).',
+   public:'Không tính là bí mật nếu {w2} <b>chứng minh được</b>: đã có trước (có giấy tờ), đã công khai không do mình làm lộ, nhận từ nguồn hợp pháp khác, hoặc tự làm ra không dựa vào thông tin bí mật (¶2B).'},
+  h_dates:'Các mốc ngày',
+  dd_oral:'Hạn gửi bản tóm tắt bằng giấy',dd_oral_p:'Thông tin nói miệng chỉ được bảo vệ nếu lúc nói đã báo là bí mật <b>và</b> trong 30 ngày có bản tóm tắt bằng giấy ghi rõ "Confidential Information" gửi bên nhận (¶1B).',
+  dd_mail:'Thư certified gửi hôm nay có hiệu lực',dd_mail_p:'Thư registered hay certified: 7 ngày sau khi gửi. FedEx, UPS: lúc giao hay lúc bị từ chối nhận (¶6).',
+  dd_def:'Default Date (trễ hạn trả bồi thường)',dd_def_p:'Không trả trong 10 ngày sau giấy đòi thì từ ngày này tính lãi 10%/năm (¶5E).',
+  h_int:'Tiền bồi thường trễ (¶5E)',ln_amt:'Số tiền đòi',ln_int:'Lãi 10%/năm × {n} ngày',ln_tot:'Tổng phải trả',int_none:'Trả trong 10 ngày sau giấy đòi: chưa có lãi.',
+  dead_recv:'Deal đổ: trả lại <b>ngay</b> mọi bản giấy tờ bí mật (¶4D). Được giữ work product của mình hay thứ luật bắt giữ, nhưng vẫn phải giữ kín hoặc hủy, và xác nhận hủy bằng văn bản nếu được hỏi. Nghĩa vụ giữ kín <b>không hết</b> khi deal đổ.',
+  dead_give:'Deal đổ: bên nhận phải trả lại ngay mọi bản giấy tờ (¶4D). Bạn có thể gửi giấy đòi lại, và xin xác nhận hủy bằng văn bản. Nghĩa vụ giữ kín của họ vẫn còn mãi (¶4B).',
+  live_note:'Ký form này <b>không bắt</b> ai phải mua hay bán. Chỉ phần bảo mật là ràng buộc (¶3).',
+  days_note:'Ngày tính theo số mặc định in trên form, nếu hai bên không sửa.',
+  h_todo:'Việc của bạn',
+  todo_recv:['Lập danh sách giấy tờ bí mật đã nhận và đang để ở đâu, kể cả bản copy. Bên kia xin là phải đưa (¶4C).',
+   'Dặn từng người cố vấn đây là bí mật. Họ làm lộ là bạn chịu (¶4B).',
+   'Chỉ dùng thông tin để xem xét deal, không dùng cho việc khác (¶4B).',
+   'Không đăng, không kể, không liên lạc người thuê, khách hàng, nhà cung cấp, cơ quan nhà nước của bên kia khi chưa có giấy đồng ý (¶4F).',
+   'Tự đánh giá thông tin. Bên đưa không bảo đảm gì về độ đúng (¶4A).',
+   'Muốn kiểm tra môi trường hay vào đất để lấy mẫu: phải kèm form CML-EIA (¶7).'],
+  todo_give:['Đánh dấu ô ¶1A: ai đưa thông tin (Seller, Buyer hay cả hai).',
+   'Ghi "Confidential Information" lên giấy tờ. Nói miệng thì báo là bí mật ngay lúc nói và gửi tóm tắt bằng giấy trong 30 ngày (¶1B).',
+   'Giữ một bản danh sách những gì đã đưa. Có thể xin bên nhận đưa danh sách của họ (¶4C).',
+   'Thông tin đưa trước ngày ký cũng được bảo vệ (¶2A), nhưng ghi lại cho rõ.',
+   'Có báo cáo Phase I, Phase II hay cho bên kia vào đất kiểm tra môi trường: đánh dấu và kèm form CML-EIA (¶7).'],
+  subj:'{code} {form} — hỏi về thỏa thuận bảo mật',
+  tx_role:{recv:'Bên nhận thông tin',give:'Bên đưa thông tin'},
+  tx:'Tôi là: {role}\nTình huống: {who}\nTrả lời: {ans}\nDeal: {deal}\nHạn tóm tắt bằng giấy (¶1B): {oral}',
+  tx_deal:{live:'Đang bàn / escrow',dead:'Đã đổ'},
+  sms:'Câu hỏi: {who}.',
+  nx1:'Đang coi tòa nhà cho thuê? Làm theo checklist due diligence ở <a href="/t267/">T267</a>.',
+  nx2:'Form có hậu quả pháp lý lớn, chính form khuyên hỏi luật sư. Khi nào cần luật sư: <a href="/t120/">T120</a>. Tìm luật sư: <a href="/t122/">T122</a>.',
+  nx3:'Coi các form khác đã giải nghĩa trong <a href="/t402/">Thư viện Forms (T402)</a>.'
+ },
+ en:{
+  title:'CML-CNDA: Commercial NDA, in plain words',
+  sub:'In one line: the side that receives the other side\'s papers (books, leases, reports) promises to keep them secret, use them only to decide on the deal, and not tell outsiders.',
+  chip1:'<b>4 pages</b> · Revised 12/23',chip2:'<b>Who signs:</b> Buyer + Seller, both brokers sign too',chip3:'<b>When:</b> before a seller opens the books of a building or business (not for 1–4 unit homes)',
+  l_role:'I am the party who',o_recv:'Receives the info',o_give:'Gives the info',
+  l_who:'Who might hear about it?',
+  w_adv:'Lender, CPA, attorney, appraiser, escrow, agent',w_team:'A partner, officer or employee of the buying company',w_friend:'A friend or relative not working on the deal',
+  w_social:'Facebook, a group chat, the press',w_biz:'Tenants, customers, suppliers or competitors',w_gov:'A city or government office',w_court:'A subpoena or court order',w_public:'It was already public',
+  l_deal:'Where is the deal now?',o_live:'Still talking / in escrow',o_dead:'Deal fell apart',
+  l_oral:'Date something was shared out loud (call, tour)',
+  l_more:'Indemnity bill (optional, ¶5E)',l_amt:'Amount demanded in writing',l_dem:'Written demand date',l_pay:'Date it gets paid',
+  k_ans:'Short answer',
+  a_yes:'Yes, if they need it for the deal',a_no:'No, not without written consent',a_out:'Not confidential anymore',a_court:'Yes, but tell the other side right away',
+  who_you:'You',who_them:'The receiving side',
+  ex:{adv:'{w} may share only with Representatives: the lender, CPA, attorney, appraiser, escrow, agents… who <b>need to know to evaluate the deal</b>, and must tell them it is confidential. If they leak it, the receiving party is responsible (¶1B, ¶4B).',
+   team:'Partners, officers, shareholders, employees and affiliates are all "Representatives." They still must <b>need to know</b> for the deal and be told it is confidential (¶1B, ¶4B).',
+   friend:'Someone outside the deal is not a Representative. Telling them is a breach unless the giving side agrees <b>in writing</b> first (¶4B).',
+   social:'No posts, comments or press releases about the deal or the other side until it closes, without written consent (¶4F). That includes one photo in a group chat.',
+   biz:'No talking to the other side\'s tenants, customers, suppliers or competitors about the deal without written consent (¶4F). Ordinary talk that doesn\'t touch the confidential info is fine.',
+   gov:'¶4F also bars contacting government agencies about the deal or property without written consent, unless the law compels it (¶4E). Want to ask the city about zoning or permits? Get the consent signed first.',
+   court:'Legally compelled (subpoena, court order): tell the giving side <b>right away</b> so it can seek a protective order. A written opinion from your lawyer is needed, and you try to keep what you disclose confidential (¶4E).',
+   public:'It is not confidential if {w2} <b>can prove</b> it was already had (with papers), became public without your leak, came lawfully from another source, or was developed independently (¶2B).'},
+  h_dates:'Key dates',
+  dd_oral:'Deadline for the written summary',dd_oral_p:'Spoken info is protected only if it was called confidential at the time <b>and</b> a written summary marked "Confidential Information" reaches the other side within 30 days (¶1B).',
+  dd_mail:'Certified letter mailed today takes effect',dd_mail_p:'Registered or certified mail: 7 days after mailing. FedEx, UPS: on delivery or refusal (¶6).',
+  dd_def:'Default Date (indemnity bill overdue)',dd_def_p:'Not paid within 10 days after the written demand, interest runs at 10% a year from this date (¶5E).',
+  h_int:'Late indemnity money (¶5E)',ln_amt:'Amount demanded',ln_int:'10% a year × {n} days',ln_tot:'Total owed',int_none:'Paid within 10 days of the demand: no interest yet.',
+  dead_recv:'Deal is dead: return <b>immediately</b> every copy of the confidential papers (¶4D). You may keep your own work product or what the law makes you keep, but it stays secret or gets destroyed, confirmed in writing if asked. The duty to keep it secret <b>does not end</b>.',
+  dead_give:'Deal is dead: the other side must return every copy right away (¶4D). You can demand it in writing and ask for written confirmation of destruction. Their secrecy duty lasts forever (¶4B).',
+  live_note:'Signing this form <b>does not commit</b> anyone to buy or sell. Only the confidentiality part binds (¶3).',
+  days_note:'Dates use the default numbers printed on the form, if the parties did not change them.',
+  h_todo:'Your to-do list',
+  todo_recv:['Keep a list of the confidential papers you got and where every copy is. Hand it over if asked (¶4C).',
+   'Tell each advisor it is confidential. If they leak it, it is on you (¶4B).',
+   'Use the info only to evaluate the deal, nothing else (¶4B).',
+   'No posts, no gossip, no contact with the other side\'s tenants, customers, suppliers or government offices without written consent (¶4F).',
+   'Judge the info yourself. The giving side makes no promise it is accurate (¶4A).',
+   'Want environmental testing or site access for samples? Form CML-EIA must be attached (¶7).'],
+  todo_give:['Check box ¶1A: who is giving info (Seller, Buyer or both).',
+   'Mark papers "Confidential Information." Spoken info: say it is confidential when you say it and send a written summary within 30 days (¶1B).',
+   'Keep your own list of what you handed over. You can ask the other side for theirs (¶4C).',
+   'Info given before signing is covered too (¶2A), but write it down.',
+   'Phase I or Phase II reports, or letting them on site for environmental tests: check the box and attach Form CML-EIA (¶7).'],
+  subj:'{code} {form} — question about a confidentiality agreement',
+  tx_role:{recv:'Receiving party',give:'Giving party'},
+  tx:'I am: {role}\nSituation: {who}\nAnswer: {ans}\nDeal: {deal}\nWritten summary deadline (¶1B): {oral}',
+  tx_deal:{live:'Still talking / escrow',dead:'Fell apart'},
+  sms:'Question: {who}.',
+  nx1:'Looking at a rental building? Use the due diligence checklist in <a href="/t267/">T267</a>.',
+  nx2:'This form has real legal weight, and it tells you to see a lawyer. When you need one: <a href="/t120/">T120</a>. Find one: <a href="/t122/">T122</a>.',
+  nx3:'See the other explained forms in the <a href="/t402/">Forms Library (T402)</a>.'
+ }
+};
+
+const PARAS=[
+ {n:{vi:'Đầu form',en:'Top of form'},vi:['Gắn với deal nào','Đánh dấu deal: CPA (thương mại), BPA (business), RIPA (nhà cho thuê 2–4 căn) hay khác, ghi tên Buyer, Seller. Nếu đánh dấu, hợp đồng thuê mà seller là người thuê và sẽ chuyển cho buyer cũng nằm trong. Form <b>không dùng cho nhà 1–4 căn</b> để ở.'],
+  en:['Which deal','Check the deal: CPA (commercial), BPA (business), RIPA (2–4 unit income) or other, and name Buyer and Seller. If checked, a lease where the seller is the tenant and will be assigned to the buyer is included. <b>Not for 1–4 unit residential</b>.']},
+ {n:'¶1A',vi:['Ai đưa thông tin','Đánh dấu Seller, Buyer, hay cả hai cùng đưa. Bên đưa gọi là Delivering Party, bên nhận là Receiving Party.'],
+  en:['Who gives info','Check Seller, Buyer or both. The giver is the "Delivering Party," the other is the "Receiving Party."']},
+ {n:'¶1B',vi:['Cái gì là bí mật','Mọi thông tin không công khai về bên đưa, tài sản hay business, dưới mọi dạng: giấy, hình, file, bản vẽ, kể cả bản phân tích bên nhận tự làm từ đó. Nói miệng thì chỉ tính khi <b>báo là bí mật lúc nói</b> và có <b>bản tóm tắt bằng giấy trong 30 ngày</b>. "Representatives" là agent, lender, thẩm định, escrow, luật sư, CPA, nhân viên, cổ đông…'],
+  en:['What counts as confidential','Any nonpublic info about the giver, the property or the business, in any form, plus analyses the receiver makes from it. Spoken info counts only if <b>called confidential at the time</b> and <b>summarized in writing within 30 days</b>. "Representatives" are agents, lenders, appraisers, escrow, lawyers, CPAs, employees, shareholders…']},
+ {n:'¶2',vi:['Gồm gì, không gồm gì','A: thông tin đưa <b>trước ngày ký</b> cũng được bảo vệ. B: không tính nếu bên nhận chứng minh được (1) đã có trước, (2) đã công khai không do mình làm lộ, (3) nhận hợp pháp từ nguồn khác, hoặc (4) tự làm ra.'],
+  en:['Included, not included','A: info given <b>before signing</b> is covered too. B: not covered if the receiver can show it (1) already had it, (2) it went public without its fault, (3) got it lawfully elsewhere, or (4) developed it independently.']},
+ {n:'¶3',vi:['Không bắt phải mua bán','Ngoài phần bảo mật, ký form này <b>không ràng buộc</b> ai phải làm deal.'],
+  en:['No duty to do the deal','Apart from the secrecy terms, signing <b>does not bind</b> anyone to do the deal.']},
+ {n:'¶4A',vi:['Không bảo đảm','Bên nhận tự đánh giá. Bên đưa không hứa thông tin đúng hay đủ, và không chịu trách nhiệm nếu bạn dựa vào đó.'],
+  en:['No warranties','The receiver judges for itself. The giver doesn\'t promise the info is true or complete, and isn\'t liable if you rely on it.']},
+ {n:'¶4B',vi:['Giữ kín mãi mãi','Giữ kín <b>vĩnh viễn</b> ("in perpetuity"). Chỉ dùng để xem xét deal. Chỉ cho Representatives cần biết và đã được dặn. Họ làm lộ thì bên nhận chịu.'],
+  en:['Secret forever','Kept confidential <b>forever</b> ("in perpetuity"). Used only to evaluate the deal. Shared only with Representatives who need to know and are told. Their leak is the receiver\'s problem.']},
+ {n:'¶4C–4D',vi:['Danh sách và trả lại','C: bên nhận ghi lại giấy tờ đã nhận và để ở đâu, đưa bên kia khi được xin. D: deal đổ hoặc bên kia xin thì trả lại <b>ngay</b> mọi bản copy. Được giữ work product và thứ luật bắt giữ (có ý kiến luật sư bằng văn bản), nhưng vẫn giữ kín hay hủy.'],
+  en:['Records and return','C: the receiver logs what it got and where it is, and shows the log on request. D: deal dies or the giver asks, return every copy <b>immediately</b>. Work product and what the law requires (backed by a written legal opinion) may be kept, but stays secret or is destroyed.']},
+ {n:'¶4E',vi:['Bị bắt phải khai','Trát tòa hay lệnh nhà nước bắt khai: báo bên đưa <b>ngay</b> để họ xin lệnh bảo vệ. Cố gắng cho phần khai được giữ kín.'],
+  en:['Compelled disclosure','A subpoena or order forces disclosure: tell the giver <b>promptly</b> so it can seek a protective order. Try to keep what you disclose confidential.']},
+ {n:'¶4F',vi:['Cấm liên lạc','Cho tới khi deal xong, không có giấy đồng ý thì không: thông cáo báo chí; nói với đối thủ, khách hàng, nhà cung cấp; liên lạc cơ quan nhà nước; đăng mạng xã hội về deal hay bên kia. Nói chuyện không dính tới thông tin bí mật thì được.'],
+  en:['No contact','Until closing, without written consent: no press, no statements to competitors, customers or suppliers, no contact with government agencies, no social media about the deal or the other side. Talk that doesn\'t touch the confidential info is OK.']},
+ {n:'¶5A–5D',vi:['Bồi thường','Bên nào vi phạm (và cả Landlord nếu có) phải bồi thường và lo luật sư cho bên kia. Bên được bồi thường phải báo sớm khi có khiếu nại và không tự ý hòa giải khi chưa có đồng ý. Bên vi phạm không nhận lo bào chữa trong <b>30 ngày</b> sau thông báo thì bên kia tự lo, tính tiền bên vi phạm.'],
+  en:['Indemnity','The side that breaks the deal (and a Landlord, if any) covers the other side\'s losses and legal defense. The protected side gives prompt notice and doesn\'t settle without consent. If the breaching side doesn\'t take over the defense within <b>30 days</b> of written notice, the other side defends at its cost.']},
+ {n:'¶5E–5F',vi:['Trả trễ, người hưởng lợi','Không trả trong <b>10 ngày</b> sau giấy đòi thì tính lãi <b>10%/năm</b> từ ngày đó. Representatives không ký vẫn được bảo vệ như người hưởng lợi thứ ba.'],
+  en:['Late payment, beneficiaries','Not paid within <b>10 days</b> after written demand, interest runs at <b>10% a year</b>. Representatives who didn\'t sign are still protected as third-party beneficiaries.']},
+ {n:{vi:'¶6 (thông báo)',en:'¶6 (Notices)'},vi:['Gửi thông báo','Gửi bằng văn bản tới địa chỉ ở phần chữ ký. Thư registered/certified có hiệu lực <b>7 ngày</b> sau khi gửi. FedEx: lúc giao hay bị từ chối. Đổi địa chỉ thì báo cho bên kia.'],
+  en:['Notices','In writing to the contact info on the signature pages. Registered/certified mail is effective <b>7 days</b> after mailing. FedEx: on delivery or refusal. Change your address by notice.']},
+ {n:'¶6 (A–L)',vi:['Điều khoản chung','Không cấp quyền sở hữu thông tin. Quyền cộng dồn. Vi phạm thì bên kia được xin <b>lệnh tòa buộc làm đúng</b> mà không cần đặt bond. Bỏ qua một lần không có nghĩa bỏ qua lần sau. Luật California. Điều nào vô hiệu thì tòa sửa cho áp dụng tối đa. Bên thắng được phí luật sư. Sửa đổi phải bằng văn bản, mọi bên ký. Không chuyển form cho người khác khi chưa có đồng ý.'],
+  en:['General terms','No license or ownership in the info. Remedies add up. A breach lets the other side seek <b>an injunction or specific performance</b> without posting a bond. One waiver doesn\'t waive the next. California law. A bad clause is reformed and enforced as far as possible. Winner gets attorney fees. Changes in writing signed by all. No assignment without consent.']},
+ {n:'¶7',vi:['Môi trường','Form này <b>không</b> lo báo cáo môi trường, không cho quyền vào đất làm test, trừ khi đánh dấu và kèm form <b>CML-EIA</b>.'],
+  en:['Environmental','This form does <b>not</b> cover environmental reports or give any right to enter and test, unless the box is checked and <b>Form CML-EIA</b> is attached.']},
+ {n:'¶8',vi:['Toàn bộ thỏa thuận, chữ ký','Form này (cộng CML-EIA nếu có) thay mọi thỏa thuận trước đó về chuyện bảo mật. Form nhắc in hoa: broker không phải luật sư, nên hỏi luật sư California trước khi ký. Seller, Buyer ký; broker hai bên ký.'],
+  en:['Entire agreement, signatures','This form (plus CML-EIA if attached) replaces earlier understandings on secrecy. In capitals it says brokers aren\'t lawyers; see a California attorney before signing. Seller and Buyer sign; both brokers sign.']}
+];
+
+const MYTHS=[
+ {a:false,vi:['Ký NDA là coi như cam kết mua.','¶3: ngoài phần bảo mật, không ai bị buộc phải làm deal.'],
+  en:['Signing the NDA means you committed to buy.','¶3: apart from secrecy, nobody is bound to do the deal.']},
+ {a:false,vi:['Deal đổ thì hết phải giữ bí mật.','¶4B: giữ kín vĩnh viễn. ¶4D: còn phải trả lại giấy tờ ngay.'],
+  en:['If the deal dies, the secrecy duty ends.','¶4B: secret forever. ¶4D: and you must return the papers right away.']},
+ {a:false,vi:['Seller nói qua điện thoại là tự động thành bí mật.','¶1B: phải báo là bí mật lúc nói và có bản tóm tắt bằng giấy trong 30 ngày.'],
+  en:['Anything the seller says on the phone is automatically confidential.','¶1B: it must be called confidential at the time and summarized in writing within 30 days.']}
+];
+
+function init(){ const s=today(); $('oral').value=iso(s); $('dem').value=iso(s); $('pay').value=iso(s); }
+
+function calc(){
+  const d=I18N[lang], role=S.role, who=$('who').value, deal=S.deal;
+  const kind={adv:'yes',team:'yes',friend:'no',social:'no',biz:'no',gov:'no',court:'court',public:'out'}[who];
+  const ans={yes:d.a_yes,no:d.a_no,out:d.a_out,court:d.a_court}[kind];
+  const w=role==='recv'?d.who_you:d.who_them, w2=role==='recv'?d.who_you.toLowerCase():d.who_them.toLowerCase();
+  let h=H.big(d.k_ans,'<span style="font-size:.62em;line-height:1.1;display:block">'+ans+'</span>');
+  h+=H.p(fill(d.ex[who],{w:w,w2:w2}),kind==='no'?'warn':'');
+  h+=H.note(deal==='dead'?(role==='recv'?d.dead_recv:d.dead_give):d.live_note);
+  const oral=pd($('oral').value);
+  h+=H.h3(d.h_dates)+'<div class="dl2">';
+  if(oral) h+=H.dd(d.dd_oral,addDays(oral,D.ORAL_WRITEUP_DAYS),d.dd_oral_p);
+  h+=H.dd(d.dd_mail,addDays(today(),D.MAIL_DAYS),d.dd_mail_p);
+  const amt=num('amt'), dem=pd($('dem').value), pay=pd($('pay').value);
+  let defd=null;
+  if(amt>0&&dem){ defd=addDays(dem,D.PAY_DAYS); h+=H.dd(d.dd_def,defd,d.dd_def_p); }
+  h+='</div>';
+  if(amt>0&&dem&&pay){
+    const n=Math.max(0,Math.round((pay-defd)/864e5)), intr=amt*D.INTEREST*n/365;
+    h+=H.h3(d.h_int);
+    h+=n>0?H.lines([[d.ln_amt,money(amt,true)],[fill(d.ln_int,{n:n}),money(intr,true)],[d.ln_tot,money(amt+intr,true),'sum']]):H.p(d.int_none);
+  }
+  h+=H.note(d.days_note);
+  h+=H.h3(d.h_todo)+H.tasks('todo_'+role,role==='recv'?d.todo_recv:d.todo_give);
+  const opt=$('who').options[$('who').selectedIndex].textContent;
+  const v={role:d.tx_role[role],who:opt,ans:ans,deal:d.tx_deal[deal],oral:oral?fd(addDays(oral,D.ORAL_WRITEUP_DAYS)):'—'};
+  return {html:h,text:fill(d.tx,v),sms:fill(d.sms,v)};
+}
+
+
+/* ===== Phần chung nhóm Giải Nghĩa Forms ===== */
+const COMMON={
+ vi:{lang:'English',h_tool:'Form này nói gì với tôi?',h_paras:'Đọc từng đoạn',
+  paras_note:'Lời dễ hiểu của Ken, theo đúng số đoạn trên form. Không phải nguyên văn form.',
+  exp_all:'Mở hết',exp_none:'Đóng hết',h_myths:'Nhiều người hiểu sai',m_true:'Đúng',m_false:'Sai',
+  m_ok:'Chuẩn.',m_no:'Chưa đúng.',m_is_t:'Đáp án: Đúng.',m_is_f:'Đáp án: Sai.',
+  nx_title:'Bước tiếp theo',h_vid:'Video 45 giây',b_email:'Email cho Ken',b_sms:'Nhắn tin cho Ken',b_video:'Xem video 45 giây',b_all:'Mọi form giải nghĩa',
+  ft_car:'Form gốc © California Association of REALTORS®. Trang này chỉ giải thích, không thay thế form và không phải tư vấn pháp lý/thuế.',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',
+  mail_hi:'Chào Ken,\n\nTôi vừa dùng tool {code} ({form}) trên tools.kenlamrealty.com. Kết quả của tôi:\n\n',
+  mail_end:'\n\nCho tôi hỏi thêm.\n\nTên:\nPhone:\n\nhttps://tools.kenlamrealty.com/{slug}/',
+  sms_hi:'Chào Ken, tôi đang xem tool {code} ({form}). ',
+  wd:['CN','T2','T3','T4','T5','T6','T7']},
+ en:{lang:'Tiếng Việt',h_tool:'What does this form mean for me?',h_paras:'Read it paragraph by paragraph',
+  paras_note:'Ken\'s plain-words version, using the paragraph numbers on the form. Not the form\'s exact wording.',
+  exp_all:'Open all',exp_none:'Close all',h_myths:'Common mistakes',m_true:'True',m_false:'False',
+  m_ok:'Right.',m_no:'Not quite.',m_is_t:'Answer: True.',m_is_f:'Answer: False.',
+  nx_title:'Next steps',h_vid:'45-second video',b_email:'Email Ken',b_sms:'Text Ken',b_video:'Watch the 45-sec video',b_all:'All explained forms',
+  ft_car:'Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.',
+  ft_src:'Source',ft_upd:'Updated',ft_all:'All tools',
+  mail_hi:'Hi Ken,\n\nI just used tool {code} ({form}) on tools.kenlamrealty.com. My result:\n\n',
+  mail_end:'\n\nI have a question.\n\nName:\nPhone:\n\nhttps://tools.kenlamrealty.com/{slug}/',
+  sms_hi:'Hi Ken, I am looking at tool {code} ({form}). ',
+  wd:['Sun','Mon','Tue','Wed','Thu','Fri','Sat']}
+};
+const I18N={vi:Object.assign({},COMMON.vi,TX.vi),en:Object.assign({},COMMON.en,TX.en)};
+let lang='en'; try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const t=k=>{const v=I18N[lang][k]; return v==null?k:v;};
+const fill=(s,v)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>v[k]!=null?v[k]:m);
+const money=(x,c)=>{const f=c&&Math.round(Math.abs(x)*100)%100!==0; return (x<0?'-':'')+'$'+Math.abs(x).toLocaleString('en-US',{minimumFractionDigits:f?2:0,maximumFractionDigits:f?2:0});};
+const num=id=>{const el=$(id); if(!el) return 0; const v=parseFloat(String(el.value).replace(/,/g,'')); return isFinite(v)&&v>0?v:0;};
+const pad=n=>String(n).padStart(2,'0');
+function pd(s){const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||''); return m?new Date(+m[1],+m[2]-1,+m[3]):null;}
+function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function addDays(d,n){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()+n); return x;}
+function addMonths(d,n){const x=new Date(d.getFullYear(),d.getMonth()+n,1); const last=new Date(x.getFullYear(),x.getMonth()+1,0).getDate(); x.setDate(Math.min(d.getDate(),last)); return x;}
+/* Ngày làm việc: bỏ thứ Bảy, Chủ Nhật. Chưa trừ ngày lễ. */
+function addBiz(d,n){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); let k=Math.abs(n); const s=n<0?-1:1; while(k>0){x.setDate(x.getDate()+s); const w=x.getDay(); if(w!==0&&w!==6) k--;} return x;}
+function fd(d){if(!d) return '—'; const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; const w=t('wd')[d.getDay()];
+  return lang==='vi'? w+', '+pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear() : w+', '+M[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();}
+function today(){const n=new Date(); return new Date(n.getFullYear(),n.getMonth(),n.getDate());}
+const H={
+ big:(k,v,s)=>'<div class="total"><div class="k">'+k+'</div><div class="v">'+v+(s?' <small>'+s+'</small>':'')+'</div></div>',
+ lines:a=>'<div class="lines">'+a.filter(Boolean).map(r=>'<div class="line '+(r[2]||'')+'"><span class="n">'+r[0]+'</span><span class="a">'+r[1]+'</span></div>').join('')+'</div>',
+ dd:(ti,d,p)=>'<div class="dd"><div class="hd"><span class="t">'+ti+'</span></div><div class="date">'+fd(d)+'</div>'+(p?'<p>'+p+'</p>':'')+'</div>',
+ h3:s=>'<h3 class="sub2">'+s+'</h3>',
+ p:(s,c)=>'<p class="ans'+(c?' '+c:'')+'">'+s+'</p>',
+ ul:a=>'<ul class="ul">'+a.filter(Boolean).map(x=>'<li>'+x+'</li>').join('')+'</ul>',
+ note:s=>'<div class="note">'+s+'</div>',
+ tasks:(id,a)=>'<div class="tasks">'+a.filter(Boolean).map((x,i)=>{const k=id+'_'+i, on=!!CK[k];
+   return '<label class="task'+(on?' done':'')+'"><input type="checkbox" data-ck="'+k+'"'+(on?' checked':'')+'><span class="tt">'+x+'</span></label>';}).join('')+'</div>'
+};
+const CK={};
+const S={};
+document.querySelectorAll('.seg[data-seg]').forEach(g=>{
+  const k=g.getAttribute('data-seg'); const p=g.querySelector('button[aria-pressed="true"]')||g.querySelector('button');
+  S[k]=p.getAttribute('data-v');
+  g.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===p)));
+  g.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button'); if(!b) return; S[k]=b.getAttribute('data-v');
+    g.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); render();});
+});
+document.querySelectorAll('input,select').forEach(el=>{ if(el.closest('#res')) return; el.addEventListener('input',render); el.addEventListener('change',render); });
+$('res').addEventListener('change',e=>{const c=e.target; if(!c.getAttribute||!c.getAttribute('data-ck')) return; const k=c.getAttribute('data-ck');
+  if(c.checked) CK[k]=1; else delete CK[k]; c.closest('.task').classList.toggle('done',c.checked);});
+let openP={};
+function renderParas(){
+  $('paras').innerHTML=PARAS.map((p,i)=>{const x=p[lang];
+    return '<details class="term" data-p="'+i+'"'+(openP[i]?' open':'')+'><summary><span class="al">'+esc(typeof p.n==='object'?p.n[lang]:p.n)+'</span><span class="nm">'+x[0]+'</span></summary><div class="bd">'+x[1]+'</div></details>';}).join('');
+  updExp();
+}
+function updExp(){ const all=PARAS.every((p,i)=>openP[i]); $('expAll').textContent=all?t('exp_none'):t('exp_all'); }
+$('paras').addEventListener('toggle',e=>{const el=e.target; if(!el.getAttribute||el.getAttribute('data-p')==null) return; const i=el.getAttribute('data-p'); if(el.open) openP[i]=1; else delete openP[i]; updExp();},true);
+$('expAll').onclick=()=>{const all=PARAS.every((p,i)=>openP[i]); openP={}; if(!all) PARAS.forEach((p,i)=>openP[i]=1); renderParas();};
+const MA={};
+function renderMyths(){
+  $('myths').innerHTML=MYTHS.map((m,i)=>{const x=m[lang], a=MA[i];
+    let rv=''; if(a!=null){ const right=(a===String(m.a)); rv='<p class="rv"><b class="'+(right?'ok':'no')+'">'+(right?t('m_ok'):t('m_no'))+'</b> '+(m.a?t('m_is_t'):t('m_is_f'))+' '+x[1]+'</p>'; }
+    return '<div class="mq"><p class="st">'+x[0]+'</p><div class="bt" role="group"><button type="button" data-m="'+i+'" data-a="true" aria-pressed="'+(a==='true')+'">'+t('m_true')+'</button><button type="button" data-m="'+i+'" data-a="false" aria-pressed="'+(a==='false')+'">'+t('m_false')+'</button></div>'+rv+'</div>';}).join('');
+}
+$('myths').addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button[data-m]'); if(!b) return; MA[b.getAttribute('data-m')]=b.getAttribute('data-a'); renderMyths();});
+function render(){
+  const r=calc();
+  $('res').innerHTML=r.html;
+  const v={code:META.code,form:META.form,slug:META.slug};
+  $('emailBtn').href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(t('subj'),v))+'&body='+encodeURIComponent(fill(t('mail_hi'),v)+r.text+fill(t('mail_end'),v));
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(t('sms_hi'),v)+(r.sms||''));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  document.querySelectorAll('[data-ph]').forEach(el=>{const k=el.getAttribute('data-ph'); if(typeof d[k]==='string') el.setAttribute('placeholder',d[k]);});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  renderParas(); renderMyths(); render();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+if(typeof init==='function') init();
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+try{if(/[?&]embed=1/.test(location.search))a.style.display='none';}catch(e){}
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+
+</body>
+</html>

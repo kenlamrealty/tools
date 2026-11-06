@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CLCA Giải Nghĩa · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+/* ---- T229 thêm (không đổi class cũ) ---- */
+.ctl input[type=search]{font-size:18px}
+.ctl input[type=search]::-webkit-search-cancel-button{cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-size:13px;padding:7px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);border-color:var(--brass);font-weight:500}
+.terms{display:grid;gap:10px}
+.term{background:var(--panel);border:1px solid var(--line);border-radius:14px;min-width:0;scroll-margin-top:16px}
+.term[open]{border-color:var(--brass)}
+.term.flash{box-shadow:0 0 0 3px var(--brass-soft)}
+.term summary{list-style:none;cursor:pointer;padding:14px 18px;display:grid;gap:2px}
+.term summary::-webkit-details-marker{display:none}
+.term summary .nm{font-family:var(--display);font-size:23px;line-height:1.15;font-weight:500;color:var(--fg)}
+.term summary .al{font-size:12px;color:var(--muted)}
+.term summary .sh{font-size:14px;color:var(--muted);line-height:1.45}
+.term .bd{padding:0 18px 16px;display:grid;gap:10px;font-size:15px;line-height:1.55}
+.term .bd p{margin:0}
+.term .bd .lb{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);font-weight:500;margin-bottom:2px}
+.term .bd .ex{background:var(--brass-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.term .bd .my b{color:var(--warn);font-weight:500}
+.term .bd .ot{font-size:13px;color:var(--muted)}
+.term .bd .ft{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px;color:var(--muted)}
+.term .bd .ft a{color:var(--brass);word-break:break-word}
+.term .bd .ft button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:12px;padding:4px 10px;border-radius:999px;cursor:pointer}
+.empty{font-size:15px;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:16px 18px}
+.empty[hidden]{display:none}
+.expall{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+</style>
+<meta name="description" content="C.A.R. Form CLCA (Commercial Lease Construction Accessibility Addendum, 11/16) explained in plain words, Vietnamese and English: CASp inspection, the 48-hour and 72-hour rules, 7 + 3 days, and who pays for access repairs.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t431/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="CLCA Explained · Ken Lam Tools">
+<meta property="og:description" content="The CASp addendum to a commercial lease: can the tenant cancel, by when, and who pays for accessibility repairs.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t431/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+<style>
+/* ---- T42x/T43x Giải nghĩa Forms thêm (không đổi class cũ) ---- */
+.chipline{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.chipline span{border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:13px;padding:6px 11px;border-radius:999px}
+.sec{display:grid;gap:14px;min-width:0}
+.sec>h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0;line-height:1.15}
+.sec>p.lead{margin:0;color:var(--muted);font-size:14px}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;padding:12px 4px;-webkit-appearance:none;appearance:none;cursor:pointer;text-overflow:ellipsis}
+.ctl.sw::after{content:'▾';color:var(--muted);font-size:14px;pointer-events:none}
+.ctl select option{color:#2B2925;background:#fff}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:15px;cursor:pointer;line-height:1.4}
+.chk input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;flex:none}
+.cond.grp{display:grid;gap:14px}
+.cond[hidden]{display:none}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.bul{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px;line-height:1.5}
+.idr h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);font-weight:500;margin:6px 0 0}
+.myths{display:grid;gap:10px}
+.mq{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:10px;min-width:0}
+.mq p{margin:0;font-size:15px;line-height:1.5}
+.mq .tf{display:flex;gap:8px}
+.mq .tf button{flex:1;border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:14px;padding:9px;border-radius:10px;cursor:pointer}
+.mq .tf button[aria-pressed="true"]{background:var(--brass-soft);border-color:var(--brass);font-weight:500}
+.mq .an{font-size:14px;color:var(--muted);line-height:1.5;margin:0}
+.mq .an b{color:var(--warn);font-weight:500}
+.mq .an b.ok{color:var(--ok)}
+.mq .an[hidden]{display:none}
+.term summary .pn{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.total .v.sm{font-size:40px}
+.vidsec{display:grid;gap:10px}
+.vidsec h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools · T431</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">CLCA: the CASp (disability access) addendum to a commercial lease</h1>
+    <p class="sub" data-i="sub">A one-page add-on that says whether an access expert (CASp) checked the space, when the tenant got the report, whether the tenant can back out, and who pays to fix access problems.</p>
+    <div class="chipline"><span data-i="c1">1 page</span><span data-i="c2">Signed by landlord + tenant</span><span data-i="c3">When you sign a commercial lease (Form CL)</span></div>
+  </header>
+
+  <section class="sec" aria-labelledby="h_my">
+    <h2 id="h_my" data-i="h_my">What does this form say to me?</h2>
+    <p class="lead" data-i="lead_my">Pick your situation. The answer and the real deadlines show right away.</p>
+    <div class="inputs">
+      <div class="field">
+        <label data-i="l_role">I am the</label>
+        <div class="seg" id="role" role="group"><button type="button" data-v="t" aria-pressed="true" data-i="o_t">Tenant</button><button type="button" data-v="l" aria-pressed="false" data-i="o_l">Landlord</button></div>
+      </div>
+      <div class="field">
+        <label for="insp" data-i="l_insp">34A: Has a CASp inspected the space?</label>
+        <div class="ctl sw"><select id="insp">
+          <option value="yes" data-i="o_yes">Yes, inspected</option>
+          <option value="nocert" data-i="o_nocert">Inspected, but no certificate was issued</option>
+          <option value="no" data-i="o_no">No, not inspected</option>
+        </select></div>
+      </div>
+      <div class="cond grp" id="c_yes">
+        <div class="field">
+          <label for="meets" data-i="l_meets">34B(1): Did the CASp find it meets the standards?</label>
+          <div class="ctl sw"><select id="meets">
+            <option value="no" data-i="o_mno">No, it does not meet all of them</option>
+            <option value="yes" data-i="o_myes">Yes, it meets them</option>
+          </select></div>
+        </div>
+        <div class="field">
+          <label for="when" data-i="l_when">34B(2): When did the tenant get the CASp report?</label>
+          <div class="ctl sw"><select id="when">
+            <option value="ii" data-i="o_ii">Before signing, but less than 48 hours before</option>
+            <option value="i" data-i="o_i">At least 48 hours before signing</option>
+            <option value="iii" data-i="o_iii">Not before signing</option>
+          </select></div>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="sign" data-i="l_sign">Lease signed (date and time)</label><div class="ctl"><input id="sign" type="datetime-local" value="2026-11-12T15:00"></div></div>
+        <div class="field cond" id="f_got"><label for="got" data-i="l_got">Date the report was delivered (if known)</label><div class="ctl"><input id="got" type="date" value=""></div></div>
+      </div>
+      <div class="field">
+        <label for="pay" data-i="l_pay">34D: Who pays for access repairs?</label>
+        <div class="ctl sw"><select id="pay">
+          <option value="" data-i="o_blank">Not checked yet</option>
+          <option value="t" data-i="o_pt">Tenant</option>
+          <option value="l" data-i="o_pl">Landlord</option>
+          <option value="o" data-i="o_po">Other (named on the form)</option>
+        </select></div>
+      </div>
+    </div>
+
+    <div class="result" aria-live="polite">
+      <div class="total"><div class="k" id="bigK">Can the tenant cancel the lease?</div><div class="v sm" id="big">—</div></div>
+      <div class="status ok" id="why"></div>
+      <div class="lines" id="lines"></div>
+      <div class="note" data-i="note_r">Only the hours and days printed on the form: 48 hours, 72 hours, 7 days, 3 days. The form does not say business days, so these are counted as calendar days and hours. If your lease changed them, use yours.</div>
+    </div>
+
+    <div class="dl" id="dl"></div>
+
+    <div class="idr">
+      <h2 data-i="h_rd">Your rights, duties and checklist</h2>
+      <h3 data-i="h_r">Rights</h3><ul class="bul" id="rights"></ul>
+      <h3 data-i="h_d">Duties</h3><ul class="bul" id="duties"></ul>
+      <h3 data-i="h_ck">Checklist</h3><div id="ck"></div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="h_par">
+    <h2 id="h_par" data-i="h_par">Read it paragraph by paragraph</h2>
+    <div class="terms" id="paras"></div>
+    <button type="button" class="expall" id="expAll" data-i="exp_all">Open all</button>
+  </section>
+
+  <section class="sec" aria-labelledby="h_myth">
+    <h2 id="h_myth" data-i="h_myth">What people get wrong</h2>
+    <p class="lead" data-i="lead_myth">True or false? Tap to see the answer.</p>
+    <div class="myths" id="myths"></div>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">Ask the landlord early: was there a CASp? Get the report more than 48 hours before you sign.</li>
+      <li data-i="nx2">Write down the exact time you sign and the date you get the report, so you know your deadline.</li>
+      <li data-i="nx3">Before checking box D, get a repair quote, and see <a href="/t120/">when you need a lawyer (T120)</a>.</li>
+    </ol>
+  </section>
+
+  <section class="vidsec" aria-labelledby="h_vid">
+    <h2 id="h_vid" data-i="h_vid">45-second video</h2>
+    <video class="kl-vid" src="video.mp4" controls playsinline preload="metadata" aria-label="CLCA video"></video>
+  </section>
+
+  <section class="actions">
+    <a class="btn primary" id="emailBtn" href="mailto:ken@kenlamrealty.com" data-i="b_email">Email Ken my result</a>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Text Ken</a>
+    <a class="btn" id="videoBtn" href="/t431/video.mp4" target="_blank" rel="noopener" data-i="b_video">Watch the 45-sec video</a>
+    <a class="btn" href="/t402/" data-i="b_all">All explained forms</a>
+  </section>
+
+  <footer>
+    <span data-i="ft_cr">Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.</span>
+    <span class="src" data-i="ft_srcl">Source: C.A.R. Form CLCA, Commercial Lease Construction Accessibility Addendum, 11/16 (1 page).</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/cong-cu/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số mặc định lấy từ C.A.R. Form CLCA, 11/16 — sửa ở đây nếu form đổi ===== */
+const F={
+  FORM:'CLCA', REV:'11/16', PAGES:1,
+  REPORT_EARLY_HOURS:48,    // 34B(2)(i): nhận báo cáo ít nhất 48 giờ trước khi ký → không được hủy
+  RESCIND_HOURS:72,         // 34B(2)(ii): nhận chưa tới 48 giờ trước → 72 giờ sau khi ký để hủy
+  LANDLORD_DELIVER_DAYS:7,  // 34B(2)(iii): chưa nhận → Landlord giao báo cáo trong 7 ngày sau khi ký
+  RESCIND_AFTER_DAYS:3      // 34B(2)(iii): Tenant có tối đa 3 ngày sau đó để hủy
+};
+const I18N={
+ vi:{title:'CLCA: phụ lục CASp (lối đi cho người khuyết tật) khi thuê thương mại',
+  sub:'Tờ gắn thêm một trang, nói: chuyên gia CASp đã kiểm tra mặt bằng chưa, người thuê nhận báo cáo lúc nào, có được rút lui không, và ai trả tiền sửa cho đạt chuẩn.',
+  c1:'1 trang',c2:'Landlord + Tenant ký',c3:'Khi ký hợp đồng thuê thương mại (form CL)',
+  h_my:'Form này nói gì với tôi?',lead_my:'Chọn tình huống của bạn. Câu trả lời và hạn chót thật hiện ngay.',
+  l_role:'Tôi là',o_t:'Người thuê',o_l:'Chủ cho thuê',
+  l_insp:'34A: CASp đã kiểm tra mặt bằng chưa?',o_yes:'Rồi, đã kiểm tra',o_nocert:'Đã kiểm tra nhưng CASp không cấp giấy chứng nhận',o_no:'Chưa kiểm tra',
+  l_meets:'34B(1): CASp kết luận đạt chuẩn chưa?',o_mno:'Chưa đạt hết',o_myes:'Đạt',
+  l_when:'34B(2): Người thuê nhận báo cáo CASp lúc nào?',o_ii:'Trước khi ký, nhưng chưa tới 48 giờ',o_i:'Ít nhất 48 giờ trước khi ký',o_iii:'Chưa nhận trước khi ký',
+  l_sign:'Ngày giờ ký lease',l_got:'Ngày nhận báo cáo (nếu biết)',
+  l_pay:'34D: Ai trả tiền sửa cho đạt chuẩn?',o_blank:'Chưa đánh ô',o_pt:'Người thuê',o_pl:'Chủ cho thuê',o_po:'Người khác (ghi trên form)',
+  note_r:'Chỉ dùng số giờ, số ngày in trên form: 48 giờ, 72 giờ, 7 ngày, 3 ngày. Form không ghi ngày làm việc, nên ở đây tính theo ngày lịch và giờ thật. Nếu lease của bạn sửa số đó thì dùng số của bạn.',
+  h_rd:'Quyền, nghĩa vụ và checklist',h_r:'Quyền',h_d:'Nghĩa vụ',h_ck:'Checklist',
+  h_par:'Đọc từng đoạn',exp_all:'Mở hết',exp_none:'Đóng hết',
+  h_myth:'Nhiều người hiểu sai',lead_myth:'Đúng hay sai? Bấm để xem đáp án.',t_true:'Đúng',t_false:'Sai',a_right:'Bạn đúng.',a_wrong:'Chưa đúng.',a_is:'Đáp án',
+  nx_title:'Bước tiếp theo',nx1:'Hỏi chủ từ sớm: có CASp chưa? Xin báo cáo hơn 48 giờ trước khi ký.',nx2:'Ghi lại giờ ký và ngày nhận báo cáo để biết hạn của mình.',nx3:'Trước khi đánh ô D, xin báo giá sửa, và xem <a href="/t120/">khi nào cần luật sư (T120)</a>.',
+  h_vid:'Video 45 giây',b_email:'Email kết quả cho Ken',b_sms:'Nhắn tin cho Ken',b_video:'Xem video 45 giây',b_all:'Mọi form giải nghĩa',
+  ft_cr:'Form gốc © California Association of REALTORS®. Trang này chỉ giải thích, không thay thế form và không phải tư vấn pháp lý/thuế.',
+  ft_srcl:'Nguồn: C.A.R. Form CLCA, Commercial Lease Construction Accessibility Addendum, 11/16 (1 trang).',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  k_can:'Người thuê có được hủy lease không?',k_no:'Không',k_yes:'Có, tới',
+  w_i:'34B(2)(i): nhận báo cáo ít nhất 48 giờ trước khi ký, nên người thuê KHÔNG được hủy lease dựa trên báo cáo.',
+  w_ii:'34B(2)(ii): nhận báo cáo chưa tới 48 giờ trước khi ký, nên người thuê có 72 giờ sau khi ký để hủy lease dựa trên báo cáo.',
+  w_iii:'34B(2)(iii): chưa nhận trước khi ký. Chủ phải giao báo cáo trong 7 ngày sau khi ký; người thuê có tối đa 3 ngày sau đó để hủy.',
+  w_iii_est:'Chưa nhập ngày nhận báo cáo, nên tính theo ngày trễ nhất chủ được giao (7 ngày sau khi ký).',
+  w_c:'34C: chưa kiểm tra (hoặc không có giấy chứng nhận). Lease có đoạn văn bắt buộc: người thuê được xin CASp kiểm tra, chủ không được cấm; hai bên thỏa thuận giờ giấc, ai trả phí kiểm tra và ai trả tiền sửa. Form không cho quyền hủy vì báo cáo trong trường hợp này.',
+  w_nc:'Vì CASp không cấp giấy chứng nhận, đoạn văn bắt buộc ở 34C cũng áp dụng: người thuê được xin kiểm tra, hai bên thỏa thuận phí và tiền sửa.',
+  k_c:'Quyền xin kiểm tra',k_c_v:'Có',
+  ln_sign:'Ký lease',ln_48:'Mốc 48 giờ trước khi ký',ln_dl:'Hạn hủy',ln_deliver:'Chủ giao báo cáo chậm nhất',ln_got:'Ngày nhận báo cáo',ln_pay:'Ai trả tiền sửa (34D)',ln_meets:'Kết luận CASp (34B(1))',
+  pay_t:'Người thuê',pay_l:'Chủ cho thuê',pay_o:'Người khác',pay_none:'Chưa đánh ô — phải chọn',m_yes:'Đạt chuẩn',m_no:'Chưa đạt hết',
+  w_late:'Ngày nhận báo cáo bạn nhập trễ hơn 7 ngày sau khi ký. Theo 34B(2)(iii) chủ đã giao trễ hạn; hỏi luật sư về quyền của bạn.',
+  dd_dl:'Hạn chót để hủy lease',dd_dl_p72:'72 giờ sau giờ ký (34B(2)(ii)). Hủy bằng văn bản và giữ bằng chứng (ngoài form).',dd_dl_p3:'3 ngày sau ngày nhận báo cáo (34B(2)(iii)).',
+  dd_dv:'Hạn chủ giao báo cáo',dd_dv_p:'7 ngày sau khi ký, kèm giấy chứng nhận nếu có (34B(2)(iii)).',
+  r_t1:'Được nhận bản báo cáo CASp nếu đã có kiểm tra (34B(1)).',r_t2:'Được hủy lease trong thời hạn nếu nhận báo cáo trễ (34B(2)(ii), (iii)).',r_t3:'Được xin CASp kiểm tra; chủ không được cấm (34C).',
+  r_l1:'Không phải để lease bị hủy nếu đưa báo cáo đủ 48 giờ trước khi ký (34B(2)(i)).',r_l2:'Được thỏa thuận ai trả phí kiểm tra và tiền sửa (34C, 34D).',r_l3:'Ô D ghi rõ ai chịu tiền sửa, thắng các đoạn sửa chữa khác của lease.',
+  d_t1:'Đọc báo cáo ngay khi nhận, vì đồng hồ đã chạy.',d_t2:'Nếu ô D ghi người thuê trả: tự lo tiền sửa cho đạt chuẩn trong mặt bằng.',d_t3:'Thỏa thuận với chủ giờ giấc và phí nếu muốn tự kiểm tra (34C).',
+  d_l1:'Đánh đúng ô 34A và 34B(1).',d_l2:'Giao báo cáo (và giấy chứng nhận nếu có) đúng hạn: trước khi ký, hoặc trong 7 ngày sau khi ký.',d_l3:'Không cấm người thuê xin kiểm tra CASp (34C).',
+  ck:['Biết rõ ô nào đánh ở 34A','Có bản báo cáo CASp trong tay (nếu đã kiểm tra)','Ghi giờ ký lease và giờ nhận báo cáo','Đã tính hạn hủy','Đã đánh ô 34D ai trả tiền sửa','Có báo giá sửa trước khi ký','Hai bên đều ký và ghi ngày'],
+  sms:'Chào Ken, tôi vừa đọc giải nghĩa form CLCA (T431) trên tools.kenlamrealty.com. {r} Cho tôi hỏi thêm.',
+  subj:'T431 CLCA — câu hỏi về CASp',
+  body:'Chào Ken,\n\nTôi dùng tool T431 (CLCA, 11/16).\n\nTôi là: {role}\nCASp: {insp}\nNhận báo cáo: {when}\nKý lease: {sign}\nAi trả tiền sửa: {pay}\n\nKết quả: {r}\n\nTên:\nPhone:\n\nGửi từ tools.kenlamrealty.com/t431/'},
+ en:{title:'CLCA: the CASp (disability access) addendum to a commercial lease',
+  sub:'A one-page add-on that says whether an access expert (CASp) checked the space, when the tenant got the report, whether the tenant can back out, and who pays to fix access problems.',
+  c1:'1 page',c2:'Signed by landlord + tenant',c3:'When you sign a commercial lease (Form CL)',
+  h_my:'What does this form say to me?',lead_my:'Pick your situation. The answer and the real deadlines show right away.',
+  l_role:'I am the',o_t:'Tenant',o_l:'Landlord',
+  l_insp:'34A: Has a CASp inspected the space?',o_yes:'Yes, inspected',o_nocert:'Inspected, but no certificate was issued',o_no:'No, not inspected',
+  l_meets:'34B(1): Did the CASp find it meets the standards?',o_mno:'No, it does not meet all of them',o_myes:'Yes, it meets them',
+  l_when:'34B(2): When did the tenant get the CASp report?',o_ii:'Before signing, but less than 48 hours before',o_i:'At least 48 hours before signing',o_iii:'Not before signing',
+  l_sign:'Lease signed (date and time)',l_got:'Date the report was delivered (if known)',
+  l_pay:'34D: Who pays for access repairs?',o_blank:'Not checked yet',o_pt:'Tenant',o_pl:'Landlord',o_po:'Other (named on the form)',
+  note_r:'Only the hours and days printed on the form: 48 hours, 72 hours, 7 days, 3 days. The form does not say business days, so these are counted as calendar days and hours. If your lease changed them, use yours.',
+  h_rd:'Your rights, duties and checklist',h_r:'Rights',h_d:'Duties',h_ck:'Checklist',
+  h_par:'Read it paragraph by paragraph',exp_all:'Open all',exp_none:'Close all',
+  h_myth:'What people get wrong',lead_myth:'True or false? Tap to see the answer.',t_true:'True',t_false:'False',a_right:'You got it.',a_wrong:'Not quite.',a_is:'Answer',
+  nx_title:'Next steps',nx1:'Ask the landlord early: was there a CASp? Get the report more than 48 hours before you sign.',nx2:'Write down the exact time you sign and the date you get the report, so you know your deadline.',nx3:'Before checking box D, get a repair quote, and see <a href="/t120/">when you need a lawyer (T120)</a>.',
+  h_vid:'45-second video',b_email:'Email Ken my result',b_sms:'Text Ken',b_video:'Watch the 45-sec video',b_all:'All explained forms',
+  ft_cr:'Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.',
+  ft_srcl:'Source: C.A.R. Form CLCA, Commercial Lease Construction Accessibility Addendum, 11/16 (1 page).',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  k_can:'Can the tenant cancel the lease?',k_no:'No',k_yes:'Yes, until',
+  w_i:'34B(2)(i): the report came at least 48 hours before signing, so the tenant may NOT cancel the lease based on the report.',
+  w_ii:'34B(2)(ii): the report came less than 48 hours before signing, so the tenant has 72 hours after signing to cancel based on the report.',
+  w_iii:'34B(2)(iii): no report before signing. The landlord must deliver it within 7 days after signing; the tenant then has up to 3 days to cancel.',
+  w_iii_est:'No delivery date entered, so this uses the latest day the landlord may deliver (7 days after signing).',
+  w_c:'34C: not inspected (or no certificate). The lease carries a required statement: the tenant may ask for a CASp inspection and the landlord may not forbid it; both sides agree on timing, who pays for it, and who pays for repairs. The form gives no report-based right to cancel here.',
+  w_nc:'Because no certificate was issued, the required statement in 34C also applies: the tenant may ask for an inspection, and both sides agree on cost and repairs.',
+  k_c:'Right to ask for an inspection',k_c_v:'Yes',
+  ln_sign:'Lease signed',ln_48:'48 hours before signing',ln_dl:'Cancel deadline',ln_deliver:'Landlord must deliver by',ln_got:'Report delivered',ln_pay:'Who pays for repairs (34D)',ln_meets:'CASp finding (34B(1))',
+  pay_t:'Tenant',pay_l:'Landlord',pay_o:'Other',pay_none:'Not checked — must pick one',m_yes:'Meets standards',m_no:'Does not meet all',
+  w_late:'The delivery date you entered is more than 7 days after signing. Under 34B(2)(iii) the landlord was late; ask a lawyer about your rights.',
+  dd_dl:'Last moment to cancel',dd_dl_p72:'72 hours after the signing time (34B(2)(ii)). Cancel in writing and keep proof (outside the form).',dd_dl_p3:'3 days after the report was delivered (34B(2)(iii)).',
+  dd_dv:'Landlord delivers report by',dd_dv_p:'7 days after signing, with the certificate if any (34B(2)(iii)).',
+  r_t1:'Get a copy of the CASp report if there was one (34B(1)).',r_t2:'Cancel within the deadline if the report came late (34B(2)(ii), (iii)).',r_t3:'Ask for a CASp inspection; the landlord may not forbid it (34C).',
+  r_l1:'The lease cannot be cancelled over the report if you gave it 48+ hours before signing (34B(2)(i)).',r_l2:'Agree on who pays for the inspection and repairs (34C, 34D).',r_l3:'Box D names who pays for repairs and wins over the lease\'s other repair paragraphs.',
+  d_t1:'Read the report as soon as you get it; the clock is running.',d_t2:'If box D says tenant: you pay for access repairs inside the space.',d_t3:'Agree with the landlord on timing and cost if you want your own inspection (34C).',
+  d_l1:'Check the right boxes in 34A and 34B(1).',d_l2:'Deliver the report (and certificate, if any) on time: before signing, or within 7 days after.',d_l3:'Do not forbid the tenant from getting a CASp inspection (34C).',
+  ck:['Know which box is checked in 34A','Have the CASp report in hand (if inspected)','Write down the signing time and report time','Work out the cancel deadline','Box 34D checked for who pays repairs','Get a repair quote before signing','Both sides signed and dated'],
+  sms:'Hi Ken, I just read the CLCA form explainer (T431) on tools.kenlamrealty.com. {r} I have a question.',
+  subj:'T431 CLCA — CASp question',
+  body:'Hi Ken,\n\nI used tool T431 (CLCA, 11/16).\n\nI am: {role}\nCASp: {insp}\nReport received: {when}\nLease signed: {sign}\nWho pays repairs: {pay}\n\nResult: {r}\n\nName:\nPhone:\n\nSent from tools.kenlamrealty.com/t431/'}
+};
+const PARAS={
+ vi:[
+  ['Đầu trang','Gắn vào lease nào','Ghi ngày lease, tên Landlord và Tenant. Câu then chốt: đoạn 34 của lease thương mại bị xóa hết và thay bằng đoạn 34 mới dưới đây.'],
+  ['34A','Đã kiểm tra chưa','Chủ đánh ô: mặt bằng đã hoặc chưa được một Certified Access Specialist (CASp) kiểm tra.'],
+  ['34B(1)','Kết luận và báo cáo','Nếu đã kiểm tra: chủ đánh ô đạt hay chưa đạt chuẩn tiếp cận theo Civil Code §55.53, và phải đưa người thuê bản báo cáo (và giấy chứng nhận nếu có).'],
+  ['34B(2)','Đồng hồ hủy lease','(i) Nhận báo cáo ít nhất 48 giờ trước khi ký: không được hủy vì báo cáo. (ii) Nhận trước khi ký nhưng chưa tới 48 giờ: có 72 giờ sau khi ký để hủy. (iii) Chưa nhận trước khi ký: chủ giao trong 7 ngày sau khi ký, người thuê có tối đa 3 ngày sau đó để hủy.'],
+  ['34C','Chưa kiểm tra','Lease có một đoạn văn bắt buộc: CASp có thể kiểm tra; luật tiểu bang không bắt buộc kiểm tra, nhưng chủ không được cấm người thuê xin kiểm tra. Hai bên thỏa thuận giờ giấc, ai trả phí kiểm tra và ai trả tiền sửa bên trong mặt bằng.'],
+  ['34D','Ai trả tiền sửa','Dù đoạn 17, 18, 19 hay chỗ khác của lease nói gì, tiền sửa cho hết vi phạm chuẩn tiếp cận là của người thuê, chủ, hoặc người khác — đánh một ô.'],
+  ['Chữ ký','Ai ký','Tối đa 2 Tenant và 2 Landlord ký, có ngày.']],
+ en:[
+  ['Top','Which lease','Lease date, Landlord and Tenant names. The key line: paragraph 34 of the commercial lease is deleted entirely and replaced by the new paragraph 34 below.'],
+  ['34A','Inspected or not','The landlord checks a box: the space has or has not been inspected by a Certified Access Specialist (CASp).'],
+  ['34B(1)','Finding and report','If inspected: the landlord checks whether it was found to meet access standards under Civil Code §55.53, and must give the tenant the report (and certificate, if any).'],
+  ['34B(2)','The cancel clock','(i) Report at least 48 hours before signing: no cancelling over the report. (ii) Report before signing but under 48 hours: 72 hours after signing to cancel. (iii) No report before signing: landlord delivers within 7 days after signing, then the tenant has up to 3 days to cancel.'],
+  ['34C','Not inspected','The lease carries a required statement: a CASp can inspect; state law does not require it, but the landlord may not forbid the tenant from getting one. Both sides agree on timing, who pays for the inspection, and who pays for repairs inside the space.'],
+  ['34D','Who pays for repairs','Whatever paragraphs 17, 18, 19 or the rest of the lease say, repairs to fix access violations are paid by the tenant, the landlord, or someone else — check one.'],
+  ['Signatures','Who signs','Up to 2 tenants and 2 landlords sign and date.']]
+};
+const MYTHS={
+ vi:[['Luật bắt chủ phải có CASp kiểm tra mới được cho thuê.',false,'Chính đoạn văn trong 34C nói luật tiểu bang không bắt buộc kiểm tra CASp. Chỉ là chủ không được cấm người thuê xin kiểm tra.'],
+     ['Có báo cáo CASp thì người thuê lúc nào cũng hủy lease được.',false,'Nhận báo cáo ít nhất 48 giờ trước khi ký thì không được hủy vì báo cáo (34B(2)(i)).'],
+     ['Ô D có thể bắt người thuê trả tiền sửa dù đoạn sửa chữa khác trong lease nói chủ trả.',true,'Đúng. 34D ghi rõ: dù đoạn 17, 18, 19 nói gì, ô đánh ở D quyết định ai trả tiền sửa cho đạt chuẩn.']],
+ en:[['The law says a landlord must have a CASp inspection before renting.',false,'The statement in 34C itself says state law does not require a CASp inspection. The landlord just may not forbid the tenant from getting one.'],
+     ['If there is a CASp report, the tenant can always cancel.',false,'If the report came at least 48 hours before signing, there is no report-based right to cancel (34B(2)(i)).'],
+     ['Box D can make the tenant pay for repairs even if other lease paragraphs say the landlord pays.',true,'True. 34D says that whatever paragraphs 17, 18 and 19 say, the box checked in D decides who pays for access repairs.']]
+};
+let lang='en'; try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+let role='t', openSet={}, mAns={}, ckSet={};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fill=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]!=null?o[k]:m);
+function pd(s){ if(!s) return null; const p=s.split('-').map(Number); if(p.length<3||!p[0]) return null; return new Date(p[0],p[1]-1,p[2]); }
+function pdt(s){ if(!s) return null; const m=s.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/); if(!m) return null; return new Date(+m[1],m[2]-1,+m[3],+m[4],+m[5]); }
+function addD(d,n){ const x=new Date(d.getTime()); x.setDate(x.getDate()+n); return x; }
+function addH(d,n){ return new Date(d.getTime()+n*3600000); }
+const WD={vi:['Chủ nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'],en:['Sun','Mon','Tue','Wed','Thu','Fri','Sat']};
+const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const p2=n=>String(n).padStart(2,'0');
+function fd(d){ if(!d) return '—'; return lang==='vi'?WD.vi[d.getDay()]+', '+p2(d.getDate())+'/'+p2(d.getMonth()+1)+'/'+d.getFullYear():WD.en[d.getDay()]+', '+MO[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear(); }
+function ft(d){ if(!d) return '—'; if(lang==='vi') return p2(d.getHours())+':'+p2(d.getMinutes())+' '+fd(d); let h=d.getHours(),ap=h<12?'AM':'PM'; h=h%12||12; return h+':'+p2(d.getMinutes())+' '+ap+', '+fd(d); }
+
+/* Hạn hủy lease theo 34B(2) — export cho test */
+function calc(i){
+  if(i.insp==='no') return {kind:'c'};
+  if(!i.sign) return {kind:i.when,dl:null};
+  if(i.when==='i') return {kind:'i',dl:null,early:addH(i.sign,-F.REPORT_EARLY_HOURS)};
+  if(i.when==='ii') return {kind:'ii',dl:addH(i.sign,F.RESCIND_HOURS),early:addH(i.sign,-F.REPORT_EARLY_HOURS)};
+  const signDay=new Date(i.sign.getFullYear(),i.sign.getMonth(),i.sign.getDate());
+  const deliverBy=addD(signDay,F.LANDLORD_DELIVER_DAYS);
+  const got=i.got||deliverBy;
+  return {kind:'iii',deliverBy,got,est:!i.got,late:!!(i.got&&i.got>deliverBy),dl:addD(got,F.RESCIND_AFTER_DAYS)};
+}
+function inputs(){ return {role,insp:$('insp').value,meets:$('meets').value,when:$('when').value,sign:pdt($('sign').value),got:pd($('got').value),pay:$('pay').value}; }
+let lastR='';
+function render(){
+  const d=I18N[lang], i=inputs(), r=calc(i);
+  $('c_yes').hidden=i.insp==='no'; $('f_got').hidden=!(i.insp!=='no'&&i.when==='iii');
+  let big='—', why='', cls='ok';
+  if(r.kind==='c'){ $('bigK').textContent=d.k_c; big=d.k_c_v; why=d.w_c; }
+  else { $('bigK').textContent=d.k_can;
+    if(r.kind==='i'){ big=d.k_no; why=d.w_i; cls='warn'; }
+    else if(r.kind==='ii'){ big=r.dl?(d.k_yes+' '+ft(r.dl)):'—'; why=d.w_ii; }
+    else { big=r.dl?(d.k_yes+' '+fd(r.dl)):'—'; why=d.w_iii+(r.est?' '+d.w_iii_est:'')+(r.late?' '+d.w_late:''); if(r.late) cls='warn'; }
+  }
+  if(i.insp==='nocert') why+=' '+d.w_nc;
+  $('big').textContent=big; $('why').textContent=why; $('why').className='status '+cls;
+  const payTxt={t:d.pay_t,l:d.pay_l,o:d.pay_o}[i.pay]||d.pay_none;
+  const L=[];
+  if(i.insp!=='no') L.push([d.ln_meets,i.meets==='yes'?d.m_yes:d.m_no]);
+  if(i.sign) L.push([d.ln_sign,ft(i.sign)]);
+  if(r.kind==='i'||r.kind==='ii'){ if(r.early) L.push([d.ln_48,ft(r.early)]); }
+  if(r.kind==='ii'&&r.dl) L.push([d.ln_dl,ft(r.dl),'sum']);
+  if(r.kind==='iii'&&r.dl){ L.push([d.ln_deliver,fd(r.deliverBy)]); L.push([d.ln_got,fd(r.got)]); L.push([d.ln_dl,fd(r.dl),'sum']); }
+  L.push([d.ln_pay,payTxt,i.pay?'':'warnl']);
+  $('lines').innerHTML=L.map(x=>'<div class="line'+(x[2]?' '+x[2]:'')+'"><span class="n"><b>'+esc(x[0])+'</b></span><span class="a">'+esc(x[1])+'</span></div>').join('');
+  const D=[];
+  if(r.kind==='ii'&&r.dl) D.push([d.dd_dl,ft(r.dl),d.dd_dl_p72]);
+  if(r.kind==='iii'&&r.dl){ D.push([d.dd_dv,fd(r.deliverBy),d.dd_dv_p]); D.push([d.dd_dl,fd(r.dl),d.dd_dl_p3]); }
+  $('dl').innerHTML=D.map(x=>'<div class="dd"><div class="hd"><span class="t">'+esc(x[0])+'</span></div><div class="date">'+esc(x[1])+'</div><p>'+esc(x[2])+'</p></div>').join('');
+  const pre=role==='t'?['r_t1','r_t2','r_t3']:['r_l1','r_l2','r_l3'], du=role==='t'?['d_t1','d_t2','d_t3']:['d_l1','d_l2','d_l3'];
+  $('rights').innerHTML=pre.map(k=>'<li>'+esc(d[k])+'</li>').join('');
+  $('duties').innerHTML=du.map(k=>'<li>'+esc(d[k])+'</li>').join('');
+  $('ck').innerHTML=d.ck.map((t,k)=>'<div class="task'+(ckSet[k]?' done':'')+'"><input type="checkbox" data-c="'+k+'" id="ck'+k+'"'+(ckSet[k]?' checked':'')+'><label class="tt" for="ck'+k+'">'+esc(t)+'</label></div>').join('');
+  lastR=$('bigK').textContent+' '+big+'. '+why;
+  const opt=id=>$(id).options[$(id).selectedIndex].textContent;
+  const v={role:role==='t'?d.o_t:d.o_l,insp:opt('insp'),when:i.insp!=='no'?opt('when'):'—',sign:ft(i.sign),pay:payTxt,r:lastR};
+  $('emailBtn').href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(d.subj)+'&body='+encodeURIComponent(fill(d.body,v));
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,{r:$('bigK').textContent+' '+big+'.'}));
+}
+$('ck').addEventListener('change',e=>{const c=e.target.dataset&&e.target.dataset.c; if(c==null) return; if(e.target.checked) ckSet[c]=1; else delete ckSet[c]; e.target.parentNode.classList.toggle('done',e.target.checked);});
+function renderParas(){
+  const d=I18N[lang];
+  $('paras').innerHTML=PARAS[lang].map((p,k)=>'<details class="term" id="p'+k+'"'+(openSet[k]?' open':'')+'><summary><span class="pn">'+(lang==='vi'?'Đoạn ':'Para ')+esc(p[0])+'</span><span class="nm">'+esc(p[1])+'</span></summary><div class="bd"><p>'+esc(p[2])+'</p></div></details>').join('');
+  $('expAll').textContent=PARAS[lang].some((p,k)=>!openSet[k])?d.exp_all:d.exp_none;
+}
+function renderMyths(){
+  const d=I18N[lang];
+  $('myths').innerHTML=MYTHS[lang].map((m,k)=>{ const a=mAns[k];
+    const ans=a==null?'':'<b class="'+((a===m[1])?'ok':'')+'">'+esc(a===m[1]?d.a_right:d.a_wrong)+'</b> '+esc(d.a_is)+': '+esc(m[1]?d.t_true:d.t_false)+'. '+esc(m[2]);
+    return '<div class="mq"><p>“'+esc(m[0])+'”</p><div class="tf"><button type="button" data-k="'+k+'" data-v="1" aria-pressed="'+(a===true)+'">'+esc(d.t_true)+'</button><button type="button" data-k="'+k+'" data-v="0" aria-pressed="'+(a===false)+'">'+esc(d.t_false)+'</button></div><p class="an"'+(a==null?' hidden':'')+'>'+ans+'</p></div>'; }).join('');
+}
+$('myths').addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button[data-k]'); if(!b) return; mAns[b.dataset.k]=b.dataset.v==='1'; renderMyths();});
+$('paras').addEventListener('toggle',e=>{const el=e.target; if(!el.classList||!el.classList.contains('term')) return; const k=+el.id.slice(1); if(el.open) openSet[k]=1; else delete openSet[k]; $('expAll').textContent=PARAS[lang].some((p,j)=>!openSet[j])?I18N[lang].exp_all:I18N[lang].exp_none;},true);
+$('expAll').onclick=()=>{const any=PARAS[lang].some((p,k)=>!openSet[k]); PARAS[lang].forEach((p,k)=>{ if(any) openSet[k]=1; else delete openSet[k]; }); renderParas();};
+$('role').addEventListener('click',e=>{const b=e.target.closest('button[data-v]'); if(!b) return; role=b.dataset.v; $('role').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); render();});
+document.querySelectorAll('.inputs input,.inputs select').forEach(el=>{el.addEventListener('input',render); el.addEventListener('change',render);});
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; renderParas(); renderMyths(); render();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+window.KL_CALC=calc;
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+try{if(/[?&]embed=1/.test(location.search))a.style.display='none';}catch(e){}
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

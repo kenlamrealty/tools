@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CLA Giải Nghĩa · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+/* ---- T229 thêm (không đổi class cũ) ---- */
+.ctl input[type=search]{font-size:18px}
+.ctl input[type=search]::-webkit-search-cancel-button{cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-size:13px;padding:7px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);border-color:var(--brass);font-weight:500}
+.terms{display:grid;gap:10px}
+.term{background:var(--panel);border:1px solid var(--line);border-radius:14px;min-width:0;scroll-margin-top:16px}
+.term[open]{border-color:var(--brass)}
+.term.flash{box-shadow:0 0 0 3px var(--brass-soft)}
+.term summary{list-style:none;cursor:pointer;padding:14px 18px;display:grid;gap:2px}
+.term summary::-webkit-details-marker{display:none}
+.term summary .nm{font-family:var(--display);font-size:23px;line-height:1.15;font-weight:500;color:var(--fg)}
+.term summary .al{font-size:12px;color:var(--muted)}
+.term summary .sh{font-size:14px;color:var(--muted);line-height:1.45}
+.term .bd{padding:0 18px 16px;display:grid;gap:10px;font-size:15px;line-height:1.55}
+.term .bd p{margin:0}
+.term .bd .lb{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);font-weight:500;margin-bottom:2px}
+.term .bd .ex{background:var(--brass-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.term .bd .my b{color:var(--warn);font-weight:500}
+.term .bd .ot{font-size:13px;color:var(--muted)}
+.term .bd .ft{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px;color:var(--muted)}
+.term .bd .ft a{color:var(--brass);word-break:break-word}
+.term .bd .ft button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:12px;padding:4px 10px;border-radius:999px;cursor:pointer}
+.empty{font-size:15px;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:16px 18px}
+.empty[hidden]{display:none}
+.expall{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+</style>
+<meta name="description" content="C.A.R. Form CLA (Commercial and Residential Income Listing Agreement, Revised 6/26) explained in plain words, Vietnamese and English: listing period, commission, continuation period, owner duties, with a calculator.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t430/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="CLA Explained · Ken Lam Tools">
+<meta property="og:description" content="The commercial and rental-property listing agreement, paragraph by paragraph, with a commission and deadline calculator.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t430/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+<style>
+/* ---- T42x/T43x Giải nghĩa Forms thêm (không đổi class cũ) ---- */
+.chipline{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.chipline span{border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:13px;padding:6px 11px;border-radius:999px}
+.sec{display:grid;gap:14px;min-width:0}
+.sec>h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0;line-height:1.15}
+.sec>p.lead{margin:0;color:var(--muted);font-size:14px}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;padding:12px 4px;-webkit-appearance:none;appearance:none;cursor:pointer;text-overflow:ellipsis}
+.ctl.sw::after{content:'▾';color:var(--muted);font-size:14px;pointer-events:none}
+.ctl select option{color:#2B2925;background:#fff}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:15px;cursor:pointer;line-height:1.4}
+.chk input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;flex:none}
+.cond.grp{display:grid;gap:14px}
+.cond[hidden]{display:none}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.bul{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px;line-height:1.5}
+.idr h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);font-weight:500;margin:6px 0 0}
+.myths{display:grid;gap:10px}
+.mq{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:10px;min-width:0}
+.mq p{margin:0;font-size:15px;line-height:1.5}
+.mq .tf{display:flex;gap:8px}
+.mq .tf button{flex:1;border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:14px;padding:9px;border-radius:10px;cursor:pointer}
+.mq .tf button[aria-pressed="true"]{background:var(--brass-soft);border-color:var(--brass);font-weight:500}
+.mq .an{font-size:14px;color:var(--muted);line-height:1.5;margin:0}
+.mq .an b{color:var(--warn);font-weight:500}
+.mq .an b.ok{color:var(--ok)}
+.mq .an[hidden]{display:none}
+.term summary .pn{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.total .v.sm{font-size:40px}
+.vidsec{display:grid;gap:10px}
+.vidsec h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools · T430</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">CLA: the listing agreement for commercial and rental property</h1>
+    <p class="sub" data-i="sub">The paper an owner signs to give one broker the only right to sell (or lease) a store, office or rental building for a set time, and to say what the broker gets paid when it works.</p>
+    <div class="chipline"><span data-i="c1">7 pages</span><span data-i="c2">Signed by owner + broker</span><span data-i="c3">When you list a commercial or income property</span></div>
+  </header>
+
+  <section class="sec" aria-labelledby="h_my">
+    <h2 id="h_my" data-i="h_my">What does this form say to me?</h2>
+    <p class="lead" data-i="lead_my">Fill in your numbers. The result updates as you type. Blank spaces on the real form have no default, so use what you and your agent wrote.</p>
+    <div class="inputs">
+      <div class="field">
+        <label for="sit" data-i="l_sit">What happened?</label>
+        <div class="ctl sw"><select id="sit">
+          <option value="sold" data-i="o_sold">Sold during the listing</option>
+          <option value="after" data-i="o_after">Owner sold after the listing ended</option>
+          <option value="withdraw" data-i="o_withdraw">Owner took it off the market / leased it without the broker's OK</option>
+          <option value="breach" data-i="o_breach">Buyer backed out, owner collected damages</option>
+          <option value="prev" data-i="o_prev">Sold to someone the owner still owes an old broker for</option>
+        </select></div>
+      </div>
+      <div class="field">
+        <label for="ptype" data-i="l_ptype">Property type</label>
+        <div class="ctl sw"><select id="ptype">
+          <option value="comm" data-i="o_comm">Commercial (store, office, warehouse)</option>
+          <option value="inc5" data-i="o_inc5">Rental building, 5+ units</option>
+          <option value="r14i" data-i="o_r14i">1–4 units, owned by person(s) or trust</option>
+          <option value="r14e" data-i="o_r14e">1–4 units, owned by corporation / LLC / partnership</option>
+        </select></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="lp" data-i="l_lp">Listing price</label><div class="ctl"><span class="pre">$</span><input id="lp" type="number" inputmode="numeric" value="2400000"></div></div>
+        <div class="field"><label for="sp" data-i="l_sp">Sale price</label><div class="ctl"><span class="pre">$</span><input id="sp" type="number" inputmode="numeric" value="2350000"></div></div>
+      </div>
+      <div class="field">
+        <label data-i="l_mode">Broker's pay, para 2C(1)</label>
+        <div class="seg" id="mode" role="group"><button type="button" data-m="pct" aria-pressed="true" data-i="m_pct">Percent</button><button type="button" data-m="flat" aria-pressed="false" data-i="m_flat">Fixed $</button></div>
+      </div>
+      <div class="row2">
+        <div class="field" id="f_pct"><label for="pct" data-i="l_pct">Percent</label><div class="ctl"><input id="pct" type="number" inputmode="decimal" step="0.1" value="2.5"><span class="post">%</span></div></div>
+        <div class="field" id="f_flat" hidden><label for="flat" data-i="l_flat">Fixed amount</label><div class="ctl"><span class="pre">$</span><input id="flat" type="number" inputmode="numeric" value="50000"></div></div>
+        <div class="field"><label for="cont" data-i="l_cont">Continuation days, 2C(3)</label><div class="ctl"><input id="cont" type="number" inputmode="numeric" value="90"><span class="post" data-i="u_days">days</span></div></div>
+      </div>
+      <label class="chk"><input type="checkbox" id="unrep"><span data-i="l_unrep">Buyer has no agent and the owner checked the extra pay box, 2C(2)</span></label>
+      <div class="field cond" id="f_extra" hidden><label for="xpct" data-i="l_xpct">Extra percent of the price, 2C(2)</label><div class="ctl"><input id="xpct" type="number" inputmode="decimal" step="0.1" value="0.5"><span class="post">%</span></div></div>
+      <div class="row2">
+        <div class="field"><label for="d1" data-i="l_d1">Listing starts (signed)</label><div class="ctl"><input id="d1" type="date" value="2026-11-09"></div></div>
+        <div class="field"><label for="d2" data-i="l_d2">Listing ends, 11:59 PM</label><div class="ctl"><input id="d2" type="date" value="2027-05-09"></div></div>
+      </div>
+      <div class="cond grp" id="c_after" hidden>
+        <div class="field"><label for="d3" data-i="l_d3">Date the owner signed with that buyer</label><div class="ctl"><input id="d3" type="date" value="2027-06-20"></div></div>
+        <label class="chk"><input type="checkbox" id="shown" checked><span data-i="l_shown">The broker (or another agent) showed this buyer the property, or brought a signed offer, during the listing</span></label>
+        <label class="chk"><input type="checkbox" id="npb" checked><span data-i="l_npb">Before the listing ended, the broker gave the owner a written list with this buyer's name (Form NPB)</span></label>
+      </div>
+      <div class="row2 cond" id="c_breach" hidden>
+        <div class="field"><label for="dmg" data-i="l_dmg">Damages the owner collected</label><div class="ctl"><span class="pre">$</span><input id="dmg" type="number" inputmode="numeric" value="70000"></div></div>
+        <div class="field"><label for="exp" data-i="l_exp">Title, escrow and collection costs</label><div class="ctl"><span class="pre">$</span><input id="exp" type="number" inputmode="numeric" value="6000"></div></div>
+      </div>
+    </div>
+
+    <div class="result" aria-live="polite">
+      <div class="total"><div class="k" id="bigK">Owner owes the broker</div><div class="v" id="big">$0</div></div>
+      <div class="status ok" id="why"></div>
+      <div class="lines" id="lines"></div>
+      <div class="note" id="warn14" hidden></div>
+      <div class="note" data-i="note_r">Uses only the numbers you type and the fixed days printed in the form (5 days for reports, 5 days for office cancel, 3 days for entity papers). If your contract changed a number, use yours.</div>
+    </div>
+
+    <div class="dl" id="dl"></div>
+
+    <div class="idr">
+      <h2 data-i="h_rd">Your rights and duties</h2>
+      <h3 data-i="h_r">Owner's rights</h3><ul class="bul" id="rights"></ul>
+      <h3 data-i="h_d">Owner's duties</h3><ul class="bul" id="duties"></ul>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="h_par">
+    <h2 id="h_par" data-i="h_par">Read it paragraph by paragraph</h2>
+    <div class="terms" id="paras"></div>
+    <button type="button" class="expall" id="expAll" data-i="exp_all">Open all</button>
+  </section>
+
+  <section class="sec" aria-labelledby="h_myth">
+    <h2 id="h_myth" data-i="h_myth">What people get wrong</h2>
+    <p class="lead" data-i="lead_myth">True or false? Tap to see the answer.</p>
+    <div class="myths" id="myths"></div>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">Before signing, fill 2A(1), 2C(1) and 2C(3), and ask who goes on the name list (NPB).</li>
+      <li data-i="nx2">See what you take home after commission and costs in <a href="/t21/">T21</a>.</li>
+      <li data-i="nx3">Selling to do a 1031? Get the dates in <a href="/t227/">T227</a>. Buying a rental building? Use the checklist in <a href="/t267/">T267</a>.</li>
+    </ol>
+  </section>
+
+  <section class="vidsec" aria-labelledby="h_vid">
+    <h2 id="h_vid" data-i="h_vid">45-second video</h2>
+    <video class="kl-vid" src="video.mp4" controls playsinline preload="metadata" aria-label="CLA video"></video>
+  </section>
+
+  <section class="actions">
+    <a class="btn primary" id="emailBtn" href="mailto:ken@kenlamrealty.com" data-i="b_email">Email Ken my result</a>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Text Ken</a>
+    <a class="btn" id="videoBtn" href="/t430/video.mp4" target="_blank" rel="noopener" data-i="b_video">Watch the 45-sec video</a>
+    <a class="btn" href="/t402/" data-i="b_all">All explained forms</a>
+  </section>
+
+  <footer>
+    <span data-i="ft_cr">Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.</span>
+    <span class="src" data-i="ft_srcl">Source: C.A.R. Form CLA, Commercial and Residential Income Listing Agreement, Revised 6/26 (7 pages).</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/cong-cu/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số mặc định lấy từ C.A.R. Form CLA, Revised 6/26 — sửa ở đây nếu form đổi =====
+   Không đoán số. Ô nào form để trống (số tháng listing, % commission, Continuation days) thì người dùng tự nhập. */
+const F={
+  FORM:'CLA', REV:'Revised 6/26', PAGES:7,
+  MAX_MONTHS_1_4:24,     // 2A(1): tối đa 24 tháng nếu 1–4 unit và chủ không phải entity; quá thì void (trừ corp/LLC/partnership)
+  REPORT_PAY_DAYS:5,     // 2F(3) + 7E: Owner trả tiền báo cáo trong 5 ngày từ Beginning Date (hoặc số khác)
+  MGMT_CANCEL_DAYS:5,    // 17: Broker/manager được hủy trong 5 ngày sau khi ký nếu agent ký thay
+  AUTH_DOCS_DAYS:3,      // 22: Legally Authorized Signer nộp giấy thẩm quyền trong 3 ngày
+  BREACH_SHARE:0.5,      // 4E(1): số nhỏ hơn giữa 1/2 tiền bồi thường (sau phí title, escrow, đi đòi) và tiền công
+  CONT_DAYS:null         // 2C(3): form để TRỐNG, không có mặc định
+};
+const I18N={
+ vi:{title:'CLA: giấy listing cho nhà thương mại và nhà cho thuê',
+  sub:'Tờ giấy chủ nhà ký để giao cho một broker quyền duy nhất đi bán (hoặc cho thuê) tiệm, văn phòng hay căn nhà cho thuê trong một thời gian, và ghi rõ bán xong trả broker bao nhiêu.',
+  c1:'7 trang',c2:'Owner + broker ký',c3:'Khi đem nhà thương mại hoặc nhà cho thuê ra bán',
+  h_my:'Form này nói gì với tôi?',lead_my:'Nhập số của bạn, kết quả hiện ngay. Chỗ nào form để trống thì không có số mặc định, dùng số bạn và agent đã ghi.',
+  l_sit:'Chuyện gì xảy ra?',o_sold:'Bán được trong thời gian listing',o_after:'Chủ bán sau khi listing hết hạn',o_withdraw:'Chủ rút nhà / tự cho thuê mà broker không đồng ý',o_breach:'Người mua bể hợp đồng, chủ đòi được bồi thường',o_prev:'Bán cho người mà chủ còn nợ broker cũ',
+  l_ptype:'Loại nhà',o_comm:'Thương mại (tiệm, văn phòng, kho)',o_inc5:'Nhà cho thuê từ 5 unit',o_r14i:'1–4 unit, cá nhân hoặc trust đứng tên',o_r14e:'1–4 unit, corporation / LLC / partnership đứng tên',
+  l_lp:'Giá listing',l_sp:'Giá bán',l_mode:'Tiền công broker, đoạn 2C(1)',m_pct:'Phần trăm',m_flat:'Số tiền cố định',l_pct:'Phần trăm',l_flat:'Số tiền cố định',
+  l_cont:'Số ngày Continuation, 2C(3)',u_days:'ngày',
+  l_unrep:'Người mua không có agent và chủ đã đánh ô trả thêm, 2C(2)',l_xpct:'Phần trăm trả thêm trên giá mua, 2C(2)',
+  l_d1:'Ngày bắt đầu listing (ngày ký)',l_d2:'Ngày hết listing, 11:59 PM',
+  l_d3:'Ngày chủ ký với người mua đó',l_shown:'Broker (hoặc agent khác) đã dẫn người này vào coi nhà, hoặc đưa offer có ký tên, trong thời gian listing',
+  l_npb:'Trước khi listing hết hạn, broker đã gửi chủ danh sách có tên người này bằng văn bản (form NPB)',
+  l_dmg:'Tiền bồi thường chủ thu được',l_exp:'Phí title, escrow và phí đi đòi',
+  note_r:'Chỉ dùng số bạn nhập và số ngày in sẵn trong form (5 ngày trả tiền báo cáo, 5 ngày văn phòng được hủy, 3 ngày nộp giấy entity). Nếu hợp đồng của bạn sửa số đó thì dùng số của bạn.',
+  h_rd:'Quyền và nghĩa vụ của bạn',h_r:'Quyền của Owner',h_d:'Nghĩa vụ của Owner',
+  h_par:'Đọc từng đoạn',exp_all:'Mở hết',exp_none:'Đóng hết',
+  h_myth:'Nhiều người hiểu sai',lead_myth:'Đúng hay sai? Bấm để xem đáp án.',t_true:'Đúng',t_false:'Sai',a_right:'Bạn đúng.',a_wrong:'Chưa đúng.',a_is:'Đáp án',
+  nx_title:'Bước tiếp theo',
+  nx1:'Trước khi ký, điền đủ 2A(1), 2C(1), 2C(3) và hỏi rõ ai được ghi tên vào danh sách NPB.',
+  nx2:'Coi bán xong cầm về bao nhiêu sau commission và chi phí ở <a href="/t21/">T21</a>.',
+  nx3:'Bán để đổi 1031? Lấy các mốc ngày ở <a href="/t227/">T227</a>. Mua nhà cho thuê nhiều unit? Dùng checklist ở <a href="/t267/">T267</a>.',
+  h_vid:'Video 45 giây',b_email:'Email kết quả cho Ken',b_sms:'Nhắn tin cho Ken',b_video:'Xem video 45 giây',b_all:'Mọi form giải nghĩa',
+  ft_cr:'Form gốc © California Association of REALTORS®. Trang này chỉ giải thích, không thay thế form và không phải tư vấn pháp lý/thuế.',
+  ft_srcl:'Nguồn: C.A.R. Form CLA, Commercial and Residential Income Listing Agreement, Revised 6/26 (7 trang).',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  k_owe:'Chủ nợ broker',k_cond:'Chủ nợ broker (có điều kiện)',
+  w_sold:'Theo 4D(1): có người mua sẵn sàng và đủ khả năng, chủ chấp nhận offer và giao dịch hoàn tất. Ai tìm ra người mua cũng vậy, kể cả chính chủ. Escrow đóng sau ngày hết listing vẫn phải trả.',
+  w_after_in:'Ngày ký vẫn nằm trong thời gian listing, nên tính như bán trong listing (4D(1)).',
+  w_after_yes:'Theo 4D(2): ký trong Continuation Period với người đã được dẫn coi hoặc đã đưa offer, và broker đã gửi danh sách tên trước khi hết hạn. Vẫn phải trả.',
+  w_after_late:'Ngày ký đã qua Continuation Period ({d}). Theo 4D(2) broker không còn quyền đòi tiền công từ người mua này.',
+  w_after_noshow:'Người này không được dẫn coi và không đưa offer trong thời gian listing, nên 4D(2) không áp dụng.',
+  w_after_nonpb:'Broker không gửi danh sách tên (NPB) trước khi listing hết hạn. Theo 4D(2), không có danh sách thì không đòi được.',
+  w_after_nocont:'Bạn chưa điền số ngày Continuation. Form để trống ô này, nên không có thời gian bảo vệ sau listing nếu hai bên không ghi.',
+  w_withdraw:'Theo 4D(3): rút nhà, bán, cho thuê hay làm nhà không bán được trong thời gian listing mà không có đồng ý bằng văn bản của broker thì vẫn nợ tiền công. Không có giá bán nên % tính trên giá listing.',
+  w_breach:'Theo 4E(1): người mua làm bể thì chỉ trả khi chủ thu được bồi thường, và trả số nhỏ hơn giữa một nửa tiền thu được (sau khi trừ phí title, escrow, đi đòi) và tiền công đầy đủ.',
+  w_prev:'Theo 4F(3): bán cho người ghi ở 2C(4) trong lúc còn nợ broker cũ thì broker mới không được tiền công và không bắt buộc đại diện chủ trong vụ đó.',
+  ln_base:'Tiền công 2C(1)',ln_base_pct:'{p}% × {b}',ln_base_flat:'số cố định',ln_extra:'Trả thêm 2C(2), người mua không có agent',ln_extra_s:'{p}% × giá mua',
+  ln_half:'Một nửa tiền bồi thường sau phí',ln_full:'Tiền công đầy đủ nếu đã bán',ln_total:'Chủ trả',ln_net:'Chủ còn lại trước các chi phí khác',
+  b_lp:'giá listing',b_sp:'giá bán',
+  w14_void:'Cảnh báo 2A(1): nhà 1–4 unit, chủ không phải entity, mà listing dài {m} tháng (quá 24 tháng). Theo form, giấy listing này vô hiệu (void).',
+  w14_ok:'2A(1): nhà 1–4 unit, chủ không phải entity: listing không được quá 24 tháng. Của bạn là {m} tháng, vẫn trong giới hạn.',
+  w14_ent:'2A(1): giới hạn 24 tháng không áp dụng khi chủ là corporation, LLC hoặc partnership.',
+  w14_bad:'Ngày hết listing phải sau ngày bắt đầu.',
+  dd_end:'Listing hết hạn',dd_end_p:'Lúc 11:59 PM, theo 2A(1). Từ đây quan hệ đại diện chấm dứt (9F).',
+  dd_cont:'Hết Continuation Period',dd_cont_p:'{n} ngày lịch sau listing, theo 2C(3). Danh sách tên NPB phải gửi TRƯỚC ngày hết listing.',
+  dd_cont_none:'Form để trống 2C(3). Không điền thì không có thời gian này.',
+  dd_rep:'Hạn trả tiền báo cáo',dd_rep_p:'5 ngày từ ngày bắt đầu, theo 2F(3) và 7E, cho các báo cáo đã đánh ô.',
+  dd_mg:'Hạn văn phòng được hủy',dd_mg_p:'Nếu agent ký thay broker, broker hoặc manager hủy được bằng văn bản trong 5 ngày sau khi ký (đoạn 17).',
+  dd_au:'Hạn nộp giấy thẩm quyền',dd_au_p:'Chỉ khi ký cho trust, LLC, công ty, probate: nộp giấy chứng minh trong 3 ngày (đoạn 22).',
+  r1:'Tự quyết giá rao và giá bán (7D).',r2:'Chọn có trình offer ngay hay hẹn ngày (2F(1), 7B), và có nhận thư của người mua hay không (2F(2), 7C).',r3:'Không cho gắn lockbox hay cắm bảng nếu đánh ô Owner Opt Outs (13, 14).',r4:'Được broker giữ kín giá thấp nhất bạn chịu khi broker làm dual agency (9C).',r5:'Tiền công là thương lượng được, luật không ấn định (đoạn 4).',
+  d1:'Cho coi nhà vào giờ hợp lý và chuyển mọi người hỏi mua cho broker (7D).',d2:'Báo broker bằng văn bản nếu biết có Notice of Default, nợ quá hạn, phá sản, kiện tụng, special assessment (đoạn 6).',d3:'Trả tiền các báo cáo đã chọn trong 5 ngày (2F(3)).',d4:'Nhà có người thuê: xin người thuê ký đồng ý cho dùng lockbox (13B, form KLA).',d5:'Cất đồ quý và mua bảo hiểm; có camera thì nên dán thông báo (đoạn 11).',d6:'Mediation trước khi kiện (19A).',
+  sms:'Chào Ken, tôi vừa đọc giải nghĩa form CLA (T430) trên tools.kenlamrealty.com. {r} Cho tôi hỏi thêm.',
+  subj:'T430 CLA — câu hỏi về listing',
+  body:'Chào Ken,\n\nTôi dùng tool T430 (CLA, Revised 6/26).\n\nTình huống: {s}\nGiá listing: {lp}\nGiá bán: {sp}\nTiền công: {c}\nListing: {d1} → {d2}\nContinuation: {cd}\n\nKết quả: {r}\n\nTên:\nPhone:\n\nGửi từ tools.kenlamrealty.com/t430/'},
+ en:{title:'CLA: the listing agreement for commercial and rental property',
+  sub:'The paper an owner signs to give one broker the only right to sell (or lease) a store, office or rental building for a set time, and to say what the broker gets paid when it works.',
+  c1:'7 pages',c2:'Signed by owner + broker',c3:'When you list a commercial or income property',
+  h_my:'What does this form say to me?',lead_my:'Fill in your numbers. The result updates as you type. Blank spaces on the real form have no default, so use what you and your agent wrote.',
+  l_sit:'What happened?',o_sold:'Sold during the listing',o_after:'Owner sold after the listing ended',o_withdraw:"Owner took it off the market / leased it without the broker's OK",o_breach:'Buyer backed out, owner collected damages',o_prev:'Sold to someone the owner still owes an old broker for',
+  l_ptype:'Property type',o_comm:'Commercial (store, office, warehouse)',o_inc5:'Rental building, 5+ units',o_r14i:'1–4 units, owned by person(s) or trust',o_r14e:'1–4 units, owned by corporation / LLC / partnership',
+  l_lp:'Listing price',l_sp:'Sale price',l_mode:"Broker's pay, para 2C(1)",m_pct:'Percent',m_flat:'Fixed $',l_pct:'Percent',l_flat:'Fixed amount',
+  l_cont:'Continuation days, 2C(3)',u_days:'days',
+  l_unrep:'Buyer has no agent and the owner checked the extra pay box, 2C(2)',l_xpct:'Extra percent of the price, 2C(2)',
+  l_d1:'Listing starts (signed)',l_d2:'Listing ends, 11:59 PM',
+  l_d3:'Date the owner signed with that buyer',l_shown:'The broker (or another agent) showed this buyer the property, or brought a signed offer, during the listing',
+  l_npb:"Before the listing ended, the broker gave the owner a written list with this buyer's name (Form NPB)",
+  l_dmg:'Damages the owner collected',l_exp:'Title, escrow and collection costs',
+  note_r:'Uses only the numbers you type and the fixed days printed in the form (5 days for reports, 5 days for office cancel, 3 days for entity papers). If your contract changed a number, use yours.',
+  h_rd:'Your rights and duties',h_r:"Owner's rights",h_d:"Owner's duties",
+  h_par:'Read it paragraph by paragraph',exp_all:'Open all',exp_none:'Close all',
+  h_myth:'What people get wrong',lead_myth:'True or false? Tap to see the answer.',t_true:'True',t_false:'False',a_right:'You got it.',a_wrong:'Not quite.',a_is:'Answer',
+  nx_title:'Next steps',
+  nx1:'Before signing, fill 2A(1), 2C(1) and 2C(3), and ask who goes on the name list (NPB).',
+  nx2:'See what you take home after commission and costs in <a href="/t21/">T21</a>.',
+  nx3:'Selling to do a 1031? Get the dates in <a href="/t227/">T227</a>. Buying a rental building? Use the checklist in <a href="/t267/">T267</a>.',
+  h_vid:'45-second video',b_email:'Email Ken my result',b_sms:'Text Ken',b_video:'Watch the 45-sec video',b_all:'All explained forms',
+  ft_cr:'Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.',
+  ft_srcl:'Source: C.A.R. Form CLA, Commercial and Residential Income Listing Agreement, Revised 6/26 (7 pages).',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  k_owe:'Owner owes the broker',k_cond:'Owner owes the broker (if conditions met)',
+  w_sold:'Para 4D(1): a ready, willing and able buyer, the owner accepts the offer, and the deal closes. It does not matter who found the buyer, even the owner. Closing after the listing ends still counts.',
+  w_after_in:'The signing date is still inside the listing, so it counts as a sale during the listing (4D(1)).',
+  w_after_yes:'Para 4D(2): signed inside the Continuation Period with someone who toured or made an offer, and the broker sent the name list before the end. Commission is owed.',
+  w_after_late:'The signing date is after the Continuation Period ({d}). Under 4D(2) the broker has no claim for this buyer.',
+  w_after_noshow:'This buyer did not tour or make an offer during the listing, so 4D(2) does not apply.',
+  w_after_nonpb:'The broker did not send the written name list (NPB) before the listing ended. Under 4D(2), no list means no claim.',
+  w_after_nocont:'You left Continuation days empty. The form leaves it blank, so there is no protection period unless the parties write one in.',
+  w_withdraw:"Para 4D(3): withdrawing, selling, leasing or making it unmarketable during the listing without the broker's written OK still owes the commission. With no sale price, the percent uses the listing price.",
+  w_breach:'Para 4E(1): if the buyer breaks the deal, pay is owed only if the owner collects damages, and only the smaller of half of what was collected (after title, escrow and collection costs) or the full commission.',
+  w_prev:'Para 4F(3): selling to someone listed in 2C(4) while still owing the old broker means the new broker gets no pay and does not have to represent the owner in that deal.',
+  ln_base:'Commission 2C(1)',ln_base_pct:'{p}% × {b}',ln_base_flat:'fixed amount',ln_extra:'Extra 2C(2), buyer has no agent',ln_extra_s:'{p}% × purchase price',
+  ln_half:'Half of damages after costs',ln_full:'Full commission if it had closed',ln_total:'Owner pays',ln_net:'Owner keeps before other costs',
+  b_lp:'listing price',b_sp:'sale price',
+  w14_void:'Warning 2A(1): 1–4 units, not owned by an entity, and the listing runs {m} months (over 24). Under the form, this listing is void.',
+  w14_ok:'2A(1): 1–4 units, not owned by an entity: the listing may not exceed 24 months. Yours is {m} months, within the limit.',
+  w14_ent:'2A(1): the 24-month cap does not apply when the owner is a corporation, LLC or partnership.',
+  w14_bad:'The end date must be after the start date.',
+  dd_end:'Listing ends',dd_end_p:'At 11:59 PM, per 2A(1). The agency relationship ends here (9F).',
+  dd_cont:'Continuation Period ends',dd_cont_p:'{n} calendar days after the listing, per 2C(3). The NPB name list must go out BEFORE the listing ends.',
+  dd_cont_none:'The form leaves 2C(3) blank. If nobody fills it, there is no such period.',
+  dd_rep:'Pay for reports by',dd_rep_p:'5 days from the start date, per 2F(3) and 7E, for the reports checked.',
+  dd_mg:'Office may cancel until',dd_mg_p:'If an agent signed for the broker, the broker or manager may cancel in writing within 5 days after signing (para 17).',
+  dd_au:'Proof of authority due',dd_au_p:'Only when signing for a trust, LLC, company or probate estate: deliver proof within 3 days (para 22).',
+  r1:'You set the list price and the sale price (7D).',r2:'You choose to see offers right away or on a set date (2F(1), 7B), and whether to see buyer letters (2F(2), 7C).',r3:'You can say no lockbox or no sign by checking Owner Opt Outs (13, 14).',r4:'If the broker is a dual agent, your lowest price stays private (9C).',r5:'Commission is negotiable, not set by law (para 4).',
+  d1:'Show the property at reasonable times and send every interested party to the broker (7D).',d2:'Tell the broker in writing about any Notice of Default, late loan payments, bankruptcy, lawsuits or special assessments (para 6).',d3:'Pay for the reports you picked within 5 days (2F(3)).',d4:'Tenant-occupied: get the tenant\'s written OK for a lockbox (13B, Form KLA).',d5:'Lock up valuables and carry insurance; post notice of any cameras (para 11).',d6:'Mediate before you sue (19A).',
+  sms:'Hi Ken, I just read the CLA form explainer (T430) on tools.kenlamrealty.com. {r} I have a question.',
+  subj:'T430 CLA — listing question',
+  body:'Hi Ken,\n\nI used tool T430 (CLA, Revised 6/26).\n\nSituation: {s}\nListing price: {lp}\nSale price: {sp}\nCommission: {c}\nListing: {d1} → {d2}\nContinuation: {cd}\n\nResult: {r}\n\nName:\nPhone:\n\nSent from tools.kenlamrealty.com/t430/'}
+};
+/* Đọc từng đoạn — [số đoạn, tiêu đề, lời dễ hiểu] */
+const PARAS={
+ vi:[
+  ['1','Exclusive Authorization','Chủ giao cho một broker quyền độc quyền, không rút ngang được (irrevocable), để bán, cho thuê, đổi, option hoặc việc khác (đánh ô). Mặc định là nhà commercial; muốn là nhà cho thuê thì đánh ô residential income.'],
+  ['2A–2B','Thời gian và giá','2A(1): ngày bắt đầu, ngày hết lúc 11:59 PM, form không có số tháng mặc định. Nhà 1–4 unit, chủ không phải entity: tối đa 24 tháng, quá là vô hiệu (trừ corporation, LLC, partnership). 2A(2): giá listing. 2B: đánh ô nếu là mobile home (MHLA) hoặc probate (PLA).'],
+  ['2C → 4','Tiền công','2C(1): ___% giá listing (nếu ký hợp đồng mua thì tính trên giá mua), hoặc số tiền cố định, hoặc bảng giá riêng. 2C(2): đánh ô nếu trả thêm khi người mua không có agent. 2C(3): số ngày Continuation, để trống. 2C(4): broker cũ. 2C(5): referral fee (RAD).'],
+  ['2D → 5','Đồ kèm, đồ loại ra','Ghi đồ để lại, đồ mang đi, đồ đi thuê (solar, propane, alarm…), đồ còn nợ có lien, đồ smart home. Đây chỉ là ý định; hợp đồng mua mới quyết định. Đồ đi thuê hay có lien thì chủ phải đưa giấy tờ cho người mua.'],
+  ['2E → 10, 12','MLS và quảng cáo','2E(1): đăng MLS nào (xem MLSA). 2E(2): đánh ô nếu cho rao "sẵn sàng xem xét concession", không ghi số tiền trừ khi chủ báo bằng văn bản. 2E(3): đánh ô nếu không cho chụp hình.'],
+  ['2F → 7B, 7C, 7E','Offer, thư người mua, báo cáo','2F(1): mặc định trình offer càng sớm càng tốt, hoặc hẹn ngày. 2F(2): mặc định KHÔNG trình thư người mua. 2F(3): đánh ô báo cáo cần làm; chủ trả tiền trong 5 ngày từ ngày bắt đầu.'],
+  ['2G, 2J, 3','Title, opt out, phụ lục','2G: ngoại lệ về người đứng tên (đoạn 21). Ô SPRP nếu chủ cần mua được nhà thay thế. 2J Owner Opt Outs: không lockbox, không bảng. Đoạn 3: tờ khuyến cáo (BCA, REO, Trust) và phụ lục (Short Sale…) đánh ô thì thành một phần hợp đồng.'],
+  ['4A–4D','Khi nào broker được trả','4D(1): có người mua sẵn sàng, đủ khả năng, chủ nhận offer, giao dịch xong — ai tìm ra cũng vậy, kể cả chủ. 4D(2): sau listing, trong Continuation Period, bán cho người đã được dẫn coi hoặc đã đưa offer, nếu broker gửi danh sách tên (NPB) trước ngày hết hạn. 4D(3): chủ tự rút hay tự cho thuê mà không có đồng ý viết của broker vẫn nợ.'],
+  ['4E–4F','Bể hợp đồng, escrow, broker cũ','4E(1): người mua làm bể thì chỉ trả khi chủ đòi được bồi thường: số nhỏ hơn giữa một nửa tiền thu được (sau phí) và tiền công. 4E(2): chủ giao trước quyền lấy tiền công từ escrow. 4F: bán cho người ghi ở 2C(4) trong lúc còn nợ broker cũ thì broker mới không được trả.'],
+  ['6','Owner Representations','Chủ nói mình không biết có Notice of Default, nợ quá hạn, phá sản, kiện tụng hay special assessment. Biết thêm thì báo broker bằng văn bản.'],
+  ['7','Nhiệm vụ hai bên','Broker cố gắng hợp lý, được quảng cáo mọi kênh và cho agent khác biết đã có offer và giá offer. Có người mua không trả được agent của họ và có thể xin chủ trả qua offer. Chủ xem offer thiện chí, cho coi nhà, tự quyết giá, và bồi thường cho broker nếu đưa thông tin sai hay giấu lỗi.'],
+  ['8–9','Cọc và đại diện','Broker được giữ tiền cọc thay chủ. Chủ đã nhận AD. Chủ đồng ý trước cho dual agency nếu người mua do văn phòng broker tìm; giá thấp nhất của chủ được giữ kín. Người mua không có agent nhận BNA. Đại diện chấm dứt khi hết listing hoặc giao dịch xong.'],
+  ['10','Concessions','Concession là tiền chủ góp vào chi phí người mua. Ghi trên MLS thì không được ghi để trả agent, và chỉ là "sẵn sàng xem xét", không phải lời hứa, trừ khi nằm trong hợp đồng mua.'],
+  ['11–14','An ninh, hình, lockbox, bảng','Broker không chịu trách nhiệm mất mát khi dẫn coi. Quyền hình thuộc broker, dùng được cả sau khi bán. Hình chỉnh sửa phải ghi rõ theo B&P Code §10140.8. Lockbox và bảng được phép trừ khi opt out; nhà có người thuê thì cần KLA.'],
+  ['15–18','Fair housing, phí luật sư, văn phòng','Bán theo luật chống kỳ thị. Mỗi bên tự trả luật sư (trừ 19A). Agent ký thay thì broker được hủy trong 5 ngày. Giấy ràng buộc cả người thừa kế của chủ.'],
+  ['19','Tranh chấp','Phải mediation trước, phí chia đều. Ai kiện mà không mediation trước thì thua không được đòi phí luật sư. Một số việc được loại trừ (foreclosure, unlawful detainer, mechanic\'s lien, probate, small claims, bankruptcy). Muốn arbitration thì ký form ARB.'],
+  ['20–22','Toàn bộ thỏa thuận, title, người ký','Lời hứa miệng trước đó không tính. Chủ bảo đảm mình đứng tên và có quyền bán. Người ký thay trust, LLC, công ty nộp giấy thẩm quyền trong 3 ngày.'],
+  ['Trang 7','Chữ ký','Khối Entity Owner, chữ ký Owner, chữ ký Broker. Ô AAA nếu nhiều agent cùng văn phòng; ô ABA nếu hai công ty co-list.']],
+ en:[
+  ['1','Exclusive Authorization','The owner gives one broker the exclusive and irrevocable right to sell, lease, exchange, option or other (check a box). It reads as commercial unless the residential income box is checked.'],
+  ['2A–2B','Time and price','2A(1): start date, end at 11:59 PM; the form sets no default length. 1–4 units not owned by an entity: 24 months max, and longer makes it void (unless a corporation, LLC or partnership). 2A(2): list price. 2B: check for mobile home (MHLA) or probate (PLA).'],
+  ['2C → 4','Pay','2C(1): ___% of the list price (based on the purchase price once a purchase agreement is signed), or a fixed $, or a broker schedule. 2C(2): extra pay if the buyer has no agent, if checked. 2C(3): Continuation days, left blank. 2C(4): prior brokers. 2C(5): referral fee (RAD).'],
+  ['2D → 5','Items in or out','List items included, excluded, leased (solar, propane, alarm…), financed with a lien, and smart home items. This is only intent; the purchase agreement decides. For leased or liened items, the owner gives the buyer the papers.'],
+  ['2E → 10, 12','MLS and marketing','2E(1): which MLS (see MLSA). 2E(2): check to market that the owner will consider concessions, with no amount unless the owner says so in writing. 2E(3): check for no photos.'],
+  ['2F → 7B, 7C, 7E','Offers, letters, reports','2F(1): default is present offers as soon as practicable, or on a set date. 2F(2): default is do NOT present buyer letters. 2F(3): check the reports; owner pays within 5 days of the start date.'],
+  ['2G, 2J, 3','Title, opt outs, add-ons','2G: exceptions to who owns it (para 21). SPRP box if the owner must buy a replacement. 2J Owner Opt Outs: no lockbox, no sign. Para 3: checked advisories (BCA, REO, Trust) and addenda (Short Sale…) become part of the deal.'],
+  ['4A–4D','When the broker gets paid','4D(1): a ready, willing and able buyer, offer accepted, deal completed — no matter who found the buyer, even the owner. 4D(2): after the listing, inside the Continuation Period, to someone who toured or made an offer, if the broker sent the NPB name list before the end. 4D(3): withdrawing or leasing it yourself without the broker\'s written OK still owes.'],
+  ['4E–4F','Broken deal, escrow, old broker','4E(1): if the buyer breaks the deal, pay only if the owner collects damages: the smaller of half of what was collected (after costs) or the commission. 4E(2): the owner assigns the pay from escrow up front. 4F: selling to someone in 2C(4) while still owing an old broker means no pay for the new broker.'],
+  ['6','Owner Representations','The owner says they know of no Notice of Default, late payments, bankruptcy, lawsuits or special assessments, and will tell the broker in writing if that changes.'],
+  ['7','Both sides\' duties','The broker uses reasonable effort, may market anywhere and may tell other agents that offers came in and at what price. Some buyers cannot pay their own agent and may ask the owner to, through the offer. The owner considers offers in good faith, allows showings, sets the price, and covers the broker for false info or hidden defects.'],
+  ['8–9','Deposit and agency','The broker may hold the deposit for the owner. The owner got the AD form. The owner agrees up front to dual agency if the buyer comes through the broker\'s office; the owner\'s lowest price stays private. A buyer with no agent gets a BNA. Agency ends when the listing ends or the deal closes.'],
+  ['10','Concessions','Money the owner puts toward the buyer\'s costs. In the MLS it may not be tied to agent pay, and it is only "will consider", not a promise, unless it is in the accepted purchase agreement.'],
+  ['11–14','Security, photos, lockbox, sign','The broker is not liable for loss during showings. Photo rights go to the broker and may be used after the sale. Altered photos must be labeled under B&P Code §10140.8. Lockbox and sign are allowed unless opted out; a tenant-occupied property needs a KLA.'],
+  ['15–18','Fair housing, fees, office','Offered under anti-discrimination laws. Each side pays its own lawyer (except 19A). If an agent signed, the broker may cancel within 5 days. Binds the owner\'s successors.'],
+  ['19','Disputes','Mediate first, fees split equally. Sue without mediating and you cannot recover attorney fees if you win. Some matters are excluded (foreclosure, unlawful detainer, mechanic\'s lien, probate, small claims, bankruptcy). For arbitration, sign Form ARB.'],
+  ['20–22','Whole deal, title, signer','Earlier verbal promises do not count. The owner warrants they own it and can sell. Someone signing for a trust, LLC or company delivers proof of authority within 3 days.'],
+  ['Page 7','Signatures','Entity Owner block, owner signatures, broker signatures. AAA box if more than one agent from the same office; ABA box if two firms co-list.']]
+};
+const MYTHS={
+ vi:[['Ký CLA là tự động có tiền trả cho agent bên mua.',false,'Form này không có chỗ cho broker bên bán hứa trả agent bên mua. Người mua phải xin trong offer (7B(1), đoạn 10), và chủ có quyền nhận, từ chối hay counter.'],
+     ['Listing nhà thương mại cũng tối đa 24 tháng như nhà 1–4 unit.',false,'Giới hạn 24 tháng ở 2A(1) chỉ cho nhà 1–4 unit mà chủ không phải entity. Tiệm, văn phòng, nhà 5+ unit: form không đặt trần.'],
+     ['Chủ tự tìm được người mua trong thời gian listing thì vẫn phải trả broker.',true,'Đúng. 4D(1) nói ai tìm ra người mua cũng vậy: broker, agent khác, chính chủ hay người khác.']],
+ en:[['Signing a CLA automatically pays the buyer\'s agent.',false,'This form has no place for the listing broker to promise pay to the buyer\'s agent. The buyer must ask in the offer (7B(1), para 10), and the owner can accept, reject or counter.'],
+     ['A commercial listing has the same 24-month cap as a 1–4 unit home.',false,'The 24-month cap in 2A(1) is only for 1–4 units not owned by an entity. Stores, offices and 5+ unit buildings have no cap in the form.'],
+     ['If the owner finds the buyer during the listing, the broker still gets paid.',true,'True. 4D(1) says it does not matter who found the buyer: the broker, another agent, the owner or anyone else.']]
+};
+let lang='en'; try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+let mode='pct', openSet={}, mAns={};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const num=id=>{const v=parseFloat(String($(id).value).replace(/,/g,''));return isFinite(v)?v:0;};
+const money=n=>(n<0?'-':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const fill=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]!=null?o[k]:m);
+function pd(s){ if(!s) return null; const p=s.split('-').map(Number); if(p.length<3||!p[0]) return null; return new Date(p[0],p[1]-1,p[2]); }
+function addD(d,n){ const x=new Date(d.getTime()); x.setDate(x.getDate()+n); return x; }
+const WD={vi:['Chủ nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'],en:['Sun','Mon','Tue','Wed','Thu','Fri','Sat']};
+const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const p2=n=>String(n).padStart(2,'0');
+function fd(d){ if(!d) return '—'; return lang==='vi'?WD.vi[d.getDay()]+', '+p2(d.getDate())+'/'+p2(d.getMonth()+1)+'/'+d.getFullYear():WD.en[d.getDay()]+', '+MO[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear(); }
+function monthsBetween(a,b){ let m=(b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth()); if(b.getDate()>a.getDate()) m+=1; return m; } /* làm tròn lên tháng lẻ */
+
+/* Tính tiền công — export cho test */
+function calc(i){
+  const base = i.mode==='flat' ? i.flat : i.pct/100*(i.sit==='withdraw'?i.lp:i.sp);
+  const extra = (i.unrep && (i.sit==='sold'||i.sit==='after'||i.sit==='breach')) ? i.xpct/100*i.sp : 0;
+  const full = base+extra;
+  let owed=0, why='', cond=false;
+  if(i.sit==='sold'){ owed=full; why='w_sold'; }
+  else if(i.sit==='withdraw'){ owed=base; why='w_withdraw'; }
+  else if(i.sit==='prev'){ owed=0; why='w_prev'; }
+  else if(i.sit==='breach'){ const half=F.BREACH_SHARE*Math.max(0,i.dmg-i.exp); owed=Math.min(half,full); why='w_breach'; cond=true; }
+  else if(i.sit==='after'){
+    const end=i.d2, ce=(i.cont>0&&end)?addD(end,i.cont):null;
+    if(i.d3&&end&&i.d3<=end){ owed=full; why='w_after_in'; }
+    else if(!(i.cont>0)){ owed=0; why='w_after_nocont'; }
+    else if(i.d3&&ce&&i.d3>ce){ owed=0; why='w_after_late'; }
+    else if(!i.shown){ owed=0; why='w_after_noshow'; }
+    else if(!i.npb){ owed=0; why='w_after_nonpb'; }
+    else { owed=full; why='w_after_yes'; }
+  }
+  return {base,extra,full,owed,why,cond};
+}
+function inputs(){ return {sit:$('sit').value,ptype:$('ptype').value,lp:num('lp'),sp:num('sp'),mode,pct:num('pct'),flat:num('flat'),cont:Math.round(num('cont')),
+  unrep:$('unrep').checked,xpct:num('xpct'),d1:pd($('d1').value),d2:pd($('d2').value),d3:pd($('d3').value),shown:$('shown').checked,npb:$('npb').checked,dmg:num('dmg'),exp:num('exp')}; }
+let lastR='';
+function render(){
+  const d=I18N[lang], i=inputs(), r=calc(i);
+  $('f_pct').hidden=mode!=='pct'; $('f_flat').hidden=mode!=='flat';
+  $('f_extra').hidden=!$('unrep').checked;
+  $('c_after').hidden=i.sit!=='after'; $('c_breach').hidden=i.sit!=='breach';
+  $('bigK').textContent=r.cond?d.k_cond:d.k_owe;
+  $('big').textContent=money(r.owed);
+  const ce=(i.cont>0&&i.d2)?addD(i.d2,i.cont):null;
+  $('why').innerHTML=esc(fill(d[r.why],{d:fd(ce)}));
+  $('why').className='status '+(r.owed>0?'ok':'warn');
+  let L=[];
+  const bTxt = mode==='flat'?d.ln_base_flat:fill(d.ln_base_pct,{p:i.pct,b:i.sit==='withdraw'?d.b_lp:d.b_sp});
+  if(i.sit==='breach'){
+    L.push([d.ln_full,'<small>'+esc(bTxt)+'</small>',money(r.full)]);
+    L.push([d.ln_half,'<small>½ × ('+money(i.dmg)+' − '+money(i.exp)+')</small>',money(F.BREACH_SHARE*Math.max(0,i.dmg-i.exp))]);
+  } else {
+    L.push([d.ln_base,'<small>'+esc(bTxt)+'</small>',money(i.sit==='prev'?0:r.base)]);
+    if(r.extra>0&&i.sit!=='prev'&&i.sit!=='withdraw') L.push([d.ln_extra,'<small>'+esc(fill(d.ln_extra_s,{p:i.xpct}))+'</small>',money(r.extra)]);
+  }
+  L.push([d.ln_total,'',money(r.owed),'sum']);
+  if(i.sit!=='withdraw'&&i.sit!=='breach'&&i.sit!=='prev') L.push([d.ln_net,'',money(i.sp-r.owed)]);
+  $('lines').innerHTML=L.map(x=>'<div class="line'+(x[3]?' '+x[3]:'')+'"><span class="n"><b>'+esc(x[0])+'</b>'+x[1]+'</span><span class="a">'+x[2]+'</span></div>').join('');
+  /* 2A(1) */
+  let w='';
+  if(i.d1&&i.d2){
+    if(i.d2<=i.d1) w=d.w14_bad;
+    else { const m=monthsBetween(i.d1,i.d2);
+      if(i.ptype==='r14i') w=fill(m>F.MAX_MONTHS_1_4?d.w14_void:d.w14_ok,{m});
+      else if(i.ptype==='r14e') w=d.w14_ent; }
+  }
+  $('warn14').hidden=!w; $('warn14').textContent=w;
+  /* mốc ngày */
+  const D=[];
+  if(i.d2) D.push([d.dd_end,i.d2,d.dd_end_p]);
+  if(i.d2) D.push([d.dd_cont,ce,ce?fill(d.dd_cont_p,{n:i.cont}):d.dd_cont_none]);
+  if(i.d1){ D.push([d.dd_rep,addD(i.d1,F.REPORT_PAY_DAYS),d.dd_rep_p]); D.push([d.dd_mg,addD(i.d1,F.MGMT_CANCEL_DAYS),d.dd_mg_p]); D.push([d.dd_au,addD(i.d1,F.AUTH_DOCS_DAYS),d.dd_au_p]); }
+  $('dl').innerHTML=D.map(x=>'<div class="dd"><div class="hd"><span class="t">'+esc(x[0])+'</span></div><div class="date">'+esc(x[1]?fd(x[1]):'—')+'</div><p>'+esc(x[2])+'</p></div>').join('');
+  $('rights').innerHTML=['r1','r2','r3','r4','r5'].map(k=>'<li>'+esc(d[k])+'</li>').join('');
+  $('duties').innerHTML=['d1','d2','d3','d4','d5','d6'].map(k=>'<li>'+esc(d[k])+'</li>').join('');
+  /* nút */
+  const so=$('sit').options[$('sit').selectedIndex].textContent;
+  lastR=($('bigK').textContent)+': '+money(r.owed)+'. '+fill(d[r.why],{d:fd(ce)});
+  const cTxt= mode==='flat'?money(i.flat):(i.pct+'%')+(i.unrep?' + '+i.xpct+'% (2C(2))':'');
+  const v={s:so,lp:money(i.lp),sp:money(i.sp),c:cTxt,d1:fd(i.d1),d2:fd(i.d2),cd:i.cont>0?i.cont+' '+d.u_days+' → '+fd(ce):'—',r:lastR};
+  $('emailBtn').href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(d.subj)+'&body='+encodeURIComponent(fill(d.body,v));
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,{r:(lang==='vi'?'Kết quả: ':'Result: ')+money(r.owed)+'.'}));
+}
+function renderParas(){
+  const d=I18N[lang];
+  $('paras').innerHTML=PARAS[lang].map((p,k)=>'<details class="term" id="p'+k+'"'+(openSet[k]?' open':'')+'><summary><span class="pn">'+(lang==='vi'?'Đoạn ':'Para ')+esc(p[0])+'</span><span class="nm">'+esc(p[1])+'</span></summary><div class="bd"><p>'+esc(p[2])+'</p></div></details>').join('');
+  $('expAll').textContent=PARAS[lang].some((p,k)=>!openSet[k])?d.exp_all:d.exp_none;
+}
+function renderMyths(){
+  const d=I18N[lang];
+  $('myths').innerHTML=MYTHS[lang].map((m,k)=>{ const a=mAns[k];
+    const ans=a==null?'':'<b class="'+((a===m[1])?'ok':'')+'">'+esc(a===m[1]?d.a_right:d.a_wrong)+'</b> '+esc(d.a_is)+': '+esc(m[1]?d.t_true:d.t_false)+'. '+esc(m[2]);
+    return '<div class="mq"><p>“'+esc(m[0])+'”</p><div class="tf"><button type="button" data-k="'+k+'" data-v="1" aria-pressed="'+(a===true)+'">'+esc(d.t_true)+'</button><button type="button" data-k="'+k+'" data-v="0" aria-pressed="'+(a===false)+'">'+esc(d.t_false)+'</button></div><p class="an"'+(a==null?' hidden':'')+'>'+ans+'</p></div>'; }).join('');
+}
+$('myths').addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button[data-k]'); if(!b) return; mAns[b.dataset.k]=b.dataset.v==='1'; renderMyths();});
+$('paras').addEventListener('toggle',e=>{const el=e.target; if(!el.classList||!el.classList.contains('term')) return; const k=+el.id.slice(1); if(el.open) openSet[k]=1; else delete openSet[k]; $('expAll').textContent=PARAS[lang].some((p,j)=>!openSet[j])?I18N[lang].exp_all:I18N[lang].exp_none;},true);
+$('expAll').onclick=()=>{const any=PARAS[lang].some((p,k)=>!openSet[k]); PARAS[lang].forEach((p,k)=>{ if(any) openSet[k]=1; else delete openSet[k]; }); renderParas();};
+$('mode').addEventListener('click',e=>{const b=e.target.closest('button[data-m]'); if(!b) return; mode=b.dataset.m; $('mode').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); render();});
+document.querySelectorAll('.inputs input,.inputs select').forEach(el=>{el.addEventListener('input',render); el.addEventListener('change',render);});
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; renderParas(); renderMyths(); render();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+window.KL_CALC=calc;
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+try{if(/[?&]embed=1/.test(location.search))a.style.display='none';}catch(e){}
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

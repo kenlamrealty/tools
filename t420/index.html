@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ACS Giải Nghĩa · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+/* ---- T229 thêm (không đổi class cũ) ---- */
+.ctl input[type=search]{font-size:18px}
+.ctl input[type=search]::-webkit-search-cancel-button{cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-size:13px;padding:7px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);border-color:var(--brass);font-weight:500}
+.terms{display:grid;gap:10px}
+.term{background:var(--panel);border:1px solid var(--line);border-radius:14px;min-width:0;scroll-margin-top:16px}
+.term[open]{border-color:var(--brass)}
+.term.flash{box-shadow:0 0 0 3px var(--brass-soft)}
+.term summary{list-style:none;cursor:pointer;padding:14px 18px;display:grid;gap:2px}
+.term summary::-webkit-details-marker{display:none}
+.term summary .nm{font-family:var(--display);font-size:23px;line-height:1.15;font-weight:500;color:var(--fg)}
+.term summary .al{font-size:12px;color:var(--muted)}
+.term summary .sh{font-size:14px;color:var(--muted);line-height:1.45}
+.term .bd{padding:0 18px 16px;display:grid;gap:10px;font-size:15px;line-height:1.55}
+.term .bd p{margin:0}
+.term .bd .lb{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);font-weight:500;margin-bottom:2px}
+.term .bd .ex{background:var(--brass-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.term .bd .my b{color:var(--warn);font-weight:500}
+.term .bd .ot{font-size:13px;color:var(--muted)}
+.term .bd .ft{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px;color:var(--muted)}
+.term .bd .ft a{color:var(--brass);word-break:break-word}
+.term .bd .ft button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:12px;padding:4px 10px;border-radius:999px;cursor:pointer}
+.empty{font-size:15px;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:16px 18px}
+.empty[hidden]{display:none}
+.expall{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+</style>
+<meta name="description" content="C.A.R. Form ACS (Agent Commission Sharing Agreement, Revised 6/23) explained in plain words, Vietnamese and English, with a calculator that splits commission, expenses and TC pay the way the form says.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t420/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="ACS Explained · Ken Lam Tools">
+<meta property="og:description" content="How two agents split commission under C.A.R. Form ACS: split first, broker second, expenses at the same ratio.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t420/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+<style>
+/* ---- T42x/T43x Giải nghĩa Forms thêm (không đổi class cũ) ---- */
+.chipline{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.chipline span{border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:13px;padding:6px 11px;border-radius:999px}
+.sec{display:grid;gap:14px;min-width:0}
+.sec>h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0;line-height:1.15}
+.sec>p.lead{margin:0;color:var(--muted);font-size:14px}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;padding:12px 4px;-webkit-appearance:none;appearance:none;cursor:pointer;text-overflow:ellipsis}
+.ctl.sw::after{content:'▾';color:var(--muted);font-size:14px;pointer-events:none}
+.ctl select option{color:#2B2925;background:#fff}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:15px;cursor:pointer;line-height:1.4}
+.chk input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;flex:none}
+.cond.grp{display:grid;gap:14px}
+.cond[hidden]{display:none}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.bul{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px;line-height:1.5}
+.idr h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);font-weight:500;margin:6px 0 0}
+.myths{display:grid;gap:10px}
+.mq{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:10px;min-width:0}
+.mq p{margin:0;font-size:15px;line-height:1.5}
+.mq .tf{display:flex;gap:8px}
+.mq .tf button{flex:1;border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:14px;padding:9px;border-radius:10px;cursor:pointer}
+.mq .tf button[aria-pressed="true"]{background:var(--brass-soft);border-color:var(--brass);font-weight:500}
+.mq .an{font-size:14px;color:var(--muted);line-height:1.5;margin:0}
+.mq .an b{color:var(--warn);font-weight:500}
+.mq .an b.ok{color:var(--ok)}
+.mq .an[hidden]{display:none}
+.term summary .pn{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.total .v.sm{font-size:40px}
+.vidsec{display:grid;gap:10px}
+.vidsec h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools · T420</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">ACS: how two agents split a commission</h1>
+    <p class="sub" data-i="sub">A paper two agents sign so they agree up front: who gets what share of the pay, who covers costs, and whose clients are whose if they split up.</p>
+    <div class="chipline"><span data-i="c1">4 pages</span><span data-i="c2">Signed by 2 agents + broker(s)</span><span data-i="c3">When two agents team up</span></div>
+  </header>
+
+  <section class="sec" aria-labelledby="h_my">
+    <h2 id="h_my" data-i="h_my">What does this form say to me?</h2>
+    <p class="lead" data-i="lead_my">Type one deal. The split updates as you type. The form splits the gross pay between the two agents first, then each agent splits with their own broker (para 4).</p>
+    <div class="inputs">
+      <div class="row2">
+        <div class="field"><label for="price" data-i="l_price">Sale price</label><div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" value="1300000"></div></div>
+        <div class="field"><label for="pct" data-i="l_pct">Your side's commission</label><div class="ctl"><input id="pct" type="number" inputmode="decimal" step="0.05" value="2.5"><span class="post">%</span></div></div>
+      </div>
+      <div class="field">
+        <label for="ctype" data-i="l_ctype">Whose client is it?</label>
+        <div class="ctl sw"><select id="ctype">
+          <option value="shared" data-i="o_shared">Shared client (new during the agreement)</option>
+          <option value="pre1" data-i="o_pre1">AL1's prior client (on Exhibit 1)</option>
+          <option value="pre2" data-i="o_pre2">AL2's prior client (on Exhibit 2)</option>
+        </select></div>
+      </div>
+      <label class="chk"><input type="checkbox" id="cust"><span data-i="l_cust">We checked the box for a different split (4A or 4B), not 50/50</span></label>
+      <div class="field cond" id="f_cust" hidden><label for="cpct" id="l_cpct">AL1 gets</label><div class="ctl"><input id="cpct" type="number" inputmode="decimal" value="60"><span class="post">%</span></div></div>
+      <div class="row2">
+        <div class="field"><label for="k1" data-i="l_k1">AL1 keeps after own broker</label><div class="ctl"><input id="k1" type="number" inputmode="decimal" value="80"><span class="post">%</span></div></div>
+        <div class="field"><label for="k2" data-i="l_k2">AL2 keeps after own broker</label><div class="ctl"><input id="k2" type="number" inputmode="decimal" value="80"><span class="post">%</span></div></div>
+      </div>
+      <p class="hint" data-i="h_k">Your split with your broker comes from your own broker agreement, not from the ACS. Put 100% if you keep it all.</p>
+      <div class="row2">
+        <div class="field"><label for="e1" data-i="l_e1">Shared costs AL1 paid</label><div class="ctl"><span class="pre">$</span><input id="e1" type="number" inputmode="numeric" value="3000"></div></div>
+        <div class="field"><label for="e2" data-i="l_e2">Shared costs AL2 paid</label><div class="ctl"><span class="pre">$</span><input id="e2" type="number" inputmode="numeric" value="1000"></div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="tc" data-i="l_tc">TC / assistant pay</label><div class="ctl"><span class="pre">$</span><input id="tc" type="number" inputmode="numeric" value="500"></div></div>
+        <div class="field"><label for="tcw" data-i="l_tcw">TC works for</label><div class="ctl sw"><select id="tcw">
+          <option value="both" data-i="o_both">Both agents</option>
+          <option value="al1" data-i="o_al1">AL1 only</option>
+          <option value="al2" data-i="o_al2">AL2 only</option>
+        </select></div></div>
+      </div>
+      <label class="chk"><input type="checkbox" id="tcr"><span data-i="l_tcr">We checked the box to split TC pay by the commission ratio (5E)</span></label>
+      <div class="row2">
+        <div class="field"><label for="dexp" data-i="l_dexp">Date of a shared cost</label><div class="ctl"><input id="dexp" type="date" value="2026-11-18"></div></div>
+        <div class="field"><label for="dterm" data-i="l_dterm">Date written notice to end was given</label><div class="ctl"><input id="dterm" type="date" value=""></div></div>
+      </div>
+    </div>
+
+    <div class="result" aria-live="polite">
+      <div class="total"><div class="k" data-i="k_big">Take-home after broker, costs and TC</div><div class="v sm"><span id="big1">$0</span> <small>AL1</small><br><span id="big2">$0</span> <small>AL2</small></div></div>
+      <div class="status ok" id="why"></div>
+      <div class="lines" id="lines"></div>
+      <div class="note" data-i="note_r">Defaults used: 50/50 split (4A, 4B), costs at the same ratio (5A), TC split equally if it works for both, paid by that agent if it works for one (5E). If you checked other boxes, change the inputs.</div>
+    </div>
+
+    <div class="dl" id="dl"></div>
+
+    <div class="idr">
+      <h2 data-i="h_rd">Your rights and duties</h2>
+      <h3 data-i="h_r">Each agent's rights</h3><ul class="bul" id="rights"></ul>
+      <h3 data-i="h_d">Each agent's duties</h3><ul class="bul" id="duties"></ul>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="h_par">
+    <h2 id="h_par" data-i="h_par">Read it paragraph by paragraph</h2>
+    <div class="terms" id="paras"></div>
+    <button type="button" class="expall" id="expAll" data-i="exp_all">Open all</button>
+  </section>
+
+  <section class="sec" aria-labelledby="h_myth">
+    <h2 id="h_myth" data-i="h_myth">What people get wrong</h2>
+    <p class="lead" data-i="lead_myth">True or false? Tap to see the answer.</p>
+    <div class="myths" id="myths"></div>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Next steps</h2>
+    <ol>
+      <li data-i="nx1">Write Exhibit 1 and Exhibit 2 in full, with dates, before you sign.</li>
+      <li data-i="nx2">Fill in the referral % in 7B and 7C. The form leaves them blank.</li>
+      <li data-i="nx3">Different brokers? Get both brokers to sign before the first deal (15C). See every form in the <a href="/t402/">forms library (T402)</a>.</li>
+    </ol>
+  </section>
+
+  <section class="vidsec" aria-labelledby="h_vid">
+    <h2 id="h_vid" data-i="h_vid">45-second video</h2>
+    <video class="kl-vid" src="video.mp4" controls playsinline preload="metadata" aria-label="ACS video"></video>
+  </section>
+
+  <section class="actions">
+    <a class="btn primary" id="emailBtn" href="mailto:ken@kenlamrealty.com" data-i="b_email">Email Ken my result</a>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Text Ken</a>
+    <a class="btn" id="videoBtn" href="/t420/video.mp4" target="_blank" rel="noopener" data-i="b_video">Watch the 45-sec video</a>
+    <a class="btn" href="/t402/" data-i="b_all">All explained forms</a>
+  </section>
+
+  <footer>
+    <span data-i="ft_cr">Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.</span>
+    <span class="src" data-i="ft_srcl">Source: C.A.R. Form ACS, Agent Commission Sharing Agreement (Between Associate-Licensees), Revised 6/23 (4 pages).</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/cong-cu/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số mặc định lấy từ C.A.R. Form ACS, Revised 6/23 — sửa ở đây nếu form đổi ===== */
+const F={
+  FORM:'ACS', REV:'Revised 6/23', PAGES:4,
+  SPLIT_DEFAULT:0.5,      // 4A khách cũ 50/50, 4B khách chung 50/50 (hoặc đánh ô % khác)
+  TERM_NOTICE_DAYS:30,    // 1B(iii): báo chấm dứt bằng văn bản ít nhất 30 ngày
+  FIXED_TERM_MONTHS:12,   // 1B(ii): nếu đánh ô Fixed Term, 12 tháng (hoặc số khác)
+  EXP_STATEMENT_DAY:10,   // 5B: bảng kê chi phí trước ngày 10 mỗi tháng
+  EXP_RECONCILE_DAYS:10,  // 5B: đối chiếu trong 10 ngày sau đó
+  EXP_PAY_DAYS:10,        // 5B: trả trong 10 ngày sau đó
+  PRE_REFERRAL_MONTHS:12, // 7B: khách cũ chọn người kia trong 12 tháng → referral fee (% để trống)
+  SHARED_REFERRAL_MONTHS:3// 7C: khách chung trong 3 tháng → referral fee (% để trống)
+};
+const I18N={
+ vi:{title:'ACS: hai agent chia commission thế nào',
+  sub:'Tờ giấy hai agent ký để nói trước: ai lấy bao nhiêu phần tiền công, chi phí ai chịu, và lúc chia tay thì khách nào của ai.',
+  c1:'4 trang',c2:'2 agent + broker ký',c3:'Khi hai agent làm chung',
+  h_my:'Form này nói gì với tôi?',lead_my:'Nhập một giao dịch, kết quả hiện ngay. Form chia tổng tiền công giữa hai agent TRƯỚC, rồi mỗi người mới chia với broker của mình (đoạn 4).',
+  l_price:'Giá bán',l_pct:'Commission bên mình',l_ctype:'Khách của ai?',o_shared:'Khách chung (mới có trong thời gian làm chung)',o_pre1:'Khách cũ của AL1 (có trong Exhibit 1)',o_pre2:'Khách cũ của AL2 (có trong Exhibit 2)',
+  l_cust:'Hai bên đã đánh ô chia tỷ lệ khác (4A hoặc 4B), không phải 50/50',l_cpct_s:'AL1 được',l_cpct_p:'Người có khách trong danh sách được',
+  l_k1:'AL1 giữ lại sau broker',l_k2:'AL2 giữ lại sau broker',h_k:'Tỷ lệ chia với broker lấy từ hợp đồng riêng của bạn với broker, không nằm trong ACS. Giữ hết thì ghi 100%.',
+  l_e1:'Chi phí chung AL1 đã trả',l_e2:'Chi phí chung AL2 đã trả',l_tc:'Tiền trả TC / trợ lý',l_tcw:'TC làm cho',o_both:'Cả hai agent',o_al1:'Chỉ AL1',o_al2:'Chỉ AL2',
+  l_tcr:'Hai bên đã đánh ô chia tiền TC theo tỷ lệ commission (5E)',l_dexp:'Ngày phát sinh một chi phí chung',l_dterm:'Ngày gửi thông báo chấm dứt bằng văn bản',
+  k_big:'Về tay sau broker, chi phí và TC',
+  note_r:'Số mặc định dùng ở đây: chia 50/50 (4A, 4B), chi phí theo cùng tỷ lệ (5A), TC làm cho cả hai thì chia đều, làm cho một người thì người đó trả (5E). Nếu bạn đánh ô khác thì sửa ô nhập.',
+  h_rd:'Quyền và nghĩa vụ của bạn',h_r:'Quyền của mỗi agent',h_d:'Nghĩa vụ của mỗi agent',
+  h_par:'Đọc từng đoạn',exp_all:'Mở hết',exp_none:'Đóng hết',
+  h_myth:'Nhiều người hiểu sai',lead_myth:'Đúng hay sai? Bấm để xem đáp án.',t_true:'Đúng',t_false:'Sai',a_right:'Bạn đúng.',a_wrong:'Chưa đúng.',a_is:'Đáp án',
+  nx_title:'Bước tiếp theo',nx1:'Lập Exhibit 1 và Exhibit 2 cho đủ, có ngày, trước khi ký.',nx2:'Điền % referral ở 7B và 7C. Form để trống hai chỗ này.',
+  nx3:'Khác broker? Lấy chữ ký đồng ý của cả hai broker trước giao dịch đầu tiên (15C). Xem mọi form ở <a href="/t402/">Thư viện Forms (T402)</a>.',
+  h_vid:'Video 45 giây',b_email:'Email kết quả cho Ken',b_sms:'Nhắn tin cho Ken',b_video:'Xem video 45 giây',b_all:'Mọi form giải nghĩa',
+  ft_cr:'Form gốc © California Association of REALTORS®. Trang này chỉ giải thích, không thay thế form và không phải tư vấn pháp lý/thuế.',
+  ft_srcl:'Nguồn: C.A.R. Form ACS, Agent Commission Sharing Agreement (Between Associate-Licensees), Revised 6/23 (4 trang).',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  why:'{c}: AL1 {a}% · AL2 {b}% của tổng tiền công. Chi phí chung chia cùng tỷ lệ (5A). {o}',
+  ws:'Khách chung, đoạn 4B',wp1:'Khách cũ của AL1, đoạn 4A',wp2:'Khách cũ của AL2, đoạn 4A',
+  o_owe12:'AL1 phải trả AL2 {m} tiền chi phí.',o_owe21:'AL2 phải trả AL1 {m} tiền chi phí.',o_even:'Chi phí đã cân, không ai nợ ai.',
+  ln_g:'Tổng tiền công',ln_gs:'{p}% × {pr}',ln_s1:'Phần AL1',ln_s2:'Phần AL2',ln_b1:'AL1 sau khi chia broker',ln_b2:'AL2 sau khi chia broker',ln_bs:'giữ {k}%',
+  ln_x1:'Chi phí AL1 phải chịu',ln_x2:'Chi phí AL2 phải chịu',ln_xs:'{r}% × tổng chi phí {t}',ln_t1:'TC phần AL1',ln_t2:'TC phần AL2',ln_n1:'AL1 về tay',ln_n2:'AL2 về tay',
+  dd_st:'Hạn gửi bảng kê chi phí',dd_st_p:'Ngày 10 kế tiếp, kèm hóa đơn (5B, mặc định theo tháng).',dd_rc:'Hạn đối chiếu ai nợ ai',dd_rc_p:'10 ngày sau hạn bảng kê (5B).',dd_py:'Hạn trả tiền chi phí',dd_py_p:'10 ngày sau hạn đối chiếu (5B).',
+  dd_te:'Ngày chấm dứt sớm nhất',dd_te_p:'Ít nhất 30 ngày sau thông báo bằng văn bản (1B(iii)). Mất license hay đổi broker thì chấm dứt ngay (1B(v)).',
+  dd_r12:'Hết hạn referral khách cũ',dd_r12_p:'12 tháng sau ngày chấm dứt (7B), nếu khách cũ chọn người kia. % referral do hai bên điền.',
+  dd_r3:'Hết hạn referral khách chung',dd_r3_p:'3 tháng sau ngày chấm dứt (7C). % referral do hai bên điền.',
+  r1:'Được trả theo tỷ lệ đã ghi, broker trả trực tiếp (4D).',r2:'Giữ khách cũ có tên trong Exhibit của mình khi chia tay (7B).',r3:'Chấm dứt bất cứ lúc nào nếu báo trước 30 ngày bằng văn bản (1B(iii)).',r4:'Giao dịch đang dở lúc chia tay vẫn được chia như cũ (7A).',r5:'Bên thắng kiện được đòi phí luật sư hợp lý (đoạn 13).',
+  d1:'Giữ license còn hiệu lực và báo ngay nếu bị treo, thu, mất, hoặc đổi broker (1B(v)).',d2:'Gửi bảng kê chi phí có hóa đơn đúng hạn (5B).',d3:'Tự trả phí license, MLS, hội phí, phí broker riêng (5D).',d4:'Có hợp đồng viết với TC của mình và tự lo luật lao động (5E).',d5:'Giữ danh sách khách chung và gửi nhau định kỳ (7C(ii)).',d6:'Nhờ broker, rồi mediation trước khi kiện (đoạn 9).',
+  sms:'Chào Ken, tôi vừa dùng tool chia commission ACS (T420) trên tools.kenlamrealty.com. {r} Cho tôi hỏi thêm.',
+  subj:'T420 ACS — chia commission',
+  body:'Chào Ken,\n\nTôi dùng tool T420 (ACS, Revised 6/23).\n\nGiá bán: {pr}\nCommission: {p}%\nLoại khách: {c}\nTỷ lệ: AL1 {a}% / AL2 {b}%\n\n{lines}\n\nTên:\nPhone:\n\nGửi từ tools.kenlamrealty.com/t420/'},
+ en:{title:'ACS: how two agents split a commission',
+  sub:'A paper two agents sign so they agree up front: who gets what share of the pay, who covers costs, and whose clients are whose if they split up.',
+  c1:'4 pages',c2:'Signed by 2 agents + broker(s)',c3:'When two agents team up',
+  h_my:'What does this form say to me?',lead_my:'Type one deal. The split updates as you type. The form splits the gross pay between the two agents first, then each agent splits with their own broker (para 4).',
+  l_price:'Sale price',l_pct:"Your side's commission",l_ctype:'Whose client is it?',o_shared:'Shared client (new during the agreement)',o_pre1:"AL1's prior client (on Exhibit 1)",o_pre2:"AL2's prior client (on Exhibit 2)",
+  l_cust:'We checked the box for a different split (4A or 4B), not 50/50',l_cpct_s:'AL1 gets',l_cpct_p:'The agent who listed the client gets',
+  l_k1:'AL1 keeps after own broker',l_k2:'AL2 keeps after own broker',h_k:'Your split with your broker comes from your own broker agreement, not from the ACS. Put 100% if you keep it all.',
+  l_e1:'Shared costs AL1 paid',l_e2:'Shared costs AL2 paid',l_tc:'TC / assistant pay',l_tcw:'TC works for',o_both:'Both agents',o_al1:'AL1 only',o_al2:'AL2 only',
+  l_tcr:'We checked the box to split TC pay by the commission ratio (5E)',l_dexp:'Date of a shared cost',l_dterm:'Date written notice to end was given',
+  k_big:'Take-home after broker, costs and TC',
+  note_r:'Defaults used: 50/50 split (4A, 4B), costs at the same ratio (5A), TC split equally if it works for both, paid by that agent if it works for one (5E). If you checked other boxes, change the inputs.',
+  h_rd:'Your rights and duties',h_r:"Each agent's rights",h_d:"Each agent's duties",
+  h_par:'Read it paragraph by paragraph',exp_all:'Open all',exp_none:'Close all',
+  h_myth:'What people get wrong',lead_myth:'True or false? Tap to see the answer.',t_true:'True',t_false:'False',a_right:'You got it.',a_wrong:'Not quite.',a_is:'Answer',
+  nx_title:'Next steps',nx1:'Write Exhibit 1 and Exhibit 2 in full, with dates, before you sign.',nx2:'Fill in the referral % in 7B and 7C. The form leaves them blank.',
+  nx3:'Different brokers? Get both brokers to sign before the first deal (15C). See every form in the <a href="/t402/">forms library (T402)</a>.',
+  h_vid:'45-second video',b_email:'Email Ken my result',b_sms:'Text Ken',b_video:'Watch the 45-sec video',b_all:'All explained forms',
+  ft_cr:'Original form © California Association of REALTORS®. This page only explains it. It does not replace the form and is not legal or tax advice.',
+  ft_srcl:'Source: C.A.R. Form ACS, Agent Commission Sharing Agreement (Between Associate-Licensees), Revised 6/23 (4 pages).',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  why:'{c}: AL1 {a}% · AL2 {b}% of the gross pay. Shared costs split at the same ratio (5A). {o}',
+  ws:'Shared client, para 4B',wp1:"AL1's prior client, para 4A",wp2:"AL2's prior client, para 4A",
+  o_owe12:'AL1 owes AL2 {m} for costs.',o_owe21:'AL2 owes AL1 {m} for costs.',o_even:'Costs are even; nobody owes.',
+  ln_g:'Gross pay',ln_gs:'{p}% × {pr}',ln_s1:"AL1's share",ln_s2:"AL2's share",ln_b1:'AL1 after broker split',ln_b2:'AL2 after broker split',ln_bs:'keeps {k}%',
+  ln_x1:"AL1's share of costs",ln_x2:"AL2's share of costs",ln_xs:'{r}% × total costs {t}',ln_t1:"AL1's TC part",ln_t2:"AL2's TC part",ln_n1:'AL1 take-home',ln_n2:'AL2 take-home',
+  dd_st:'Cost statement due',dd_st_p:'The next 10th of the month, with receipts (5B, monthly default).',dd_rc:'Reconcile who owes whom by',dd_rc_p:'10 days after the statement date (5B).',dd_py:'Pay costs owed by',dd_py_p:'10 days after reconciling (5B).',
+  dd_te:'Earliest end date',dd_te_p:'At least 30 days after written notice (1B(iii)). A lost license or a broker change ends it at once (1B(v)).',
+  dd_r12:'Prior-client referral window ends',dd_r12_p:'12 months after the end date (7B), if a prior client picks the other agent. The referral % is yours to fill in.',
+  dd_r3:'Shared-client referral window ends',dd_r3_p:'3 months after the end date (7C). The referral % is yours to fill in.',
+  r1:'Get paid at the agreed ratio, directly by the broker (4D).',r2:'Keep the prior clients on your own Exhibit if you split up (7B).',r3:'End it any time with 30 days\' written notice (1B(iii)).',r4:'Deals pending at the split still pay as before (7A).',r5:'The winner of a dispute gets reasonable attorney fees (para 13).',
+  d1:'Keep your license active and say so at once if it is suspended, revoked, lost, or you change brokers (1B(v)).',d2:'Send cost statements with receipts on time (5B).',d3:'Pay your own license, MLS, association and broker fees (5D).',d4:'Have a written contract with your own TC and follow labor law (5E).',d5:'Keep a shared-client list and send it to the other agent from time to time (7C(ii)).',d6:'Go to the broker, then mediation, before suing (para 9).',
+  sms:'Hi Ken, I just used the ACS commission split tool (T420) on tools.kenlamrealty.com. {r} I have a question.',
+  subj:'T420 ACS — commission split',
+  body:'Hi Ken,\n\nI used tool T420 (ACS, Revised 6/23).\n\nSale price: {pr}\nCommission: {p}%\nClient type: {c}\nSplit: AL1 {a}% / AL2 {b}%\n\n{lines}\n\nName:\nPhone:\n\nSent from tools.kenlamrealty.com/t420/'}
+};
+const PARAS={
+ vi:[
+  ['1','Thời hạn','Bắt đầu từ ngày ghi, hoặc ngày người cuối cùng ký. Mặc định là Ongoing, kéo dài tới khi một bên chấm dứt; đánh ô thì Fixed Term 12 tháng (tự gia hạn nếu không ai báo). Muốn nghỉ: báo bằng văn bản trước ít nhất 30 ngày. Mất license hay không còn làm dưới broker ghi ở đoạn 15 thì hết ngay.'],
+  ['2','Phạm vi','All Activity: mọi giao dịch có tiền công của một trong hai người, trừ loại đánh ô (nhà mình, người nhà, commercial, nhà trên 4 unit, cho thuê, đất…). Limited Activity: chỉ một city, một căn, một số người hay một vùng farm.'],
+  ['3','Khách cũ','Exhibit 1 là khách cũ của AL1, Exhibit 2 của AL2, có trước ngày bắt đầu. Danh sách này là đầy đủ: ai không có tên thì không phải khách cũ.'],
+  ['4','Chia tiền','Tổng tiền công chia giữa hai agent trước, rồi broker trả từng người theo tỷ lệ riêng với broker. Khách cũ: 50/50, hoặc đánh ô cho người có khách nhiều hơn. Khách chung: 50/50, hoặc đánh ô tỷ lệ khác. Có tranh chấp thì broker được giữ lại toàn bộ.'],
+  ['5','Chi phí','Chi phí chung chia cùng tỷ lệ với tiền công. Bảng kê kèm hóa đơn trước ngày 10 mỗi tháng (hoặc theo quý, hoặc 10 ngày sau close); đối chiếu trong 10 ngày; trả trong 10 ngày nữa. Mỗi người tự trả license, MLS, hội phí. TC làm cho cả hai thì chia đều (hoặc theo tỷ lệ nếu đánh ô); làm cho một người thì người đó trả.'],
+  ['6','DBA và tên team','Ghi tên DBA, ai sở hữu, ai trả phí lập, chia tay ai được dùng tiếp. Tên team: không dùng tên khác nếu chưa có đồng ý viết của cả hai.'],
+  ['7','Khi chia tay','Giao dịch đang dở chia như cũ. Khách cũ chọn người có tên mình: người kia không được gì; chọn người kia: trong 12 tháng người có khách được referral ___% (để trống). Khách chung: người còn lại được referral ___% trong 3 tháng. Đổi broker thì làm referral agreement (RFA). Danh sách khách cũ là bí mật kinh doanh.'],
+  ['8','Independent Contractor','Giấy này không biến hai người thành nhân viên hay partnership của nhau.'],
+  ['9','Tranh chấp','Tự nói chuyện, rồi nhờ broker, rồi mediation (phí chia đều). Arbitration chỉ khi cả hai đồng ý hoặc cùng ký tắt ô arbitration. Mọi thủ tục giữ kín.'],
+  ['10–12','AAA/ABA, thêm, định nghĩa','Mỗi giao dịch dùng AAA (cùng broker) hoặc ABA (khác broker). Đoạn 11 để ghi thêm. Định nghĩa: Compensation là mọi tiền công cần license (%, flat fee, theo giờ). Shared Client là khách có trong thời hạn mà không phải khách cũ.'],
+  ['13–14','Phí luật sư, toàn bộ thỏa thuận','Bên thắng được đòi phí luật sư hợp lý. Giấy này là toàn bộ thỏa thuận; sửa phải viết và hai người ký.'],
+  ['15','Broker','Ghi broker của mỗi người. Cùng broker: broker ký nhận bản, không thành một bên. Khác broker: phải có đồng ý của từng broker, không thì giấy không có hiệu lực.']],
+ en:[
+  ['1','Term','Starts on the date written, or the last signature. Default is Ongoing until someone ends it; check the box for a 12-month Fixed Term (renews unless someone ends it). To end it: at least 30 days\' written notice. A lost license, or no longer working under the broker in para 15, ends it at once.'],
+  ['2','Scope','All Activity: every deal where either agent earns pay, except checked types (own property, family, commercial, 5+ units, leases, land…). Limited Activity: only one city, one property, named people or a farm area.'],
+  ['3','Prior clients','Exhibit 1 lists AL1\'s prior clients, Exhibit 2 lists AL2\'s, from before the start date. The lists are complete: anyone not on them is not a prior client.'],
+  ['4','The split','Gross pay is split between the two agents first, then the broker pays each agent under that agent\'s own broker split. Prior clients: 50/50, or check a box to give the listing agent more. Shared clients: 50/50, or check a box for another ratio. In a dispute the broker may hold all of it.'],
+  ['5','Costs','Shared costs split at the same ratio as pay. Statements with receipts by the 10th of each month (or quarterly, or 10 days after closing); reconcile within 10 days; pay within 10 more. Each agent pays their own license, MLS and dues. A TC for both is split equally (or by ratio if checked); a TC for one is paid by that agent.'],
+  ['6','DBA and team name','Name the DBA, who owns it, who pays to set it up, who may keep using it after a split. No other team name without both agents\' written OK.'],
+  ['7','After a split','Pending deals pay as before. A prior client who picks their own agent: the other gets nothing; who picks the other agent: within 12 months the original agent gets a ___% referral (blank). Shared clients: the other agent gets a ___% referral within 3 months. Changing brokers needs a referral agreement (RFA). Prior-client lists are trade secrets.'],
+  ['8','Independent contractor','This does not make either agent the other\'s employee or partner.'],
+  ['9','Disputes','Talk it out, then the broker, then mediation (cost split equally). Arbitration only if both agree or both initial the arbitration box. Everything stays confidential.'],
+  ['10–12','AAA/ABA, extras, definitions','Use AAA (same broker) or ABA (different brokers) on each deal. Para 11 is for extra terms. Compensation means any pay for licensed work (%, flat fee, hourly). A Shared Client is any client during the term who is not a prior client.'],
+  ['13–14','Attorney fees, whole deal','The winner gets reasonable attorney fees. This is the whole agreement; changes must be in writing, signed by both.'],
+  ['15','Brokers','Name each agent\'s broker. Same broker: the broker signs to acknowledge receipt and is not a party. Different brokers: each broker must consent, or the agreement has no effect.']]
+};
+const MYTHS={
+ vi:[['Mỗi người chia với broker của mình trước, rồi mới chia phần còn lại cho nhau.',false,'Ngược lại. Đoạn 4: tổng tiền công chia giữa hai agent trước, rồi broker mới trả từng người theo tỷ lệ riêng với broker.'],
+     ['Đã ký ACS thì broker phải trả ngay dù hai người đang cãi nhau.',false,'Đoạn 4D cho broker quyền (không bắt buộc) giữ lại toàn bộ tiền công khi hai agent tranh chấp.'],
+     ['Chia tay rồi, khách chung đi với ai thì người kia vẫn có thể được referral fee.',true,'Đúng. 7C: người còn lại được referral fee cho giao dịch trong 3 tháng (mặc định). Nhưng % phải điền, form để trống.']],
+ en:[['Each agent splits with their broker first, then they split what is left.',false,'The other way around. Para 4: the gross pay is split between the two agents first, then the broker pays each one under their own broker split.'],
+     ['Once you sign an ACS, the broker must pay right away even during a dispute.',false,'Para 4D lets the broker (if it chooses) hold all the pay while the agents dispute.'],
+     ['After a split, the other agent can still get a referral fee on a shared client.',true,'True. 7C: the other agent gets a referral fee on deals within 3 months (default). But the % must be filled in; the form leaves it blank.']]
+};
+let lang='en'; try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+let openSet={}, mAns={};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const num=id=>{const v=parseFloat(String($(id).value).replace(/,/g,''));return isFinite(v)?v:0;};
+const money=n=>(n<0?'-':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const fill=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]!=null?o[k]:m);
+const r1d=n=>Math.round(n*10)/10;
+function pd(s){ if(!s) return null; const p=s.split('-').map(Number); if(p.length<3||!p[0]) return null; return new Date(p[0],p[1]-1,p[2]); }
+function addD(d,n){ const x=new Date(d.getTime()); x.setDate(x.getDate()+n); return x; }
+function addM(d,n){ const x=new Date(d.getFullYear(),d.getMonth()+n,1); const last=new Date(x.getFullYear(),x.getMonth()+1,0).getDate(); x.setDate(Math.min(d.getDate(),last)); return x; }
+const WD={vi:['Chủ nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'],en:['Sun','Mon','Tue','Wed','Thu','Fri','Sat']};
+const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const p2=n=>String(n).padStart(2,'0');
+function fd(d){ if(!d) return '—'; return lang==='vi'?WD.vi[d.getDay()]+', '+p2(d.getDate())+'/'+p2(d.getMonth()+1)+'/'+d.getFullYear():WD.en[d.getDay()]+', '+MO[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear(); }
+
+/* Chia tiền theo đoạn 4, 5A, 5E — export cho test */
+function calc(i){
+  const gross=i.price*i.pct/100;
+  const c=Math.min(100,Math.max(0,i.cpct))/100;
+  let r1=F.SPLIT_DEFAULT;
+  if(i.cust){ r1 = i.ctype==='pre2' ? 1-c : c; }   /* pre1/pre2: c = % của người có khách; shared: c = % của AL1 */
+  const r2=1-r1, s1=gross*r1, s2=gross*r2;
+  const b1=s1*i.k1/100, b2=s2*i.k2/100;           /* sau khi chia broker riêng (ngoài form) */
+  const et=i.e1+i.e2, x1=et*r1, x2=et*r2, owe12=x1-i.e1; /* >0: AL1 trả AL2 */
+  let t1,t2;
+  if(i.tcw==='both'){ t1=i.tcr?i.tc*r1:i.tc/2; t2=i.tc-t1; }
+  else if(i.tcw==='al1'){ t1=i.tcr?i.tc*r1:i.tc; t2=i.tc-t1; }
+  else { t2=i.tcr?i.tc*r2:i.tc; t1=i.tc-t2; }
+  return {gross,r1,r2,s1,s2,b1,b2,et,x1,x2,owe12,t1,t2,n1:b1-x1-t1,n2:b2-x2-t2};
+}
+function inputs(){ return {price:num('price'),pct:num('pct'),ctype:$('ctype').value,cust:$('cust').checked,cpct:num('cpct'),k1:num('k1'),k2:num('k2'),e1:num('e1'),e2:num('e2'),tc:num('tc'),tcw:$('tcw').value,tcr:$('tcr').checked,dexp:pd($('dexp').value),dterm:pd($('dterm').value)}; }
+function nextTenth(d){ let x=new Date(d.getFullYear(),d.getMonth(),F.EXP_STATEMENT_DAY); if(x<=d) x=new Date(d.getFullYear(),d.getMonth()+1,F.EXP_STATEMENT_DAY); return x; }
+function render(){
+  const d=I18N[lang], i=inputs(), r=calc(i);
+  $('f_cust').hidden=!i.cust;
+  $('l_cpct').textContent=i.ctype==='shared'?d.l_cpct_s:d.l_cpct_p;
+  $('big1').textContent=money(r.n1); $('big2').textContent=money(r.n2);
+  const cname=i.ctype==='shared'?d.ws:(i.ctype==='pre1'?d.wp1:d.wp2);
+  const o=Math.abs(r.owe12)<0.5?d.o_even:fill(r.owe12>0?d.o_owe12:d.o_owe21,{m:money(Math.abs(r.owe12))});
+  $('why').textContent=fill(d.why,{c:cname,a:r1d(r.r1*100),b:r1d(r.r2*100),o});
+  const L=[[d.ln_g,fill(d.ln_gs,{p:i.pct,pr:money(i.price)}),money(r.gross),'sum'],
+    [d.ln_s1,r1d(r.r1*100)+'%',money(r.s1)],[d.ln_s2,r1d(r.r2*100)+'%',money(r.s2)],
+    [d.ln_b1,fill(d.ln_bs,{k:i.k1}),money(r.b1)],[d.ln_b2,fill(d.ln_bs,{k:i.k2}),money(r.b2)],
+    [d.ln_x1,fill(d.ln_xs,{r:r1d(r.r1*100),t:money(r.et)}),'−'+money(r.x1)],[d.ln_x2,fill(d.ln_xs,{r:r1d(r.r2*100),t:money(r.et)}),'−'+money(r.x2)],
+    [d.ln_t1,'','−'+money(r.t1)],[d.ln_t2,'','−'+money(r.t2)],
+    [d.ln_n1,'',money(r.n1),'sum'],[d.ln_n2,'',money(r.n2),'sum']];
+  $('lines').innerHTML=L.map(x=>'<div class="line'+(x[3]?' '+x[3]:'')+'"><span class="n"><b>'+esc(x[0])+'</b>'+(x[1]?'<small>'+esc(x[1])+'</small>':'')+'</span><span class="a">'+x[2]+'</span></div>').join('');
+  const D=[];
+  if(i.dexp){ const st=nextTenth(i.dexp), rc=addD(st,F.EXP_RECONCILE_DAYS), py=addD(rc,F.EXP_PAY_DAYS);
+    D.push([d.dd_st,st,d.dd_st_p],[d.dd_rc,rc,d.dd_rc_p],[d.dd_py,py,d.dd_py_p]); }
+  if(i.dterm){ const te=addD(i.dterm,F.TERM_NOTICE_DAYS);
+    D.push([d.dd_te,te,d.dd_te_p],[d.dd_r12,addM(te,F.PRE_REFERRAL_MONTHS),d.dd_r12_p],[d.dd_r3,addM(te,F.SHARED_REFERRAL_MONTHS),d.dd_r3_p]); }
+  $('dl').innerHTML=D.map(x=>'<div class="dd"><div class="hd"><span class="t">'+esc(x[0])+'</span></div><div class="date">'+esc(fd(x[1]))+'</div><p>'+esc(x[2])+'</p></div>').join('');
+  $('rights').innerHTML=['r1','r2','r3','r4','r5'].map(k=>'<li>'+esc(d[k])+'</li>').join('');
+  $('duties').innerHTML=['d1','d2','d3','d4','d5','d6'].map(k=>'<li>'+esc(d[k])+'</li>').join('');
+  const lines=L.map(x=>x[0]+': '+x[2]).join('\n')+'\n'+o;
+  $('emailBtn').href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(d.subj)+'&body='+encodeURIComponent(fill(d.body,{pr:money(i.price),p:i.pct,c:cname,a:r1d(r.r1*100),b:r1d(r.r2*100),lines}));
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,{r:'AL1 '+money(r.n1)+' / AL2 '+money(r.n2)+'.'}));
+}
+function renderParas(){
+  const d=I18N[lang];
+  $('paras').innerHTML=PARAS[lang].map((p,k)=>'<details class="term" id="p'+k+'"'+(openSet[k]?' open':'')+'><summary><span class="pn">'+(lang==='vi'?'Đoạn ':'Para ')+esc(p[0])+'</span><span class="nm">'+esc(p[1])+'</span></summary><div class="bd"><p>'+esc(p[2])+'</p></div></details>').join('');
+  $('expAll').textContent=PARAS[lang].some((p,k)=>!openSet[k])?d.exp_all:d.exp_none;
+}
+function renderMyths(){
+  const d=I18N[lang];
+  $('myths').innerHTML=MYTHS[lang].map((m,k)=>{ const a=mAns[k];
+    const ans=a==null?'':'<b class="'+((a===m[1])?'ok':'')+'">'+esc(a===m[1]?d.a_right:d.a_wrong)+'</b> '+esc(d.a_is)+': '+esc(m[1]?d.t_true:d.t_false)+'. '+esc(m[2]);
+    return '<div class="mq"><p>“'+esc(m[0])+'”</p><div class="tf"><button type="button" data-k="'+k+'" data-v="1" aria-pressed="'+(a===true)+'">'+esc(d.t_true)+'</button><button type="button" data-k="'+k+'" data-v="0" aria-pressed="'+(a===false)+'">'+esc(d.t_false)+'</button></div><p class="an"'+(a==null?' hidden':'')+'>'+ans+'</p></div>'; }).join('');
+}
+$('myths').addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button[data-k]'); if(!b) return; mAns[b.dataset.k]=b.dataset.v==='1'; renderMyths();});
+$('paras').addEventListener('toggle',e=>{const el=e.target; if(!el.classList||!el.classList.contains('term')) return; const k=+el.id.slice(1); if(el.open) openSet[k]=1; else delete openSet[k]; $('expAll').textContent=PARAS[lang].some((p,j)=>!openSet[j])?I18N[lang].exp_all:I18N[lang].exp_none;},true);
+$('expAll').onclick=()=>{const any=PARAS[lang].some((p,k)=>!openSet[k]); PARAS[lang].forEach((p,k)=>{ if(any) openSet[k]=1; else delete openSet[k]; }); renderParas();};
+document.querySelectorAll('.inputs input,.inputs select').forEach(el=>{el.addEventListener('input',render); el.addEventListener('change',render);});
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; renderParas(); renderMyths(); render();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+window.KL_CALC=calc;
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+try{if(/[?&]embed=1/.test(location.search))a.style.display='none';}catch(e){}
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
