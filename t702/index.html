@@ -1,0 +1,782 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Notary Acknowledgment (NA) Explained · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+
+/* ===== Thêm cho T42 / T43 / T44 (không đổi class cũ) ===== */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;-webkit-appearance:none;appearance:none;cursor:pointer}
+.ctl .chev{color:var(--muted);font-size:12px;pointer-events:none}
+.ctl input[type=date]{font-size:18px;min-height:48px}
+.ctl input[type=text]{font-size:18px}
+.hint{font-size:12px;color:var(--muted);margin:0;line-height:1.45}
+.hint b{color:var(--fg);font-weight:500}
+.total .of{font-size:14px;color:var(--muted);margin-top:6px}
+.chip{font-size:12px;line-height:1.3;padding:3px 9px;border-radius:999px;border:1px solid var(--line);white-space:nowrap;flex:none;color:var(--muted)}
+.chip.ok{color:var(--ok);border-color:var(--ok)}
+.chip.mid{color:var(--brass);border-color:var(--brass)}
+.chip.no{color:var(--warn);border-color:var(--warn)}
+.grp-h{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);margin:6px 0 0;font-weight:500}
+.myth{font-size:14px;line-height:1.5;border-left:2px solid var(--brass);padding:2px 0 2px 12px;margin:0}
+.myth b{font-weight:500}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:12px}
+.next h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0;line-height:1.15}
+.steps{margin:0;padding:0;list-style:none;display:grid;gap:12px;counter-reset:st}
+.steps li{display:grid;grid-template-columns:26px minmax(0,1fr);gap:10px;font-size:15px;line-height:1.45;counter-increment:st}
+.steps li::before{content:counter(st);font-family:var(--display);font-size:22px;line-height:1;color:var(--brass)}
+.steps small{display:block;color:var(--muted);font-size:13px;margin-top:3px}
+.steps a{color:var(--brass);text-decoration:none}
+.dline{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.dline .n{color:var(--muted);min-width:0}
+.dline .n b{color:var(--fg);font-weight:500}
+.dline .a{font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+.tips{margin:0;padding-left:18px;font-size:14px;line-height:1.5;display:grid;gap:8px;color:var(--fg)}
+.tips li::marker{color:var(--brass)}
+.tips small{display:block;color:var(--muted);font-size:13px}
+.linkbtn{justify-self:start;border:1px solid var(--line);background:transparent;color:var(--brass);font:inherit;font-size:14px;padding:7px 13px;border-radius:999px;cursor:pointer}
+.linkbtn:hover{border-color:var(--brass)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0;line-height:1.15}
+.prog{display:grid;gap:6px;font-size:13px;color:var(--muted)}
+.prog b{color:var(--fg);font-weight:500}
+.gcal{color:var(--brass);text-decoration:none;white-space:nowrap;font-size:13px}
+.gcal:hover{text-decoration:underline}
+footer .src{line-height:1.6}
+.hide{display:none!important}
+.result > *,.inputs > *,.wrap > *,.panel > *{min-width:0}
+
+/* ===== Riêng T43: lịch 2 tháng ===== */
+.best{display:grid;gap:0;border-top:1px solid var(--line)}
+.bd{display:grid;gap:4px;padding:12px 0;border-bottom:1px solid var(--line)}
+.bd .hd{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.bd .dt{font-family:var(--display);font-size:28px;line-height:1.1;font-weight:400}
+.bd .dt small{font-family:var(--body);font-size:14px;color:var(--muted)}
+.bd .d{font-size:13px;color:var(--muted);line-height:1.5}
+.bd .d b{color:var(--fg);font-weight:500}
+.bd.first{background:var(--brass-soft);margin:0 -10px;padding:12px 10px;border-radius:8px;border-bottom-color:transparent}
+.cal-wrap{display:grid;gap:18px}
+.mon h3{font-family:var(--display);font-weight:400;font-size:24px;margin:0 0 8px}
+.grid7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.grid7 .wd{font-size:11px;color:var(--muted);text-align:center;padding:2px 0;letter-spacing:.04em}
+.dc{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:5px 2px 4px;display:grid;justify-items:center;gap:1px;cursor:pointer;font:inherit;color:var(--fg);min-height:58px}
+.dc .s{font-size:16px;font-weight:500;line-height:1.1;font-variant-numeric:tabular-nums}
+.dc .l{font-size:10.5px;color:var(--muted);line-height:1.2;font-variant-numeric:tabular-nums}
+.dc .c{font-size:10px;color:var(--muted);line-height:1.2}
+.dc .m{width:6px;height:6px;border-radius:50%;margin-top:2px;background:transparent}
+.dc.good{background:var(--brass-soft);border-color:var(--brass)}
+.dc.good .m{background:var(--ok)}
+.dc.no .m{background:var(--warn)}
+.dc.no .s{color:var(--warn)}
+.dc.past{opacity:.4}
+.dc.sel{outline:2px solid var(--fg);outline-offset:1px}
+.dc.top3 .s{text-decoration:underline;text-decoration-color:var(--brass);text-underline-offset:3px}
+.dc.blank{visibility:hidden}
+.det{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:8px;font-size:14px;line-height:1.5}
+.det .dt{font-family:var(--display);font-size:24px;line-height:1.15}
+.det .r{color:var(--muted)}
+.det .r b{color:var(--fg);font-weight:500}
+.legend .lg-g{background:var(--brass-soft);border:1px solid var(--brass)}
+.legend .lg-n{background:var(--warn)}
+
+
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+
+/* ===== Forms group (T700–T714): giải thích form từng phần ===== */
+.wrap{max-width:720px}
+.sec{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:12px}
+.sec h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0;line-height:1.15}
+.sec p{margin:0;font-size:15px;line-height:1.6}
+.kid{background:var(--brass-soft);border-color:var(--brass)}
+.kid p{font-size:16px}
+.kid .eg{font-size:15px;border-left:2px solid var(--brass);padding-left:12px;color:var(--fg)}
+.tblw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.t{width:100%;border-collapse:collapse;font-size:14px;line-height:1.45}
+table.t th,table.t td{border-bottom:1px solid var(--line);padding:9px 8px;text-align:left;vertical-align:top}
+table.t th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+table.t td:first-child{font-weight:500;white-space:normal;min-width:96px}
+table.t .no{color:var(--warn)}
+table.t .ok{color:var(--ok)}
+.part{display:grid;gap:10px;padding:16px 0;border-top:1px solid var(--line)}
+.part:first-of-type{border-top:0;padding-top:4px}
+.part .ref{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.part h3{font-size:18px;font-weight:600;margin:0;line-height:1.35}
+.part figure{margin:0;display:grid;gap:6px}
+.part figure .sc{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:#fff;-webkit-overflow-scrolling:touch}
+.part figure img{display:block;width:100%;min-width:560px;height:auto}
+.part figcaption{font-size:12px;color:var(--muted)}
+.part .ex{font-size:14px;line-height:1.55;background:var(--bg);border:1px dashed var(--line);border-radius:10px;padding:10px 12px}
+.part .ex b{font-weight:600}
+.part .diff{font-size:14px;line-height:1.55;border-left:3px solid var(--warn);padding:2px 0 2px 12px}
+.part .diff b{color:var(--warn);font-weight:600}
+.tool{border-color:var(--brass)}
+.big{font-family:var(--display);font-size:52px;line-height:1.05;font-variant-numeric:tabular-nums}
+.big.ok{color:var(--ok)}.big.no{color:var(--warn)}.big.mid{color:var(--brass)}
+.bigsub{font-size:14px;color:var(--muted);margin-top:4px}
+.dl{display:grid;border-top:1px solid var(--line)}
+.dl .r{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.dl .r .n{font-size:14px;color:var(--muted);min-width:0}
+.dl .r .n b{color:var(--fg);font-weight:500}
+.dl .r .a{font-family:var(--display);font-size:24px;line-height:1.1;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dl .r .a small{display:block;font-family:var(--body);font-size:12px;color:var(--muted);white-space:normal;line-height:1.35;margin-top:3px}
+.dl .r .n{flex:1 1 45%}.dl .r .a{flex:0 1 auto;max-width:62%}
+.chk{display:grid;gap:0;border-top:1px solid var(--line)}
+.chk li{list-style:none;display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px;line-height:1.5}
+.chk li::before{content:'';width:10px;height:10px;border-radius:50%;margin-top:6px;background:var(--line)}
+.chk li.g::before{background:var(--ok)}.chk li.w::before{background:var(--brass)}.chk li.r::before{background:var(--warn)}
+.chk{margin:0;padding:0}
+.vid video{width:100%;max-width:360px;aspect-ratio:9/16;border-radius:12px;background:#000;display:block;margin:0 auto}
+.seg button{min-height:44px}
+.sec > *,.part > *,.part figure > *,.tool .inputs > *,.result > *{min-width:0}
+.tblw{max-width:100%}
+.sec a{color:var(--brass)}
+.ctl select{font-size:16px}
+@media (max-width:420px){.big{font-size:42px}.dl .r .a{font-size:20px}.sec{padding:16px}}
+</style>
+<meta name="description" content="Notary Acknowledgment (C.A.R. Form NA) explained line by line: venue, satisfactory evidence, seal, thumbprint, fees. Plus a 30-second checker: do you need a notary, which certificate, what ID to bring.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t702/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:title" content="Notary Acknowledgment (NA) Explained · Ken Lam Tools">
+<meta property="og:description" content="Notary Acknowledgment (C.A.R. Form NA) explained line by line: venue, satisfactory evidence, seal, thumbprint, fees. Plus a 30-second checker: do you need a notary, which certificate, what ID to bring.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t702/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/t702/poster.jpg">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools · T702</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="h1">NA: the notary acknowledgment, the stamp page that lets a deed get recorded</h1>
+    <p class="sub" data-i="sub">C.A.R. Form NA (4/09) is the certificate a notary fills out to say: this person showed me ID and told me they signed this document. One page, two identical blocks. Here is what each line means, and what a notary does not check.</p>
+  </header>
+  <section class="sec kid" aria-labelledby="kidH">
+    <h2 id="kidH" data-i="kid_h">The 10-year-old version</h2>
+    <p data-i="kid_p">Imagine your teacher signs your permission slip and writes: “I saw this kid’s school ID, and this kid told me the signature is really theirs.” The teacher is not saying the field trip is safe, or that the slip is filled in right. Only: right person, they signed it. A notary does exactly that for adults. The county will not record a deed without that note attached.</p>
+    <p class="eg" data-i="kid_eg"><b>Example:</b> Chị Lan (seller) signs a grant deed for <b>1234 Example Lane, San Jose, CA 95100</b>. She shows her California driver license to the notary at escrow, signs the notary’s journal, and leaves a thumbprint. The notary fills in the acknowledgment, signs and stamps. Now escrow can record the deed.</p>
+  </section>
+  <section class="sec" aria-labelledby="whoH">
+    <h2 id="whoH" data-i="who_h">Who signs it, when to use it, when not to</h2>
+    <div class="tblw"><table class="t"><tbody><tr><td data-i="w1a">Who fills and signs</td><td data-i="w1b">Only the notary public (or another officer allowed to take acknowledgments). The person who signed the document signs the document itself and the notary’s journal, not this certificate.</td></tr><tr><td data-i="w2a">Use it when</td><td data-i="w2b">A document must be recorded or the other side requires a notarized signature: grant deed, quitclaim deed, interspousal transfer deed, deed of trust, power of attorney, certification of trust, many loan and title papers.</td></tr><tr><td data-i="w3a">Do NOT use it</td><td data-i="w3b">For the purchase contract, counter offers and disclosures (no notary needed). For a sworn statement, where you swear the content is true: that needs a <b>jurat</b>, a different certificate. When signing in another state or country: the local notary uses their own form (valid in California, Civil Code §1189(b)).</td></tr><tr><td data-i="w4a">Heads-up</td><td data-i="w4b">This C.A.R. form is dated 4/09. Since 1/1/2015 every California acknowledgment must start with a boxed notice that the notary verifies only identity (Civil Code §1189(a)). A California notary will almost always attach their own current certificate. Use this page to understand the parts.</td></tr></tbody></table></div>
+  </section>
+  <section class="sec" aria-labelledby="walkH">
+    <h2 id="walkH" data-i="walk_h">Walk through the form, line by line</h2>
+    <p data-i="walk_p">Four images cut from the real form. The example signer and notary are filled in blue.</p>
+    <article class="part" id="p1">
+      <div class="ref" data-i="p1_r">Top · venue</div>
+      <h3 data-i="p1_h">“State of California, County of ___”: where the signing happened</h3>
+      <figure><div class="sc"><img src="s01.jpg" alt="“State of California, County of ___”: where the signing happened" data-ia="p1_h" loading="lazy" width="847"></div><figcaption data-i="figcap">From the actual C.A.R. form. <b>Blue text</b> = example fill-in. <i>Yellow</i> = the part to read. Swipe sideways on a phone.</figcaption></figure>
+      <p data-i="p1_p">This is the venue: the county where the signer stood in front of the notary that day. Not where the property is. Not where the signer lives.</p>
+      <p class="ex" data-i="p1_e"><b>Example:</b> the house is in Alameda County, but Chị Lan signs at an escrow office in San Jose. The venue says Santa Clara.</p>
+      <p class="diff" data-i="p1_d"><b>Heads-up:</b> the current statutory form puts a boxed notice above this line (Civil Code §1189(a)(1)). This 4/09 form does not have it, so notaries use their own updated certificate.</p>
+    </article>
+    <article class="part" id="p2">
+      <div class="ref" data-i="p2_r">Middle · the acknowledgment</div>
+      <h3 data-i="p2_h">Date, notary name, who appeared, and “satisfactory evidence”</h3>
+      <figure><div class="sc"><img src="s02.jpg" alt="Date, notary name, who appeared, and “satisfactory evidence”" data-ia="p2_h" loading="lazy" width="847"></div><figcaption data-i="figcap">From the actual C.A.R. form. <b>Blue text</b> = example fill-in. <i>Yellow</i> = the part to read. Swipe sideways on a phone.</figcaption></figure>
+      <p data-i="p2_p">On [date], before me [notary name and title], personally appeared [signer’s name]. “Personally appeared” means in person, in the room. “Satisfactory evidence” means acceptable ID: a current California license or ID, a U.S. passport, or certain other IDs, current or issued within the last 5 years, or credible witnesses (Civil Code §1185). The signer then admits they signed, in their authorized capacity (for example as trustee). The notary does not decide whether that capacity is real.</p>
+      <p class="ex" data-i="p2_e"><b>Example:</b> On 11/06/2026, before me, Jane Doe, Notary Public (example), personally appeared Minh Tran. He showed a U.S. passport issued in 2023.</p>
+    </article>
+    <article class="part" id="p3">
+      <div class="ref" data-i="p3_r">Bottom · perjury, signature, seal</div>
+      <h3 data-i="p3_h">The notary swears to it, signs and stamps</h3>
+      <figure><div class="sc"><img src="s03.jpg" alt="The notary swears to it, signs and stamps" data-ia="p3_h" loading="lazy" width="847"></div><figcaption data-i="figcap">From the actual C.A.R. form. <b>Blue text</b> = example fill-in. <i>Yellow</i> = the part to read. Swipe sideways on a phone.</figcaption></figure>
+      <p data-i="p3_p">The notary certifies under penalty of perjury that the paragraph is true, signs, and applies the official seal. A notary who knowingly states something false faces a civil penalty up to $10,000 (Civil Code §1189(a)(4)). Behind the scenes the notary also writes a journal entry. For deeds, deeds of trust, other documents affecting real property and powers of attorney, the signer leaves a right thumbprint in that journal (Gov Code §8206).</p>
+      <p class="ex" data-i="p3_e"><b>Example:</b> Minh Tran signs Jane Doe’s journal, leaves a thumbprint because it is a deed of trust, and pays $15 for his one signature.</p>
+    </article>
+    <article class="part" id="p4">
+      <div class="ref" data-i="p4_r">Second block</div>
+      <h3 data-i="p4_h">The second block: another signer, another day or another county</h3>
+      <figure><div class="sc"><img src="s04.jpg" alt="The second block: another signer, another day or another county" data-ia="p4_h" loading="lazy" width="847"></div><figcaption data-i="figcap">From the actual C.A.R. form. <b>Blue text</b> = example fill-in. <i>Yellow</i> = the part to read. Swipe sideways on a phone.</figcaption></figure>
+      <p data-i="p4_p">The page repeats the same wording for a second acknowledgment. Use it when a second signer appears on a different date or in a different county. Two people who appear together at the same place and time can be listed on one block.</p>
+      <p class="ex" data-i="p4_e"><b>Example:</b> Anh Minh signs in San Jose on Friday. Chị Lan signs at another notary in Fremont on Monday. Two blocks: Santa Clara for him, Alameda for her.</p>
+    </article>
+  </section>
+  <section class="sec tool" aria-labelledby="toolH">
+    <h2 id="toolH" data-i="tool_h">x</h2>
+    <p data-i="tool_p">x</p>
+    <div class="inputs">
+      <div class="field"><label for="doc" data-i="l_doc">x</label><div class="ctl"><select id="doc">
+        <option value="deed" data-o="o_deed">Grant deed / quitclaim / interspousal deed</option>
+        <option value="dot" data-o="o_dot">Deed of trust (loan papers)</option>
+        <option value="poa" data-o="o_poa">Power of attorney</option>
+        <option value="trust" data-o="o_trust">Certification of trust</option>
+        <option value="affid" data-o="o_affid">Affidavit / sworn statement</option>
+        <option value="rpa" data-o="o_rpa">Purchase contract, disclosures, counter offer</option>
+      </select><span class="chev">▾</span></div></div>
+      <div class="field"><label for="idt" data-i="l_id">x</label><div class="ctl"><select id="idt">
+        <option value="cadl" data-o="o_cadl">California driver license / ID card</option>
+        <option value="uspp" data-o="o_uspp">U.S. passport</option>
+        <option value="oth" data-o="o_oth">Other: other-state license, foreign passport, consular ID, military ID</option>
+        <option value="old" data-o="o_old">Expired and issued more than 5 years ago</option>
+        <option value="none" data-o="o_none">No photo ID at all</option>
+      </select><span class="chev">▾</span></div></div>
+      <div class="row2">
+        <div class="field"><label for="nm" data-i="l_nm">x</label><div class="ctl"><select id="nm">
+          <option value="same" data-o="o_same">Exactly the same</option>
+          <option value="more" data-o="o_more">ID has an extra middle name</option>
+          <option value="diff" data-o="o_diff">Different (married name, spelling)</option>
+        </select><span class="chev">▾</span></div></div>
+        <div class="field"><label for="ns" data-i="l_ns">x</label><div class="ctl"><input id="ns" type="number" inputmode="numeric" min="1" max="12" value="2"></div></div>
+      </div>
+      <div class="field"><label for="wh" data-i="l_wh">x</label><div class="ctl"><select id="wh">
+        <option value="ca" data-o="o_ca">In California, can go in person</option>
+        <option value="home" data-o="o_home">In California, can’t travel (home, hospital)</option>
+        <option value="us" data-o="o_us">In another U.S. state</option>
+        <option value="intl" data-o="o_intl">Outside the U.S. (for example Vietnam)</option>
+      </select><span class="chev">▾</span></div></div>
+    </div>
+    <div class="result" aria-live="polite">
+      <div class="total"><div class="k" data-i="r_k">x</div><div class="big" id="rBig">—</div><div class="bigsub" id="rSub"></div></div>
+      <ul class="chk" id="rList"></ul>
+      <p class="hint" data-i="r_hint">x</p>
+    </div>
+  </section>
+  <section class="sec" aria-labelledby="mythH">
+    <h2 id="mythH" data-i="myth_h">What people get wrong</h2>
+    <p class="myth" data-i="m1"><b>“The notary checked that the deed is legal.”</b> No. The required notice says the notary verifies only the identity of the signer, not the truthfulness, accuracy or validity of the document (Civil Code §1189).</p><p class="myth" data-i="m2"><b>“I can send my husband with my ID.”</b> No. “Personally appeared” means you, in person. No exceptions for family.</p><p class="myth" data-i="m3"><b>“An old expired license is still a photo.”</b> It must be current or issued within the last 5 years (Civil Code §1185).</p><p class="myth" data-i="m4"><b>“Notarized means recorded.”</b> No. Recording is a separate step at the County Recorder, usually done by title or escrow.</p><p class="myth" data-i="m5"><b>“Any notary form from the internet is fine.”</b> A California acknowledgment must use the statutory wording with the boxed notice. Out-of-state forms are fine only when signed out of state.</p>
+  </section>
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="ns_h">Next steps</h2>
+    <ol class="steps"><li><span><span data-i="n1">Selling a mobile home after someone passed away? See which papers need a notary.</span><small><a href="/t172/" data-i="n1l">T172 · When the owner dies: the mobile home</a></small></span></li><li><span><span data-i="n2">Look up any other form in one line.</span><small><a href="/t402/" data-i="n2l">T402 · Forms library</a></small></span></li><li><span><span data-i="n3">See where the deed and loan papers fit in escrow.</span><small><a href="/t61/" data-i="n3l">T61 · Escrow step by step</a></small></span></li><li><span><span data-i="n4">Seller signing a FIRPTA affidavit? Read the QS form.</span><small><a href="/t713/" data-i="n4l">T713 · QS explained</a></small></span></li><li><span><span data-i="n5">Read the purchase contract (no notary needed there).</span><small><a href="/t401/" data-i="n5l">T401 · Read the RPA</a></small></span></li></ol>
+  </section>
+  <section class="sec vid" id="vid" aria-labelledby="vidH">
+    <h2 id="vidH" data-i="vid_h">45-second video</h2>
+    <p data-i="vid_p">Why a stamp is not a guarantee, in 45 seconds. For Reels, TikTok and Shorts.</p>
+    <video id="vidEl" controls playsinline preload="none" poster="poster.jpg" src="video.mp4"></video>
+  </section>
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me this checklist</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Text Ken</a>
+    <button class="btn" type="button" id="videoBtn" data-i="b_video">Watch the 45-sec video</button>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this to yourself</h2>
+    <p data-i="f_sub">Ken can answer questions about your situation. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you’re done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+  <footer>
+    <span class="src"><span data-i="ft_src">Sources:</span>
+      <a href="https://www.car.org/transactions/standardforms" target="_blank" rel="noopener">C.A.R. standard forms (NA 4/09)</a> ·
+      <a href="https://california.public.law/codes/civil_code_section_1189" target="_blank" rel="noopener">Civil Code §1189 (acknowledgment form)</a> ·
+      <a href="https://california.public.law/codes/civil_code_section_1185" target="_blank" rel="noopener">Civil Code §1185 (ID, credible witnesses)</a> ·
+      <a href="https://california.public.law/codes/government_code_section_8206" target="_blank" rel="noopener">Gov Code §8206 (journal, thumbprint)</a> ·
+      <a href="https://california.public.law/codes/government_code_section_8211" target="_blank" rel="noopener">Gov Code §8211 (fees)</a> ·
+      <a href="https://sos.ca.gov/notary/acknowledgments/" target="_blank" rel="noopener">CA Secretary of State · Acknowledgments</a> ·
+      <a href="https://notary.cdn.sos.ca.gov/forms/notary-handbook-2025.pdf" target="_blank" rel="noopener">CA Notary Handbook 2025</a> ·
+      <a href="https://legiscan.com/CA/text/SB696/2023" target="_blank" rel="noopener">SB 696 (online notarization)</a>
+      <span data-i="src_date">(checked 11/06/2026)</span></span>
+    <span data-i="ft_dis">For understanding the form only. Not legal, tax or lending advice. Ask a California real estate attorney or CPA about your deal.</span>
+    <span class="who">Ken Lam · BRG Realty Corp · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a> · 408-666-2825</span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+<script>
+/* ===== Số luật (sửa ở đây) ===== */
+const LAW={
+  FEE_ACK:15,     // Gov Code §8211(a): tối đa $15 mỗi chữ ký cho acknowledgment
+  FEE_JURAT:15,   // Gov Code §8211(b): tối đa $15 mỗi người cho jurat
+  ID_YEARS:5,     // Civil Code §1185(b)(3)-(4): giấy tờ còn hạn hoặc cấp trong 5 năm
+  PENALTY:10000   // Civil Code §1189(a)(4), §1185(b)(1)(B): phạt notary tới $10,000
+};
+/* Thumbprint: Gov Code §8206(a)(2)(G) — deed, quitclaim, deed of trust, giấy tờ ảnh hưởng bất động sản, power of attorney */
+const THUMB=new Set(['deed','dot','poa']);
+const I18N={
+"en": {
+"lang": "Tiếng Việt",
+"figcap": "From the actual C.A.R. form. <b>Blue text</b> = example fill-in. <i>Yellow</i> = the part to read. Swipe sideways on a phone.",
+"myth_h": "What people get wrong",
+"ns_h": "Next steps",
+"vid_h": "45-second video",
+"b_sms": "Text Ken",
+"b_video": "Watch the 45-sec video",
+"f_title": "Email this to yourself",
+"f_sub": "Ken can answer questions about your situation. No spam.",
+"f_name": "Name",
+"f_phone": "Phone (optional)",
+"f_send": "Send",
+"f_ok": "Email opened. Hit Send and you’re done.",
+"f_or": "Or text:",
+"f_copy": "Copy",
+"ft_src": "Sources:",
+"src_date": "(checked 11/06/2026)",
+"ft_dis": "For understanding the form only. Not legal, tax or lending advice. Ask a California real estate attorney or CPA about your deal.",
+"ft_upd": "Updated",
+"ft_all": "All tools",
+"wd": [
+"Sun",
+"Mon",
+"Tue",
+"Wed",
+"Thu",
+"Fri",
+"Sat"
+],
+"mo": [
+"Jan",
+"Feb",
+"Mar",
+"Apr",
+"May",
+"Jun",
+"Jul",
+"Aug",
+"Sep",
+"Oct",
+"Nov",
+"Dec"
+],
+"doc_title": "Notary Acknowledgment (NA) Explained · Ken Lam Tools",
+"h1": "NA: the notary acknowledgment, the stamp page that lets a deed get recorded",
+"sub": "C.A.R. Form NA (4/09) is the certificate a notary fills out to say: this person showed me ID and told me they signed this document. One page, two identical blocks. Here is what each line means, and what a notary does not check.",
+"kid_h": "The 10-year-old version",
+"kid_p": "Imagine your teacher signs your permission slip and writes: “I saw this kid’s school ID, and this kid told me the signature is really theirs.” The teacher is not saying the field trip is safe, or that the slip is filled in right. Only: right person, they signed it. A notary does exactly that for adults. The county will not record a deed without that note attached.",
+"kid_eg": "<b>Example:</b> Chị Lan (seller) signs a grant deed for <b>1234 Example Lane, San Jose, CA 95100</b>. She shows her California driver license to the notary at escrow, signs the notary’s journal, and leaves a thumbprint. The notary fills in the acknowledgment, signs and stamps. Now escrow can record the deed.",
+"who_h": "Who signs it, when to use it, when not to",
+"w1a": "Who fills and signs",
+"w1b": "Only the notary public (or another officer allowed to take acknowledgments). The person who signed the document signs the document itself and the notary’s journal, not this certificate.",
+"w2a": "Use it when",
+"w2b": "A document must be recorded or the other side requires a notarized signature: grant deed, quitclaim deed, interspousal transfer deed, deed of trust, power of attorney, certification of trust, many loan and title papers.",
+"w3a": "Do NOT use it",
+"w3b": "For the purchase contract, counter offers and disclosures (no notary needed). For a sworn statement, where you swear the content is true: that needs a <b>jurat</b>, a different certificate. When signing in another state or country: the local notary uses their own form (valid in California, Civil Code §1189(b)).",
+"w4a": "Heads-up",
+"w4b": "This C.A.R. form is dated 4/09. Since 1/1/2015 every California acknowledgment must start with a boxed notice that the notary verifies only identity (Civil Code §1189(a)). A California notary will almost always attach their own current certificate. Use this page to understand the parts.",
+"walk_h": "Walk through the form, line by line",
+"walk_p": "Four images cut from the real form. The example signer and notary are filled in blue.",
+"p1_r": "Top · venue",
+"p1_h": "“State of California, County of ___”: where the signing happened",
+"p1_p": "This is the venue: the county where the signer stood in front of the notary that day. Not where the property is. Not where the signer lives.",
+"p1_e": "<b>Example:</b> the house is in Alameda County, but Chị Lan signs at an escrow office in San Jose. The venue says Santa Clara.",
+"p1_d": "<b>Heads-up:</b> the current statutory form puts a boxed notice above this line (Civil Code §1189(a)(1)). This 4/09 form does not have it, so notaries use their own updated certificate.",
+"p2_r": "Middle · the acknowledgment",
+"p2_h": "Date, notary name, who appeared, and “satisfactory evidence”",
+"p2_p": "On [date], before me [notary name and title], personally appeared [signer’s name]. “Personally appeared” means in person, in the room. “Satisfactory evidence” means acceptable ID: a current California license or ID, a U.S. passport, or certain other IDs, current or issued within the last 5 years, or credible witnesses (Civil Code §1185). The signer then admits they signed, in their authorized capacity (for example as trustee). The notary does not decide whether that capacity is real.",
+"p2_e": "<b>Example:</b> On 11/06/2026, before me, Jane Doe, Notary Public (example), personally appeared Minh Tran. He showed a U.S. passport issued in 2023.",
+"p3_r": "Bottom · perjury, signature, seal",
+"p3_h": "The notary swears to it, signs and stamps",
+"p3_p": "The notary certifies under penalty of perjury that the paragraph is true, signs, and applies the official seal. A notary who knowingly states something false faces a civil penalty up to $10,000 (Civil Code §1189(a)(4)). Behind the scenes the notary also writes a journal entry. For deeds, deeds of trust, other documents affecting real property and powers of attorney, the signer leaves a right thumbprint in that journal (Gov Code §8206).",
+"p3_e": "<b>Example:</b> Minh Tran signs Jane Doe’s journal, leaves a thumbprint because it is a deed of trust, and pays $15 for his one signature.",
+"p4_r": "Second block",
+"p4_h": "The second block: another signer, another day or another county",
+"p4_p": "The page repeats the same wording for a second acknowledgment. Use it when a second signer appears on a different date or in a different county. Two people who appear together at the same place and time can be listed on one block.",
+"p4_e": "<b>Example:</b> Anh Minh signs in San Jose on Friday. Chị Lan signs at another notary in Fremont on Monday. Two blocks: Santa Clara for him, Alameda for her.",
+"tool_h": "Ready for the notary? Check in 30 seconds",
+"tool_p": "Pick the document, the ID you will bring, and where the signer is. You see if a notary is needed, which certificate, what to bring, the fee, and what to fix first.",
+"l_doc": "What are you signing?",
+"l_id": "What ID will the signer bring?",
+"l_nm": "Name on ID vs. document",
+"l_ns": "Number of signatures",
+"l_wh": "Where is the signer?",
+"o_deed": "Grant deed / quitclaim / interspousal deed",
+"o_dot": "Deed of trust (loan papers)",
+"o_poa": "Power of attorney",
+"o_trust": "Certification of trust",
+"o_affid": "Affidavit / sworn statement",
+"o_rpa": "Purchase contract, disclosures, counter offer",
+"o_cadl": "California driver license / ID card",
+"o_uspp": "U.S. passport",
+"o_oth": "Other: other-state license, foreign passport, consular ID, military ID",
+"o_old": "Expired and issued more than 5 years ago",
+"o_none": "No photo ID at all",
+"o_same": "Exactly the same",
+"o_more": "ID has an extra middle name",
+"o_diff": "Different (married name, spelling)",
+"o_ca": "In California, can go in person",
+"o_home": "In California, can’t travel (home, hospital)",
+"o_us": "In another U.S. state",
+"o_intl": "Outside the U.S. (for example Vietnam)",
+"r_k": "Result",
+"v_no": "No notary needed",
+"v_ready": "Ready",
+"v_fix": "Fix {n} thing(s) first",
+"sub_deed": "Recorded document → acknowledgment + thumbprint",
+"sub_dot": "Loan document → acknowledgment + thumbprint",
+"sub_poa": "Power of attorney → acknowledgment + thumbprint",
+"sub_trust": "Certification of trust → acknowledgment",
+"sub_affid": "Sworn statement → jurat, not acknowledgment",
+"sub_rpa": "Contracts and disclosures are signed normally or by e-signature",
+"i_rpa": "RPA, NCPA, counter offers and disclosures do not need a notary. The contracts allow electronic signatures.",
+"i_ack": "Certificate: <b>acknowledgment</b> (like form NA). You may sign before, but you must appear in person and say it is your signature.",
+"i_jurat": "Certificate: <b>jurat</b>. Sign in front of the notary and swear or affirm the statement is true. Do not sign beforehand.",
+"i_thumb": "Right thumbprint in the notary journal (Gov Code §8206). Normal, not a red flag.",
+"i_trust": "Bring the trust’s name and date and the trustee names exactly as written; title may want the trustee pages too.",
+"i_poa": "Title companies often have their own POA rules. Ask escrow to approve the POA wording before anyone signs.",
+"i_id_ok": "ID OK if current or issued within the last {y} years (Civil Code §1185).",
+"i_id_oth": "Usually OK (Civil Code §1185(b)(4)) if it has a photo, description, signature and number, and is current or issued within {y} years. Foreign passports: call the notary first.",
+"i_id_old": "Not acceptable: older than {y} years from issue and expired. Renew, or use a U.S. passport, or use credible witnesses.",
+"i_id_none": "No ID: possible only with credible witnesses under oath (one the notary knows, or two with ID), and only if getting ID is truly hard (Civil Code §1185(b)(1)). Call ahead.",
+"i_nm_same": "Name matches. Good.",
+"i_nm_more": "Usually fine if the document name is contained in the ID name. Sign the name exactly as typed on the document.",
+"i_nm_diff": "Name does not match: the notary may refuse. Bring ID in the document’s name, or ask escrow to fix the document or add an “also known as” line.",
+"i_ca": "Book a notary (escrow and title offices usually have one). Bring the ID and the unsigned pages if it is a jurat.",
+"i_home": "Use a mobile notary. Signer must be awake, aware and willing; the notary will ask simple questions. Travel fee is separate; agree on it first.",
+"i_us": "A local notary in that state can do it with their state’s form (valid in California, Civil Code §1189(b)). Ask escrow if the title company wants California wording. Online notarization from a state that allows it is also recognized.",
+"i_intl": "Outside the U.S.: usually a U.S. embassy or consulate (appointment needed) or a local notary plus extra certification. Ask escrow which they accept before you book. Start early, this takes weeks.",
+"i_fee": "Notary fee: up to ${u} per signature (Gov Code §8211) → about {f} for {n} signature(s).",
+"i_fee_j": "Notary fee: up to $15 per person for a jurat (Gov Code §8211) → about {f} for {n}.",
+"i_only": "Remember: the notary checks identity only, not whether the document is correct or fair. Read it, or have escrow or an attorney explain it, before you go.",
+"r_hint": "For understanding only. Notaries can refuse when something looks wrong. California notaries cannot yet do online notarizations themselves (SB 696: no later than 1/1/2030).",
+"m1": "<b>“The notary checked that the deed is legal.”</b> No. The required notice says the notary verifies only the identity of the signer, not the truthfulness, accuracy or validity of the document (Civil Code §1189).",
+"m2": "<b>“I can send my husband with my ID.”</b> No. “Personally appeared” means you, in person. No exceptions for family.",
+"m3": "<b>“An old expired license is still a photo.”</b> It must be current or issued within the last 5 years (Civil Code §1185).",
+"m4": "<b>“Notarized means recorded.”</b> No. Recording is a separate step at the County Recorder, usually done by title or escrow.",
+"m5": "<b>“Any notary form from the internet is fine.”</b> A California acknowledgment must use the statutory wording with the boxed notice. Out-of-state forms are fine only when signed out of state.",
+"n1": "Selling a mobile home after someone passed away? See which papers need a notary.",
+"n1l": "T172 · When the owner dies: the mobile home",
+"n2": "Look up any other form in one line.",
+"n2l": "T402 · Forms library",
+"n3": "See where the deed and loan papers fit in escrow.",
+"n3l": "T61 · Escrow step by step",
+"n4": "Seller signing a FIRPTA affidavit? Read the QS form.",
+"n4l": "T713 · QS explained",
+"n5": "Read the purchase contract (no notary needed there).",
+"n5l": "T401 · Read the RPA",
+"vid_p": "Why a stamp is not a guarantee, in 45 seconds. For Reels, TikTok and Shorts.",
+"b_email": "Email me this checklist",
+"subj": "Notary question — {v}",
+"body": "Hi Ken,\n\nI used the notary checker on tools.kenlamrealty.com/t702.\nDocument: {doc}\nResult: {v}\n{list}\n\nName: {n}\nEmail: {e}\nPhone: {ph}\n",
+"sms": "Hi Ken, I need a notary for: {doc}. Checker says: {v}. Can you help?"
+},
+"vi": {
+"lang": "English",
+"figcap": "Hình từ form C.A.R. thật. <b>Chữ xanh</b> = ví dụ điền vào. <i>Vàng</i> = chỗ cần đọc. Trên điện thoại kéo ngang để xem hết.",
+"myth_h": "Nhiều người hiểu sai",
+"ns_h": "Bước tiếp theo",
+"vid_h": "Video 45 giây",
+"b_sms": "Nhắn Ken",
+"b_video": "Xem video 45 giây",
+"f_title": "Gửi kết quả này vào email",
+"f_sub": "Ken trả lời câu hỏi theo trường hợp của anh chị. Không spam.",
+"f_name": "Tên",
+"f_phone": "Số điện thoại (không bắt buộc)",
+"f_send": "Gửi",
+"f_ok": "Đã mở email. Bấm Send là xong.",
+"f_or": "Hoặc nhắn tin:",
+"f_copy": "Chép số",
+"ft_src": "Nguồn:",
+"src_date": "(tra ngày 06/11/2026)",
+"ft_dis": "Chỉ để hiểu form. Không phải tư vấn luật, thuế hay vay tiền. Hỏi luật sư địa ốc California hoặc CPA cho trường hợp của mình.",
+"ft_upd": "Cập nhật",
+"ft_all": "Tất cả tools",
+"wd": [
+"CN",
+"Thứ Hai",
+"Thứ Ba",
+"Thứ Tư",
+"Thứ Năm",
+"Thứ Sáu",
+"Thứ Bảy"
+],
+"mo": [
+"Th1",
+"Th2",
+"Th3",
+"Th4",
+"Th5",
+"Th6",
+"Th7",
+"Th8",
+"Th9",
+"Th10",
+"Th11",
+"Th12"
+],
+"doc_title": "Notary Acknowledgment (NA) Giải Thích · Ken Lam Tools",
+"h1": "NA: trang notary xác nhận chữ ký, để deed được record",
+"sub": "C.A.R. Form NA (4/09) là giấy notary điền để nói: người này đã đưa tôi coi giấy tờ tùy thân và nói với tôi là họ đã ký giấy này. Một trang, hai khung giống nhau. Dưới đây là nghĩa từng dòng, và những gì notary KHÔNG kiểm.",
+"kid_h": "Giải thích cho đứa 10 tuổi",
+"kid_p": "Tưởng tượng cô giáo ký tờ giấy xin phép đi chơi của con và ghi: “Cô đã coi thẻ học sinh của em này, và em nói chữ ký đó đúng là của em.” Cô không nói chuyến đi an toàn, cũng không nói tờ giấy điền đúng. Chỉ nói: đúng người, đúng là người đó ký. Notary làm y vậy cho người lớn. County không record deed nếu thiếu tờ xác nhận đó.",
+"kid_eg": "<b>Ví dụ:</b> Chị Lan (seller) ký grant deed cho <b>1234 Example Lane, San Jose, CA 95100</b>. Chị đưa bằng lái California cho notary ở văn phòng escrow, ký vào sổ của notary, lăn dấu ngón cái. Notary điền acknowledgment, ký, đóng mộc. Giờ escrow mới record deed được.",
+"who_h": "Ai ký, khi nào dùng, khi nào KHÔNG dùng",
+"w1a": "Ai điền và ký",
+"w1b": "Chỉ notary public (hoặc viên chức khác được phép). Người ký giấy thì ký trên giấy đó và ký sổ của notary, không ký trên tờ xác nhận này.",
+"w2a": "Dùng khi",
+"w2b": "Giấy cần record hoặc bên kia đòi chữ ký có notary: grant deed, quitclaim deed, interspousal transfer deed, deed of trust, power of attorney, certification of trust, nhiều giấy vay và title.",
+"w3a": "KHÔNG dùng",
+"w3b": "Cho hợp đồng mua bán, counter offer, disclosures (không cần notary). Cho giấy cam đoan nội dung là thật: cái đó cần <b>jurat</b>, một loại giấy khác. Khi ký ở tiểu bang hay nước khác: notary ở đó dùng form của họ (vẫn có giá trị ở California, Civil Code §1189(b)).",
+"w4a": "Lưu ý",
+"w4b": "Form C.A.R. này đề 4/09. Từ 1/1/2015, mọi acknowledgment ở California phải mở đầu bằng một khung thông báo là notary chỉ xác nhận danh tính (Civil Code §1189(a)). Notary California gần như luôn kẹp giấy xác nhận mới của họ. Trang này để hiểu từng phần.",
+"walk_h": "Đi qua form, từng dòng một",
+"walk_p": "Bốn hình cắt từ form thật. Người ký và notary ví dụ điền chữ xanh.",
+"p1_r": "Phần đầu · nơi ký",
+"p1_h": "“State of California, County of ___”: ký ở đâu",
+"p1_p": "Đây là venue: county nơi người ký đứng trước mặt notary hôm đó. Không phải nơi có căn nhà. Không phải nơi người ký ở.",
+"p1_e": "<b>Ví dụ:</b> nhà ở Alameda County, nhưng chị Lan ký ở văn phòng escrow tại San Jose. Venue ghi Santa Clara.",
+"p1_d": "<b>Lưu ý:</b> form theo luật hiện nay có khung thông báo nằm trên dòng này (Civil Code §1189(a)(1)). Form 4/09 không có, nên notary dùng giấy xác nhận mới của họ.",
+"p2_r": "Phần giữa · lời xác nhận",
+"p2_h": "Ngày, tên notary, ai có mặt, và “satisfactory evidence”",
+"p2_p": "Ngày [ngày], trước mặt tôi [tên và chức danh notary], đã có mặt [tên người ký]. “Personally appeared” là có mặt thật, trong phòng. “Satisfactory evidence” là giấy tờ tùy thân hợp lệ: bằng lái hay ID California còn hạn, passport Mỹ, hoặc vài loại khác, còn hạn hoặc cấp trong 5 năm, hoặc nhân chứng đáng tin (Civil Code §1185). Người ký nói là mình đã ký, với tư cách của mình (vd trustee). Notary không quyết tư cách đó có thật hay không.",
+"p2_e": "<b>Ví dụ:</b> Ngày 06/11/2026, trước mặt Jane Doe, Notary Public (ví dụ), Minh Tran có mặt. Anh đưa passport Mỹ cấp năm 2023.",
+"p3_r": "Phần cuối · thề, ký, mộc",
+"p3_h": "Notary cam đoan, ký và đóng mộc",
+"p3_p": "Notary cam đoan dưới hình phạt khai man là đoạn trên đúng, ký tên, đóng mộc. Notary cố ý ghi sai có thể bị phạt dân sự tới $10,000 (Civil Code §1189(a)(4)). Đằng sau đó notary còn ghi sổ. Với deed, deed of trust, giấy khác ảnh hưởng bất động sản và power of attorney, người ký lăn dấu ngón cái phải vào sổ (Gov Code §8206).",
+"p3_e": "<b>Ví dụ:</b> Minh Tran ký sổ của Jane Doe, lăn dấu tay vì là deed of trust, trả $15 cho một chữ ký.",
+"p4_r": "Khung thứ hai",
+"p4_h": "Khung thứ hai: người ký khác, ngày khác hoặc county khác",
+"p4_p": "Trang lặp lại y chang cho lần xác nhận thứ hai. Dùng khi người ký thứ hai có mặt vào ngày khác hoặc ở county khác. Hai người cùng có mặt một chỗ một lúc thì ghi chung một khung được.",
+"p4_e": "<b>Ví dụ:</b> anh Minh ký ở San Jose thứ Sáu. Chị Lan ký với notary khác ở Fremont thứ Hai. Hai khung: Santa Clara cho anh, Alameda cho chị.",
+"tool_h": "Đi notary được chưa? Kiểm trong 30 giây",
+"tool_p": "Chọn loại giấy, giấy tờ tùy thân sẽ mang, và người ký đang ở đâu. Ra ngay: có cần notary không, loại giấy xác nhận nào, mang gì, phí bao nhiêu, và phải sửa gì trước.",
+"l_doc": "Ký giấy gì?",
+"l_id": "Mang giấy tờ tùy thân gì?",
+"l_nm": "Tên trên ID so với trên giấy",
+"l_ns": "Số chữ ký",
+"l_wh": "Người ký đang ở đâu?",
+"o_deed": "Grant deed / quitclaim / interspousal deed",
+"o_dot": "Deed of trust (giấy vay)",
+"o_poa": "Power of attorney (giấy ủy quyền)",
+"o_trust": "Certification of trust",
+"o_affid": "Affidavit / giấy cam đoan",
+"o_rpa": "Hợp đồng mua bán, disclosures, counter offer",
+"o_cadl": "Bằng lái / ID California",
+"o_uspp": "Passport Mỹ",
+"o_oth": "Loại khác: bằng lái tiểu bang khác, passport nước ngoài, ID lãnh sự, ID quân đội",
+"o_old": "Hết hạn và cấp hơn 5 năm rồi",
+"o_none": "Không có giấy có hình",
+"o_same": "Giống y chang",
+"o_more": "ID có thêm tên lót",
+"o_diff": "Khác (tên sau khi lấy chồng, sai chính tả)",
+"o_ca": "Ở California, đi được",
+"o_home": "Ở California, không đi được (ở nhà, bệnh viện)",
+"o_us": "Ở tiểu bang khác",
+"o_intl": "Ở ngoài nước Mỹ (vd Việt Nam)",
+"r_k": "Kết quả",
+"v_no": "Không cần notary",
+"v_ready": "Sẵn sàng",
+"v_fix": "Sửa {n} chuyện trước",
+"sub_deed": "Giấy để record → acknowledgment + lăn tay",
+"sub_dot": "Giấy vay → acknowledgment + lăn tay",
+"sub_poa": "Giấy ủy quyền → acknowledgment + lăn tay",
+"sub_trust": "Certification of trust → acknowledgment",
+"sub_affid": "Giấy cam đoan → jurat, không phải acknowledgment",
+"sub_rpa": "Hợp đồng và disclosures ký bình thường hoặc ký điện tử",
+"i_rpa": "RPA, NCPA, counter offer và disclosures không cần notary. Hợp đồng cho phép ký điện tử.",
+"i_ack": "Loại giấy: <b>acknowledgment</b> (như form NA). Ký trước cũng được, nhưng phải tự có mặt và nói đó là chữ ký của mình.",
+"i_jurat": "Loại giấy: <b>jurat</b>. Ký trước mặt notary và thề là nội dung đúng. Đừng ký trước ở nhà.",
+"i_thumb": "Lăn dấu ngón cái phải vào sổ notary (Gov Code §8206). Chuyện bình thường, không có gì đáng lo.",
+"i_trust": "Mang tên trust, ngày lập và tên trustee ghi đúng y như trong trust; title có thể xin thêm mấy trang về trustee.",
+"i_poa": "Title company hay có luật riêng về giấy ủy quyền. Nhờ escrow duyệt câu chữ POA trước khi ai ký.",
+"i_id_ok": "ID được nếu còn hạn hoặc cấp trong {y} năm gần đây (Civil Code §1185).",
+"i_id_oth": "Thường được (Civil Code §1185(b)(4)) nếu có hình, mô tả, chữ ký và số, còn hạn hoặc cấp trong {y} năm. Passport nước ngoài: gọi notary hỏi trước.",
+"i_id_old": "Không được: cấp hơn {y} năm và đã hết hạn. Làm lại, hoặc dùng passport Mỹ, hoặc dùng nhân chứng.",
+"i_id_none": "Không có ID: chỉ làm được với nhân chứng thề (một người notary quen, hoặc hai người có ID), và chỉ khi thật sự khó lấy ID (Civil Code §1185(b)(1)). Gọi hỏi trước.",
+"i_nm_same": "Tên khớp. Tốt.",
+"i_nm_more": "Thường được nếu tên trên giấy nằm trong tên trên ID. Ký đúng tên như đánh máy trên giấy.",
+"i_nm_diff": "Tên không khớp: notary có thể từ chối. Mang ID đúng tên trên giấy, hoặc nhờ escrow sửa giấy hay thêm dòng “also known as”.",
+"i_ca": "Hẹn notary (văn phòng escrow, title thường có sẵn). Mang ID, và mang giấy chưa ký nếu là jurat.",
+"i_home": "Gọi mobile notary. Người ký phải tỉnh táo, hiểu và tự nguyện; notary sẽ hỏi vài câu đơn giản. Phí đi lại tính riêng, thỏa thuận trước.",
+"i_us": "Notary ở tiểu bang đó làm được với form của tiểu bang họ (có giá trị ở California, Civil Code §1189(b)). Hỏi escrow coi title có muốn câu chữ kiểu California không. Notary online từ tiểu bang cho phép cũng được công nhận.",
+"i_intl": "Ngoài nước Mỹ: thường là lãnh sự quán hay đại sứ quán Mỹ (phải hẹn), hoặc notary địa phương cộng giấy chứng thực thêm. Hỏi escrow chấp nhận cách nào trước khi đặt hẹn. Làm sớm, mất cả mấy tuần.",
+"i_fee": "Phí notary: tối đa ${u} mỗi chữ ký (Gov Code §8211) → khoảng {f} cho {n} chữ ký.",
+"i_fee_j": "Phí notary: tối đa $15 mỗi người cho jurat (Gov Code §8211) → khoảng {f} cho {n} người.",
+"i_only": "Nhớ: notary chỉ kiểm danh tính, không kiểm giấy đúng hay công bằng. Đọc kỹ, hoặc nhờ escrow hay luật sư giải thích, trước khi đi.",
+"r_hint": "Chỉ để hiểu. Notary có quyền từ chối khi thấy có gì không ổn. Notary California hiện chưa tự làm notary online được (SB 696: chậm nhất 1/1/2030).",
+"m1": "<b>“Notary đã kiểm deed hợp pháp rồi.”</b> Không. Thông báo bắt buộc ghi rõ notary chỉ xác nhận danh tính người ký, không xác nhận giấy đúng, chính xác hay có hiệu lực (Civil Code §1189).",
+"m2": "<b>“Tôi gửi ông xã cầm ID của tôi đi ký giùm.”</b> Không được. “Personally appeared” là chính mình, có mặt. Vợ chồng cũng không ngoại lệ.",
+"m3": "<b>“Bằng lái hết hạn lâu rồi nhưng vẫn có hình mà.”</b> Phải còn hạn hoặc cấp trong 5 năm gần đây (Civil Code §1185).",
+"m4": "<b>“Notary rồi là record rồi.”</b> Không. Record là bước riêng ở County Recorder, thường title hay escrow làm.",
+"m5": "<b>“Form notary trên mạng xài cái nào cũng được.”</b> Acknowledgment ở California phải dùng đúng câu chữ theo luật, có khung thông báo. Form tiểu bang khác chỉ được khi ký ở tiểu bang đó.",
+"n1": "Bán mobile home sau khi chủ mất? Coi giấy nào cần notary.",
+"n1l": "T172 · Người đứng tên mất: mobile home",
+"n2": "Tra nhanh các form khác, mỗi form một dòng.",
+"n2l": "T402 · Thư viện forms",
+"n3": "Coi deed và giấy vay nằm ở bước nào trong escrow.",
+"n3l": "T61 · Escrow từng bước",
+"n4": "Người bán ký giấy FIRPTA? Đọc form QS.",
+"n4l": "T713 · Giải thích QS",
+"n5": "Đọc hợp đồng mua bán (cái này không cần notary).",
+"n5l": "T401 · Đọc hợp đồng RPA",
+"vid_p": "Tại sao con mộc notary không phải là bảo đảm, trong 45 giây. Cho Reels, TikTok, Shorts.",
+"b_email": "Gửi checklist này vào email",
+"subj": "Hỏi về notary — {v}",
+"body": "Chào Ken,\n\nTôi vừa dùng tool kiểm notary trên tools.kenlamrealty.com/t702.\nGiấy: {doc}\nKết quả: {v}\n{list}\n\nTên: {n}\nEmail: {e}\nĐiện thoại: {ph}\n",
+"sms": "Chào Ken, tôi cần notary cho: {doc}. Tool nói: {v}. Ken giúp tôi được không?"
+}
+};
+
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const D=()=>I18N[lang];
+const fmt=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>(o[k]!==undefined?o[k]:m));
+const money=n=>'$'+Math.round(n).toLocaleString('en-US');
+let last={};
+/* ---- dates: dùng giờ UTC trưa để khỏi lệch múi giờ ---- */
+const P2=n=>String(n).padStart(2,'0');
+function parseD(v){ if(!/^\d{4}-\d{2}-\d{2}$/.test(v||'')) return null; const [y,m,d]=v.split('-').map(Number); return new Date(Date.UTC(y,m-1,d,12)); }
+const iso=d=>d.getUTCFullYear()+'-'+P2(d.getUTCMonth()+1)+'-'+P2(d.getUTCDate());
+const addD=(d,n)=>new Date(d.getTime()+n*864e5);
+function fmtD(d){ if(!d) return '—'; const w=D().wd[d.getUTCDay()];
+  return lang==='vi' ? w+', '+P2(d.getUTCDate())+'/'+P2(d.getUTCMonth()+1)+'/'+d.getUTCFullYear()
+                     : w+', '+D().mo[d.getUTCMonth()]+' '+d.getUTCDate()+', '+d.getUTCFullYear(); }
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function applyLang(){ const d=D();
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  document.querySelectorAll('[data-ia]').forEach(el=>{const k=el.getAttribute('data-ia'); if(typeof d[k]==='string') el.setAttribute('alt',d[k].replace(/<[^>]+>/g,''));});
+  document.querySelectorAll('option[data-o]').forEach(el=>{const k=el.getAttribute('data-o'); if(typeof d[k]==='string') el.textContent=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; document.title=d.doc_title;
+  calc(); }
+
+
+function calc(){ const d=D();
+  const doc=$('doc').value, id=$('idt').value, nm=$('nm').value, wh=$('wh').value;
+  let ns=parseInt($('ns').value,10); if(!isFinite(ns)||ns<1) ns=1; if(ns>12) ns=12;
+  const items=[]; let red=0, verdict, cls;
+  const it=(c,k,o)=>{ items.push('<li class="'+c+'"><span>'+fmt(d[k],o||{})+'</span></li>'); if(c==='r') red++; };
+  if(doc==='rpa'){
+    verdict=d.v_no; cls='ok'; it('g','i_rpa');
+  } else {
+    it('g', doc==='affid'?'i_jurat':'i_ack');
+    if(THUMB.has(doc)) it('w','i_thumb');
+    if(doc==='trust') it('w','i_trust');
+    if(doc==='poa') it('w','i_poa');
+    if(id==='cadl'||id==='uspp') it('g','i_id_ok',{y:LAW.ID_YEARS});
+    else if(id==='oth') it('w','i_id_oth',{y:LAW.ID_YEARS});
+    else if(id==='old') it('r','i_id_old',{y:LAW.ID_YEARS});
+    else it('r','i_id_none');
+    if(nm==='more') it('w','i_nm_more'); else if(nm==='diff') it('r','i_nm_diff'); else it('g','i_nm_same');
+    if(wh==='home') it('w','i_home'); else if(wh==='us') it('w','i_us'); else if(wh==='intl') it('r','i_intl'); else it('g','i_ca');
+    it('g', doc==='affid'?'i_fee_j':'i_fee',{n:ns,f:money(ns*(doc==='affid'?LAW.FEE_JURAT:LAW.FEE_ACK)),u:LAW.FEE_ACK});
+    it('w','i_only');
+    if(red){ verdict=fmt(d.v_fix,{n:red}); cls='no'; } else { verdict=d.v_ready; cls='ok'; }
+  }
+  $('rBig').textContent=verdict; $('rBig').className='big '+cls;
+  $('rSub').textContent=d['sub_'+doc];
+  $('rList').innerHTML=items.join('');
+  last={v:verdict,doc:$('doc').options[$('doc').selectedIndex].textContent,list:items.map(x=>'- '+x.replace(/<[^>]+>/g,'')).join('\n')};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fmt(d.sms,last));
+}
+
+
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('videoBtn').onclick=()=>{ const v=$('vidEl'); $('vid').scrollIntoView({behavior:'smooth',block:'center'}); try{ const p=v.play(); if(p&&p.catch) p.catch(()=>{}); }catch(e){} };
+$('sendBtn').onclick=()=>{
+  const d=D(), n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>fmt(s,Object.assign({n:n,e:e,ph:ph},last));
+  /* LEAD → email tới ken@kenlamrealty.com (FUB parser đọc email này) */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+document.querySelectorAll('input,select').forEach(el=>{ el.addEventListener('input',calc); el.addEventListener('change',calc); });
+applyLang();
+
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'\u2190 All tools':'\u2190 T\u1ea5t c\u1ea3 tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

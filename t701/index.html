@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MSS: Mortgage Loan Disclosure Substitute · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+
+/* ===== Thêm cho T42 / T43 / T44 (không đổi class cũ) ===== */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;-webkit-appearance:none;appearance:none;cursor:pointer}
+.ctl .chev{color:var(--muted);font-size:12px;pointer-events:none}
+.ctl input[type=date]{font-size:18px;min-height:48px}
+.ctl input[type=text]{font-size:18px}
+.hint{font-size:12px;color:var(--muted);margin:0;line-height:1.45}
+.hint b{color:var(--fg);font-weight:500}
+.total .of{font-size:14px;color:var(--muted);margin-top:6px}
+.chip{font-size:12px;line-height:1.3;padding:3px 9px;border-radius:999px;border:1px solid var(--line);white-space:nowrap;flex:none;color:var(--muted)}
+.chip.ok{color:var(--ok);border-color:var(--ok)}
+.chip.mid{color:var(--brass);border-color:var(--brass)}
+.chip.no{color:var(--warn);border-color:var(--warn)}
+.grp-h{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);margin:6px 0 0;font-weight:500}
+.myth{font-size:14px;line-height:1.5;border-left:2px solid var(--brass);padding:2px 0 2px 12px;margin:0}
+.myth b{font-weight:500}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:12px}
+.next h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0;line-height:1.15}
+.steps{margin:0;padding:0;list-style:none;display:grid;gap:12px;counter-reset:st}
+.steps li{display:grid;grid-template-columns:26px minmax(0,1fr);gap:10px;font-size:15px;line-height:1.45;counter-increment:st}
+.steps li::before{content:counter(st);font-family:var(--display);font-size:22px;line-height:1;color:var(--brass)}
+.steps small{display:block;color:var(--muted);font-size:13px;margin-top:3px}
+.steps a{color:var(--brass);text-decoration:none}
+.dline{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.dline .n{color:var(--muted);min-width:0}
+.dline .n b{color:var(--fg);font-weight:500}
+.dline .a{font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+.tips{margin:0;padding-left:18px;font-size:14px;line-height:1.5;display:grid;gap:8px;color:var(--fg)}
+.tips li::marker{color:var(--brass)}
+.tips small{display:block;color:var(--muted);font-size:13px}
+.linkbtn{justify-self:start;border:1px solid var(--line);background:transparent;color:var(--brass);font:inherit;font-size:14px;padding:7px 13px;border-radius:999px;cursor:pointer}
+.linkbtn:hover{border-color:var(--brass)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0;line-height:1.15}
+.prog{display:grid;gap:6px;font-size:13px;color:var(--muted)}
+.prog b{color:var(--fg);font-weight:500}
+.gcal{color:var(--brass);text-decoration:none;white-space:nowrap;font-size:13px}
+.gcal:hover{text-decoration:underline}
+footer .src{line-height:1.6}
+.hide{display:none!important}
+.result > *,.inputs > *,.wrap > *,.panel > *{min-width:0}
+
+/* ===== Riêng T43: lịch 2 tháng ===== */
+.best{display:grid;gap:0;border-top:1px solid var(--line)}
+.bd{display:grid;gap:4px;padding:12px 0;border-bottom:1px solid var(--line)}
+.bd .hd{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.bd .dt{font-family:var(--display);font-size:28px;line-height:1.1;font-weight:400}
+.bd .dt small{font-family:var(--body);font-size:14px;color:var(--muted)}
+.bd .d{font-size:13px;color:var(--muted);line-height:1.5}
+.bd .d b{color:var(--fg);font-weight:500}
+.bd.first{background:var(--brass-soft);margin:0 -10px;padding:12px 10px;border-radius:8px;border-bottom-color:transparent}
+.cal-wrap{display:grid;gap:18px}
+.mon h3{font-family:var(--display);font-weight:400;font-size:24px;margin:0 0 8px}
+.grid7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.grid7 .wd{font-size:11px;color:var(--muted);text-align:center;padding:2px 0;letter-spacing:.04em}
+.dc{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:5px 2px 4px;display:grid;justify-items:center;gap:1px;cursor:pointer;font:inherit;color:var(--fg);min-height:58px}
+.dc .s{font-size:16px;font-weight:500;line-height:1.1;font-variant-numeric:tabular-nums}
+.dc .l{font-size:10.5px;color:var(--muted);line-height:1.2;font-variant-numeric:tabular-nums}
+.dc .c{font-size:10px;color:var(--muted);line-height:1.2}
+.dc .m{width:6px;height:6px;border-radius:50%;margin-top:2px;background:transparent}
+.dc.good{background:var(--brass-soft);border-color:var(--brass)}
+.dc.good .m{background:var(--ok)}
+.dc.no .m{background:var(--warn)}
+.dc.no .s{color:var(--warn)}
+.dc.past{opacity:.4}
+.dc.sel{outline:2px solid var(--fg);outline-offset:1px}
+.dc.top3 .s{text-decoration:underline;text-decoration-color:var(--brass);text-underline-offset:3px}
+.dc.blank{visibility:hidden}
+.det{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:8px;font-size:14px;line-height:1.5}
+.det .dt{font-family:var(--display);font-size:24px;line-height:1.15}
+.det .r{color:var(--muted)}
+.det .r b{color:var(--fg);font-weight:500}
+.legend .lg-g{background:var(--brass-soft);border:1px solid var(--brass)}
+.legend .lg-n{background:var(--warn)}
+
+
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+
+/* ===== Forms group (T700–T714): giải thích form từng phần ===== */
+.wrap{max-width:720px}
+.sec{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:12px}
+.sec h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0;line-height:1.15}
+.sec p{margin:0;font-size:15px;line-height:1.6}
+.kid{background:var(--brass-soft);border-color:var(--brass)}
+.kid p{font-size:16px}
+.kid .eg{font-size:15px;border-left:2px solid var(--brass);padding-left:12px;color:var(--fg)}
+.tblw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.t{width:100%;border-collapse:collapse;font-size:14px;line-height:1.45}
+table.t th,table.t td{border-bottom:1px solid var(--line);padding:9px 8px;text-align:left;vertical-align:top}
+table.t th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+table.t td:first-child{font-weight:500;white-space:normal;min-width:96px}
+table.t .no{color:var(--warn)}
+table.t .ok{color:var(--ok)}
+.part{display:grid;gap:10px;padding:16px 0;border-top:1px solid var(--line)}
+.part:first-of-type{border-top:0;padding-top:4px}
+.part .ref{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.part h3{font-size:18px;font-weight:600;margin:0;line-height:1.35}
+.part figure{margin:0;display:grid;gap:6px}
+.part figure .sc{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:#fff;-webkit-overflow-scrolling:touch}
+.part figure img{display:block;width:100%;min-width:560px;height:auto}
+.part figcaption{font-size:12px;color:var(--muted)}
+.part .ex{font-size:14px;line-height:1.55;background:var(--bg);border:1px dashed var(--line);border-radius:10px;padding:10px 12px}
+.part .ex b{font-weight:600}
+.part .diff{font-size:14px;line-height:1.55;border-left:3px solid var(--warn);padding:2px 0 2px 12px}
+.part .diff b{color:var(--warn);font-weight:600}
+.tool{border-color:var(--brass)}
+.big{font-family:var(--display);font-size:52px;line-height:1.05;font-variant-numeric:tabular-nums}
+.big.ok{color:var(--ok)}.big.no{color:var(--warn)}.big.mid{color:var(--brass)}
+.bigsub{font-size:14px;color:var(--muted);margin-top:4px}
+.dl{display:grid;border-top:1px solid var(--line)}
+.dl .r{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.dl .r .n{font-size:14px;color:var(--muted);min-width:0}
+.dl .r .n b{color:var(--fg);font-weight:500}
+.dl .r .a{font-family:var(--display);font-size:24px;line-height:1.1;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dl .r .a small{display:block;font-family:var(--body);font-size:12px;color:var(--muted);white-space:normal;line-height:1.35;margin-top:3px}
+.dl .r .n{flex:1 1 45%}.dl .r .a{flex:0 1 auto;max-width:62%}
+.chk{display:grid;gap:0;border-top:1px solid var(--line)}
+.chk li{list-style:none;display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px;line-height:1.5}
+.chk li::before{content:'';width:10px;height:10px;border-radius:50%;margin-top:6px;background:var(--line)}
+.chk li.g::before{background:var(--ok)}.chk li.w::before{background:var(--brass)}.chk li.r::before{background:var(--warn)}
+.chk{margin:0;padding:0}
+.vid video{width:100%;max-width:360px;aspect-ratio:9/16;border-radius:12px;background:#000;display:block;margin:0 auto}
+.seg button{min-height:44px}
+.sec > *,.part > *,.part figure > *,.tool .inputs > *,.result > *{min-width:0}
+.tblw{max-width:100%}
+.sec a{color:var(--brass)}
+.ctl select{font-size:16px}
+@media (max-width:420px){.big{font-size:42px}.dl .r .a{font-size:20px}.sec{padding:16px}}
+</style>
+<meta name="description" content="MSS (Mortgage Loan Disclosure Statement Substitute) explained: when a DRE broker arranges your loan, this page plus a signed Loan Estimate replace the full MLDS. With a checker for which disclosure you should get and the 3-business-day deadline.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t701/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:title" content="MSS: Mortgage Loan Disclosure Substitute · Ken Lam Tools">
+<meta property="og:description" content="MSS (Mortgage Loan Disclosure Statement Substitute) explained: when a DRE broker arranges your loan, this page plus a signed Loan Estimate replace the full MLDS. With a checker for which disclosure you should get and the 3-business-day deadline.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t701/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/t701/poster.jpg">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools · T701</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="h1">MSS: the one-page cover sheet when a real estate broker arranges your loan</h1>
+    <p class="sub" data-i="sub">C.A.R. Form MSS (Revised 12/23) is the Mortgage Loan Disclosure Statement Substitute. When a DRE-licensed broker arranges a home loan and gives you the federal Loan Estimate, this page plus your signed Loan Estimate replace the state’s longer Mortgage Loan Disclosure Statement.</p>
+  </header>
+  <section class="sec kid" aria-labelledby="kidH">
+    <h2 id="kidH" data-i="kid_h">The 10-year-old version</h2>
+    <p data-i="kid_p">When you buy a toy online, the store sends a price sheet: what it costs, shipping, tax. California has its own price sheet for loans arranged by real estate brokers. The federal government has one too, called the Loan Estimate. Two sheets saying the same thing is silly, so California says: if the broker gives you the federal one, staple this one-page note on top, you both sign, and that is enough. The note also says: this price sheet is not a promise to lend, and here is how to check the broker’s license.</p>
+    <p class="eg" data-i="kid_eg"><b>Example:</b> Anh Minh (buyer) is buying <b>1234 Example Lane, San Jose, CA 95100</b>. His loan is arranged by a broker with a DRE license. He gets a Loan Estimate for a $960,000 first loan. The broker hands him the MSS. Both sign the MSS and the Loan Estimate. That covers California’s disclosure rule.</p>
+  </section>
+  <section class="sec" aria-labelledby="whoH">
+    <h2 id="whoH" data-i="who_h">Who signs it, when to use it, when not to</h2>
+    <div class="tblw"><table class="t"><tbody><tr><td data-i="w1a">Who signs</td><td data-i="w1b">The borrower (buyer), and the real estate broker with its DRE license number, plus the licensee who arranged the loan (“By”, with DRE number).</td></tr><tr><td data-i="w2a">Use it when</td><td data-i="w2b">A DRE-licensed broker (or its loan officer) negotiates a federally regulated residential loan and gives a TRID Loan Estimate: first lien $30,000 or more, or junior lien $20,000 or more (DRE advisory, 2015).</td></tr><tr><td data-i="w3a">Do NOT use it</td><td data-i="w3b">When you borrow straight from a bank, credit union or a DFPI-licensed lender: they give the Loan Estimate, but this DRE broker form is not part of it. For business-purpose, private or hard-money loans with no Loan Estimate: the broker uses the full Mortgage Loan Disclosure Statement (DRE RE 882, or RE 885 for non-traditional loans). It is never a loan approval.</td></tr><tr><td data-i="w4a">Deadline</td><td data-i="w4b">The Loan Estimate is due within 3 business days after your application (federal TRID rule). Without the LE route, the state disclosure is due within 3 business days after a completed written application, or before you become obligated, whichever comes first (B&P Code §10240).</td></tr></tbody></table></div>
+  </section>
+  <section class="sec" aria-labelledby="walkH">
+    <h2 id="walkH" data-i="walk_h">Walk through the form, line by line</h2>
+    <p data-i="walk_p">It is one page. Four parts. The example broker and borrower are filled in blue.</p>
+    <article class="part" id="p1">
+      <div class="ref" data-i="p1_r">Top</div>
+      <h3 data-i="p1_h">Who is the broker / arranger of credit</h3>
+      <figure><div class="sc"><img src="s01.jpg" alt="Who is the broker / arranger of credit" data-ia="p1_h" loading="lazy" width="847"></div><figcaption data-i="figcap">From the actual C.A.R. form. <b>Blue text</b> = example fill-in. <i>Yellow</i> = the part to read. Swipe sideways on a phone.</figcaption></figure>
+      <p data-i="p1_p">The title says it all: a substitute, to be used with a written Loan Estimate that satisfies the TILA-RESPA Integrated Disclosure (TRID) rules. Under it go the name and business address of the broker arranging the loan. That is the company with the DRE license, not the bank that funds the loan.</p>
+      <p class="ex" data-i="p1_e"><b>Example:</b> Example Mortgage &amp; Realty Inc., 100 Example Blvd, San Jose, CA 95100. The Loan Estimate should show the same broker name and an NMLS number.</p>
+    </article>
+    <article class="part" id="p2">
+      <div class="ref" data-i="p2_r">Property + the Loan Estimate</div>
+      <h3 data-i="p2_h">Which property, and “not a loan commitment”</h3>
+      <figure><div class="sc"><img src="s02.jpg" alt="Which property, and “not a loan commitment”" data-ia="p2_h" loading="lazy" width="847"></div><figcaption data-i="figcap">From the actual C.A.R. form. <b>Blue text</b> = example fill-in. <i>Yellow</i> = the part to read. Swipe sideways on a phone.</figcaption></figure>
+      <p data-i="p2_p">The MSS names the property (address, city, county, zip, APN). Then the two key sentences: a completed Loan Estimate is attached, and the Loan Estimate does not constitute a loan commitment. A Loan Estimate is a price quote. Approval comes later, after underwriting and appraisal.</p>
+      <p class="ex" data-i="p2_e"><b>Example:</b> 1234 Example Lane, San Jose, Santa Clara County, 95100. Anh Minh’s LE shows a $960,000 loan. That does not mean he is approved for it.</p>
+      <p class="diff" data-i="p2_d"><b>Different from the full MLDS (RE 882):</b> the MLDS lists every cost itself across several pages. The MSS lists none; the numbers live in the attached Loan Estimate.</p>
+    </article>
+    <article class="part" id="p3">
+      <div class="ref" data-i="p3_r">License check + why it must be signed</div>
+      <h3 data-i="p3_h">Check the license, then sign both</h3>
+      <figure><div class="sc"><img src="s03.jpg" alt="Check the license, then sign both" data-ia="p3_h" loading="lazy" width="847"></div><figcaption data-i="figcap">From the actual C.A.R. form. <b>Blue text</b> = example fill-in. <i>Yellow</i> = the part to read. Swipe sideways on a phone.</figcaption></figure>
+      <p data-i="p3_p">The form gives the DRE license line, 1-877-373-4542, and www.dre.ca.gov, so you can check the broker and loan officer. Last sentence: the MSS and the Loan Estimate must both be signed, or the broker is not excused from giving the separate Mortgage Loan Disclosure Statement.</p>
+      <p class="ex" data-i="p3_e"><b>Example:</b> Anh Minh looks up the broker on the DRE site and the loan officer on NMLS Consumer Access. Both show active. Then he signs.</p>
+    </article>
+    <article class="part" id="p4">
+      <div class="ref" data-i="p4_r">Signatures</div>
+      <h3 data-i="p4_h">Borrower, broker, and the licensee who arranged it</h3>
+      <figure><div class="sc"><img src="s04.jpg" alt="Borrower, broker, and the licensee who arranged it" data-ia="p4_h" loading="lazy" width="847"></div><figcaption data-i="figcap">From the actual C.A.R. form. <b>Blue text</b> = example fill-in. <i>Yellow</i> = the part to read. Swipe sideways on a phone.</figcaption></figure>
+      <p data-i="p4_p">Date and borrower signature with printed name, then the real estate broker and its DRE license number, then “By” the licensee who arranged the loan, with their DRE number and date. The broker keeps signed copies for 3 years (B&P §10240).</p>
+      <p class="ex" data-i="p4_e"><b>Example:</b> 11/06/2026, Minh Tran. Example Mortgage &amp; Realty Inc., DRE 01234567. By Agent Example, DRE 01234567 (example numbers).</p>
+    </article>
+  </section>
+  <section class="sec tool" aria-labelledby="toolH">
+    <h2 id="toolH" data-i="tool_h">x</h2>
+    <p data-i="tool_p">x</p>
+    <div class="inputs">
+      <div class="field"><label for="who" data-i="l_who">x</label><div class="ctl"><select id="who">
+        <option value="re" data-o="o_re">A real estate broker / DRE-licensed loan agent</option>
+        <option value="bank" data-o="o_bank">A bank, credit union or direct lender</option>
+        <option value="dfpi" data-o="o_dfpi">A mortgage company licensed by DFPI (not DRE)</option>
+      </select><span class="chev">▾</span></div></div>
+      <div class="row2">
+        <div class="field"><label for="pur" data-i="l_pur">x</label><div class="ctl"><select id="pur">
+          <option value="home" data-o="o_home">Home for me / family (1–4 units)</option>
+          <option value="biz" data-o="o_biz">Business or investment purpose</option>
+        </select><span class="chev">▾</span></div></div>
+        <div class="field"><label for="lien" data-i="l_lien">x</label><div class="ctl"><select id="lien">
+          <option value="first" data-o="o_first">First loan (1st lien)</option>
+          <option value="junior" data-o="o_junior">Second loan / HELOC (junior)</option>
+        </select><span class="chev">▾</span></div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="amt" data-i="l_amt">x</label><div class="ctl"><span class="pre">$</span><input id="amt" type="number" inputmode="numeric" min="0" step="1000" value="960000"></div></div>
+        <div class="field"><label for="app" data-i="l_app">x</label><div class="ctl"><input id="app" type="date" value="2026-11-06"></div></div>
+      </div>
+      <div class="field"><label data-i="l_le">x</label><div class="seg" role="group"><button type="button" id="leY" aria-pressed="true" data-i="o_y">Yes</button><button type="button" id="leN" aria-pressed="false" data-i="o_n">Not yet</button></div></div>
+    </div>
+    <div class="result" aria-live="polite">
+      <div class="total"><div class="k" data-i="r_k">x</div><div class="big" id="rBig">—</div><div class="bigsub" id="rSub"></div></div>
+      <div class="dl" id="rDates"></div>
+      <ul class="chk" id="rList"></ul>
+      <p class="hint" data-i="r_hint">x</p>
+    </div>
+  </section>
+  <section class="sec" aria-labelledby="mythH">
+    <h2 id="mythH" data-i="myth_h">What people get wrong</h2>
+    <p class="myth" data-i="m1"><b>“I got a Loan Estimate, so I’m approved.”</b> The MSS says it in plain words: the Loan Estimate does not constitute a loan commitment.</p><p class="myth" data-i="m2"><b>“The MSS is my loan application.”</b> No. It is a one-page cover disclosure. The application (Form 1003) is separate.</p><p class="myth" data-i="m3"><b>“Everybody gets an MSS.”</b> Only when a DRE-licensed broker arranges the loan. Borrow straight from a bank and you will never see one.</p><p class="myth" data-i="m4"><b>“If I sign the Loan Estimate, I’m locked in.”</b> Signing only confirms you received it. You can still walk and shop.</p><p class="myth" data-i="m5"><b>“My agent can arrange my loan, any agent.”</b> Arranging residential mortgage loans needs a DRE license plus an NMLS loan-originator endorsement. Check both before you sign.</p>
+  </section>
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="ns_h">Next steps</h2>
+    <ol class="steps"><li><span><span data-i="n1">Read the Loan Estimate line by line.</span><small><a href="/t311/" data-i="n1l">T311 · Read your Loan Estimate</a></small></span></li><li><span><span data-i="n2">Compare the Closing Disclosure to the Loan Estimate before signing.</span><small><a href="/t312/" data-i="n2l">T312 · CD vs LE</a></small></span></li><li><span><span data-i="n3">Put two loan offers side by side.</span><small><a href="/t32/" data-i="n3l">T32 · Compare two loans</a></small></span></li><li><span><span data-i="n4">Look up any other form in one line.</span><small><a href="/t402/" data-i="n4l">T402 · Forms library</a></small></span></li><li><span><span data-i="n5">See where the loan contingency sits in the purchase contract.</span><small><a href="/t401/" data-i="n5l">T401 · Read the RPA</a></small></span></li></ol>
+  </section>
+  <section class="sec vid" id="vid" aria-labelledby="vidH">
+    <h2 id="vidH" data-i="vid_h">45-second video</h2>
+    <p data-i="vid_p">The one-page form that says “this is not an approval,” in 45 seconds.</p>
+    <video id="vidEl" controls playsinline preload="none" poster="poster.jpg" src="video.mp4"></video>
+  </section>
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me this result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Text Ken</a>
+    <button class="btn" type="button" id="videoBtn" data-i="b_video">Watch the 45-sec video</button>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this to yourself</h2>
+    <p data-i="f_sub">Ken can answer questions about your situation. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you’re done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+  <footer>
+    <span class="src"><span data-i="ft_src">Sources:</span>
+      <a href="https://www.car.org/transactions/standardforms" target="_blank" rel="noopener">C.A.R. standard forms (MSS Revised 12/23)</a> ·
+      <a href="https://law.justia.com/codes/california/code-bpc/division-4/part-1/chapter-3/article-7/section-10240/" target="_blank" rel="noopener">B&amp;P Code §10240</a> ·
+      <a href="https://california.public.law/codes/business_and_professions_code_section_10241" target="_blank" rel="noopener">B&amp;P Code §10241</a> ·
+      <a href="https://www.dre.ca.gov/files/pdf/adv/2015_2019/Advisory2015MLDS%20and%20Loan%20Estimate%20Advisory.pdf" target="_blank" rel="noopener">DRE Advisory: MLDS and Loan Estimate (2015)</a> ·
+      <a href="https://dre.ca.gov/forms/MLB.html" target="_blank" rel="noopener">DRE Mortgage Loan Broker forms (RE 882/883/885)</a> ·
+      <a href="https://www.law.cornell.edu/regulations/california/10-CCR-2840" target="_blank" rel="noopener">10 CCR §2840</a> ·
+      <a href="https://www.ecfr.gov/current/title-12/chapter-X/part-1026/subpart-C/section-1026.19" target="_blank" rel="noopener">12 CFR 1026.19(e) (Loan Estimate timing)</a> ·
+      <a href="https://www.nmlsconsumeraccess.org/" target="_blank" rel="noopener">NMLS Consumer Access</a>
+      <span data-i="src_date">(checked 11/06/2026)</span></span>
+    <span data-i="ft_dis">For understanding the form only. Not legal, tax or lending advice. Ask a California real estate attorney or CPA about your deal.</span>
+    <span class="who">Ken Lam · BRG Realty Corp · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a> · 408-666-2825</span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+<script>
+/* ===== Số luật (sửa ở đây) ===== */
+const LAW={
+  BDAYS:3,          // B&P §10240(a): MLDS trong 3 business days sau khi nhận đơn vay đầy đủ; 12 CFR 1026.19(e)(1)(iii): Loan Estimate trong 3 business days
+  FIRST_MIN:30000,  // DRE Advisory 2015 (MLDS & Loan Estimate) + B&P §10245: lối LE chỉ cho loan first lien ≥ $30,000
+  JUNIOR_MIN:20000, // ... và junior lien ≥ $20,000
+  DRE_PHONE:'1-877-373-4542' // số tra license DRE in trên form MSS
+};
+/* Federal holidays (5 U.S.C. §6103, ngày nghỉ bù). ESTIMATE: "business day" của TRID là ngày văn phòng lender mở cửa. */
+const HOL=new Set(['2026-01-01','2026-01-19','2026-02-16','2026-05-25','2026-06-19','2026-07-03','2026-09-07','2026-10-12','2026-11-11','2026-11-26','2026-12-25',
+'2027-01-01','2027-01-18','2027-02-15','2027-05-31','2027-06-18','2027-07-05','2027-09-06','2027-10-11','2027-11-11','2027-11-25','2027-12-24','2027-12-31',
+'2028-01-17','2028-02-21','2028-05-29','2028-06-19','2028-07-04','2028-09-04','2028-10-09','2028-11-10','2028-11-23','2028-12-25']);
+const I18N={
+"en": {
+"lang": "Tiếng Việt",
+"figcap": "From the actual C.A.R. form. <b>Blue text</b> = example fill-in. <i>Yellow</i> = the part to read. Swipe sideways on a phone.",
+"myth_h": "What people get wrong",
+"ns_h": "Next steps",
+"vid_h": "45-second video",
+"b_sms": "Text Ken",
+"b_video": "Watch the 45-sec video",
+"f_title": "Email this to yourself",
+"f_sub": "Ken can answer questions about your situation. No spam.",
+"f_name": "Name",
+"f_phone": "Phone (optional)",
+"f_send": "Send",
+"f_ok": "Email opened. Hit Send and you’re done.",
+"f_or": "Or text:",
+"f_copy": "Copy",
+"ft_src": "Sources:",
+"src_date": "(checked 11/06/2026)",
+"ft_dis": "For understanding the form only. Not legal, tax or lending advice. Ask a California real estate attorney or CPA about your deal.",
+"ft_upd": "Updated",
+"ft_all": "All tools",
+"wd": [
+"Sun",
+"Mon",
+"Tue",
+"Wed",
+"Thu",
+"Fri",
+"Sat"
+],
+"mo": [
+"Jan",
+"Feb",
+"Mar",
+"Apr",
+"May",
+"Jun",
+"Jul",
+"Aug",
+"Sep",
+"Oct",
+"Nov",
+"Dec"
+],
+"doc_title": "MSS: Mortgage Loan Disclosure Substitute · Ken Lam Tools",
+"h1": "MSS: the one-page cover sheet when a real estate broker arranges your loan",
+"sub": "C.A.R. Form MSS (Revised 12/23) is the Mortgage Loan Disclosure Statement Substitute. When a DRE-licensed broker arranges a home loan and gives you the federal Loan Estimate, this page plus your signed Loan Estimate replace the state’s longer Mortgage Loan Disclosure Statement.",
+"kid_h": "The 10-year-old version",
+"kid_p": "When you buy a toy online, the store sends a price sheet: what it costs, shipping, tax. California has its own price sheet for loans arranged by real estate brokers. The federal government has one too, called the Loan Estimate. Two sheets saying the same thing is silly, so California says: if the broker gives you the federal one, staple this one-page note on top, you both sign, and that is enough. The note also says: this price sheet is not a promise to lend, and here is how to check the broker’s license.",
+"kid_eg": "<b>Example:</b> Anh Minh (buyer) is buying <b>1234 Example Lane, San Jose, CA 95100</b>. His loan is arranged by a broker with a DRE license. He gets a Loan Estimate for a $960,000 first loan. The broker hands him the MSS. Both sign the MSS and the Loan Estimate. That covers California’s disclosure rule.",
+"who_h": "Who signs it, when to use it, when not to",
+"w1a": "Who signs",
+"w1b": "The borrower (buyer), and the real estate broker with its DRE license number, plus the licensee who arranged the loan (“By”, with DRE number).",
+"w2a": "Use it when",
+"w2b": "A DRE-licensed broker (or its loan officer) negotiates a federally regulated residential loan and gives a TRID Loan Estimate: first lien $30,000 or more, or junior lien $20,000 or more (DRE advisory, 2015).",
+"w3a": "Do NOT use it",
+"w3b": "When you borrow straight from a bank, credit union or a DFPI-licensed lender: they give the Loan Estimate, but this DRE broker form is not part of it. For business-purpose, private or hard-money loans with no Loan Estimate: the broker uses the full Mortgage Loan Disclosure Statement (DRE RE 882, or RE 885 for non-traditional loans). It is never a loan approval.",
+"w4a": "Deadline",
+"w4b": "The Loan Estimate is due within 3 business days after your application (federal TRID rule). Without the LE route, the state disclosure is due within 3 business days after a completed written application, or before you become obligated, whichever comes first (B&P Code §10240).",
+"walk_h": "Walk through the form, line by line",
+"walk_p": "It is one page. Four parts. The example broker and borrower are filled in blue.",
+"p1_r": "Top",
+"p1_h": "Who is the broker / arranger of credit",
+"p1_p": "The title says it all: a substitute, to be used with a written Loan Estimate that satisfies the TILA-RESPA Integrated Disclosure (TRID) rules. Under it go the name and business address of the broker arranging the loan. That is the company with the DRE license, not the bank that funds the loan.",
+"p1_e": "<b>Example:</b> Example Mortgage &amp; Realty Inc., 100 Example Blvd, San Jose, CA 95100. The Loan Estimate should show the same broker name and an NMLS number.",
+"p2_r": "Property + the Loan Estimate",
+"p2_h": "Which property, and “not a loan commitment”",
+"p2_p": "The MSS names the property (address, city, county, zip, APN). Then the two key sentences: a completed Loan Estimate is attached, and the Loan Estimate does not constitute a loan commitment. A Loan Estimate is a price quote. Approval comes later, after underwriting and appraisal.",
+"p2_e": "<b>Example:</b> 1234 Example Lane, San Jose, Santa Clara County, 95100. Anh Minh’s LE shows a $960,000 loan. That does not mean he is approved for it.",
+"p2_d": "<b>Different from the full MLDS (RE 882):</b> the MLDS lists every cost itself across several pages. The MSS lists none; the numbers live in the attached Loan Estimate.",
+"p3_r": "License check + why it must be signed",
+"p3_h": "Check the license, then sign both",
+"p3_p": "The form gives the DRE license line, 1-877-373-4542, and www.dre.ca.gov, so you can check the broker and loan officer. Last sentence: the MSS and the Loan Estimate must both be signed, or the broker is not excused from giving the separate Mortgage Loan Disclosure Statement.",
+"p3_e": "<b>Example:</b> Anh Minh looks up the broker on the DRE site and the loan officer on NMLS Consumer Access. Both show active. Then he signs.",
+"p4_r": "Signatures",
+"p4_h": "Borrower, broker, and the licensee who arranged it",
+"p4_p": "Date and borrower signature with printed name, then the real estate broker and its DRE license number, then “By” the licensee who arranged the loan, with their DRE number and date. The broker keeps signed copies for 3 years (B&P §10240).",
+"p4_e": "<b>Example:</b> 11/06/2026, Minh Tran. Example Mortgage &amp; Realty Inc., DRE 01234567. By Agent Example, DRE 01234567 (example numbers).",
+"tool_h": "Which disclosure should you get? MSS or the full MLDS",
+"tool_p": "Answer five questions about who arranges your loan. You see which California disclosure applies, the 3-business-day deadline, and what to check before signing.",
+"l_who": "Who is arranging the loan?",
+"l_pur": "Loan purpose",
+"l_lien": "Which loan",
+"l_amt": "Loan amount",
+"l_app": "Date you applied",
+"l_le": "Have you received a Loan Estimate?",
+"o_re": "A real estate broker / DRE-licensed loan agent",
+"o_bank": "A bank, credit union or direct lender",
+"o_dfpi": "A mortgage company licensed by DFPI (not DRE)",
+"o_home": "Home for me / family (1–4 units)",
+"o_biz": "Business or investment purpose",
+"o_first": "First loan (1st lien)",
+"o_junior": "Second loan / HELOC (junior)",
+"o_y": "Yes",
+"o_n": "Not yet",
+"r_k": "What you should get",
+"v_mss": "MSS + signed LE",
+"v_mlds": "Full MLDS",
+"v_wait": "LE first",
+"v_not": "No MSS",
+"s_mss": "Sign the MSS and the Loan Estimate together.",
+"s_biz": "No TRID Loan Estimate for business-purpose loans → DRE form RE 882/883 (or RE 885).",
+"s_small": "Under {m}: the Loan Estimate route does not apply → DRE MLDS.",
+"s_wait": "The MSS only works once you have a Loan Estimate to attach.",
+"s_not": "The MSS is a form for DRE-licensed brokers only.",
+"i_sign": "Sign both the MSS and the Loan Estimate. Unsigned, the broker still owes the full MLDS.",
+"i_attach": "The completed Loan Estimate must be physically attached to the MSS.",
+"i_notcommit": "Read the line “does not constitute a loan commitment.” You are not approved yet.",
+"i_biz": "Business or investment-purpose loan arranged by a DRE broker: ask for the Mortgage Loan Disclosure Statement (DRE RE 882 or RE 883).",
+"i_885": "Interest-only, negative amortization or other non-traditional loan: the DRE form is RE 885.",
+"i_small": "Below {m}, ask for the DRE Mortgage Loan Disclosure Statement (RE 882). Small loans also have extra California limits on fees (B&P Article 7).",
+"i_wait": "No Loan Estimate yet. Within the deadline below you should receive either the Loan Estimate (then MSS) or the full MLDS.",
+"i_le_only": "You get the federal Loan Estimate from the lender. California’s DRE broker disclosure (MSS/MLDS) does not apply to this lender.",
+"i_biz_other": "Business-purpose loans from non-DRE lenders follow that lender’s own disclosure rules. Ask what you will receive and when.",
+"i_check_nmls": "Check the company and loan officer on NMLS Consumer Access.",
+"i_lic": "Check the broker and loan officer: DRE {p} or dre.ca.gov, and NMLS Consumer Access.",
+"i_keep": "Keep your signed copy. The broker must keep one for 3 years.",
+"i_shop": "Signing a Loan Estimate only confirms you received it. You can still compare other lenders.",
+"d_le": "Disclosure due by (<b>3 business days</b>)",
+"d_le_s": "after application · TRID / B&P §10240",
+"d_none": "Enter the application date",
+"r_hint": "ESTIMATE. Business days skip weekends and federal holidays; under TRID a business day is a day the lender’s office is open. Ask your loan officer for the exact date on your file.",
+"m1": "<b>“I got a Loan Estimate, so I’m approved.”</b> The MSS says it in plain words: the Loan Estimate does not constitute a loan commitment.",
+"m2": "<b>“The MSS is my loan application.”</b> No. It is a one-page cover disclosure. The application (Form 1003) is separate.",
+"m3": "<b>“Everybody gets an MSS.”</b> Only when a DRE-licensed broker arranges the loan. Borrow straight from a bank and you will never see one.",
+"m4": "<b>“If I sign the Loan Estimate, I’m locked in.”</b> Signing only confirms you received it. You can still walk and shop.",
+"m5": "<b>“My agent can arrange my loan, any agent.”</b> Arranging residential mortgage loans needs a DRE license plus an NMLS loan-originator endorsement. Check both before you sign.",
+"n1": "Read the Loan Estimate line by line.",
+"n1l": "T311 · Read your Loan Estimate",
+"n2": "Compare the Closing Disclosure to the Loan Estimate before signing.",
+"n2l": "T312 · CD vs LE",
+"n3": "Put two loan offers side by side.",
+"n3l": "T32 · Compare two loans",
+"n4": "Look up any other form in one line.",
+"n4l": "T402 · Forms library",
+"n5": "See where the loan contingency sits in the purchase contract.",
+"n5l": "T401 · Read the RPA",
+"vid_p": "The one-page form that says “this is not an approval,” in 45 seconds.",
+"b_email": "Email me this result",
+"subj": "Loan disclosure question — {v}",
+"body": "Hi Ken,\n\nI used the MSS checker on tools.kenlamrealty.com/t701.\nResult: {v}\nDisclosure due by: {dl}\n{list}\n\nName: {n}\nEmail: {e}\nPhone: {ph}\n",
+"sms": "Hi Ken, I got loan papers with an MSS form. Checker says: {v} (due {dl}). Can you take a look?"
+},
+"vi": {
+"lang": "English",
+"figcap": "Hình từ form C.A.R. thật. <b>Chữ xanh</b> = ví dụ điền vào. <i>Vàng</i> = chỗ cần đọc. Trên điện thoại kéo ngang để xem hết.",
+"myth_h": "Nhiều người hiểu sai",
+"ns_h": "Bước tiếp theo",
+"vid_h": "Video 45 giây",
+"b_sms": "Nhắn Ken",
+"b_video": "Xem video 45 giây",
+"f_title": "Gửi kết quả này vào email",
+"f_sub": "Ken trả lời câu hỏi theo trường hợp của anh chị. Không spam.",
+"f_name": "Tên",
+"f_phone": "Số điện thoại (không bắt buộc)",
+"f_send": "Gửi",
+"f_ok": "Đã mở email. Bấm Send là xong.",
+"f_or": "Hoặc nhắn tin:",
+"f_copy": "Chép số",
+"ft_src": "Nguồn:",
+"src_date": "(tra ngày 06/11/2026)",
+"ft_dis": "Chỉ để hiểu form. Không phải tư vấn luật, thuế hay vay tiền. Hỏi luật sư địa ốc California hoặc CPA cho trường hợp của mình.",
+"ft_upd": "Cập nhật",
+"ft_all": "Tất cả tools",
+"wd": [
+"CN",
+"Thứ Hai",
+"Thứ Ba",
+"Thứ Tư",
+"Thứ Năm",
+"Thứ Sáu",
+"Thứ Bảy"
+],
+"mo": [
+"Th1",
+"Th2",
+"Th3",
+"Th4",
+"Th5",
+"Th6",
+"Th7",
+"Th8",
+"Th9",
+"Th10",
+"Th11",
+"Th12"
+],
+"doc_title": "MSS: Giấy Thay Thế Mortgage Loan Disclosure · Ken Lam Tools",
+"h1": "MSS: tờ bìa một trang khi broker địa ốc lo loan cho mình",
+"sub": "C.A.R. Form MSS (bản 12/23) là Mortgage Loan Disclosure Statement Substitute. Khi broker có license DRE lo một khoản vay mua nhà và đưa mình Loan Estimate của liên bang, thì trang này cộng Loan Estimate đã ký thay cho bản Mortgage Loan Disclosure Statement dài của tiểu bang.",
+"kid_h": "Giải thích cho đứa 10 tuổi",
+"kid_p": "Mua đồ chơi trên mạng, tiệm gửi tờ báo giá: giá bao nhiêu, ship bao nhiêu, thuế bao nhiêu. California có tờ báo giá riêng cho các khoản vay do broker địa ốc lo. Liên bang cũng có một tờ, gọi là Loan Estimate. Hai tờ nói cùng một chuyện thì thừa, nên California nói: broker đưa tờ của liên bang rồi thì kẹp thêm tờ ghi chú một trang này lên trên, hai bên cùng ký, vậy là đủ. Tờ ghi chú còn nói: báo giá này không phải lời hứa cho vay, và đây là cách kiểm license của broker.",
+"kid_eg": "<b>Ví dụ:</b> Anh Minh (buyer) mua <b>1234 Example Lane, San Jose, CA 95100</b>. Loan do một broker có license DRE lo. Anh nhận Loan Estimate cho khoản vay đầu $960,000. Broker đưa anh tờ MSS. Hai bên ký MSS và Loan Estimate. Vậy là đủ luật disclosure của California.",
+"who_h": "Ai ký, khi nào dùng, khi nào KHÔNG dùng",
+"w1a": "Ai ký",
+"w1b": "Người vay (buyer), và real estate broker kèm số license DRE, cộng người có license đã lo khoản vay (“By”, kèm số DRE).",
+"w2a": "Dùng khi",
+"w2b": "Broker có license DRE (hoặc loan officer của họ) lo một khoản vay nhà ở thuộc luật liên bang và đưa Loan Estimate theo TRID: vay thứ nhất từ $30,000 trở lên, hoặc vay thứ hai từ $20,000 trở lên (advisory của DRE, 2015).",
+"w3a": "KHÔNG dùng",
+"w3b": "Khi vay thẳng ngân hàng, credit union hay lender có license DFPI: họ đưa Loan Estimate, nhưng form của broker DRE này không dính vào. Vay kinh doanh, vay tư nhân, hard money không có Loan Estimate: broker phải dùng bản Mortgage Loan Disclosure Statement đầy đủ (DRE RE 882, hoặc RE 885 cho loan không truyền thống). Không bao giờ là giấy duyệt loan.",
+"w4a": "Hạn chót",
+"w4b": "Loan Estimate phải tới trong 3 business days sau khi nộp đơn (luật TRID liên bang). Không đi đường LE thì bản disclosure tiểu bang phải tới trong 3 business days sau khi nhận đơn vay đầy đủ bằng giấy, hoặc trước khi mình bị ràng buộc, cái nào tới trước (B&P Code §10240).",
+"walk_h": "Đi qua form, từng dòng một",
+"walk_p": "Chỉ một trang. Bốn phần. Broker và người vay ví dụ điền chữ xanh.",
+"p1_r": "Phần đầu",
+"p1_h": "Ai là broker / người lo khoản vay",
+"p1_p": "Tựa đề nói hết: bản thay thế, dùng kèm Loan Estimate bằng giấy đúng luật TILA-RESPA Integrated Disclosure (TRID). Bên dưới ghi tên và địa chỉ văn phòng của broker lo khoản vay. Đó là công ty có license DRE, không phải ngân hàng bỏ tiền ra cho vay.",
+"p1_e": "<b>Ví dụ:</b> Example Mortgage &amp; Realty Inc., 100 Example Blvd, San Jose, CA 95100. Loan Estimate cũng phải ghi đúng tên broker đó và số NMLS.",
+"p2_r": "Căn nhà + Loan Estimate",
+"p2_h": "Căn nào, và câu “không phải cam kết cho vay”",
+"p2_p": "MSS ghi căn nhà (địa chỉ, city, county, zip, APN). Rồi tới hai câu quan trọng: có kèm Loan Estimate đầy đủ, và Loan Estimate không phải là cam kết cho vay. Loan Estimate là báo giá. Duyệt loan là chuyện sau, sau underwriting và appraisal.",
+"p2_e": "<b>Ví dụ:</b> 1234 Example Lane, San Jose, Santa Clara County, 95100. LE của anh Minh ghi khoản vay $960,000. Không có nghĩa là anh đã được duyệt số đó.",
+"p2_d": "<b>Khác bản MLDS đầy đủ (RE 882):</b> MLDS tự liệt kê mọi chi phí trong mấy trang. MSS không ghi con số nào; số nằm trong Loan Estimate kẹp theo.",
+"p3_r": "Kiểm license + vì sao phải ký",
+"p3_h": "Kiểm license, rồi ký cả hai",
+"p3_p": "Form ghi số điện thoại tra license của DRE, 1-877-373-4542, và www.dre.ca.gov, để mình kiểm broker và loan officer. Câu cuối: MSS và Loan Estimate đều phải có chữ ký, không thì broker vẫn phải đưa bản Mortgage Loan Disclosure Statement riêng.",
+"p3_e": "<b>Ví dụ:</b> anh Minh tra broker trên trang DRE và loan officer trên NMLS Consumer Access. Cả hai đều active. Rồi anh mới ký.",
+"p4_r": "Chữ ký",
+"p4_h": "Người vay, broker, và người lo khoản vay",
+"p4_p": "Ngày và chữ ký người vay, kèm tên viết in, rồi tới real estate broker và số license DRE, rồi “By” người có license đã lo khoản vay, kèm số DRE và ngày. Broker giữ bản có ký 3 năm (B&P §10240).",
+"p4_e": "<b>Ví dụ:</b> 06/11/2026, Minh Tran. Example Mortgage &amp; Realty Inc., DRE 01234567. By Agent Example, DRE 01234567 (số ví dụ).",
+"tool_h": "Mình phải nhận giấy nào? MSS hay bản MLDS đầy đủ",
+"tool_p": "Trả lời năm câu về người lo khoản vay. Ra ngay bản disclosure California nào áp dụng, hạn 3 business days, và những gì phải kiểm trước khi ký.",
+"l_who": "Ai đang lo khoản vay?",
+"l_pur": "Vay để làm gì",
+"l_lien": "Khoản vay nào",
+"l_amt": "Số tiền vay",
+"l_app": "Ngày nộp đơn vay",
+"l_le": "Đã nhận Loan Estimate chưa?",
+"o_re": "Broker địa ốc / loan agent có license DRE",
+"o_bank": "Ngân hàng, credit union hoặc lender trực tiếp",
+"o_dfpi": "Công ty mortgage có license DFPI (không phải DRE)",
+"o_home": "Nhà cho mình / gia đình ở (1–4 unit)",
+"o_biz": "Kinh doanh hoặc đầu tư",
+"o_first": "Khoản vay thứ nhất (1st lien)",
+"o_junior": "Vay thứ hai / HELOC (junior)",
+"o_y": "Rồi",
+"o_n": "Chưa",
+"r_k": "Mình phải nhận",
+"v_mss": "MSS + LE có ký",
+"v_mlds": "MLDS đầy đủ",
+"v_wait": "Cần LE trước",
+"v_not": "Không có MSS",
+"s_mss": "Ký MSS và Loan Estimate cùng lúc.",
+"s_biz": "Vay kinh doanh không có Loan Estimate TRID → form DRE RE 882/883 (hoặc RE 885).",
+"s_small": "Dưới {m}: không đi đường Loan Estimate được → MLDS của DRE.",
+"s_wait": "MSS chỉ dùng được khi đã có Loan Estimate để kẹp vào.",
+"s_not": "MSS là form riêng của broker có license DRE.",
+"i_sign": "Ký cả MSS lẫn Loan Estimate. Thiếu chữ ký thì broker vẫn nợ mình bản MLDS đầy đủ.",
+"i_attach": "Loan Estimate đầy đủ phải kẹp theo MSS.",
+"i_notcommit": "Đọc câu “does not constitute a loan commitment.” Mình chưa được duyệt.",
+"i_biz": "Vay kinh doanh hay đầu tư do broker DRE lo: xin bản Mortgage Loan Disclosure Statement (DRE RE 882 hoặc RE 883).",
+"i_885": "Loan chỉ trả lãi, negative amortization hay loại không truyền thống khác: form của DRE là RE 885.",
+"i_small": "Dưới {m} thì xin bản Mortgage Loan Disclosure Statement của DRE (RE 882). Khoản vay nhỏ còn có thêm giới hạn phí của California (B&P Article 7).",
+"i_wait": "Chưa có Loan Estimate. Trước hạn bên dưới mình phải nhận Loan Estimate (rồi MSS) hoặc bản MLDS đầy đủ.",
+"i_le_only": "Mình nhận Loan Estimate của liên bang từ lender. Disclosure của broker DRE ở California (MSS/MLDS) không áp cho lender này.",
+"i_biz_other": "Vay kinh doanh từ lender không thuộc DRE thì theo luật disclosure riêng của lender đó. Hỏi coi mình nhận giấy gì, khi nào.",
+"i_check_nmls": "Tra công ty và loan officer trên NMLS Consumer Access.",
+"i_lic": "Kiểm broker và loan officer: DRE {p} hoặc dre.ca.gov, và NMLS Consumer Access.",
+"i_keep": "Giữ bản mình đã ký. Broker phải giữ một bản 3 năm.",
+"i_shop": "Ký Loan Estimate chỉ là xác nhận đã nhận. Mình vẫn so được với lender khác.",
+"d_le": "Hạn nhận disclosure (<b>3 business days</b>)",
+"d_le_s": "sau ngày nộp đơn · TRID / B&P §10240",
+"d_none": "Nhập ngày nộp đơn",
+"r_hint": "ƯỚC TÍNH. Business day bỏ qua cuối tuần và ngày lễ liên bang; theo TRID, business day là ngày văn phòng lender mở cửa. Hỏi loan officer ngày chính xác trong hồ sơ của mình.",
+"m1": "<b>“Có Loan Estimate là được duyệt rồi.”</b> MSS ghi rõ: Loan Estimate không phải là cam kết cho vay.",
+"m2": "<b>“MSS là đơn xin vay.”</b> Không. Nó là tờ bìa disclosure một trang. Đơn xin vay (Form 1003) là giấy khác.",
+"m3": "<b>“Ai vay cũng có MSS.”</b> Chỉ khi broker có license DRE lo khoản vay. Vay thẳng ngân hàng thì không bao giờ thấy tờ này.",
+"m4": "<b>“Ký Loan Estimate là bị trói với lender đó.”</b> Ký chỉ là xác nhận đã nhận. Vẫn bỏ đi, vẫn so giá được.",
+"m5": "<b>“Agent nào cũng lo loan cho mình được.”</b> Lo vay mua nhà ở cần license DRE cộng endorsement loan originator trên NMLS. Kiểm cả hai trước khi ký.",
+"n1": "Đọc Loan Estimate từng dòng.",
+"n1l": "T311 · Đọc Loan Estimate",
+"n2": "So Closing Disclosure với Loan Estimate trước khi ký.",
+"n2l": "T312 · CD so với LE",
+"n3": "Đặt hai offer vay cạnh nhau.",
+"n3l": "T32 · So sánh hai loan",
+"n4": "Tra nhanh các form khác.",
+"n4l": "T402 · Thư viện forms",
+"n5": "Coi loan contingency nằm đâu trong hợp đồng mua.",
+"n5l": "T401 · Đọc hợp đồng RPA",
+"vid_p": "Tờ giấy một trang nói rõ “đây chưa phải là duyệt loan”, trong 45 giây.",
+"b_email": "Gửi kết quả này vào email",
+"subj": "Hỏi về disclosure khoản vay — {v}",
+"body": "Chào Ken,\n\nTôi vừa dùng tool MSS trên tools.kenlamrealty.com/t701.\nKết quả: {v}\nHạn nhận disclosure: {dl}\n{list}\n\nTên: {n}\nEmail: {e}\nĐiện thoại: {ph}\n",
+"sms": "Chào Ken, tôi nhận giấy vay có form MSS. Tool nói: {v} (hạn {dl}). Ken coi giùm tôi được không?"
+}
+};
+
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const D=()=>I18N[lang];
+const fmt=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>(o[k]!==undefined?o[k]:m));
+const money=n=>'$'+Math.round(n).toLocaleString('en-US');
+let last={};
+/* ---- dates: dùng giờ UTC trưa để khỏi lệch múi giờ ---- */
+const P2=n=>String(n).padStart(2,'0');
+function parseD(v){ if(!/^\d{4}-\d{2}-\d{2}$/.test(v||'')) return null; const [y,m,d]=v.split('-').map(Number); return new Date(Date.UTC(y,m-1,d,12)); }
+const iso=d=>d.getUTCFullYear()+'-'+P2(d.getUTCMonth()+1)+'-'+P2(d.getUTCDate());
+const addD=(d,n)=>new Date(d.getTime()+n*864e5);
+function fmtD(d){ if(!d) return '—'; const w=D().wd[d.getUTCDay()];
+  return lang==='vi' ? w+', '+P2(d.getUTCDate())+'/'+P2(d.getUTCMonth()+1)+'/'+d.getUTCFullYear()
+                     : w+', '+D().mo[d.getUTCMonth()]+' '+d.getUTCDate()+', '+d.getUTCFullYear(); }
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function applyLang(){ const d=D();
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  document.querySelectorAll('[data-ia]').forEach(el=>{const k=el.getAttribute('data-ia'); if(typeof d[k]==='string') el.setAttribute('alt',d[k].replace(/<[^>]+>/g,''));});
+  document.querySelectorAll('option[data-o]').forEach(el=>{const k=el.getAttribute('data-o'); if(typeof d[k]==='string') el.textContent=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; document.title=d.doc_title;
+  calc(); }
+
+
+let le=true;
+$('leY').onclick=()=>{le=true; $('leY').setAttribute('aria-pressed','true'); $('leN').setAttribute('aria-pressed','false'); calc();};
+$('leN').onclick=()=>{le=false; $('leN').setAttribute('aria-pressed','true'); $('leY').setAttribute('aria-pressed','false'); calc();};
+const isOff=d=>{const w=d.getUTCDay(); return w===0||w===6||HOL.has(iso(d));};
+function addBiz(d,n){ let x=d,c=0; while(c<n){ x=addD(x,1); if(!isOff(x)) c++; } return x; }
+function calc(){ const d=D();
+  const who=$('who').value, pur=$('pur').value, lien=$('lien').value, app=parseD($('app').value);
+  const amtV=parseFloat($('amt').value), amt=isFinite(amtV)&&amtV>0?amtV:0;
+  const min=lien==='first'?LAW.FIRST_MIN:LAW.JUNIOR_MIN;
+  const items=[]; const it=(c,k,o)=>items.push('<li class="'+c+'"><span>'+fmt(d[k],o||{})+'</span></li>');
+  let v, cls, sub;
+  if(who!=='re'){ v=d.v_not; cls='mid'; sub=d.s_not;
+    it('g', pur==='home'?'i_le_only':'i_biz_other'); it('w','i_check_nmls');
+  } else if(pur==='biz'){ v=d.v_mlds; cls='no'; sub=d.s_biz;
+    it('r','i_biz'); it('w','i_885');
+  } else if(amt>0 && amt<min){ v=d.v_mlds; cls='no'; sub=fmt(d.s_small,{m:money(min)});
+    it('r','i_small',{m:money(min)});
+  } else if(!le){ v=d.v_wait; cls='mid'; sub=d.s_wait;
+    it('w','i_wait'); it('w','i_885');
+  } else { v=d.v_mss; cls='ok'; sub=d.s_mss;
+    it('g','i_sign'); it('g','i_attach'); it('g','i_notcommit');
+  }
+  if(who==='re'){ it('w','i_lic',{p:LAW.DRE_PHONE}); it('g','i_keep'); }
+  it('w','i_shop');
+  $('rBig').textContent=v; $('rBig').className='big '+cls; $('rSub').textContent=sub;
+  let rows='';
+  if(app){ const dl=addBiz(app,LAW.BDAYS);
+    rows+='<div class="r"><span class="n">'+d.d_le+'</span><span class="a">'+fmtD(dl)+'<small>'+d.d_le_s+'</small></span></div>';
+    last={v:v,dl:fmtD(dl)};
+  } else { rows+='<div class="r"><span class="n">'+d.d_none+'</span><span class="a">—</span></div>'; last={v:v,dl:'—'}; }
+  $('rDates').innerHTML=rows; $('rList').innerHTML=items.join('');
+  last.list=items.map(x=>'- '+x.replace(/<[^>]+>/g,'')).join('\n');
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fmt(d.sms,last));
+}
+
+
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('videoBtn').onclick=()=>{ const v=$('vidEl'); $('vid').scrollIntoView({behavior:'smooth',block:'center'}); try{ const p=v.play(); if(p&&p.catch) p.catch(()=>{}); }catch(e){} };
+$('sendBtn').onclick=()=>{
+  const d=D(), n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>fmt(s,Object.assign({n:n,e:e,ph:ph},last));
+  /* LEAD → email tới ken@kenlamrealty.com (FUB parser đọc email này) */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+document.querySelectorAll('input,select').forEach(el=>{ el.addEventListener('input',calc); el.addEventListener('change',calc); });
+applyLang();
+
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'\u2190 All tools':'\u2190 T\u1ea5t c\u1ea3 tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
