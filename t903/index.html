@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Biên Nhận Báo Cáo (RFR) · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+@media (max-width:420px){.total .v{font-size:min(58px,13vw)}}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+
+/* ---- T222 thêm ---- */
+.chart{display:grid;gap:12px}
+.chart h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.cb{display:grid;gap:5px;min-width:0}
+.cb .hd{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:14px}
+.cb .hd b{font-weight:500;min-width:0}
+.cb .hd span{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.cb .tr{height:14px;border-radius:999px;background:var(--line);overflow:hidden}
+.cb .tr i{display:block;height:100%;border-radius:999px;background:var(--brass);transition:width .2s}
+.cb.p1 .tr i{background:#CBB7A3}.cb.p3 .tr i{background:var(--ok)}.cb.p4 .tr i{background:#A9B7A0}
+.cb small{font-size:12px;color:var(--muted);line-height:1.4}
+.cb.best .hd span{color:var(--ok)}
+.ctl input[type=number].sm{font-size:20px}
+</style>
+<meta name="description" content="Giải nghĩa form RFR (Receipt for Reports) bằng tiếng Việt: từng phần, ví dụ, và tool tính hạn xem báo cáo theo RPA.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t903/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Biên Nhận Báo Cáo (RFR) · Ken Lam Tools">
+<meta property="og:description" content="Giải nghĩa form RFR (Receipt for Reports) bằng tiếng Việt: từng phần, ví dụ, và tool tính hạn xem báo cáo theo RPA.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t903/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+html.embed .kl-back{display:none}
+html.embed body{padding-top:8px}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+<style>
+/* ---- Thuế nhà đất group thêm ---- */
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer;line-height:1.45}
+.chk input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;flex:none}
+.chk small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.grp{display:grid;gap:0}
+.grp h3{font-family:var(--display);font-weight:400;font-size:22px;margin:4px 0 6px}
+.seg button{min-width:0}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:12px 4px}
+.pill{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.04em;border-radius:999px;padding:2px 9px;margin-right:6px;vertical-align:1px}
+.pill.y{background:var(--brass-soft);color:var(--warn)}.pill.n{background:var(--brass-soft);color:var(--ok)}
+.ex{font-size:12px;color:var(--muted);margin:0}
+
+/* ---- Giải nghĩa form C.A.R. thêm (không đổi class cũ) ---- */
+h2.h{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.en-name{font-size:14px;color:var(--muted);margin:0}
+.ver{font-size:12px;color:var(--muted);margin:0;letter-spacing:.02em}
+.ver b{color:var(--fg);font-weight:500}
+.blk{display:grid;gap:10px;min-width:0}
+.blk p{margin:0}
+.eli{font-size:15px;line-height:1.6;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:8px}
+.eli p{margin:0}
+.eli .exl{background:var(--brass-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.vidw{display:grid;gap:8px;justify-items:center}
+.vidw video{display:block;background:#111;border:1px solid var(--line)}
+.paper{background:#FFFEFB;color:#2B2925;border:1px solid #DDD5C4;border-radius:6px;box-shadow:0 10px 30px rgba(43,41,37,.08);padding:18px 16px 10px;display:grid;gap:0;min-width:0}
+:root[data-theme="dark"] .paper{background:#F7F3EA}
+.paper .ph1{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;border-bottom:3px double #DDD5C4;padding-bottom:10px;margin-bottom:6px}
+.paper .ph1 b{font-family:var(--display);font-weight:500;font-size:20px;line-height:1.15;display:block}
+.paper .ph1 small{font-size:11px;color:#7A7468;letter-spacing:.06em;text-transform:uppercase}
+.paper .ph1 .no{font-size:11px;color:#7A7468;white-space:nowrap;text-align:right}
+.paper .meta2{font-size:12px;color:#5f594f;line-height:1.55;padding:4px 0 8px;border-bottom:1px solid #EAE3D5}
+.paper .meta2 u{text-decoration:none;border-bottom:1px solid #B8955A;color:#2B2925;font-family:'Be Vietnam Pro',sans-serif}
+.part{border-bottom:1px dashed #E2D9C7}
+.part:last-child{border-bottom:0}
+.pbtn{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-items:start;width:100%;text-align:left;border:0;background:transparent;color:#2B2925;font:inherit;padding:11px 2px;cursor:pointer}
+.pbtn:hover .pt{color:#8a6a35}
+.pn{font-size:11px;font-weight:600;color:#8a6a35;background:#F3EBDC;border-radius:6px;padding:2px 7px;white-space:nowrap;margin-top:2px}
+.pt{font-size:14px;font-weight:500;line-height:1.35;min-width:0}
+.pf{grid-column:2/3;font-size:12px;color:#6d675c;line-height:1.45;min-width:0;overflow-wrap:anywhere}
+.pf i{font-style:normal;background:#EEF3F1;color:#2f5f52;border-radius:4px;padding:0 4px}
+.chev{font-size:13px;color:#8a6a35;transition:transform .15s;margin-top:2px}
+.pbtn[aria-expanded="true"] .chev{transform:rotate(90deg)}
+.pbody{display:grid;gap:8px;padding:2px 2px 14px 2px;font-size:14px;line-height:1.55;color:#2B2925}
+.pbody[hidden]{display:none}
+.pbody p{margin:0}
+.pbody .k{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#7A7468;font-weight:600;margin-bottom:1px}
+.pbody .exb{background:#F6F1E6;border-radius:8px;padding:8px 10px}
+.pbody .care{border-left:3px solid #9A5B2E;padding-left:10px}
+.pbody .care .k{color:#9A5B2E}
+.allbtn{justify-self:start;border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;cursor:pointer}
+.rest{font-size:13px;color:var(--muted);margin:0}
+.tool{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:14px;min-width:0}
+.tool h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.tool .inputs{gap:12px}
+.sgn{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.sgn th,.sgn td{text-align:left;vertical-align:top;padding:9px 10px;border-bottom:1px solid var(--line);overflow-wrap:anywhere;line-height:1.45}
+.sgn th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--brass-soft)}
+.sgn tr:last-child td{border-bottom:0}
+.sgn td b{font-weight:500}
+.myths{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.myths li{font-size:14px;line-height:1.55;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 18px}
+.myths li b{color:var(--warn);font-weight:500;display:block;margin-bottom:4px}
+.big2{font-family:var(--display);font-weight:400;font-size:46px;line-height:1.02;font-variant-numeric:tabular-nums}
+@media (max-width:420px){.big2{font-size:min(46px,11vw)}}
+.big2 small{font-family:var(--body);font-size:14px;color:var(--muted)}
+.rlist{display:grid;gap:0;border-top:1px solid var(--line)}
+.ri{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px;line-height:1.45}
+.ri .dot{width:10px;height:10px;border-radius:50%;margin-top:6px;background:var(--line)}
+.ri.ok .dot{background:var(--ok)}.ri.no .dot{background:var(--warn)}.ri.mid .dot{background:var(--brass)}
+.ri small{grid-column:2;font-size:12px;color:var(--muted)}
+.ri b{font-weight:500}
+.tag{display:inline-block;font-size:11px;font-weight:600;border-radius:999px;padding:1px 8px;background:var(--brass-soft);color:var(--warn);margin-left:4px;white-space:nowrap}
+.tag.ok{color:var(--ok)}
+.rrow{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px}
+.rrow .top2{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.rrow .seg button{font-size:13px;padding:8px 6px}
+.mini{font-size:12px;color:var(--muted)}
+.xbtn{border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;cursor:pointer;justify-self:start}
+.ctl input[type=text].t{font-size:16px}
+.cks{display:grid;gap:8px}
+.cks .chk{padding:10px 12px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="h1">RFR — Biên nhận báo cáo</h1>
+    <p class="en-name">Receipt for Reports (C.A.R. Form RFR)</p>
+    <p class="ver" data-i="ver">Bản form: <b>C.A.R. Form RFR, Revised 12/25</b> · hạn tính theo RPA Revised 6/26</p>
+  </header>
+
+  <section class="blk" aria-labelledby="hWhat">
+    <h2 class="h" id="hWhat" data-i="h_what">Form này là gì</h2>
+    <div class="eli" data-i="what"><p><b>Ai dùng:</b> bên nhận giấy, thường là bên mua. <b>Lúc nào:</b> mỗi lần bên kia giao báo cáo, ví dụ termite, inspection, prelim, NHD, giấy HOA. <b>Để làm gì:</b> ghi lại đã nhận giấy gì, ai đặt, ngày nào, để sau này không ai cãi "tôi chưa nhận".</p><p class="exl">Giống ký nhận gói hàng: người giao ghi trong thùng có gì, mình ký "đã nhận". Ký nhận không có nghĩa là mình khen món hàng tốt.</p></div>
+  </section>
+
+  <section class="blk vidw" aria-labelledby="hVid">
+    <h2 class="h" id="hVid" data-i="h_vid" style="justify-self:stretch">Video 45 giây</h2>
+    <video src="form-45s.mp4" controls playsinline preload="metadata" style="width:100%;max-width:360px;border-radius:12px" aria-label="Video 45s RFR"></video>
+  </section>
+
+  <section class="blk" aria-labelledby="hWalk">
+    <h2 class="h" id="hWalk" data-i="h_walk">Đi qua từng phần của form</h2>
+    <p class="rest" data-i="walk_sub"></p>
+    <button type="button" class="allbtn" id="allBtn">Mở hết</button>
+    <div class="paper" role="group" aria-label="Form RFR">
+      <div id="paperHead"></div>
+      <div id="parts"></div>
+    </div>
+    
+  </section>
+
+  <section class="tool" aria-labelledby="hTool">
+    <h2 id="hTool" data-i="h_tool"></h2>
+    <p class="ex" data-i="ex"></p>
+    <div class="inputs">
+      <div class="field"><label for="acc"><span data-i="l_acc"></span></label><div class="ctl"><input id="acc" type="date" value="2026-11-02"></div></div>
+      <div class="row2">
+        <div class="field"><label for="d3"><span data-i="l_d3"></span></label><div class="ctl"><input id="d3" type="number" inputmode="numeric" min="1" max="90" value="17"><span class="post" data-i="u_days">ngày</span></div></div>
+        <div class="field"><label for="d5"><span data-i="l_d5"></span></label><div class="ctl"><input id="d5" type="number" inputmode="numeric" min="1" max="90" value="17"><span class="post" data-i="u_days">ngày</span></div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label><span data-i="l_hoa"></span></label><div class="seg" role="group" id="hoaG"><button type="button" data-v="1" aria-pressed="false" data-i="yes">Có</button><button type="button" data-v="0" aria-pressed="true" data-i="no">Không</button></div></div>
+        <div class="field"><label><span data-i="l_ten"></span></label><div class="seg" role="group" id="tenG"><button type="button" data-v="1" aria-pressed="false" data-i="yes">Có</button><button type="button" data-v="0" aria-pressed="true" data-i="no">Không</button></div></div>
+      </div>
+      <div class="grp"><h3 data-i="h_rows"></h3><div class="cks" id="rows"></div></div>
+    </div>
+    <div class="result" aria-live="polite">
+      <div class="row2">
+        <div class="total"><div class="k" data-i="bigK"></div><div class="big2" id="big"></div></div>
+        <div class="total"><div class="k" data-i="big2K"></div><div class="big2" id="big2" style="font-size:30px"></div></div>
+      </div>
+      <div class="status" id="status"></div>
+      <div class="rlist" id="rlist"></div>
+      <div class="note" data-i="note1"></div>
+    </div>
+  </section>
+
+  <section class="blk" aria-labelledby="hSign">
+    <h2 class="h" id="hSign" data-i="h_sign">Ai ký, ký lúc nào, hạn bao lâu</h2>
+    <table class="sgn"><colgroup><col style="width:28%"><col style="width:38%"><col style="width:34%"></colgroup>
+      <thead><tr><th data-i="th_who">Ai ký</th><th data-i="th_when">Lúc nào</th><th data-i="th_due">Hạn</th></tr></thead>
+      <tbody id="sgnBody"></tbody></table>
+  </section>
+
+  <section class="blk" aria-labelledby="hMyth">
+    <h2 class="h" id="hMyth" data-i="h_myth">Nhiều người hiểu sai</h2>
+    <ol class="myths" id="myths"></ol>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Bước tiếp theo</h2>
+    <ol id="nextList"></ol>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Gửi kết quả qua email</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Hỏi Ken</a>
+    <a class="btn" id="videoBtn" href="/t903/form-45s.mp4" target="_blank" rel="noopener" data-i="b_video">Xem video 45 giây</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title"></h2>
+    <p data-i="f_sub"></p>
+    <div class="field"><label for="fname"><span data-i="f_name">Tên</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (không bắt buộc)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Đã mở email.</div>
+    <div class="copyrow"><span data-i="f_or">Hoặc text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span class="src"><span data-i="ft_src">Nguồn</span>: <span data-i="src_txt"></span></span>
+    <span data-i="disc"></span>
+    <span class="who">Ken Lam Realty · Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 06/11/2026 · <a href="/cong-cu/" data-i="ft_all">Tất cả tools</a></span>
+  </footer>
+</div>
+
+<script>
+
+/* ===== RFR / RPA NUMBERS — sửa 1 chỗ ở đây (checked 06/11/2026 against C.A.R. RFR 12/25 + RPA 6/26) =====
+   3L(3) Investigation: 17 Days after Acceptance (buyer-ordered inspections).
+   3L(5) Seller Documents / 3L(6) Prelim / 3L(7) HOA: 17 Days after Acceptance OR 5 Days after Delivery, whichever is later.
+   3N(1)/14A: Seller delivers its documents within 7 Days after Acceptance (10A: seller-paid reports too).
+   12D: buyer gives seller copies of its reports by 3L(3) or 3 Days after receipt, whichever later.
+   25K + RFR §6: a link that can't be opened must be reported within 3 Days after Delivery.
+   11H: disclosure delivered after offer signed → 3 Days (in person) / 5 Days (mail/email) to rescind.
+   25I: Acceptance = Day 0; Sat/Sun/legal holiday → next business day (holidays NOT modeled). */
+const RFR={INV:17, SDOC:17, SDOC_AFTER:5, SELLER_DELIVER:7, COPY_AFTER:3, LINK:3};
+/* [letter, kind, core] kind: inv | title | nhd | hoa | lease ; core: 1 always, 'hoa', 'ten', 0 optional */
+const TYPES=[['A','inv',1],['B','inv',1],['C','title',1],['D','inv',0],['E','inv',0],['F','nhd',1],['G','inv',0],['H','inv',0],['I','inv',0],['J','inv',0],['K','hoa','hoa'],['L','hoa',0],['M','lease','ten'],['N','lease','ten']];
+const DEF={A:{on:1,by:'S',dt:'2026-11-06'},B:{on:1,by:'B',dt:'2026-11-05'},C:{on:1,by:'S',dt:'2026-11-04',link:1}};
+function toolInit(){
+  $('rows').innerHTML=TYPES.map(([k])=>{const df=DEF[k]||{};
+    return '<div class="rrow" id="r_'+k+'"><label class="chk" style="border:0;padding:0;background:transparent"><input type="checkbox" id="c_'+k+'"'+(df.on?' checked':'')+'><span data-i="rt_'+k+'"></span></label>'+
+    '<div class="sub" id="s_'+k+'" style="display:grid;gap:8px">'+
+    '<div class="row2"><div class="field"><label><span data-i="by"></span></label><div class="seg" role="group" id="g_'+k+'"><button type="button" data-v="B" aria-pressed="'+((df.by||'S')==='B')+'" data-i="byB">Buyer</button><button type="button" data-v="S" aria-pressed="'+((df.by||'S')==='S')+'" data-i="byS">Seller</button></div></div>'+
+    '<div class="field"><label for="dt_'+k+'"><span data-i="dt"></span></label><div class="ctl"><input id="dt_'+k+'" type="date" value="'+(df.dt||'2026-11-06')+'"></div></div></div>'+
+    '<label class="chk" style="padding:8px 10px"><input type="checkbox" id="l_'+k+'"'+(df.link?' checked':'')+'><span data-i="lnk"></span></label></div></div>';}).join('');
+}
+function rfrCalc(i){ /* pure: i={acc,d3,d5,hoa,ten,items:{k:{on,by,dt,link}}} */
+  const out={rows:[],miss:[],core:0,have:0,due:[]};
+  const sd=addD(i.acc,RFR.SELLER_DELIVER);
+  TYPES.forEach(([k,kind,core])=>{
+    const it=i.items[k]||{}; const isCore=core===1||(core==='hoa'&&i.hoa)||(core==='ten'&&i.ten);
+    if(isCore) out.core++;
+    if(!it.on){ if(isCore) out.miss.push({k,kind,by:(kind==='inv'&&k==='B')?'B':'S'}); return; }
+    if(isCore) out.have++;
+    let due,p,extra=[];
+    if(kind==='inv'&&it.by==='B'){ due=addD(i.acc,i.d3); p='3L(3)'; const c3=addD(it.dt,RFR.COPY_AFTER); extra.push(['copy',roll(c3>due?c3:due)]); }
+    else { const a=addD(i.acc,i.d5), b=addD(it.dt,RFR.SDOC_AFTER); due=a>b?a:b; p=kind==='title'?'3L(6)':kind==='hoa'?'3L(7)':kind==='nhd'?'3L(5) · 11G':'3L(5)';
+      if(it.by==='S'&&it.dt>sd) extra.push(['late',sd]); }
+    if(it.link) extra.push(['link',roll(addD(it.dt,RFR.LINK))]);
+    if(kind==='nhd') extra.push(['nhd','']);
+    const dr=roll(due); out.due.push(dr);
+    out.rows.push({k,by:it.by,dt:it.dt,due,dr,p,extra});
+  });
+  out.sd=roll(sd); out.inv=roll(addD(i.acc,i.d3)); out.earliest=out.due.length?out.due.slice().sort()[0]:'';
+  return out;
+}
+function toolCalc(d){
+  const items={}; TYPES.forEach(([k])=>{const on=$('c_'+k).checked; $('s_'+k).style.display=on?'grid':'none';
+    items[k]={on,by:segV('g_'+k)||'S',dt:$('dt_'+k).value,link:$('l_'+k).checked};});
+  const acc=$('acc').value||'2026-11-02';
+  const r=rfrCalc({acc,d3:Math.max(0,Math.round(num('d3'))),d5:Math.max(0,Math.round(num('d5'))),hoa:segV('hoaG')==='1',ten:segV('tenG')==='1',items});
+  $('big').innerHTML=r.have+'<small> / '+r.core+'</small>';
+  $('big2').textContent=r.earliest?fd(r.earliest):'—';
+  const nm=k=>d['rt_'+k].replace(/^[A-N] · /,'');
+  const missN=r.miss.map(m=>nm(m.k));
+  $('status').className='status '+(r.miss.length?'warn':'ok');
+  $('status').innerHTML=r.miss.length?T(d.st_miss,{n:r.miss.length,list:missN.join(', ')}):d.st_ok;
+  const by=b=>b==='B'?d.byB:d.byS;
+  let h=r.rows.map(x=>{ const ex=x.extra.map(([t,v])=>'<small>'+(t==='copy'?T(d.r_copy,{d:fd(v)}):t==='late'?T(d.r_late,{d:fd(roll(v))}):t==='link'?T(d.r_link,{d:fd(v)}):d.r_nhd)+'</small>').join('');
+    return '<div class="ri '+(x.extra.some(e=>e[0]==='late')?'mid':'ok')+'"><span class="dot"></span><span><b>'+esc(nm(x.k))+'</b> — '+T(d.r_rcv,{dt:fd(x.dt),by:by(x.by)})+'</span><small>'+T(d.r_due,{due:fdr(x.due),p:x.p})+'</small>'+ex+'</div>';}).join('');
+  h+=r.miss.map(m=>'<div class="ri no"><span class="dot"></span><span><b>'+esc(nm(m.k))+'</b> <span class="tag">'+d.miss+'</span></span><small>'+(m.by==='B'?T(d.r_missB,{d:fd(r.inv)}):T(d.r_missS,{d:fd(r.sd)}))+'</small></div>').join('');
+  $('rlist').innerHTML=h;
+  const o={acc:fd(acc),n:r.have,m:r.core,miss:missN.join(', ')||d.none,due:r.earliest?fd(r.earliest):d.none};
+  const body=[d.l_acc.replace(/<[^>]+>/g,'')+': '+o.acc, d.bigK+': '+r.have+'/'+r.core, d.miss+': '+o.miss, d.big2K+': '+o.due, '',
+    ...r.rows.map(x=>'- '+nm(x.k)+' ('+by(x.by)+', '+fd(x.dt)+'): '+fd(x.dr)+' ['+x.p+']')].join('\n');
+  return {sms:T(d.sms,o),body};
+}
+
+const TOOL_CODE='T903', TOOL_DIR='t903';
+const PAGE={vi:{"h1": "RFR — Biên nhận báo cáo", "ver": "Bản form: <b>C.A.R. Form RFR, Revised 12/25</b> · hạn tính theo RPA Revised 6/26", "what": "<p><b>Ai dùng:</b> bên nhận giấy, thường là bên mua. <b>Lúc nào:</b> mỗi lần bên kia giao báo cáo, ví dụ termite, inspection, prelim, NHD, giấy HOA. <b>Để làm gì:</b> ghi lại đã nhận giấy gì, ai đặt, ngày nào, để sau này không ai cãi \"tôi chưa nhận\".</p><p class=\"exl\">Giống ký nhận gói hàng: người giao ghi trong thùng có gì, mình ký \"đã nhận\". Ký nhận không có nghĩa là mình khen món hàng tốt.</p>", "h_tool": "Đã nhận giấy gì, còn thiếu gì, hạn khi nào", "l_acc": "Ngày Acceptance (hợp đồng có hiệu lực)", "l_d3": "Hạn Investigation <small>(RPA 3L(3))</small>", "l_d5": "Hạn xem giấy seller <small>(RPA 3L(5)–(7))</small>", "u_days": "ngày", "l_hoa": "Nhà có HOA?", "l_ten": "Có người thuê ở?", "h_rows": "Đánh dấu giấy đã nhận", "by": "Ai đặt", "byB": "Buyer", "byS": "Seller", "dt": "Ngày nhận", "lnk": "Nhận qua link", "rt_A": "A · Termite (Wood Destroying Pest)", "rt_B": "B · Home inspection", "rt_C": "C · Prelim title (Preliminary Report)", "rt_D": "D · Kiểm tra mái", "rt_E": "E · Ống cống ra đường (Sewer lateral)", "rt_F": "F · NHD (vùng thiên tai)", "rt_G": "G · Thử nước giếng", "rt_H": "H · Hầm phân (Septic)", "rt_I": "I · Máy lạnh / sưởi (HVAC)", "rt_J": "J · Báo cáo của chính quyền", "rt_K": "K · Giấy HOA theo luật (Civil Code § 4525)", "rt_L": "L · Giấy HOA theo hợp đồng", "rt_M": "M · Hợp đồng thuê", "rt_N": "N · Tenant estoppel", "bigK": "Giấy chính đã nhận", "big2K": "Hạn gỡ contingency sớm nhất", "st_ok": "<b>Đủ giấy chính.</b> Đọc hết rồi mới gỡ contingency. Báo cáo nào khuyên kiểm thêm (§7) thì gọi thợ trước hạn.", "st_miss": "<b>Còn thiếu {n} giấy:</b> {list}. Đừng gỡ contingency liên quan khi chưa nhận (RPA 8I).", "r_rcv": "nhận {dt} · {by} đặt", "r_due": "Hạn xem và gỡ: <b>{due}</b> ({p})", "r_copy": "Bên mua đưa seller bản sao trước {d} (RPA 12D)", "r_late": "Seller giao trễ: hạn giao là {d} (RPA 3N(1))", "r_link": "Không mở được link thì báo trước hết {d} (RPA 25K, RFR §6)", "r_nhd": "NHD giao sau khi ký offer: có quyền hủy trong 3 ngày nếu nhận tận tay, 5 ngày nếu qua mail/email (RPA 11H)", "r_missS": "Chưa nhận. Seller phải giao trước {d} (RPA 3N(1)).", "r_missB": "Chưa có. Anh chị tự đặt, làm xong trước {d} (RPA 3L(3)).", "miss": "Chưa nhận", "note1": "Hạn ở đây tính theo RPA bản 6/26: ngày Acceptance là ngày 0, hết 11:59 tối ngày cuối. Rơi vào thứ Bảy, Chủ nhật thì dời qua ngày làm việc kế (RPA 25I). Tool không tính ngày lễ, nhớ kiểm lịch. Hợp đồng của anh chị có thể đổi số ngày.", "none": "—", "sms": "Chào Ken, tôi xem tool T903 (RFR). Acceptance {acc}. Đã nhận {n}/{m} giấy chính. Thiếu: {miss}. Hạn sớm nhất: {due}. Cho tôi hỏi thêm.", "subj": "RFR — giấy đã nhận / còn thiếu — {nm}", "src_txt": "C.A.R. Form RFR (Receipt for Reports), Revised 12/25 · C.A.R. Form RPA, Revised 6/26: đoạn 3L, 3N(1), 8I, 10A, 11G–11H, 12D, 14, 25I, 25K"},en:{"h1": "RFR — Receipt for Reports", "ver": "Form version: <b>C.A.R. Form RFR, Revised 12/25</b> · deadlines from RPA Revised 6/26", "what": "<p><b>Who uses it:</b> whoever is receiving documents, usually the buyer. <b>When:</b> each time the other side hands over reports, such as termite, inspection, prelim, NHD or HOA documents. <b>Why:</b> to record what was received, who ordered it and when, so nobody can later say \"I never got it.\"</p><p class=\"exl\">Like signing for a package: the sender lists what is in the box and you sign \"received.\" Signing does not mean you like what is inside.</p>", "h_tool": "What you have, what is missing, and when it is due", "l_acc": "Acceptance date (contract in effect)", "l_d3": "Investigation period <small>(RPA 3L(3))</small>", "l_d5": "Seller documents review <small>(RPA 3L(5)–(7))</small>", "u_days": "days", "l_hoa": "Is there an HOA?", "l_ten": "Tenants living there?", "h_rows": "Check the documents you received", "by": "Ordered by", "byB": "Buyer", "byS": "Seller", "dt": "Date received", "lnk": "Received by link", "rt_A": "A · Termite (Wood Destroying Pest)", "rt_B": "B · Home inspection", "rt_C": "C · Preliminary title report", "rt_D": "D · Roof inspection", "rt_E": "E · Sewer lateral", "rt_F": "F · NHD (natural hazards)", "rt_G": "G · Domestic well test", "rt_H": "H · Septic inspection", "rt_I": "I · HVAC inspection", "rt_J": "J · Government inspection or report", "rt_K": "K · Statutory HOA disclosures (Civil Code § 4525)", "rt_L": "L · Contractual HOA disclosures", "rt_M": "M · Lease documents", "rt_N": "N · Tenant estoppel certificates", "bigK": "Key documents received", "big2K": "Earliest contingency deadline", "st_ok": "<b>All key documents in.</b> Read everything before removing contingencies. If a report recommends more inspection (§7), book it before the deadline.", "st_miss": "<b>Still missing {n}:</b> {list}. Do not remove the related contingency before you have it (RPA 8I).", "r_rcv": "received {dt} · ordered by {by}", "r_due": "Review and remove by: <b>{due}</b> ({p})", "r_copy": "Buyer gives seller a copy by {d} (RPA 12D)", "r_late": "Seller delivered late: it was due {d} (RPA 3N(1))", "r_link": "If the link won't open, say so by end of {d} (RPA 25K, RFR §6)", "r_nhd": "NHD delivered after the offer was signed: you may cancel within 3 days if handed to you, 5 days if by mail/email (RPA 11H)", "r_missS": "Not received. Seller must deliver by {d} (RPA 3N(1)).", "r_missB": "Not done yet. You order it; finish by {d} (RPA 3L(3)).", "miss": "Not received", "note1": "Deadlines follow the 6/26 RPA: Acceptance day is Day 0, and the last day ends at 11:59 pm. If it lands on a Saturday or Sunday it moves to the next business day (RPA 25I). The tool does not count holidays, so check a calendar. Your contract may use different numbers of days.", "none": "—", "sms": "Hi Ken, I used tool T903 (RFR). Acceptance {acc}. Received {n}/{m} key documents. Missing: {miss}. Earliest deadline: {due}. I have a question.", "subj": "RFR — received / missing documents — {nm}", "src_txt": "C.A.R. Form RFR (Receipt for Reports), Revised 12/25 · C.A.R. Form RPA, Revised 6/26: paragraphs 3L, 3N(1), 8I, 10A, 11G–11H, 12D, 14, 25I, 25K"}};
+const PAPER_HEAD={"vi": "<div class=\"ph1\"><div><small>C.A.R. Form RFR · Revised 12/25</small><b>Receipt for Reports</b></div><div class=\"no\">No. <u>1</u><br>bản vẽ lại</div></div><div class=\"meta2\">Theo: <u>Purchase Agreement</u> ngày <u>02/11/2026</u><br>Nhà: <u>1234 Example Lane, San Jose, CA 95100</u><br>Buyer: <u>Anh Minh &amp; Chị Lan Nguyễn</u><br>Seller: <u>Cô Hạnh Trần</u></div>", "en": "<div class=\"ph1\"><div><small>C.A.R. Form RFR · Revised 12/25</small><b>Receipt for Reports</b></div><div class=\"no\">No. <u>1</u><br>redrawn</div></div><div class=\"meta2\">Under: <u>Purchase Agreement</u> dated <u>11/02/2026</u><br>Property: <u>1234 Example Lane, San Jose, CA 95100</u><br>Buyer: <u>Anh Minh &amp; Chị Lan Nguyễn</u><br>Seller: <u>Cô Hạnh Trần</u></div>"};
+const PARTS=[{"p": {"vi": "Đầu form", "en": "Header"}, "t": {"vi": "Hợp đồng nào, nhà nào, ai mua ai bán", "en": "Which contract, which home, who is buying and selling"}, "f": {"vi": "☑ <i>Purchase Agreement</i> · ngày <i>02/11/2026</i> · số RFR <i>No. 1</i>", "en": "☑ <i>Purchase Agreement</i> · dated <i>11/02/2026</i> · RFR <i>No. 1</i>"}, "say": {"vi": "Ghi tờ biên nhận này đi theo hợp đồng nào (thường là hợp đồng mua RPA), ngày ký, địa chỉ nhà, tên bên mua và bên bán. Ô \"No.\" để đánh số, vì một deal hay có nhiều tờ RFR: mỗi đợt giao giấy là một tờ.", "en": "Says which contract this receipt belongs to (usually the RPA purchase agreement), its date, the address, and the buyer and seller. The \"No.\" box is a number, because one deal often has several RFRs: one per batch of documents."}, "ex": {"vi": "RFR No. 1 cho hợp đồng ngày 02/11/2026, nhà 1234 Example Lane. Tuần sau seller giao thêm NHD thì làm RFR No. 2.", "en": "RFR No. 1 for the 11/02/2026 contract on 1234 Example Lane. When the seller sends the NHD next week, that is RFR No. 2."}, "care": null}, {"p": "§1", "t": {"vi": "Ai đang nhận báo cáo", "en": "Who is receiving the reports"}, "f": {"vi": "☑ <i>Buyer</i> ☐ Seller đang được giao các báo cáo ở §4 và §5", "en": "☑ <i>Buyer</i> ☐ Seller is being given the reports in §4 and §5"}, "say": {"vi": "Đánh dấu bên nào đang nhận giấy: bên mua hay bên bán. Đa số là bên mua nhận giấy từ bên bán. Nhưng cũng có lúc ngược lại, ví dụ bên mua gửi báo cáo inspection của mình cho bên bán.", "en": "Check which side is receiving: buyer or seller. Most of the time the buyer receives from the seller. It can go the other way, for example when the buyer sends their inspection report to the seller."}, "ex": {"vi": "Anh Minh &amp; Chị Lan (Buyer) nhận báo cáo termite và prelim mà bên Cô Hạnh đặt.", "en": "Anh Minh &amp; Chị Lan (Buyer) receive the termite report and prelim that Cô Hạnh's side ordered."}, "care": {"vi": "Hợp đồng RPA (đoạn 12D) bắt buộc bên mua đưa bên bán bản sao mọi báo cáo kiểm tra mình làm, miễn phí. Khi đó chính bên bán ký RFR.", "en": "The RPA (paragraph 12D) requires the buyer to give the seller free copies of every inspection report the buyer gets. Then the seller is the one who signs an RFR."}}, {"p": "§2", "t": {"vi": "Broker và seller không bảo đảm báo cáo", "en": "Broker and seller do not vouch for the reports"}, "f": {"vi": "Báo cáo do người khác làm · broker/seller <i>không kiểm lại</i>", "en": "Reports made by others · broker/seller <i>did not verify</i>"}, "say": {"vi": "Agent và bên bán chỉ chuyển giấy. Họ không kiểm lại báo cáo đúng hay đủ, cũng không bảo đảm người làm báo cáo làm tốt.", "en": "The agents and the seller only pass the papers along. They did not check whether the report is right or complete, and they do not vouch for the person who wrote it."}, "ex": {"vi": "Báo cáo termite ghi \"không thấy mối\". Agent không thể bảo đảm câu đó. Muốn chắc thì đặt người kiểm riêng.", "en": "The termite report says \"no termites found.\" The agent cannot promise that. If you want to be sure, hire your own inspector."}, "care": null}, {"p": "§3", "t": {"vi": "Bên mua nên tự kiểm tra", "en": "Buyer should do their own inspections"}, "f": {"vi": "Báo cáo người khác đặt <i>không thay</i> inspection của bên mua", "en": "Reports others ordered <i>do not replace</i> the buyer's own"}, "say": {"vi": "Báo cáo nào bên mua không tự đặt thì đừng coi là đủ. Form khuyên bên mua đặt kiểm tra riêng cho cùng hạng mục, và cho bất cứ điều gì ảnh hưởng giá trị căn nhà.", "en": "Any report the buyer did not order should not be treated as enough. The form advises the buyer to get their own inspections of the same items, and of anything else that affects the home's value."}, "ex": {"vi": "Seller đưa báo cáo mái làm năm ngoái. Anh Minh vẫn nên gọi thợ mái xem lại trong 17 ngày kiểm tra.", "en": "The seller hands over last year's roof report. Anh Minh should still have a roofer look within the 17-day inspection period."}, "care": null}, {"p": "§4", "t": {"vi": "Danh sách báo cáo làm cho deal này (A–R)", "en": "Reports ordered for this deal (A–R)"}, "f": {"vi": "☑ A Termite · <i>S</i> · 06/11 &nbsp;☑ B Home inspection · <i>B</i> · 05/11 &nbsp;☑ C Prelim · <i>S</i> · 04/11 · <i>link</i>", "en": "☑ A Termite · <i>S</i> · 11/06 &nbsp;☑ B Home inspection · <i>B</i> · 11/05 &nbsp;☑ C Prelim · <i>S</i> · 11/04 · <i>link</i>"}, "say": {"vi": "Bảng chính của form. Mỗi dòng là một loại giấy: A termite (pest), B home inspection, C prelim title, D mái, E ống cống ra đường (sewer lateral), F NHD, G nước giếng, H hầm phân (septic), I máy lạnh sưởi (HVAC), J báo cáo của chính quyền, K và L giấy HOA, M hợp đồng thuê, N estoppel của người thuê, O–R để trống tự ghi. Mỗi dòng ghi ai đặt (B = bên mua, S = bên bán), ai làm, ngày làm, và có giao qua link không.", "en": "The main table. Each line is a type of document: A termite (pest), B home inspection, C preliminary title report, D roof, E sewer lateral, F NHD, G well water, H septic, I HVAC, J government report, K and L HOA documents, M leases, N tenant estoppels, O–R blank lines. Each line shows who ordered it (B = buyer, S = seller), who prepared it, its date, and whether it came by link."}, "ex": {"vi": "Dòng A: termite, bên bán đặt (S), ngày 06/11. Dòng C: prelim, bên bán đặt, gửi qua link Google Drive.", "en": "Line A: termite, ordered by the seller (S), dated 11/06. Line C: prelim, ordered by the seller, sent by Google Drive link."}, "care": {"vi": "Ô \"ai đặt\" quan trọng hơn người ta nghĩ. Theo RPA, báo cáo bên mua tự đặt nằm trong hạn Investigation 3L(3), 17 ngày. Giấy bên bán phải giao thì hạn xem là 17 ngày hoặc 5 ngày sau khi nhận, cái nào trễ hơn (3L(5)–3L(7)). Tool ở dưới tính giúp.", "en": "The \"ordered by\" box matters more than people think. Under the RPA, reports the buyer ordered fall under the Investigation deadline 3L(3), 17 days. Documents the seller must deliver get 17 days or 5 days after delivery, whichever is later (3L(5)–3L(7)). The tool below does the math."}}, {"p": "§5", "t": {"vi": "Báo cáo cũ seller đang giữ", "en": "Old reports the seller already had"}, "f": {"vi": "☑ A <i>Báo cáo mái 2025</i> · làm bởi <i>thợ mái (ví dụ)</i>", "en": "☑ A <i>2025 roof report</i> · by <i>roofer (example)</i>"}, "say": {"vi": "Giấy từ lần mua bán trước, hoặc seller có sẵn. Seller chưa kiểm lại nội dung, có thể đã cũ, không còn đúng tình trạng nhà bây giờ.", "en": "Papers from an earlier sale, or that the seller already had. The seller has not checked them, and they may be out of date and no longer match the home today."}, "ex": {"vi": "Cô Hạnh còn giữ báo cáo mái năm 2025 lúc thay ống xối. Ghi ở §5, không phải §4.", "en": "Cô Hạnh still has a 2025 roof report from when the gutters were replaced. It goes in §5, not §4."}, "care": {"vi": "Báo cáo cũ chỉ để tham khảo. Mưa một mùa là mái khác rồi.", "en": "An old report is only background. One rainy season and the roof is different."}}, {"p": "§6", "t": {"vi": "Giao qua link", "en": "Reports delivered by link"}, "f": {"vi": "☐ A Tất cả giấy giao qua link &nbsp;☐ B ____", "en": "☐ A All reports delivered by link &nbsp;☐ B ____"}, "say": {"vi": "Nếu bên nhận không mở được link, không tải được, hoặc muốn nhận file trực tiếp, thì đánh dấu ở đây. Theo RPA đoạn 25K, phải báo bằng văn bản trong 3 ngày sau khi nhận link. Không báo thì coi như đã nhận và đã mở được.", "en": "If the receiving side cannot open the link, cannot download, or wants the files sent directly, check it here. Under RPA paragraph 25K, you must say so in writing within 3 days of getting the link. If you don't, you are treated as having received and opened it."}, "ex": {"vi": "Link prelim nhận thứ Tư 04/11 mà không mở được: hạn là 07/11, rơi vào thứ Bảy nên dời qua hết thứ Hai 09/11 (RPA 25I).", "en": "Prelim link received Wednesday 11/04 and it won't open: the deadline is 11/07, a Saturday, so it moves to the end of Monday 11/09 (RPA 25I)."}, "care": {"vi": "Link hết hạn hay đòi đăng nhập là chuyện thường. Bấm thử ngay ngày nhận, đừng để tới lúc gỡ contingency mới mở.", "en": "Links that expire or ask for a login are common. Click it the day you get it, not on contingency-removal day."}}, {"p": "§7", "t": {"vi": "Báo cáo khuyên kiểm thêm", "en": "When a report recommends more inspections"}, "f": {"vi": "\"Khuyên gọi thợ điện kiểm tra thêm\" → <i>gọi người có chuyên môn</i>", "en": "\"Recommend further evaluation by electrician\" → <i>call a qualified expert</i>"}, "say": {"vi": "Báo cáo nào khuyên kiểm thêm thì bên mua nên gọi người có chuyên môn để quyết có cần không. Không làm là đi ngược lời khuyên của broker.", "en": "If any report recommends more investigation, the buyer should call a qualified expert to decide whether it is needed. Skipping it means acting against the broker's advice."}, "ex": {"vi": "Home inspection ghi \"panel điện cũ, nên cho thợ điện xem\". Anh Minh gọi thợ điện trong thời gian kiểm tra.", "en": "The home inspection says \"older electrical panel, have an electrician evaluate.\" Anh Minh books an electrician inside the inspection period."}, "care": {"vi": "Câu \"nên kiểm thêm\" trong báo cáo là chỗ người ta hay bỏ qua nhất, và cũng là chỗ hay kiện nhau nhất sau khi close.", "en": "The \"further evaluation recommended\" line is what people skip most, and it is also where most after-closing disputes start."}}, {"p": "§8", "t": {"vi": "Báo cáo làm cho người khác", "en": "Reports prepared for someone else"}, "f": {"vi": "Báo cáo <i>không do bên mua đặt</i> → có thể không đòi được người làm", "en": "Report <i>not ordered by the buyer</i> → may have no claim against preparer"}, "say": {"vi": "Báo cáo người khác đặt (seller hay ai đó) thì nếu sai sót, bên mua có thể không có quyền đòi người làm báo cáo. Nên hỏi người làm báo cáo xem họ có nhận trách nhiệm với bên mua không.", "en": "If a report was ordered by someone else (the seller or anyone), the buyer may have no claim against its preparer for errors. Ask the preparer whether they will stand behind the report for the buyer."}, "ex": {"vi": "Báo cáo termite do bên Cô Hạnh đặt. Anh Minh gọi công ty termite hỏi có thể ghi thêm tên bên mua không.", "en": "The termite report was ordered by Cô Hạnh's side. Anh Minh calls the termite company to ask if they can add the buyer's name."}, "care": null}, {"p": {"vi": "Ký", "en": "Sign"}, "t": {"vi": "Ký nhận", "en": "Signature"}, "f": {"vi": "☑ Buyer <i>Minh Nguyễn</i> · ngày <i>06/11/2026</i>", "en": "☑ Buyer <i>Minh Nguyễn</i> · date <i>11/06/2026</i>"}, "say": {"vi": "Bên nhận ký xác nhận đã nhận các giấy có đánh dấu, đã nhận bản RFR này, đã đọc và hiểu. Dòng nào đánh \"Via Link\" mà không ghi ở §6 thì coi như bên nhận mở được hết.", "en": "The receiving side signs to confirm they received the checked documents, got a copy of this RFR, and read and understood it. Any line marked \"Via Link\" that is not listed in §6 means the receiver confirms they could open it all."}, "ex": {"vi": "Anh Minh và Chị Lan ký ngày 06/11/2026, ngay hôm nhận giấy.", "en": "Anh Minh and Chị Lan sign on 11/06/2026, the day they get the documents."}, "care": {"vi": "Ký RFR là xác nhận \"đã nhận\", không phải \"đồng ý\" hay \"chấp nhận tình trạng nhà\". Nhưng ngày nhận ghi trên đó có thể làm bắt đầu đếm ngày.", "en": "Signing an RFR says \"received,\" not \"agree\" and not \"accept the home's condition.\" But the receipt date can start a deadline clock."}}];
+const SIGN=[[{"vi": "Bên nhận giấy (thường là Buyer)", "en": "The receiving side (usually Buyer)"}, {"vi": "Mỗi lần nhận một đợt báo cáo. Một deal có thể có RFR No. 1, 2, 3…", "en": "Each time a batch of reports is delivered. One deal can have RFR No. 1, 2, 3…"}, {"vi": "Form không đặt hạn ký. Hạn xem xét tính theo RPA (tool ở trên).", "en": "The form sets no signing deadline. Review deadlines come from the RPA (tool above)."}], [{"vi": "Bên nhận, nếu không mở được link", "en": "Receiver, if a link won't open"}, {"vi": "Ghi ở §6, báo bằng văn bản", "en": "Mark §6 and say so in writing"}, {"vi": "3 ngày sau khi nhận link (RPA 25K)", "en": "3 days after the link is delivered (RPA 25K)"}], [{"vi": "Bên giao (agent bên kia)", "en": "The delivering side (other agent)"}, {"vi": "Điền §4–§5: loại giấy, ai đặt, ai làm, ngày", "en": "Fills in §4–§5: type, who ordered, who prepared, date"}, {"vi": "Giấy seller phải giao: 7 ngày sau Acceptance (RPA 3N(1))", "en": "Seller documents: 7 days after Acceptance (RPA 3N(1))"}]];
+const MYTHS=[[{"vi": "\"Ký RFR là đồng ý với tình trạng nhà.\"", "en": "\"Signing the RFR means I accept the home.\""}, {"vi": "Không. RFR chỉ là biên nhận: \"tôi nhận rồi\". Muốn xin sửa thì làm RR, muốn gỡ điều kiện thì ký CR, muốn rút thì ký CC. Nhưng ngày nhận trên RFR có thể làm bắt đầu đếm 5 ngày xem giấy, nên đừng ký cho có.", "en": "No. The RFR is just a receipt: \"I got it.\" To ask for repairs you use an RR, to remove contingencies a CR, to cancel a CC. But the receipt date can start a 5-day review clock, so don't sign it without looking."}], [{"vi": "\"Seller có báo cáo rồi, khỏi tốn tiền inspection.\"", "en": "\"The seller already has reports, so I can skip my inspection.\""}, {"vi": "Hai mươi mấy năm làm nghề, tôi thấy chỗ này người mua tiếc tiền nhất và hối hận nhiều nhất. Báo cáo seller đặt không làm cho anh chị. Sai thì anh chị có thể không đòi được ai (§8). Vài trăm đô inspection là rẻ nhất trong cả deal.", "en": "After twenty-plus years, this is where buyers save the most money and regret it the most. The seller's report was not done for you. If it's wrong, you may have no one to go after (§8). A few hundred dollars for your own inspection is the cheapest part of the deal."}], [{"vi": "\"Nhận link là đủ, khi nào rảnh mở.\"", "en": "\"I got the link, I'll open it later.\""}, {"vi": "Theo RPA 25K, nhận link mà 3 ngày không báo là coi như đã mở được. Link hết hạn ngày 18, anh chị mở ngày 19, vẫn bị tính là đã nhận. Bấm ngay, tải về máy.", "en": "Under RPA 25K, if you don't speak up within 3 days, you are treated as having opened it. If the link expires on the 18th and you click on the 19th, it still counts as delivered. Open it now and download it."}]];
+const NEXT=[["/t401/", {"vi": "Đọc hợp đồng RPA từng bước (T401)", "en": "Read the RPA step by step (T401)"}, {"vi": "— chỗ ghi 17 ngày và các hạn 3L.", "en": "— where the 17 days and 3L deadlines live."}], ["/t908/", {"vi": "RR — Yêu cầu sửa nhà (T908)", "en": "RR — Request for Repair (T908)"}, {"vi": "— đọc báo cáo xong thì xin sửa bằng form này.", "en": "— after reading the reports, ask for repairs with this form."}], ["/t60/", {"vi": "Lịch escrow (T60)", "en": "Escrow calendar (T60)"}, {"vi": "— xếp mọi hạn lên lịch.", "en": "— put every deadline on a calendar."}], ["/t402/", {"vi": "Thư viện forms (T402)", "en": "Forms library (T402)"}, {"vi": "— các form khác.", "en": "— other forms."}]];
+
+const BASE={
+ vi:{b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 45 giây',
+  f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  f_title:'Gửi kết quả này về email',f_sub:'Ken nhận được sẽ trả lời trong ngày. Không spam.',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',nx_title:'Bước tiếp theo',ex:'Số đang hiện là ví dụ với 1234 Example Lane. Sửa lại theo hồ sơ của bạn.',
+  h_what:'Form này là gì',h_vid:'Video 45 giây',h_walk:'Đi qua từng phần của form',walk_sub:'Đây là tờ form vẽ lại cho dễ hiểu, không phải bản gốc. Bấm vào từng phần để xem giải thích.',
+  k_say:'Nói gì',k_ex:'Ví dụ với 1234 Example Lane',k_care:'Cẩn thận',all_open:'Mở hết',all_close:'Đóng hết',
+  h_sign:'Ai ký, ký lúc nào, hạn bao lâu',th_who:'Ai ký',th_when:'Lúc nào',th_due:'Hạn',h_myth:'Nhiều người hiểu sai',
+  disc:'Trang này chỉ để hiểu form, không thay form gốc, không phải tư vấn pháp lý hay thuế. Khi ký thật, đọc bản đầy đủ và hỏi agent hoặc luật sư.',
+  yes:'Có',no:'Không',dows:['CN','T2','T3','T4','T5','T6','T7'],wk:'rơi vào cuối tuần, dời qua',
+  e_head:'Tên: {nm}\nEmail: {em}\nPhone: {ph}\n',e_foot:'\nChỉ để tham khảo, không thay form gốc.\nGửi từ tool {tc} tools.kenlamrealty.com/{td}/'},
+ en:{b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 45-sec video',
+  f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  f_title:'Email this result to yourself',f_sub:'Ken will reply the same day. No spam.',
+  ft_src:'Sources',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',nx_title:'Next steps',ex:'The numbers shown are an example for 1234 Example Lane. Change them to match your deal.',
+  h_what:'What this form is',h_vid:'45-second video',h_walk:'Walk through the form, part by part',walk_sub:'This is a redrawn sheet to make it easy to follow, not the original form. Tap any part to see what it means.',
+  k_say:'What it says',k_ex:'Example: 1234 Example Lane',k_care:'Watch out',all_open:'Open all',all_close:'Close all',
+  h_sign:'Who signs, when, and deadlines',th_who:'Who signs',th_when:'When',th_due:'Deadline',h_myth:'What people get wrong',
+  disc:'This page only explains the form. It does not replace the original form and is not legal or tax advice. Before you sign, read the full form and ask your agent or an attorney.',
+  yes:'Yes',no:'No',dows:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],wk:'falls on a weekend, moves to',
+  e_head:'Name: {nm}\nEmail: {em}\nPhone: {ph}\n',e_foot:'\nFor reference only, does not replace the original form.\nSent from tool {tc} tools.kenlamrealty.com/{td}/'}
+};
+
+
+const I18N={vi:Object.assign({},BASE.vi,PAGE.vi),en:Object.assign({},BASE.en,PAGE.en)};
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const T=(s,o)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+const L=o=>o==null?'':(typeof o==='string'?o:(o[lang]??o.vi));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* dates: ISO yyyy-mm-dd, counted in UTC so time zone never shifts a day (RPA 25I: event day = Day 0) */
+const D=iso=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||'');return m?new Date(Date.UTC(+m[1],+m[2]-1,+m[3])):null};
+const ISO=d=>d.toISOString().slice(0,10);
+const addD=(iso,n)=>{const d=D(iso);if(!d)return '';d.setUTCDate(d.getUTCDate()+n);return ISO(d)};
+const dow=iso=>{const d=D(iso);return d?d.getUTCDay():-1};
+const roll=iso=>{let x=iso;while(x&&(dow(x)===0||dow(x)===6))x=addD(x,1);return x};
+const diffD=(a,b)=>{const x=D(a),y=D(b);return x&&y?Math.round((y-x)/864e5):0};
+const fd=iso=>{const d=D(iso);if(!d)return '—';const dd=String(d.getUTCDate()).padStart(2,'0'),mm=String(d.getUTCMonth()+1).padStart(2,'0');
+  return I18N[lang].dows[d.getUTCDay()]+' '+(lang==='vi'?dd+'/'+mm+'/'+d.getUTCFullYear():mm+'/'+dd+'/'+d.getUTCFullYear())};
+const fdr=iso=>{const r=roll(iso);return r===iso?fd(iso):fd(iso)+' → '+fd(r)};
+let last={sms:'',body:''};
+const OPEN=new Set();
+function renderWalk(){
+  const d=I18N[lang];
+  $('paperHead').innerHTML=L(PAPER_HEAD);
+  $('parts').innerHTML=PARTS.map((p,i)=>{const o=OPEN.has(i);
+    return '<div class="part"><button type="button" class="pbtn" aria-expanded="'+o+'" aria-controls="pb'+i+'" data-p="'+i+'">'+
+    '<span class="pn">'+esc(L(p.p))+'</span><span class="pt">'+L(p.t)+'</span><span class="chev" aria-hidden="true">›</span>'+
+    '<span class="pf">'+L(p.f)+'</span></button>'+
+    '<div class="pbody" id="pb'+i+'"'+(o?'':' hidden')+'>'+
+    '<p><span class="k">'+d.k_say+'</span>'+L(p.say)+'</p>'+
+    '<p class="exb"><span class="k">'+d.k_ex+'</span>'+L(p.ex)+'</p>'+
+    (p.care?'<p class="care"><span class="k">'+d.k_care+'</span>'+L(p.care)+'</p>':'')+'</div></div>';}).join('');
+  $('allBtn').textContent=OPEN.size===PARTS.length?d.all_close:d.all_open;
+}
+function renderStatic(){
+  const d=I18N[lang];
+  renderWalk();
+  $('sgnBody').innerHTML=SIGN.map(r=>'<tr><td><b>'+L(r[0])+'</b></td><td>'+L(r[1])+'</td><td>'+L(r[2])+'</td></tr>').join('');
+  $('myths').innerHTML=MYTHS.map(m=>'<li><b>'+L(m[0])+'</b>'+L(m[1])+'</li>').join('');
+  $('nextList').innerHTML=NEXT.map(n=>'<li><a href="'+n[0]+'">'+L(n[1])+'</a> '+L(n[2])+'</li>').join('');
+}
+function calc(){
+  const d=I18N[lang]; const r=toolCalc(d)||{}; last=r;
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(r.sms||'');
+  klSend();
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  document.querySelectorAll('[data-o]').forEach(el=>{const k=el.getAttribute('data-o'); if(typeof d[k]==='string') el.textContent=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  renderStatic(); if(typeof toolLang==='function') toolLang(d); calc();
+}
+const EMBED=/[?&]embed=1/.test(location.search);
+let klSend=()=>{};
+if(EMBED){ document.documentElement.classList.add('embed'); let lastH=0;
+  klSend=()=>{ const w=document.querySelector('.wrap'); const h=Math.ceil(w.getBoundingClientRect().bottom+window.scrollY+40); if(Math.abs(h-lastH)<4) return; lastH=h; try{ parent.postMessage({klToolsHeight:h},'*'); }catch(e){} };
+  window.addEventListener('resize',()=>klSend());
+  document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('a[href]'); if(!a) return; const h=a.getAttribute('href'); if(h.startsWith('#')||a.target==='_blank') return; if(h.startsWith('/')) a.href='https://tools.kenlamrealty.com'+h; a.target='_top'; },true); }
+$('parts').addEventListener('click',e=>{const b=e.target.closest('.pbtn'); if(!b) return; const i=+b.getAttribute('data-p');
+  if(OPEN.has(i)) OPEN.delete(i); else OPEN.add(i);
+  const o=OPEN.has(i); b.setAttribute('aria-expanded',o); $('pb'+i).hidden=!o; $('allBtn').textContent=OPEN.size===PARTS.length?I18N[lang].all_close:I18N[lang].all_open; klSend();});
+$('allBtn').onclick=()=>{ if(OPEN.size===PARTS.length) OPEN.clear(); else PARTS.forEach((p,i)=>OPEN.add(i)); renderWalk(); klSend(); };
+const segV=id=>{const b=document.querySelector('#'+id+' button[aria-pressed="true"]'); return b?b.getAttribute('data-v'):'';};
+function bindSegs(root){ (root||document).querySelectorAll('.seg').forEach(g=>{ if(g.__b) return; g.__b=1; g.querySelectorAll('button[data-v]').forEach(b=>b.addEventListener('click',()=>{
+  g.querySelectorAll('button[data-v]').forEach(x=>x.setAttribute('aria-pressed',x===b)); calc();}));}); }
+function bindInputs(root){ (root||document).querySelectorAll('.tool input,.tool select,.tool textarea').forEach(el=>{ if(el.__b) return; el.__b=1; el.addEventListener('input',calc); el.addEventListener('change',calc);}); }
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus(); klSend();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], o={nm:$('fname').value.trim()||'—',em:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—',tc:TOOL_CODE,td:TOOL_DIR};
+  /* LEAD → FUB: mailto ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const a=document.createElement('a'); a.href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(T(d.subj,o))+'&body='+encodeURIComponent(T(d.e_head,o)+'\n'+(last.body||'')+'\n'+T(d.e_foot,o)); a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){} };
+if(typeof toolInit==='function') toolInit();
+bindSegs(); bindInputs();
+applyLang();
+
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

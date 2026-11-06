@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Khai người ký thay bên mua (RCSD-B) · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+@media (max-width:420px){.total .v{font-size:min(58px,13vw)}}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+
+/* ---- T222 thêm ---- */
+.chart{display:grid;gap:12px}
+.chart h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.cb{display:grid;gap:5px;min-width:0}
+.cb .hd{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:14px}
+.cb .hd b{font-weight:500;min-width:0}
+.cb .hd span{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.cb .tr{height:14px;border-radius:999px;background:var(--line);overflow:hidden}
+.cb .tr i{display:block;height:100%;border-radius:999px;background:var(--brass);transition:width .2s}
+.cb.p1 .tr i{background:#CBB7A3}.cb.p3 .tr i{background:var(--ok)}.cb.p4 .tr i{background:#A9B7A0}
+.cb small{font-size:12px;color:var(--muted);line-height:1.4}
+.cb.best .hd span{color:var(--ok)}
+.ctl input[type=number].sm{font-size:20px}
+
+/* ---- Nhóm giải nghĩa form C.A.R. (T901–T914) ---- */
+:root{--ink:#2C4A7C;--paper:#FFFEFA}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--ink:#9DB6E3;--paper:#26231F}}
+:root[data-theme="dark"]{--ink:#9DB6E3;--paper:#26231F}
+.wrap{max-width:640px}
+.code{font-size:13px;color:var(--muted);margin:0}
+.code b{color:var(--fg);font-weight:500}
+.ver{display:inline-block;justify-self:start;font-size:12px;color:var(--warn);background:var(--brass-soft);border-radius:999px;padding:3px 10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px;min-width:0}
+.card h2,.tool h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.card p{margin:0;font-size:15px;line-height:1.55}
+.card p.eg{font-size:14px;color:var(--muted);border-left:3px solid var(--brass);padding-left:12px}
+.vidbox{display:grid;gap:10px;justify-items:start}
+.vidbox h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.paper{background:var(--paper);border:1px solid var(--line);border-radius:6px;box-shadow:0 10px 30px rgba(43,41,37,.08);padding:18px 14px 10px;display:grid;gap:0;min-width:0}
+.paper .ph{text-align:center;border-bottom:3px double var(--line);padding-bottom:10px;margin-bottom:4px;display:grid;gap:2px}
+.paper .ph b{font-family:var(--display);font-weight:500;font-size:21px;line-height:1.15;letter-spacing:.02em}
+.paper .ph small{font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.paper .ph i{font-style:normal;font-size:11px;color:var(--warn)}
+.pt{border-bottom:1px dashed var(--line)}
+.pt:last-child{border-bottom:0}
+.pt>button{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-items:start;border:0;background:transparent;color:var(--fg);font:inherit;text-align:left;padding:12px 4px;cursor:pointer;border-radius:8px}
+.pt>button:hover{background:var(--brass-soft)}
+.pt .no{font-size:12px;font-weight:600;color:var(--brass);border:1px solid var(--brass);border-radius:6px;padding:1px 6px;margin-top:2px;white-space:nowrap}
+.pt .lb{display:grid;gap:3px;min-width:0}
+.pt .lb b{font-weight:500;font-size:15px;line-height:1.35}
+.pt .lb span{font-size:14px;color:var(--ink);border-bottom:1px solid var(--line);padding-bottom:2px;overflow-wrap:anywhere;font-style:italic}
+.pt .cv{color:var(--muted);font-size:18px;line-height:1;transition:transform .15s;margin-top:2px}
+.pt.open .cv{transform:rotate(90deg)}
+.px{display:none;gap:10px;padding:2px 6px 14px 6px}
+.pt.open .px{display:grid}
+.px div{font-size:14px;line-height:1.55;min-width:0}
+.px div b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:2px}
+.px .ex2{background:var(--brass-soft);border-radius:10px;padding:10px 12px}
+.px .cf{border:1px solid var(--warn);border-radius:10px;padding:10px 12px}
+.px .cf b{color:var(--warn)}
+.rest{font-size:13px;color:var(--muted);margin:8px 0 0;line-height:1.5}
+.tapall{justify-self:start;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:13px;padding:5px 12px;border-radius:999px;cursor:pointer}
+.tool{display:grid;gap:14px}
+.tbl{width:100%;border-collapse:collapse;table-layout:fixed;font-size:14px}
+.tbl th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+.tbl td{padding:10px 6px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.45;overflow-wrap:anywhere}
+.tbl td:first-child{font-weight:500}
+.myths{display:grid;gap:12px;margin:0;padding:0;list-style:none}
+.myths li{font-size:14px;line-height:1.55;border-top:1px solid var(--line);padding-top:12px}
+.myths li:first-child{border-top:0;padding-top:0}
+.myths li b{color:var(--warn);font-weight:500}
+.next ul{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.cmp{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr);gap:0;border-top:1px solid var(--line);font-size:14px}
+.cmp>div{padding:9px 4px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.cmp .h{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.cmp .ch{color:var(--warn);font-weight:600}
+.cmp .k{color:var(--muted)}
+.cmp small{display:block;font-size:11px;color:var(--muted);font-weight:400}
+.big2{font-family:var(--display);font-weight:400;font-size:40px;line-height:1.05;font-variant-numeric:tabular-nums;margin-top:4px}
+@media (max-width:420px){.big2{font-size:32px}}
+.est{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--warn);border:1px solid var(--warn);border-radius:999px;padding:1px 8px;vertical-align:3px;margin-left:6px}
+.doclist{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px;line-height:1.5}
+.doclist small{color:var(--muted)}
+footer .disc{line-height:1.55}
+.ctl{min-width:0}
+.ctl input{width:100%}
+
+</style>
+<meta name="description" content="RCSD-B giải thích bằng tiếng Việt: mua bằng trust, LLC, giấy ủy quyền (POA) hay conservatorship — ghi tên thế nào, nộp giấy gì, hạn 3 ngày theo RPA.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t901/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Khai người ký thay bên mua (RCSD-B) · Ken Lam Tools">
+<meta property="og:description" content="Mua nhà bằng trust, LLC hay POA: ghi tên thế nào, ký ra sao, nộp giấy gì.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t901/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+html.embed .kl-back{display:none}
+html.embed body{padding-top:8px}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+<style>
+/* ---- Thuế nhà đất group thêm ---- */
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer;line-height:1.45}
+.chk input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;flex:none}
+.chk small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.grp{display:grid;gap:0}
+.grp h3{font-family:var(--display);font-weight:400;font-size:22px;margin:4px 0 6px}
+.seg button{min-width:0}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:12px 4px}
+.pill{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.04em;border-radius:999px;padding:2px 9px;margin-right:6px;vertical-align:1px}
+.pill.y{background:var(--brass-soft);color:var(--warn)}.pill.n{background:var(--brass-soft);color:var(--ok)}
+.ex{font-size:12px;color:var(--muted);margin:0}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools · T901</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="h1"></h1>
+    <p class="code" data-i="enorig"></p>
+    <span class="ver" data-i="verline"></span>
+    <p class="sub" data-i="sub"></p>
+  </header>
+
+  <section class="card" aria-labelledby="hWhat">
+    <h2 id="hWhat" data-i="h_what"></h2>
+    <p data-i="what"></p>
+    <p class="eg" data-i="what_eg"></p>
+  </section>
+
+  <section class="vidbox" aria-labelledby="hVid">
+    <h2 id="hVid" data-i="h_vid"></h2>
+    <video src="form-45s.mp4" controls playsinline preload="metadata" style="width:100%;max-width:360px;border-radius:12px" aria-label="RCSD-B 45s video"></video>
+    <p class="ex" data-i="vid_note"></p>
+  </section>
+
+  <section class="tool" aria-labelledby="hParts">
+    <h2 id="hParts" data-i="h_parts"></h2>
+    <p class="ex" data-i="tap"></p>
+    <div class="paper">
+      <div class="ph"><small>C.A.R. Form RCSD-B · Revised 6/23</small><b data-i="ph_title"></b><i data-i="mock"></i></div>
+      <div class="pt"><button type="button" aria-expanded="false" aria-controls="px0"><span class="no" data-i="p0_n"></span><span class="lb"><b data-i="p0_t"></b><span data-i="p0_v"></span></span><span class="cv" aria-hidden="true">›</span></button>
+      <div class="px" id="px0"><div><b data-i="k_say"></b><span data-i="p0_s"></span></div><div class="ex2"><b data-i="k_ex"></b><span data-i="p0_e"></span></div><div class="cf"><b data-i="k_cf"></b><span data-i="p0_w"></span></div></div></div><div class="pt"><button type="button" aria-expanded="false" aria-controls="px1"><span class="no" data-i="p1_n"></span><span class="lb"><b data-i="p1_t"></b><span data-i="p1_v"></span></span><span class="cv" aria-hidden="true">›</span></button>
+      <div class="px" id="px1"><div><b data-i="k_say"></b><span data-i="p1_s"></span></div><div class="ex2"><b data-i="k_ex"></b><span data-i="p1_e"></span></div><div class="cf"><b data-i="k_cf"></b><span data-i="p1_w"></span></div></div></div><div class="pt"><button type="button" aria-expanded="false" aria-controls="px2"><span class="no" data-i="p2_n"></span><span class="lb"><b data-i="p2_t"></b><span data-i="p2_v"></span></span><span class="cv" aria-hidden="true">›</span></button>
+      <div class="px" id="px2"><div><b data-i="k_say"></b><span data-i="p2_s"></span></div><div class="ex2"><b data-i="k_ex"></b><span data-i="p2_e"></span></div><div class="cf"><b data-i="k_cf"></b><span data-i="p2_w"></span></div></div></div><div class="pt"><button type="button" aria-expanded="false" aria-controls="px3"><span class="no" data-i="p3_n"></span><span class="lb"><b data-i="p3_t"></b><span data-i="p3_v"></span></span><span class="cv" aria-hidden="true">›</span></button>
+      <div class="px" id="px3"><div><b data-i="k_say"></b><span data-i="p3_s"></span></div><div class="ex2"><b data-i="k_ex"></b><span data-i="p3_e"></span></div></div></div><div class="pt"><button type="button" aria-expanded="false" aria-controls="px4"><span class="no" data-i="p4_n"></span><span class="lb"><b data-i="p4_t"></b><span data-i="p4_v"></span></span><span class="cv" aria-hidden="true">›</span></button>
+      <div class="px" id="px4"><div><b data-i="k_say"></b><span data-i="p4_s"></span></div><div class="ex2"><b data-i="k_ex"></b><span data-i="p4_e"></span></div><div class="cf"><b data-i="k_cf"></b><span data-i="p4_w"></span></div></div></div><div class="pt"><button type="button" aria-expanded="false" aria-controls="px5"><span class="no" data-i="p5_n"></span><span class="lb"><b data-i="p5_t"></b><span data-i="p5_v"></span></span><span class="cv" aria-hidden="true">›</span></button>
+      <div class="px" id="px5"><div><b data-i="k_say"></b><span data-i="p5_s"></span></div><div class="ex2"><b data-i="k_ex"></b><span data-i="p5_e"></span></div></div></div><div class="pt"><button type="button" aria-expanded="false" aria-controls="px6"><span class="no" data-i="p6_n"></span><span class="lb"><b data-i="p6_t"></b><span data-i="p6_v"></span></span><span class="cv" aria-hidden="true">›</span></button>
+      <div class="px" id="px6"><div><b data-i="k_say"></b><span data-i="p6_s"></span></div><div class="ex2"><b data-i="k_ex"></b><span data-i="p6_e"></span></div><div class="cf"><b data-i="k_cf"></b><span data-i="p6_w"></span></div></div></div><div class="pt"><button type="button" aria-expanded="false" aria-controls="px7"><span class="no" data-i="p7_n"></span><span class="lb"><b data-i="p7_t"></b><span data-i="p7_v"></span></span><span class="cv" aria-hidden="true">›</span></button>
+      <div class="px" id="px7"><div><b data-i="k_say"></b><span data-i="p7_s"></span></div><div class="ex2"><b data-i="k_ex"></b><span data-i="p7_e"></span></div><div class="cf"><b data-i="k_cf"></b><span data-i="p7_w"></span></div></div></div><div class="pt"><button type="button" aria-expanded="false" aria-controls="px8"><span class="no" data-i="p8_n"></span><span class="lb"><b data-i="p8_t"></b><span data-i="p8_v"></span></span><span class="cv" aria-hidden="true">›</span></button>
+      <div class="px" id="px8"><div><b data-i="k_say"></b><span data-i="p8_s"></span></div><div class="ex2"><b data-i="k_ex"></b><span data-i="p8_e"></span></div><div class="cf"><b data-i="k_cf"></b><span data-i="p8_w"></span></div></div></div><div class="pt"><button type="button" aria-expanded="false" aria-controls="px9"><span class="no" data-i="p9_n"></span><span class="lb"><b data-i="p9_t"></b><span data-i="p9_v"></span></span><span class="cv" aria-hidden="true">›</span></button>
+      <div class="px" id="px9"><div><b data-i="k_say"></b><span data-i="p9_s"></span></div><div class="ex2"><b data-i="k_ex"></b><span data-i="p9_e"></span></div><div class="cf"><b data-i="k_cf"></b><span data-i="p9_w"></span></div></div></div><div class="pt"><button type="button" aria-expanded="false" aria-controls="px10"><span class="no" data-i="p10_n"></span><span class="lb"><b data-i="p10_t"></b><span data-i="p10_v"></span></span><span class="cv" aria-hidden="true">›</span></button>
+      <div class="px" id="px10"><div><b data-i="k_say"></b><span data-i="p10_s"></span></div><div class="ex2"><b data-i="k_ex"></b><span data-i="p10_e"></span></div></div></div>
+    </div>
+    <button class="tapall" id="tapAll" type="button" data-i="tapall"></button>
+    
+  </section>
+
+  <section class="tool" aria-labelledby="hTool">
+    <h2 id="hTool" data-i="h_tool"></h2>
+    <p class="sub" data-i="tool_sub"></p>
+
+    <section class="inputs" aria-label="Inputs">
+      <p class="ex" data-i="ex"></p>
+      <div class="field"><label for="kind" data-i="l_kind"></label>
+        <div class="ctl"><select id="kind">
+          <option value="trust" data-o="o_trust"></option>
+          <option value="entity" data-o="o_entity"></option>
+          <option value="poa" data-o="o_poa"></option>
+          <option value="estate" data-o="o_estate"></option>
+        </select></div></div>
+      <div class="field"><label for="ename"><span data-i="l_name"></span> <small id="nameHint"></small></label><div class="ctl"><input id="ename" type="text" autocomplete="off"></div></div>
+      <div class="field"><label for="signers"><span data-i="l_sign"></span> <small data-i="l_sign_s"></small></label><div class="ctl"><input id="signers" type="text" autocomplete="off"></div></div>
+      <div class="field"><label for="acc"><span data-i="l_acc"></span> <small data-i="l_acc_s"></small></label><div class="ctl"><input id="acc" type="date" value="2026-11-09"></div></div>
+    </section>
+
+    <section class="result" aria-live="polite">
+      <div class="total"><div class="k" data-i="bigK"></div><div class="big2" id="big">—</div></div>
+      <div class="status ok" id="status"></div>
+      <div class="lines">
+        <div class="line"><span class="n"><b data-i="r_box"></b></span><span class="a" id="oBox" style="white-space:normal;text-align:right"></span></div>
+        <div class="line"><span class="n"><b data-i="r_buyer"></b><small id="oBuyer"></small></span></div>
+        <div class="line"><span class="n"><b data-i="r_full"></b><small id="oFull"></small></span></div>
+        <div class="line"><span class="n"><b data-i="r_by"></b><small id="oBy"></small></span></div>
+      </div>
+      <div><b data-i="r_docs" style="font-weight:500;font-size:15px"></b><ul class="doclist" id="oDocs"></ul></div>
+      <div class="note" id="oWho"></div>
+      <div class="note" id="oCf"></div>
+    </section>
+
+  </section>
+
+  <section class="card" aria-labelledby="hSign">
+    <h2 id="hSign" data-i="h_sign"></h2>
+    <table class="tbl"><thead><tr><th data-i="th_who"></th><th data-i="th_when"></th><th data-i="th_due"></th></tr></thead><tbody><tr><td data-i="s0a"></td><td data-i="s0b"></td><td data-i="s0c"></td></tr><tr><td data-i="s1a"></td><td data-i="s1b"></td><td data-i="s1c"></td></tr><tr><td data-i="s2a"></td><td data-i="s2b"></td><td data-i="s2c"></td></tr></tbody></table>
+  </section>
+
+  <section class="card" aria-labelledby="hMyth">
+    <h2 id="hMyth" data-i="h_myth"></h2>
+    <ul class="myths"><li data-i="m0"></li><li data-i="m1"></li><li data-i="m2"></li></ul>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title"></h2>
+    <ul><li data-i="nx0"></li><li data-i="nx1"></li><li data-i="nx2"></li><li data-i="nx3"></li></ul>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email"></button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms"></a>
+    <a class="btn" id="videoBtn" href="form-45s.mp4" target="_blank" rel="noopener" data-i="b_video"></a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title"></h2>
+    <p data-i="f_sub"></p>
+    <div class="field"><label for="fname"><span data-i="f_name">Tên</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send"></button>
+    <div class="ok" id="sent" hidden data-i="f_ok"></div>
+    <div class="copyrow"><span data-i="f_or">Hoặc text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span class="src"><span data-i="ft_src">Nguồn</span>: C.A.R. Form RCSD-B, Revised 6/23 (Representative Capacity Signature Disclosure (for Buyer Representatives)) · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=PROB&amp;sectionNum=18100.5" target="_blank" rel="noopener">Probate Code §18100.5 (Certification of Trust)</a> · <a href="https://tools.kenlamrealty.com/t401/" target="_blank" rel="noopener">C.A.R. RPA 6/26 ¶ 24, 25I</a></span>
+    <span class="who">Ken Lam Realty · Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 06/11/2026 · <a href="/cong-cu/" data-i="ft_all">Tất cả tools</a></span>
+    <span class="disc" data-i="disc"></span>
+  </footer>
+</div>
+
+<script>
+/* ===== RCSD-B — C.A.R. Form RCSD-B Revised 6/23 =====
+   RCSD-B tu no KHONG ghi so ngay nop giay to. Han 3 Days lay tu RPA 6/26 doan 24 (Legally Authorized Signer):
+   giao cho ben kia va Escrow Holder trong 3 Days sau Acceptance bang chung quyen ky (Certification of Trust - Probate Code 18100.5,
+   letters testamentary, court order, POA, corporate resolution, formation documents).
+   RPA 25I(4): sau Acceptance, han trung thu Bay/Chu Nhat/Legal Holiday -> doi qua ngay lam viec ke. Tool chi doi thu Bay/CN. */
+const RC={DOC_DAYS:3,
+  DEF:{trust:{name:'Nguyen Family Trust dated 03/15/2019',signers:'Minh Nguyen, Lan Nguyen'},
+       entity:{name:'Nguyen Investments LLC',signers:'Minh Nguyen'},
+       poa:{name:'Minh Nguyen',signers:'Lan Nguyen'},
+       estate:{name:'Conservatorship of Bao Pham, Case #00PR000000',signers:'Lan Nguyen'}}};
+const I18N={"vi": {"b_email": "Gửi kết quả qua email", "b_sms": "Hỏi Ken", "b_video": "Xem video 45 giây", "f_name": "Tên", "f_phone": "Phone (không bắt buộc)", "f_send": "Gửi", "f_ok": "Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.", "f_or": "Hoặc text:", "f_copy": "Copy", "f_title": "Gửi kết quả này về email", "f_sub": "Ken nhận được sẽ trả lời và gửi thêm giấy tờ cần chuẩn bị. Không spam.", "ft_src": "Nguồn", "ft_upd": "Cập nhật", "ft_all": "Tất cả tools", "lang": "English", "nx_title": "Bước tiếp theo", "ex": "Số đang hiện là ví dụ. Sửa lại số của bạn.", "yes": "Có", "no": "Không", "h_what": "Form này là gì", "h_vid": "Video 45 giây", "h_parts": "Đi qua từng phần của form", "h_sign": "Ai ký, ký lúc nào, hạn bao lâu", "h_myth": "Nhiều người hiểu sai", "tap": "Bấm vào từng phần để xem giải thích.", "tapall": "Mở / đóng hết", "k_say": "Nói gì", "k_ex": "Ví dụ với 1234 Example Lane", "k_cf": "Cẩn thận", "mock": "Minh họa vẽ lại — không phải form thật", "th_who": "Ai ký", "th_when": "Lúc nào", "th_due": "Hạn", "disc": "Trang này chỉ để hiểu form, không thay form gốc, không phải tư vấn pháp lý hay thuế. Ký thật thì đọc bản đầy đủ và hỏi agent hoặc luật sư.", "vid_note": "Video không có tiếng, có chữ. Xem được trên điện thoại.", "wd": ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"], "mo": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"], "h1": "RCSD-B — Khai người ký thay bên mua", "enorig": "Tên gốc: <b>Representative Capacity Signature Disclosure (for Buyer Representatives)</b>", "verline": "Bản form: C.A.R. Form RCSD-B, Revised 6/23", "sub": "Mua bằng trust, LLC, giấy ủy quyền hay conservatorship: ghi tên thế nào, ai ký, nộp giấy gì, hạn bao lâu.", "what": "RCSD-B là tờ khai một trang khi người ký offer không mua cho chính mình mà ký thay: thay trust, thay công ty, thay người đã ủy quyền, hay thay người được tòa bảo hộ. Dùng lúc làm offer (hoặc ký hợp đồng thuê agent). Nó cho bên bán và escrow biết ai là người mua thật, ai có quyền ký.", "what_eg": "Giống ba mẹ ký giấy cho con đi field trip: người ký là ba mẹ, nhưng người đi là con. RCSD-B ghi rõ \"ai đi\" và \"ai ký\".", "p0_n": "Đầu form", "p0_t": "Form này để làm gì — và không để làm gì", "p0_v": "Không phải assignment · không dùng để thêm người mua mới", "p0_s": "Mục đích: cho biết ai là người mua thật (principal) và ai có quyền ký thay. Form nói rõ đây không phải assignment, không được dùng để thêm bên mới sau khi hợp đồng đã thành.", "p0_e": "Nguyen Family Trust mua căn 1234 Example Lane; Anh Minh và Chị Lan ký với tư cách trustee.", "p0_w": "Hợp đồng ký rồi mới muốn thêm tên em trai vào? Không phải chỗ này.", "p1_n": "Ô đầu", "p1_t": "Thay thế phần khai trước đó", "p1_v": "☐ Thay cho phần Legally Authorized Signer trong hợp đồng", "p1_s": "Tick ô này thì RCSD-B thay cho phần khai người ký đại diện (Legally Authorized Signer) đã ghi trong hợp đồng hoặc trên một RCSD trước đó.", "p1_e": "Offer ghi Anh Minh là trustee duy nhất, giờ thêm Chị Lan là co-trustee → làm RCSD-B mới, tick ô này.", "p1_w": "RPA 6/26 có sẵn đoạn 32B (Entity Buyers). Điền đầy đủ 32B thì RPA nói không cần RCSD nữa. Hai chỗ ghi khác nhau là rắc rối.", "p2_n": "Dòng tham chiếu", "p2_t": "Gắn vào hợp đồng nào, nhà nào", "p2_v": "Purchase Agreement · 1234 Example Lane · Seller: Cô Hạnh Trần", "p2_s": "Chọn giấy được khai: Purchase Agreement, hoặc Buyer Representation Agreement, Assignment of Agreement Addendum, hay giấy khác. Ghi ngày, địa chỉ nhà, tên Seller (hoặc Broker) và Buyer.", "p2_e": "Purchase Agreement ngày 03/11/2026, 1234 Example Lane, San Jose, CA 95100. Seller: Cô Hạnh Trần.", "p2_w": "Ký hợp đồng thuê agent (buyer representation) bằng tên trust cũng cần khai — form có ô riêng cho việc đó.", "p3_n": "Hướng dẫn tên Buyer", "p3_t": "Ghi tên người mua thế nào", "p3_v": "Minh Nguyen, co-trustee, Lan Nguyen, co-trustee", "p3_s": "Trust: dòng Buyer ghi tên các trustee hoặc tên trust rút gọn; tên đầy đủ để ở 1A. Ủy quyền (POA): dòng Buyer ghi tên người ủy quyền, không phải người cầm giấy.", "p3_e": "Anh Minh ở Việt Nam, ủy quyền cho Chị Lan → Buyer: Minh Nguyen. Chị Lan ký với tư cách Attorney-in-Fact.", "p4_n": "Đoạn 1A", "p4_t": "Trust", "p4_v": "Nguyen Family Trust dated 03/15/2019 · Co-Trustees", "p4_s": "Tiền mua nằm trong trust tên là… (ghi tên đầy đủ). Người ký là trustee: sole (một mình), co (đồng trustee) hoặc successor (trustee kế nhiệm).", "p4_e": "Anh Minh và Chị Lan là co-trustee của Nguyen Family Trust dated 03/15/2019.", "p4_w": "Trust ghi cần cả 2 trustee cùng ký thì 2 người phải ký. Đọc trust trước.", "p5_n": "Đoạn 1B", "p5_t": "Công ty (entity)", "p5_v": "☑ LLC · Nguyen Investments LLC · resolution ☑ có gắn", "p5_s": "Bên mua là corporation, LLC, partnership hay loại khác, đã cho phép người ký (officer, managing member, partner) hành động thay công ty. Tick resolution có gắn kèm hay không.", "p5_e": "Nguyen Investments LLC mua 1234 Example Lane để cho thuê. Anh Minh ký với tư cách Managing Member.", "p6_n": "Đoạn 1C", "p6_t": "Giấy ủy quyền (POA)", "p6_v": "POA dated 10/20/2026 · Lan Nguyen, Attorney-in-Fact", "p6_s": "Người mua (principal) đã cho người ký quyền hành động thay, theo POA tổng quát hoặc POA riêng cho căn nhà này, ghi ngày ký POA. Form nói rõ: RCSD-B không phải POA, POA phải ký xong trước.", "p6_e": "Anh Minh ký POA ngày 20/10/2026 cho Chị Lan mua căn 1234 Example Lane.", "p6_w": "Không có POA thật thì đừng điền ô này. Title company sẽ hỏi bản POA.", "p7_n": "Đoạn 1D", "p7_t": "Conservatorship / guardianship", "p7_v": "Conservatorship of Bao Pham · Case #00PR000000", "p7_s": "Bên mua là một conservatorship hoặc guardianship có tên vụ và số Case ở Superior Court. Người ký là người được tòa chấp thuận (executor, administrator, conservator, guardian).", "p7_e": "Chị Lan là conservator do tòa chỉ định cho Chú Bảo Phạm, mua căn nhỏ hơn bằng tiền của chú.", "p7_w": "Hiếm gặp bên mua. Gặp thì hỏi luật sư của vụ trước khi ký offer.", "p8_n": "Đoạn 2", "p8_t": "Trust / công ty / POA đã có sẵn", "p8_v": "Đã có từ trước ngày ký", "p8_s": "Người ký đại diện cam kết: trust, công ty hay POA mà mình đứng tên đã có thật, đã lập xong.", "p8_e": "LLC của Anh Minh đã đăng ký với California từ 2024.", "p8_w": "Ký offer hôm nay, tuần sau mới lập LLC là sai cam kết này.", "p9_n": "Chữ ký", "p9_t": "Người ký đại diện", "p9_v": "By: Minh Nguyen · Title: Co-Trustee", "p9_s": "Hai dòng \"By\": ký tên người đại diện (trustee, officer, managing member, partner, attorney-in-fact), ghi tên in, chức danh (Title), ngày.", "p9_e": "By: Minh Nguyen, Co-Trustee · By: Lan Nguyen, Co-Trustee · 03/11/2026.", "p9_w": "Ký là ký thay trust/công ty, không phải ký cá nhân. Chức danh phải khớp giấy tờ.", "p10_n": "Cuối form", "p10_t": "Bên kia xác nhận đã nhận", "p10_v": "Cô Hạnh Trần · đã nhận", "p10_s": "Seller (hoặc broker, bên khác) ký để xác nhận đã nhận form. Chỉ là đã nhận, không phải duyệt quyền ký.", "p10_e": "Cô Hạnh ký nhận RCSD-B cùng lúc ký offer.", "ph_title": "Representative Capacity Signature Disclosure (Buyer)", "s0a": "Người ký đại diện (trustee, managing member, attorney-in-fact, conservator…)", "s0b": "Cùng lúc ký offer, hoặc khi người ký thay đổi", "s0c": "Ghi tên in, chức danh, ngày trên dòng \"By\"", "s1a": "Seller / broker / bên kia", "s1b": "Khi nhận RCSD-B", "s1c": "Ký xác nhận đã nhận — không phải duyệt", "s2a": "Người ký đại diện giao giấy tờ", "s2b": "Sau Acceptance", "s2c": "Trong 3 ngày, giao cho bên bán và escrow (RPA 6/26 đoạn 24 — RCSD-B không ghi số ngày)", "m0": "<b>\"Mua bằng LLC là xong, khỏi lo trách nhiệm cá nhân.\"</b> RCSD-B chỉ ghi ai ký với tư cách gì. Bảo vệ tài sản, thuế, loan là chuyện của luật sư, CPA và lender. Nhiều người ghi LLC vô offer rồi mới biết loan nhà ở không cho đứng tên công ty — đổi tên lúc đó là mệt.", "m1": "<b>\"Ký xong rồi, dùng RCSD-B thêm tên vợ hay em vào.\"</b> Không. Form ghi ngay dòng đầu: không phải assignment, không dùng để thêm bên mới sau khi đã có hợp đồng. Muốn đổi người mua thì phải làm assignment hoặc sửa hợp đồng, bên bán phải đồng ý.", "m2": "<b>\"Có POA là ký gì cũng được, gửi giấy lúc nào cũng được.\"</b> POA phải có trước, RCSD-B không thay POA. Theo RPA đoạn 24, giấy chứng minh quyền ký phải giao trong 3 ngày sau Acceptance. Title còn phải duyệt POA — người mua ở Việt Nam mà để tới tuần close mới lo là dễ trễ close.", "nx0": "Đọc hợp đồng mua (RPA) từng bước, có đoạn 24 và 32B: <a href=\"/t401/\">T401</a>.", "nx1": "Tính hạn 3 ngày và các hạn khác từ ngày Acceptance: <a href=\"/t60/\">T60</a>.", "nx2": "Seller counter lại offer của trust/LLC? Xem SCO: <a href=\"/t912/\">T912</a>.", "nx3": "Tất cả form đã giải nghĩa: <a href=\"/t402/\">T402</a>.", "h_tool": "Ai ký thay bên mua? Ghi thế nào, nộp gì, hạn khi nào", "tool_sub": "Chọn kiểu đại diện. Tool ra ô cần tick trên RCSD-B, cách ghi tên, giấy tờ chứng minh và hạn nộp.", "l_kind": "Người ký đứng tên cho ai?", "o_trust": "Trust (trustee ký)", "o_entity": "Công ty: LLC, corporation, partnership", "o_poa": "Giấy ủy quyền (Power of Attorney)", "o_estate": "Conservatorship / guardianship (tòa chỉ định)", "l_name": "Tên", "h_trust": "(tên đầy đủ của trust)", "h_entity": "(tên công ty đúng như đăng ký)", "h_poa": "(người ủy quyền — người mua thật)", "h_estate": "(tên vụ ở Superior Court + Case #)", "l_sign": "Người ký", "l_sign_s": "(cách nhau bằng dấu phẩy)", "l_acc": "Ngày Acceptance", "l_acc_s": "(ngày hợp đồng được ký và giao đủ)", "bigK": "Hạn giao giấy tờ chứng minh quyền ký", "st": "<b>{n} ngày sau Acceptance</b> — hạn này nằm trong RPA đoạn 24, không phải trong RCSD-B.", "st_wk": "Ngày thứ 3 rơi vào cuối tuần nên dời qua thứ Hai (RPA 25I).", "st_hol": "Trúng ngày lễ thì dời thêm — tool chỉ tính thứ Bảy, Chủ Nhật.", "r_box": "Ô tick trên RCSD-B", "box_trust": "1A — Trust", "box_entity": "1B — Entity", "box_poa": "1C — Power of Attorney", "box_estate": "1D — Estate", "r_buyer": "Dòng \"Buyer\" trên hợp đồng", "b_trust": "{b} <br>(hoặc tên trust rút gọn)", "b_entity": "{b}", "b_poa": "{b} — ghi tên người ủy quyền, không ghi tên người cầm POA", "b_estate": "{b}", "r_full": "Tên đầy đủ ghi ở đâu", "f_trust": "Đoạn 1A(1): {nm}", "f_entity": "Đoạn 1B: loại công ty + tên {nm}; tick resolution có gắn kèm hay không", "f_poa": "Đoạn 1C: ngày ký POA, loại general hay specific cho căn nhà này", "f_estate": "Đoạn 1D(1): tên vụ và Case # ở Superior Court", "r_by": "Dòng ký \"By\"", "t_trust": "Trustee", "t_trust2": "Co-Trustee", "t_entity": "Managing Member / Officer", "t_entity2": "Managing Member / Officer", "t_poa": "Attorney-in-Fact", "t_poa2": "Attorney-in-Fact", "t_estate": "Conservator / Guardian", "t_estate2": "Co-Conservator / Co-Guardian", "more2": "Form chỉ có 2 dòng ký cho bên mua — hơn 2 người thì hỏi agent dùng trang ký thêm.", "r_docs": "Giấy tờ chứng minh quyền ký (RPA đoạn 24 nêu ví dụ)", "docs_trust": ["Certification of Trust (Probate Code §18100.5), hoặc phần trust có tên trustee và quyền mua bán", "Trang có chữ ký và ngày lập trust <small>(escrow hay hỏi)</small>"], "docs_entity": ["Formation documents: Articles of Organization / Incorporation", "Resolution hoặc Operating Agreement cho phép người này ký mua", "Công ty phải đang tồn tại và hoạt động hợp lệ ở California (RPA 24) <small>(thường xem bằng giấy good standing)</small>"], "docs_poa": ["Bản Power of Attorney đã ký (và notarize) <b>trước</b> khi dùng RCSD-B", "Escrow và title thường đòi xem sớm; có nơi phải record POA"], "docs_estate": ["Court order / Letters (Letters of Conservatorship hoặc Guardianship) còn hiệu lực", "Nếu tòa phải duyệt việc mua: giấy tòa cho phép"], "who": "<b>Ai lo:</b> {s} — người ký đại diện giao giấy tờ cho bên bán và escrow. Bên bán chỉ ký xác nhận đã nhận RCSD-B, không phải đồng ý gì thêm.", "cf_trust": "<b>Cẩn thận:</b> trust phải có sẵn trước khi ký (đoạn 2). Lập trust sau khi ký offer rồi đổi tên người mua là chuyện khác — đó là assignment, không phải RCSD-B.", "cf_entity": "<b>Cẩn thận:</b> đang vay loan nhà ở (owner-occupied) mà muốn đứng tên LLC thì hỏi lender trước. Nhiều loại loan không cho.", "cf_poa": "<b>Cẩn thận:</b> RCSD-B không phải giấy ủy quyền. Người mua ở Việt Nam thì phải làm POA trước (thường ở lãnh sự quán Mỹ) và gửi escrow duyệt sớm — đợi tuần close là trễ.", "cf_estate": "<b>Cẩn thận:</b> người ký phải là người tòa chỉ định, đúng tên trong Letters. Mua bằng tiền của conservatorship thường cần tòa duyệt — hỏi luật sư của vụ.", "sms": "Chào Ken, tôi xem tool T901 (RCSD-B): bên mua là {k}, tên {nm}, người ký {s}. Hạn giao giấy tờ {x}. Cho tôi hỏi thêm.", "subj": "RCSD-B ký thay bên mua — {nm}", "body": "Tên: {nm}\nEmail: {em}\nPhone: {ph}\n\nKiểu đại diện: {k}\nÔ tick trên RCSD-B: {box}\nNgười ký: {s}\nHạn giao giấy tờ (RPA đoạn 24): {x}\nGiấy tờ:\n{docs}\n\nChỉ để hiểu form, không phải tư vấn pháp lý.\nGửi từ tool T901 tools.kenlamrealty.com"}, "en": {"b_email": "Email me the result", "b_sms": "Ask Ken", "b_video": "Watch the 45-sec video", "f_name": "Name", "f_phone": "Phone (optional)", "f_send": "Send", "f_ok": "Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.", "f_or": "Or text:", "f_copy": "Copy", "f_title": "Email this result to yourself", "f_sub": "Ken will reply and send the list of papers to get ready. No spam.", "ft_src": "Sources", "ft_upd": "Updated", "ft_all": "All tools", "lang": "Tiếng Việt", "nx_title": "Next steps", "ex": "The numbers shown are an example. Change them to yours.", "yes": "Yes", "no": "No", "h_what": "What this form is", "h_vid": "45-second video", "h_parts": "Walk through the form, part by part", "h_sign": "Who signs, when, and deadlines", "h_myth": "What people get wrong", "tap": "Tap any part to see what it means.", "tapall": "Open / close all", "k_say": "What it says", "k_ex": "Example: 1234 Example Lane", "k_cf": "Watch out", "mock": "Redrawn illustration — not the real form", "th_who": "Who signs", "th_when": "When", "th_due": "Deadline", "disc": "This page only helps you understand the form. It does not replace the original form and is not legal or tax advice. Before you sign, read the full form and ask your agent or an attorney.", "vid_note": "Silent video with on-screen text. Made for phones.", "wd": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], "mo": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], "h1": "RCSD-B — Representative Capacity Signature Disclosure (for Buyer Representatives)", "enorig": "Original name: <b>Representative Capacity Signature Disclosure (for Buyer Representatives)</b>", "verline": "Form version: C.A.R. Form RCSD-B, Revised 6/23", "sub": "Buying through a trust, LLC, power of attorney or conservatorship: what to write, who signs, what to send, and by when.", "what": "The RCSD-B is a one-page disclosure for when the person signing is not buying for themselves but for a trust, a company, someone who gave them a power of attorney, or a court-supervised person. It is used with the offer (or a buyer representation agreement). It tells the seller and escrow who the real buyer is and who may sign.", "what_eg": "Like a parent signing a field-trip slip: the parent signs, the child goes. The RCSD-B spells out who is buying and who is signing.", "p0_n": "Top", "p0_t": "What the form is for — and not for", "p0_v": "Not an assignment · not for adding new parties", "p0_s": "Purpose: identify the real buyer (the principal) and who may sign for them. The form says it is not an assignment and must not be used to add new parties after a contract is formed.", "p0_e": "The Nguyen Family Trust buys 1234 Example Lane; Anh Minh and Chị Lan sign as trustees.", "p0_w": "Want to add a brother to the deal after it is signed? Not with this form.", "p1_n": "First box", "p1_t": "Supersedes earlier statements", "p1_v": "☐ Replaces the Legally Authorized Signer section", "p1_s": "If checked, this RCSD-B replaces any Legally Authorized Signer statement already in the agreement or in an earlier RCSD.", "p1_e": "The offer named Anh Minh as sole trustee; now Chị Lan is co-trustee → new RCSD-B with this box checked.", "p1_w": "RPA 6/26 has paragraph 32B (Entity Buyers). If 32B is completed, the RPA says no RCSD is needed. Two different versions cause trouble.", "p2_n": "Reference line", "p2_t": "Which agreement, which home", "p2_v": "Purchase Agreement · 1234 Example Lane · Seller: Cô Hạnh Trần", "p2_s": "Choose the document: Purchase Agreement, or Buyer Representation Agreement, Assignment of Agreement Addendum, or other. Add the date, property, Seller (or Broker) and Buyer.", "p2_e": "Purchase Agreement dated 11/03/2026, 1234 Example Lane, San Jose, CA 95100. Seller: Cô Hạnh Trần.", "p2_w": "Signing a buyer representation agreement in a trust's name also needs this — there is a box for it.", "p3_n": "Buyer name", "p3_t": "How to write the buyer name", "p3_v": "Minh Nguyen, co-trustee, Lan Nguyen, co-trustee", "p3_s": "Trust: the Buyer line shows the trustee(s) or a simplified trust name; the full name goes in 1A. Power of attorney: the Buyer line shows the principal, not the agent.", "p3_e": "Anh Minh is in Vietnam and gives Chị Lan a POA → Buyer: Minh Nguyen. Chị Lan signs as Attorney-in-Fact.", "p4_n": "¶ 1A", "p4_t": "Trust", "p4_v": "Nguyen Family Trust dated 03/15/2019 · Co-Trustees", "p4_s": "The money used to buy is held in a trust named… (full name). The signers are the sole, co- or successor trustee(s).", "p4_e": "Anh Minh and Chị Lan are co-trustees of the Nguyen Family Trust dated 03/15/2019.", "p4_w": "If the trust requires both trustees to act together, both sign. Read the trust first.", "p5_n": "¶ 1B", "p5_t": "Entity", "p5_v": "☑ LLC · Nguyen Investments LLC · resolution ☑ attached", "p5_s": "The buyer is a corporation, LLC, partnership or other entity that authorized the signer (officer, managing member, partner). Check whether an authorizing resolution is attached.", "p5_e": "Nguyen Investments LLC buys 1234 Example Lane as a rental. Anh Minh signs as Managing Member.", "p6_n": "¶ 1C", "p6_t": "Power of attorney", "p6_v": "POA dated 10/20/2026 · Lan Nguyen, Attorney-in-Fact", "p6_s": "The buyer (principal) gave the signer authority under a general POA or one specific to this property, with its date. The form says it is not a POA; the POA must already be signed.", "p6_e": "Anh Minh signed a POA on 10/20/2026 letting Chị Lan buy 1234 Example Lane.", "p6_w": "No real POA, no checking this box. The title company will ask for it.", "p7_n": "¶ 1D", "p7_t": "Conservatorship / guardianship", "p7_v": "Conservatorship of Bao Pham · Case #00PR000000", "p7_s": "The buyer is a conservatorship or guardianship identified by Superior Court case name and number. The signers are court-approved representatives (executor, administrator, conservator, guardian).", "p7_e": "Chị Lan is the court-appointed conservator for Chú Bảo Phạm and buys a smaller home with his funds.", "p7_w": "Rare on the buyer side. If you see it, ask the case attorney before signing.", "p8_n": "¶ 2", "p8_t": "It already exists", "p8_v": "Exists before signing", "p8_s": "The representative states that the trust, entity or power of attorney already exists.", "p8_e": "Anh Minh's LLC was registered in California in 2024.", "p8_w": "Signing today and forming the LLC next week breaks this statement.", "p9_n": "Signatures", "p9_t": "Representative signatures", "p9_v": "By: Minh Nguyen · Title: Co-Trustee", "p9_s": "Two \"By\" lines: signature of the trustee, officer, managing member, partner or attorney-in-fact, printed name, title and date.", "p9_e": "By: Minh Nguyen, Co-Trustee · By: Lan Nguyen, Co-Trustee · 11/03/2026.", "p9_w": "You sign for the trust or entity, not yourself. The title must match the documents.", "p10_n": "Bottom", "p10_t": "Other party acknowledges receipt", "p10_v": "Cô Hạnh Trần · received", "p10_s": "The seller (or broker, other party) signs to acknowledge receiving the form. Receipt only, not approval of authority.", "p10_e": "Cô Hạnh acknowledges the RCSD-B when she signs the offer.", "ph_title": "Representative Capacity Signature Disclosure (Buyer)", "s0a": "Representative (trustee, managing member, attorney-in-fact, conservator…)", "s0b": "With the offer, or when the signer changes", "s0c": "Printed name, title and date on the \"By\" line", "s1a": "Seller / broker / other party", "s1b": "On receiving the RCSD-B", "s1c": "Acknowledges receipt — not approval", "s2a": "Representative delivers proof", "s2b": "After Acceptance", "s2c": "Within 3 Days, to the seller and escrow (RPA 6/26 ¶ 24 — the RCSD-B itself sets no days)", "m0": "<b>\"Buy in an LLC and I'm personally protected.\"</b> The RCSD-B only states who signs in what capacity. Asset protection, tax and the loan are for the attorney, CPA and lender. Plenty of buyers put an LLC on the offer and then learn their home loan won't allow it — changing it then is a headache.", "m1": "<b>\"The deal is signed; let's use the RCSD-B to add my wife or brother.\"</b> No. The first line says it is not an assignment and must not add parties after a contract exists. Changing buyers takes an assignment or an amendment the seller agrees to.", "m2": "<b>\"With a POA I can sign anything and send the papers whenever.\"</b> The POA must exist first; the RCSD-B does not replace it. RPA ¶ 24 requires proof of authority within 3 Days after Acceptance. Title must also approve the POA — a buyer in Vietnam who waits until closing week risks a late close.", "nx0": "Read the purchase agreement (RPA) step by step, including ¶ 24 and 32B: <a href=\"/t401/\">T401</a>.", "nx1": "Count the 3-day deadline and the others from Acceptance: <a href=\"/t60/\">T60</a>.", "nx2": "Seller countered your trust/LLC offer? See SCO: <a href=\"/t912/\">T912</a>.", "nx3": "All explained forms: <a href=\"/t402/\">T402</a>.", "h_tool": "Who signs for the buyer? What to write, what to send, by when", "tool_sub": "Pick the type of representative. The tool shows the RCSD-B box, how to write the names, the proof to send and the deadline.", "l_kind": "Who is the signer acting for?", "o_trust": "Trust (trustee signs)", "o_entity": "Entity: LLC, corporation, partnership", "o_poa": "Power of attorney", "o_estate": "Conservatorship / guardianship (court-appointed)", "l_name": "Name", "h_trust": "(full trust name)", "h_entity": "(exact registered entity name)", "h_poa": "(principal — the real buyer)", "h_estate": "(Superior Court case name + Case #)", "l_sign": "Signer(s)", "l_sign_s": "(separate with commas)", "l_acc": "Acceptance date", "l_acc_s": "(contract fully signed and delivered)", "bigK": "Deadline to deliver proof of authority", "st": "<b>{n} Days after Acceptance</b> — this deadline is in RPA paragraph 24, not in the RCSD-B itself.", "st_wk": "Day 3 lands on a weekend, so it moves to Monday (RPA 25I).", "st_hol": "A legal holiday pushes it further — the tool only skips weekends.", "r_box": "RCSD-B box to check", "box_trust": "1A — Trust", "box_entity": "1B — Entity", "box_poa": "1C — Power of Attorney", "box_estate": "1D — Estate", "r_buyer": "\"Buyer\" line on the contract", "b_trust": "{b} <br>(or a simplified trust name)", "b_entity": "{b}", "b_poa": "{b} — the principal's name, not the POA holder", "b_estate": "{b}", "r_full": "Where the full name goes", "f_trust": "¶ 1A(1): {nm}", "f_entity": "¶ 1B: entity type + {nm}; check whether a resolution is attached", "f_poa": "¶ 1C: the POA date, general or specific to this property", "f_estate": "¶ 1D(1): Superior Court case name and Case #", "r_by": "Signature \"By\" line", "t_trust": "Trustee", "t_trust2": "Co-Trustee", "t_entity": "Managing Member / Officer", "t_entity2": "Managing Member / Officer", "t_poa": "Attorney-in-Fact", "t_poa2": "Attorney-in-Fact", "t_estate": "Conservator / Guardian", "t_estate2": "Co-Conservator / Co-Guardian", "more2": "The form has only 2 buyer signature lines — more signers, ask your agent about an extra signature page.", "r_docs": "Proof of authority (examples listed in RPA ¶ 24)", "docs_trust": ["Certification of Trust (Probate Code §18100.5), or the part of the trust naming the trustees and their power to buy and sell", "The page with signatures and the trust date <small>(escrow often asks)</small>"], "docs_entity": ["Formation documents: Articles of Organization / Incorporation", "A resolution or operating agreement authorizing this person to sign", "The entity must exist and be in good standing in California (RPA 24) <small>(usually shown with a good standing certificate)</small>"], "docs_poa": ["The power of attorney, signed (and notarized) <b>before</b> the RCSD-B is used", "Escrow and title usually want to review it early; some require it to be recorded"], "docs_estate": ["A current court order / Letters of Conservatorship or Guardianship", "If the court must approve the purchase: the court authorization"], "who": "<b>Who handles it:</b> {s} — the representative delivers the proof to the seller and escrow. The seller only signs to acknowledge receipt of the RCSD-B.", "cf_trust": "<b>Watch out:</b> the trust must already exist (¶ 2). Creating a trust after the offer and changing the buyer is an assignment, not an RCSD-B.", "cf_entity": "<b>Watch out:</b> buying in an LLC with an owner-occupied loan? Ask the lender first. Many loan types do not allow it.", "cf_poa": "<b>Watch out:</b> the RCSD-B is not a power of attorney. A buyer who is in Vietnam needs the POA done first (often at a U.S. consulate) and sent to escrow early — waiting until closing week is too late.", "cf_estate": "<b>Watch out:</b> the signer must be the court-appointed person named in the Letters. Buying with conservatorship funds often needs court approval — ask the case attorney.", "sms": "Hi Ken, I used tool T901 (RCSD-B): buyer is a {k}, name {nm}, signer {s}. Proof due {x}. I have a question.", "subj": "RCSD-B representative signer — {nm}", "body": "Name: {nm}\nEmail: {em}\nPhone: {ph}\n\nRepresentative type: {k}\nRCSD-B box: {box}\nSigner(s): {s}\nProof due (RPA ¶ 24): {x}\nDocuments:\n{docs}\n\nFor understanding only, not legal advice.\nSent from tool T901 tools.kenlamrealty.com"}};
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function addDays(iso,n){ if(!iso) return null; const [y,m,d]=iso.split('-').map(Number); if(!y||!m||!d) return null; return new Date(y,m-1,d+n); }
+function due(iso){ let dt=addDays(iso,RC.DOC_DAYS); if(!dt) return null; let moved=false;
+  while(dt.getDay()===0||dt.getDay()===6){ dt=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate()+1); moved=true; } return {dt,moved}; }
+function dLong(dt){ if(!dt) return '—'; const d=I18N[lang];
+  return lang==='vi' ? d.wd[dt.getDay()]+', '+dt.getDate()+' tháng '+(dt.getMonth()+1)+', '+dt.getFullYear()
+                     : d.wd[dt.getDay()]+', '+d.mo[dt.getMonth()]+' '+dt.getDate()+', '+dt.getFullYear(); }
+let edited=false;
+function setDefaults(){ const k=$('kind').value; $('ename').value=RC.DEF[k].name; $('signers').value=RC.DEF[k].signers; edited=false; }
+function names(){ return $('signers').value.split(/,|&| and | và /).map(s=>s.trim()).filter(Boolean); }
+function calc(){
+  const d=I18N[lang], k=$('kind').value, nm=$('ename').value.trim()||'—', ss=names(), n=ss.length||1;
+  const s1=esc(ss[0]||'—'), sAll=ss.length?ss.map(esc).join(lang==='vi'?' và ':' and '):'—';
+  const title=d['t_'+k+(n>1?'2':'')];
+  $('nameHint').textContent=d['h_'+k];
+  const r=due($('acc').value);
+  $('big').textContent=r?dLong(r.dt):'—';
+  $('status').innerHTML=T(d.st,{n:RC.DOC_DAYS})+(r&&r.moved?' '+d.st_wk:'')+' '+d.st_hol;
+  $('oBox').textContent=d['box_'+k];
+  let buyer;
+  if(k==='trust') buyer=n>1?ss.map(x=>esc(x)+', co-trustee').join(', '):s1+', trustee';
+  else if(k==='poa') buyer=esc(nm);
+  else buyer=esc(nm);
+  $('oBuyer').innerHTML=T(d['b_'+k],{b:buyer,nm:esc(nm)});
+  $('oFull').innerHTML=T(d['f_'+k],{nm:esc(nm)});
+  $('oBy').innerHTML=ss.map(x=>`By: <i>${esc(x)}</i> · Title: <i>${title}</i>`).join('<br>')+(ss.length>2?'<br>'+d.more2:'');
+  $('oDocs').innerHTML=d['docs_'+k].map(x=>'<li>'+x+'</li>').join('');
+  $('oWho').innerHTML=T(d.who,{s:sAll});
+  $('oCf').innerHTML=d['cf_'+k];
+  last={k:$('kind').options[$('kind').selectedIndex].textContent,nm,s:ss.join(', ')||'—',box:d['box_'+k],x:r?dLong(r.dt):'—',docs:d['docs_'+k].map(x=>'- '+x.replace(/<[^>]+>/g,'')).join('\n')};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(T(d.sms,last));
+  klSend();
+}
+
+
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const T=(s,o)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+const segV=id=>{const b=document.querySelector('#'+id+' button[aria-pressed="true"]'); return b?b.getAttribute('data-v'):'';};
+let last={};
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  document.querySelectorAll('[data-o]').forEach(el=>{const k=el.getAttribute('data-o'); if(typeof d[k]==='string') el.textContent=d[k];});
+  document.querySelectorAll('[data-ph]').forEach(el=>{const k=el.getAttribute('data-ph'); if(typeof d[k]==='string') el.setAttribute('placeholder',d[k]);});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+const EMBED=/[?&]embed=1/.test(location.search);
+let klSend=()=>{};
+if(EMBED){ document.documentElement.classList.add('embed'); let lastH=0;
+  klSend=()=>{ const w=document.querySelector('.wrap'); const h=Math.ceil(w.getBoundingClientRect().bottom+window.scrollY+40); if(Math.abs(h-lastH)<4) return; lastH=h; try{ parent.postMessage({klToolsHeight:h},'*'); }catch(e){} };
+  window.addEventListener('resize',()=>klSend());
+  document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('a[href]'); if(!a) return; const h=a.getAttribute('href'); if(h.startsWith('#')||a.target==='_blank') return; if(h.startsWith('/')) a.href='https://tools.kenlamrealty.com'+h; a.target='_top'; },true); }
+document.querySelectorAll('.inputs input,.inputs select').forEach(el=>{el.addEventListener('input',calc); el.addEventListener('change',calc);});
+document.querySelectorAll('.seg').forEach(g=>g.querySelectorAll('button[data-v]').forEach(b=>b.addEventListener('click',()=>{
+  g.querySelectorAll('button[data-v]').forEach(x=>x.setAttribute('aria-pressed',x===b)); calc();})));
+document.querySelectorAll('.pt>button').forEach(b=>b.addEventListener('click',()=>{const p=b.parentElement; const o=p.classList.toggle('open'); b.setAttribute('aria-expanded',o); klSend();}));
+$('tapAll').onclick=()=>{const all=[...document.querySelectorAll('.pt')]; const open=!all.every(p=>p.classList.contains('open')); all.forEach(p=>{p.classList.toggle('open',open); p.querySelector('button').setAttribute('aria-expanded',open);}); klSend();};
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus(); klSend();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], o=Object.assign({},last,{nm:$('fname').value.trim()||'—',em:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'});
+  /* LEAD → FUB: mailto ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const a=document.createElement('a'); a.href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(T(d.subj,o))+'&body='+encodeURIComponent(T(d.body,o)); a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){} };
+applyLang();
+
+$('kind').addEventListener('change',()=>{setDefaults();calc();}); setDefaults(); calc();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
