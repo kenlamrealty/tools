@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Landlord in Default Addendum · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="C.A.R. Form LID giải thích bằng tiếng Việt: chủ nhà đang bị foreclosure thì người thuê được ở tới khi nào, tối thiểu 90 ngày sau notice. Có form mẫu và tool tính ngày.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t421/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:title" content="Landlord in Default Addendum · Ken Lam Tools">
+<meta property="og:description" content="Landlord in Default Addendum explained in Vietnamese and English: how long a tenant can stay after a foreclosure sale, the 90-day notice rule, sample form.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t421/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* forms-group additions */
+.wrap,.sec,.inputs,.result,.eli{grid-template-columns:minmax(0,1fr)}
+.ctl select{width:100%}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl select:focus-visible{outline:none}
+.ctl .chev{color:var(--muted);font-size:13px;pointer-events:none}
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.chipf{justify-self:start;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--brass);color:var(--brass);border-radius:999px;padding:3px 11px;font-weight:500}
+.sec{display:grid;gap:12px}
+.sec>h2{font-family:var(--display);font-weight:400;font-size:28px;line-height:1.15;margin:0}
+.sec>p,.eli p{margin:0;font-size:15.5px}
+.eli{display:grid;gap:10px}
+.mock{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.mock .mh{padding:12px 16px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);display:grid;gap:6px}
+.stamp{justify-self:start;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--warn);border:1px dashed var(--warn);border-radius:6px;padding:2px 8px;font-weight:500}
+.mh b{color:var(--fg);font-weight:500}
+.para{border-bottom:1px solid var(--line)}
+.para:last-child{border-bottom:0}
+.para summary{list-style:none;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:12px 16px;cursor:pointer}
+.para summary::-webkit-details-marker{display:none}
+.para summary:focus-visible{outline:2px solid var(--brass);outline-offset:-2px}
+.pn{grid-column:1;font-size:12px;color:var(--brass);letter-spacing:.06em;text-transform:uppercase;font-weight:500}
+.pv{grid-column:1;font-size:16px;font-weight:500;overflow-wrap:anywhere}
+.pt{grid-column:2;grid-row:1/span 2;align-self:center;font-size:12px;color:var(--muted);text-align:right;max-width:88px;line-height:1.3}
+.para[open] .pt{color:var(--brass)}
+.pw{margin:0 12px 12px;padding:10px 12px;border-radius:10px;background:var(--brass-soft);font-size:14.5px;line-height:1.5}
+.seg button{white-space:normal;line-height:1.3;min-width:0}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.field[hidden]{display:none}
+.total .v.word{font-size:40px}
+.badge{justify-self:start;font-size:12px;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:4px 11px;font-weight:500;background:var(--brass-soft);color:var(--fg)}
+.badge.bad{background:transparent;border:1px solid var(--warn);color:var(--warn)}
+.badge.good{background:transparent;border:1px solid var(--ok);color:var(--ok)}
+.line .a.w{white-space:normal;text-align:right;min-width:0;max-width:58%}
+.line .n{flex:1 1 auto;min-width:0}
+.note b{color:var(--fg);font-weight:500}
+.list{margin:0;padding-left:20px;display:grid;gap:6px;font-size:15px}
+.list li b{font-weight:500}
+.sub2{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:4px 0 0}
+.chk{display:grid;gap:0;border-top:1px solid var(--line)}
+.chk label{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px;cursor:pointer}
+.chk input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--brass);flex:0 0 auto}
+.rk{display:grid;gap:4px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.rk .tg{justify-self:start;font-size:11px;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:2px 9px;font-weight:600}
+.tg.hi{background:var(--warn);color:#FFFDF8}
+.tg.md{border:1px solid var(--warn);color:var(--warn)}
+.tg.lo{border:1px solid var(--ok);color:var(--ok)}
+.myth{font-size:14.5px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.op{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:8px;font-size:15px}
+.op p{margin:0}
+.next{display:grid;gap:8px}
+.next a{display:block;border:1px solid var(--line);border-radius:10px;padding:12px 14px;color:var(--fg);text-decoration:none;background:var(--panel);font-size:15px}
+.next a span{display:block;font-size:12px;color:var(--brass);letter-spacing:.06em;text-transform:uppercase}
+.next a:hover{border-color:var(--brass)}
+.vid{display:grid;justify-items:center;gap:10px}
+.vid video{width:100%;max-width:320px;aspect-ratio:9/16;border-radius:14px;background:#000;display:block}
+.legal{font-size:12px;color:var(--muted);line-height:1.5}
+footer .src a{overflow-wrap:anywhere}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language / Đổi ngôn ngữ">English</button>
+    </div>
+    <span class="chipf">C.A.R. Form LID</span>
+    <h1 data-i="title"></h1>
+    <p class="sub" data-i="sub"></p>
+  </header>
+
+  <section class="sec">
+    <h2 data-i="h_eli"></h2>
+    <div class="eli" id="eli"></div>
+  </section>
+
+  <section class="sec">
+    <h2 data-i="h_mock"></h2>
+    <div class="mock">
+      <div class="mh"><span class="stamp" data-i="mock_stamp"></span><span data-i="mock_note"></span></div>
+      <div id="mock"></div>
+    </div>
+  </section>
+
+  <section class="sec" id="tool">
+    <h2 data-i="h_tool"></h2>
+    <p class="hint" data-i="tool_sub"></p>
+    <div class="inputs">
+      <div class="field"><label for="ltype"><span data-i="l_type"></span></label>
+        <div class="ctl"><select id="ltype"><option value="fixed" data-i="o_fixed"></option><option value="mtm" data-i="o_mtm"></option></select><span class="chev">▾</span></div></div>
+      <div class="field" id="endF"><label for="dEnd"><span data-i="l_end"></span></label>
+        <div class="ctl"><input id="dEnd" type="date" value="2027-06-30"></div></div>
+      <div class="row2">
+        <div class="field"><label for="dSale"><span data-i="l_sale"></span> <small data-i="l_sale_s"></small></label>
+          <div class="ctl"><input id="dSale" type="date" value="2026-12-15"></div></div>
+        <div class="field"><label for="dNtc"><span data-i="l_ntc"></span> <small data-i="l_ntc_s"></small></label>
+          <div class="ctl"><input id="dNtc" type="date" value="2026-12-20"></div></div>
+      </div>
+      <div class="field"><label for="occ"><span data-i="l_occ"></span></label>
+        <div class="ctl"><select id="occ"><option value="n" data-i="o_occ_n"></option><option value="y" data-i="o_occ_y"></option><option value="u" data-i="o_occ_u"></option></select><span class="chev">▾</span></div></div>
+      <div class="field"><label for="bona"><span data-i="l_bona"></span></label>
+        <div class="ctl"><select id="bona"><option value="y" data-i="o_bona_y"></option><option value="n" data-i="o_bona_n"></option></select><span class="chev">▾</span></div>
+        <p class="hint" data-i="l_bona_s"></p></div>
+    </div>
+    <div class="result" aria-live="polite">
+      <span class="badge" id="badge"></span>
+      <div class="total"><div class="k" id="bigK"></div><div class="v" id="bigV"><span id="big">—</span></div></div>
+      <div class="lines">
+        <div class="line"><span class="n" data-i="n_90"></span><span class="a" id="o90"></span></div>
+        <div class="line"><span class="n" data-i="n_lease"></span><span class="a w" id="oLease"></span></div>
+        <div class="line"><span class="n" data-i="n_rule"></span><span class="a w" id="oRule"></span></div>
+      </div>
+      <div class="note" id="xNote"></div>
+    </div>
+  </section>
+
+  <section class="sec vid">
+    <h2 data-i="h_vid"></h2>
+    <video src="video.mp4" controls playsinline preload="metadata" poster="poster.jpg" aria-label="Video 45 giây"></video>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email"></button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms"></a>
+    <a class="btn" id="videoBtn" href="/t421/video.mp4" target="_blank" rel="noopener" data-i="b_video"></a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title"></h2>
+    <p data-i="f_sub"></p>
+    <div class="field"><label for="fname"><span data-i="f_name"></span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone"></span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send"></button>
+    <div class="ok" id="sent" hidden data-i="f_ok"></div>
+    <div class="copyrow"><span data-i="f_or"></span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy"></button></div>
+  </section>
+
+  <section class="sec">
+    <h2 data-i="h_myth"></h2>
+    <div class="eli" id="myths"></div>
+  </section>
+
+  <section class="sec">
+    <h2 data-i="h_op"></h2>
+    <div class="op" id="op"></div>
+  </section>
+
+  <section class="sec">
+    <h2 data-i="h_next"></h2>
+    <div class="next" id="next"></div>
+  </section>
+
+  <footer>
+    <span class="legal" data-i="legal"></span>
+    <span class="legal" data-i="copy"></span>
+    <span class="src"><span data-i="ft_src">Nguồn:</span> <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CCP&amp;sectionNum=1161b" target="_blank" rel="noopener">Code of Civil Procedure §1161b</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=2924.8" target="_blank" rel="noopener">Civil Code §2924.8</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=2924.85" target="_blank" rel="noopener">Civil Code §2924.85</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=1946.2" target="_blank" rel="noopener">Civil Code §1946.2</a> · <a href="https://oag.ca.gov/tenants" target="_blank" rel="noopener">CA Attorney General</a> · <a href="https://sanjoseca.gov/your-government/departments-offices/housing/housing-rental-rights" target="_blank" rel="noopener">San Jose Housing</a></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 06/11/2026 · <a href="/" data-i="ft_all">Mọi tool</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== LAW — mọi con số luật của trang này nằm ở đây. Tra ngày 06/11/2026 (FACTS.md §8). =====
+   CCP §1161b (KHÔNG phải Civil Code): sau foreclosure sale, người thuê (bona fide) phải được báo trước 90 ngày bằng giấy
+     trước khi bị đuổi. Lease có thời hạn ký trước ngày sale được giữ tới hết hạn, TRỪ KHI người mua sẽ ở làm nhà chính
+     (khi đó vẫn 90 ngày). Không áp dụng nếu người thuê là chủ nợ vay (mortgagor) hoặc gia đình, lease không arm's length,
+     hoặc tiền thuê thấp hơn giá thị trường nhiều. SB 18 (2019) làm luật này vĩnh viễn.
+     https://california.public.law/codes/code_of_civil_procedure_section_1161b
+   Federal PTFA: được làm vĩnh viễn 24/05/2018 (S.2155) — UNVERIFIED, chỉ nhắc nhẹ.
+   Civ §2924.8: thông báo cho người thuê dán + gửi cùng notice of sale, tiếng Anh + 5 thứ tiếng của §1632.
+   Civ §2924.85: nghĩa vụ báo trước khi ký lease — bản trên public.law ghi hết hiệu lực 01/01/2018, KHÔNG tìm thấy gia hạn
+     → UNVERIFIED. Trang này KHÔNG nói là bắt buộc; chỉ nói "nên báo, hỏi luật sư".
+   Just cause (Civ §1946.2, AB 1482) và luật city (San Jose TPO) có thể vẫn áp dụng sau khi sale — hỏi luật sư. */
+const LAW={noticeDays:90};
+const IC={
+ vi:{lang:'English',back:'← Tất cả tools',h_eli:'Giải thích dễ hiểu',h_mock:'Form mẫu điền sẵn',
+  mock_stamp:'Bản minh họa, không phải form thật',
+  mock_note:'Mình dựng lại cho dễ hiểu, chữ là lời giải thích của mình, không chép form C.A.R. Bấm từng đoạn để coi đoạn đó nói gì.',
+  para:'Đoạn',what:'Đoạn này nói gì ▾',h_tool:'Tool',h_myth:'Nhiều người hiểu sai',h_op:'Ý kiến người làm nghề',h_next:'Bước tiếp theo',h_vid:'Video 45 giây',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 45 giây',
+  f_title:'Gửi kết quả này về email',f_sub:'Ken nhận được sẽ trả lời, giúp mình kiểm lại cho đúng trường hợp. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số dưới đây nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  legal:'Thông tin chung, không phải tư vấn pháp lý. Form C.A.R. chỉ agent/member được dùng; hỏi luật sư trước khi gửi notice.',
+  copy:'C.A.R. form là tài liệu có bản quyền của California Association of REALTORS®; trang này chỉ giải thích bằng lời của mình.',
+  ft_src:'Nguồn:',ft_upd:'Cập nhật',ft_all:'Mọi tool',est:'Ước tính',
+  mail:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\n'},
+ en:{lang:'Tiếng Việt',back:'← All tools',h_eli:'Plain-English explainer',h_mock:'Filled-in sample',
+  mock_stamp:'Illustration, not the real form',
+  mock_note:'Rebuilt to make it easy to follow. The words are our own explanation, not the C.A.R. text. Tap a section to see what it says.',
+  para:'Para.',what:'What this says ▾',h_tool:'Tool',h_myth:'What people get wrong',h_op:'A practitioner’s take',h_next:'Next steps',h_vid:'45-second video',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 45-sec video',
+  f_title:'Email this result to yourself',f_sub:'Ken will reply and help you check it for your exact case. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, text Ken the number below.",f_or:'Or text:',f_copy:'Copy',
+  legal:'General information, not legal advice. C.A.R. forms are for agents/members only; talk to an attorney before you send any notice.',
+  copy:'C.A.R. forms are copyrighted by the California Association of REALTORS®; this page only explains them in our own words.',
+  ft_src:'Sources:',ft_upd:'Updated',ft_all:'All tools',est:'Estimate',
+  mail:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\n'}
+};
+const IP={
+ vi:{title:'Phụ lục chủ nhà đang bị foreclosure',sub:'Form LID là tờ báo cho người thuê biết: căn nhà mình sắp thuê (hoặc đang thuê) đã vào thủ tục foreclosure.',
+  tool_sub:'Nhập loại lease, ngày hết lease, ngày bán đấu giá và ngày nhận notice. Tool cho biết người thuê được ở tới ít nhất ngày nào.',
+  eli:['Giống như mình mướn xe của một người đang nợ ngân hàng. Ngân hàng có thể lấy xe lại bất cứ lúc nào. Form LID là tờ giấy nói thẳng chuyện đó trước khi mình nhận chìa khóa.',
+   'Foreclosure là khi chủ nhà không trả nợ vay, ngân hàng đem nhà ra bán đấu giá để lấy lại tiền. Nhà đã có giấy “notice of default” là đã vào quy trình. Chưa chắc sẽ bán, vì chủ nhà vẫn có thể trả nợ hoặc bán nhà trước.',
+   'Nếu nhà bị bán đấu giá, người chủ mới <b>không được đuổi ngay</b>. Luật California (CCP §1161b) bắt chủ mới báo bằng giấy <b>ít nhất 90 ngày</b>. Lease có thời hạn còn hiệu lực thì thường được ở tới hết lease, trừ khi chủ mới dọn vô ở làm nhà chính.',
+   'Form chỉ 1 trang. Chủ nhà (Housing Provider) ký, người thuê ký xác nhận đã nhận. Nó gắn vào lease (RLMM) hoặc hợp đồng thuê tháng-tháng. Không có ô tiền, không có số phải điền ngoài tên, ngày và địa chỉ.',
+   'Luật cũ ở California từng bắt chủ nhà có nhà đang bị default phải báo cho người thuê trước khi ký lease. Điều luật đó có thể đã hết hiệu lực. Dù vậy, <b>nên báo cho người thuê</b> — vừa thật lòng, vừa tránh bị kiện. Hỏi luật sư cho chắc.'],
+  myths:['<b>“Nhà bị foreclosure thì người thuê phải dọn ra liền.”</b> Sai. Chủ mới phải báo bằng giấy ít nhất 90 ngày. Lease có thời hạn còn thì thường được ở tới hết lease.',
+   '<b>“Ký LID rồi là người thuê mất hết quyền.”</b> Sai. LID chỉ là giấy báo cho biết. Nó không bỏ quyền nào của người thuê, cũng không thay luật just cause của tiểu bang hay city.',
+   '<b>“Chủ mới mua đấu giá thì lease cũ coi như bỏ.”</b> Không đúng hẳn. Với người thuê thật (arm’s length, giá thị trường), lease ký trước ngày sale vẫn được giữ, chỉ trừ khi người mua dọn vô ở. Thuê giá “cho người nhà” thấp bất thường thì khác — có thể không được bảo vệ.'],
+  op:['Ý kiến thẳng: agent nào biết nhà đang default mà giấu người thuê là đang đánh cược bằng tên mình. Người thuê dọn vô, 3 tháng sau thấy giấy dán cửa, người đầu tiên họ tìm là agent.',
+   'Điều gây tranh cãi: nhiều người nghĩ cho thuê nhà đang bị foreclosure là “ăn gian”. Không hẳn. Tiền thuê nhiều khi là cách chủ nhà giữ được căn nhà. Vấn đề không phải cho thuê, mà là có nói thật trước khi người ta ký hay không.'],
+  l_type:'Loại hợp đồng thuê',o_fixed:'Lease có thời hạn (vd 12 tháng)',o_mtm:'Tháng-tháng (month-to-month)',
+  l_end:'Ngày hết lease',l_sale:'Ngày bán đấu giá',l_sale_s:'(nếu có)',l_ntc:'Ngày nhận notice 90 ngày',l_ntc_s:'(từ chủ mới)',
+  l_occ:'Người mua mới có dọn vô ở làm nhà chính không?',o_occ_n:'Không, họ cho thuê tiếp / bán lại',o_occ_y:'Có, họ dọn vô ở',o_occ_u:'Chưa biết',
+  l_bona:'Người thuê là người ngoài, thuê giá thị trường?',o_bona_y:'Đúng, giá thị trường',o_bona_n:'Không, người nhà / giá rất thấp',
+  l_bona_s:'Luật gọi là “bona fide tenant”: không phải chủ vay hay vợ/chồng/con/cha mẹ của chủ, lease arm’s length, tiền thuê không thấp hơn thị trường nhiều.',
+  k_stay:'Người thuê được ở ít nhất tới',k_nosale:'Chưa bán đấu giá',k_na:'Cần hỏi luật sư',
+  n_90:'Hết 90 ngày kể từ notice',n_lease:'Ngày hết lease',n_rule:'Theo luật',
+  b_ok:'Được bảo vệ theo CCP §1161b',b_bad:'Có thể KHÔNG được bảo vệ 90 ngày',b_wait:'Lease vẫn chạy bình thường',
+  r_lease:'Ở tới hết lease (người mua không dọn vô)',r_90:'90 ngày kể từ notice',r_unk:'Chưa biết người mua có dọn vô không → tính chắc ăn 90 ngày',r_nosale:'Chủ nhà cũ vẫn là chủ',r_na:'Không phải bona fide tenant',
+  mtm_v:'Không có (tháng-tháng)',ntc_need:'Nhập ngày nhận notice',
+  x_nosale:'Chưa có ngày bán đấu giá: lease và tiền thuê vẫn y như cũ, trả cho chủ nhà hiện tại. Chủ nhà có thể trả nợ, bán nhà, hoặc dời ngày đấu giá.',
+  x_nontc:'Nhà đã bán nhưng chưa có notice: đồng hồ 90 ngày <b>chưa bắt đầu</b>. Sớm nhất có thể là {d} nếu notice đưa ngay ngày sale.',
+  x_after:'Hết ngày này, chủ mới vẫn phải làm đúng thủ tục để đòi nhà. Nếu căn nhà thuộc luật just cause (AB 1482) hoặc luật của city (San Jose TPO cho nhà nhiều căn), người thuê có thể không phải dọn. Hỏi luật sư.',
+  x_lease:'Lease có thời hạn ký trước ngày sale được giữ tới hết hạn, vì người mua không dọn vô ở.',
+  x_occ:'Người mua dọn vô ở làm nhà chính thì lease có thời hạn không giữ được, nhưng vẫn phải đủ 90 ngày.',
+  x_na:'Người thuê là người nhà của chủ, lease không arm’s length, hoặc giá thuê thấp hơn thị trường nhiều thì CCP §1161b có thể không bảo vệ. Hỏi luật sư ngay, đừng đợi.',
+  x_bad:'Ngày notice đang trước ngày bán đấu giá. Notice 90 ngày chỉ tính từ sau khi nhà đã bán. Kiểm lại ngày.',
+  x_fed:'Luật liên bang (PTFA) cũng có quy định 90 ngày tương tự. Kiểm lại với luật sư nếu có khoản vay liên bang.',
+  x_mail:'Notice gửi qua bưu điện thì có thể được cộng thêm ngày. Hỏi luật sư trước khi tính sát ngày.',
+  yes:'Có',no:'Không',
+  subj:'Chủ nhà bị foreclosure (LID) — {n}',sent_from:'Gửi từ tool T421 tools.kenlamrealty.com/t421/',
+  out:'Form LID — chủ nhà bị foreclosure\nLoại lease: {lt}\nNgày hết lease: {le}\nNgày bán đấu giá: {ds}\nNgày nhận notice: {dn}\nNgười mua dọn vô ở: {oc}\nBona fide tenant: {bf}\n\nKết quả: {res}\nĐược ở ít nhất tới: {stay}\nLý do: {rule}',
+  sms:'Chào Ken, tôi dùng tool foreclosure (LID): lease {lt}, sale {ds}, notice {dn}. Tool nói được ở ít nhất tới {stay} ({rule}). Ken coi giùm được không?'},
+ en:{title:'Landlord in Default Addendum',sub:'Form LID tells the tenant, in writing, that the home they’re renting (or about to rent) is in foreclosure.',
+  tool_sub:'Enter the lease type, lease end date, foreclosure sale date and notice date. The tool shows the earliest date the tenant can be made to leave.',
+  eli:['Think of renting a car from someone who’s behind on the car loan. The bank could take it back any time. Form LID is the note that says so before you get the keys.',
+   'Foreclosure is when the owner stops paying the mortgage and the lender sells the home at auction. Once a “notice of default” is recorded, the process has started. A sale isn’t certain: the owner can still catch up or sell first.',
+   'If the home is sold at auction, the new owner <b>can’t remove the tenant right away</b>. California law (CCP §1161b) requires <b>at least 90 days’</b> written notice. A fixed-term lease usually runs to its end, unless the new owner will live there as a primary residence.',
+   'It’s one page. The owner (Housing Provider) signs, the tenant signs that they received it. It attaches to the lease (RLMM) or month-to-month agreement. Nothing to calculate: just names, date and address.',
+   'An older California law made owners of homes in default tell tenants before signing a lease. That section may no longer be in effect. Still, <b>tell the tenant</b> — it’s honest and it avoids lawsuits. Ask an attorney to be sure.'],
+  myths:['<b>“Foreclosure means the tenant must move out right away.”</b> No. The new owner must give at least 90 days’ written notice. A fixed-term lease usually runs to its end.',
+   '<b>“Signing LID means the tenant gives up their rights.”</b> No. LID is a heads-up. It doesn’t waive any tenant rights or replace state or city just-cause rules.',
+   '<b>“A buyer at auction can ignore the old lease.”</b> Not quite. For a real arm’s-length tenant at market rent, a lease signed before the sale is honored unless the buyer moves in. A “family deal” at very low rent is different and may not be protected.'],
+  op:['Straight talk: an agent who knows a home is in default and keeps quiet is betting their license. When the tenant finds a notice taped to the door three months later, the agent is the first call.',
+   'The debatable part: many people think renting out a home in foreclosure is shady. Not always. The rent is sometimes how the owner saves the house. The issue isn’t renting it out; it’s whether you told the truth before they signed.'],
+  l_type:'Type of rental agreement',o_fixed:'Fixed-term lease (e.g. 12 months)',o_mtm:'Month-to-month',
+  l_end:'Lease end date',l_sale:'Foreclosure sale date',l_sale_s:'(if any)',l_ntc:'Date the 90-day notice was received',l_ntc_s:'(from new owner)',
+  l_occ:'Will the new owner live there as a primary residence?',o_occ_n:'No, they’ll rent it out or resell',o_occ_y:'Yes, they’ll move in',o_occ_u:'Don’t know yet',
+  l_bona:'Is the tenant an outsider paying market rent?',o_bona_y:'Yes, market rent',o_bona_n:'No, family / very low rent',
+  l_bona_s:'The law calls this a “bona fide tenant”: not the borrower or their spouse/child/parent, an arm’s-length lease, and rent not far below market.',
+  k_stay:'Tenant can stay at least until',k_nosale:'No sale yet',k_na:'Talk to an attorney',
+  n_90:'90 days after notice',n_lease:'Lease end date',n_rule:'Rule',
+  b_ok:'Protected under CCP §1161b',b_bad:'May NOT get the 90-day protection',b_wait:'Lease continues as normal',
+  r_lease:'Stays to the end of the lease (buyer not moving in)',r_90:'90 days from notice',r_unk:'Not known if buyer moves in → safe answer is 90 days',r_nosale:'The current owner is still the owner',r_na:'Not a bona fide tenant',
+  mtm_v:'None (month-to-month)',ntc_need:'Enter the notice date',
+  x_nosale:'No sale date yet: the lease and rent stay the same, paid to the current owner. The owner may still pay off the loan, sell, or the sale may be postponed.',
+  x_nontc:'Sold but no notice yet: the 90-day clock <b>hasn’t started</b>. The earliest possible date is {d} if notice is given on the sale date.',
+  x_after:'After this date the new owner still has to follow the eviction process. If the home is covered by just cause (AB 1482) or a city law (San Jose TPO for multi-unit buildings), the tenant may not have to leave at all. Ask an attorney.',
+  x_lease:'A fixed-term lease signed before the sale is honored to its end, because the buyer won’t move in.',
+  x_occ:'If the buyer moves in as a primary residence, the fixed-term lease doesn’t carry over, but the 90 days still apply.',
+  x_na:'If the tenant is the owner’s family, the lease isn’t arm’s length, or the rent is far below market, CCP §1161b may not protect them. Talk to an attorney now.',
+  x_bad:'The notice date is before the sale date. The 90-day notice only counts after the home is sold. Check the dates.',
+  x_fed:'Federal law (PTFA) has a similar 90-day rule. Check with an attorney if a federally backed loan is involved.',
+  x_mail:'If the notice was mailed, extra days may apply. Ask an attorney before cutting it close.',
+  yes:'Yes',no:'No',
+  subj:'Landlord in foreclosure (LID) — {n}',sent_from:'Sent from tool T421 tools.kenlamrealty.com/t421/',
+  out:'Form LID — landlord in foreclosure\nLease type: {lt}\nLease end: {le}\nSale date: {ds}\nNotice date: {dn}\nBuyer moving in: {oc}\nBona fide tenant: {bf}\n\nResult: {res}\nStay at least until: {stay}\nWhy: {rule}',
+  sms:'Hi Ken, I used the foreclosure tool (LID): lease {lt}, sale {ds}, notice {dn}. It says I can stay at least until {stay} ({rule}). Can you take a look?'}
+};
+const MOCK=[
+ {n:{vi:'Đầu form',en:'Top'},v:{vi:'Gắn vào lease ngày 20/11/2026 · 1234 Example Lane, San Jose, CA 95100',en:'Attached to lease dated 11/20/2026 · 1234 Example Lane, San Jose, CA 95100'},w:{vi:'Ghi form này đi kèm hợp đồng thuê nào (lease hay tháng-tháng), ngày ký, địa chỉ căn nhà.',en:'Names which rental agreement this attaches to (lease or month-to-month), its date, and the property address.'}},
+ {n:{vi:'Các bên',en:'Parties'},v:{vi:'Người thuê: Nguyễn Văn An · Chủ nhà: Trần Minh Bình',en:'Tenant: Nguyễn Văn An · Landlord: Trần Minh Bình'},w:{vi:'Tên người thuê và tên chủ nhà. Form cũ gọi là Buyer/Tenant và Seller/Landlord, nhưng ở đây chỉ là người thuê và chủ nhà.',en:'Tenant and owner names. The old form wording says Buyer/Tenant and Seller/Landlord; here it simply means tenant and owner.'}},
+ {n:{vi:'Lời báo',en:'The notice'},v:{vi:'Nhà đã vào thủ tục foreclosure · có thể bị bán đấu giá',en:'Foreclosure has started · home may be sold at auction'},w:{vi:'Đây là phần chính. Nói 4 ý: (1) nhà đã vào foreclosure, có thể bị bán; (2) nếu bán, quyền ở tiếp của người thuê có thể bị ảnh hưởng; (3) chủ mới thường phải giữ lease, trừ khi họ dọn vô ở hoặc vài trường hợp khác, và ở vài city có luật just cause thì người thuê có thể không phải dọn; (4) muốn đuổi, chủ mới thường phải báo bằng giấy ít nhất 90 ngày.',en:'The core of the form. Four points: (1) foreclosure has started and the home may be sold; (2) a sale may affect the tenant’s right to stay; (3) the new owner usually must honor the lease unless they move in or a few other cases, and in cities with just-cause laws the tenant may not have to leave; (4) to evict, the new owner usually must give at least 90 days’ written notice.'}},
+ {n:{vi:'Ký tên',en:'Signatures'},v:{vi:'Nguyễn Văn An ký 20/11/2026 · Trần Minh Bình ký 20/11/2026',en:'Nguyễn Văn An signed 11/20/2026 · Trần Minh Bình signed 11/20/2026'},w:{vi:'Hai bên ký và ghi ngày, xác nhận đồng ý và đã nhận bản sao. Có chỗ cho 2 người thuê và 2 chủ nhà. Agent A giữ bản sao trong hồ sơ.',en:'Both sides sign and date, agreeing and confirming they got a copy. Room for two tenants and two owners. Agent A keeps a copy in the file.'}}
+];
+const NEXT=[
+ {code:'T53',href:'/t53/',vi:'Luật chủ nhà – người thuê',en:'Landlord–tenant law basics'},
+ {code:'T419',href:'/t419/',vi:'Phụ lục rent cap &amp; just cause (RCJC)',en:'Rent cap &amp; just cause addendum (RCJC)'},
+ {code:'T418',href:'/t418/',vi:'Quyền nhận bản dịch hợp đồng thuê (FLTN)',en:'Right to a translated lease (FLTN)'},
+ {code:'T402',href:'/t402/',vi:'Thư viện forms địa ốc',en:'Real estate forms library'}
+];
+/* pure logic: i={type:'fixed'|'mtm', end:Date|null, sale:Date|null, ntc:Date|null, occ:'y'|'n'|'u', bona:'y'|'n'} */
+function lidCalc(i){
+  const r={kind:'',stay:null,d90:null,rule:'',bad:false};
+  if(i.bona==='n'){r.kind='na';r.rule='r_na';return r;}
+  if(!i.sale){r.kind='nosale';r.rule='r_nosale';return r;}
+  if(!i.ntc){r.kind='nontc';r.d90=addDays(i.sale,LAW.noticeDays);r.stay=r.d90;}
+  else {r.d90=addDays(i.ntc,LAW.noticeDays);r.stay=r.d90;r.bad=i.ntc<i.sale;r.kind='ok';}
+  if(i.type==='fixed' && i.occ==='n' && i.end && i.end>r.stay){r.stay=i.end;r.rule='r_lease';}
+  else r.rule = i.occ==='u'?'r_unk':'r_90';
+  return r;
+}
+function calc(){
+  const type=$('ltype').value; $('endF').hidden = type!=='fixed';
+  const i={type,end:type==='fixed'?D($('dEnd').value):null,sale:D($('dSale').value),ntc:D($('dNtc').value),occ:$('occ').value,bona:$('bona').value};
+  const r=lidCalc(i), b=$('badge'), notes=[];
+  $('oLease').textContent = type==='fixed'?fdate(i.end):t('mtm_v');
+  $('o90').textContent = r.d90?fdate(r.d90):(r.kind==='nosale'||r.kind==='na'?'—':t('ntc_need'));
+  $('oRule').textContent=t(r.rule);
+  $('bigV').classList.remove('word');
+  if(r.kind==='na'){ $('bigK').textContent=t('k_stay'); $('big').textContent=t('k_na'); $('bigV').classList.add('word'); b.textContent=t('b_bad'); b.className='badge bad'; notes.push(t('x_na')); }
+  else if(r.kind==='nosale'){ $('bigK').textContent=t('k_stay'); $('big').textContent=t('k_nosale'); $('bigV').classList.add('word'); b.textContent=t('b_wait'); b.className='badge'; notes.push(t('x_nosale')); }
+  else {
+    $('bigK').textContent=t('k_stay'); $('big').textContent=fdate(r.stay); b.textContent=t('b_ok'); b.className='badge good';
+    if(r.kind==='nontc') notes.push(fill(t('x_nontc'),{d:fdate(r.d90)}));
+    if(r.bad) notes.push(t('x_bad'));
+    if(r.rule==='r_lease') notes.push(t('x_lease'));
+    if(type==='fixed' && i.occ==='y') notes.push(t('x_occ'));
+    notes.push(t('x_after')); notes.push(t('x_mail')); notes.push(t('x_fed'));
+  }
+  $('xNote').innerHTML=notes.join('<br>');
+  const o={lt:t(type==='fixed'?'o_fixed':'o_mtm'),le:type==='fixed'?fdate(i.end):t('mtm_v'),ds:fdate(i.sale),dn:fdate(i.ntc),
+    oc:t('o_occ_'+i.occ),bf:t('o_bona_'+i.bona),res:b.textContent,stay:r.stay?fdate(r.stay):$('big').textContent,rule:t(r.rule)};
+  OUT.txt=fill(t('out'),o); OUT.sms=fill(t('sms'),o);
+}
+
+const I18N={vi:Object.assign({},IC.vi,IP.vi),en:Object.assign({},IC.en,IP.en)};
+let lang='vi';
+try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+const $=id=>document.getElementById(id);
+const t=k=>I18N[lang][k];
+const fill=(s,o)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+function D(s){if(!s)return null;const p=String(s).split('-').map(Number);if(p.length!==3||!p[0]||!p[1]||!p[2])return null;return new Date(Date.UTC(p[0],p[1]-1,p[2]));}
+function addDays(d,n){return new Date(d.getTime()+n*864e5);}
+function addBiz(d,n){let x=d;while(n>0){x=addDays(x,1);const w=x.getUTCDay();if(w!==0&&w!==6)n--;}return x;}
+function fdate(d){if(!d)return '—';const y=d.getUTCFullYear(),m=String(d.getUTCMonth()+1).padStart(2,'0'),dd=String(d.getUTCDate()).padStart(2,'0');return lang==='vi'?dd+'/'+m+'/'+y:m+'/'+dd+'/'+y;}
+const money=n=>'$'+(Math.round(n*100)/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+let OUT={txt:'',sms:''};
+function renderStatic(){
+  $('eli').innerHTML=t('eli').map(p=>'<p>'+p+'</p>').join('');
+  $('mock').innerHTML=MOCK.map(p=>{const n=typeof p.n==='string'?t('para')+' '+p.n:p.n[lang];
+    return '<details class="para"><summary><span class="pn">'+n+'</span><span class="pv">'+p.v[lang]+'</span><span class="pt">'+t('what')+'</span></summary><div class="pw">'+p.w[lang]+'</div></details>';}).join('');
+  $('myths').innerHTML=t('myths').map(m=>'<p class="myth">'+m+'</p>').join('');
+  $('op').innerHTML=t('op').map(p=>'<p>'+p+'</p>').join('');
+  $('next').innerHTML=NEXT.map(x=>'<a href="'+x.href+'"><span>'+x.code+'</span>'+x[lang]+'</a>').join('');
+}
+function run(){ calc(); $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(OUT.sms); }
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; $('klBack').textContent=d.back; document.documentElement.lang=lang;
+  renderStatic(); run();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const o={n:$('fname').value.trim()||'—',e:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'};
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (Lead Email Parsing), như t55. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(t('subj'),o))+'&body='+encodeURIComponent(fill(t('mail'),o)+OUT.txt+'\n\n'+t('sent_from'));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+document.querySelectorAll('#tool input,#tool select').forEach(el=>{el.addEventListener('input',run);el.addEventListener('change',run);});
+applyLang();
+
+</script>
+</body>
+</html>
