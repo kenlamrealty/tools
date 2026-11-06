@@ -1,0 +1,763 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Two brokerages, one side: Form ABA · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="C.A.R. Form ABA (Additional Broker Acknowledgement and Addendum, Revised 6/23) in plain words: two brokerages from different companies sharing one side. Each paragraph explained, a filled-in sample, and a calculator for how the commission splits and who signs.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t461/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Two brokerages, one side: Form ABA · Ken Lam Tools">
+<meta property="og:description" content="C.A.R. Form ABA (Additional Broker Acknowledgement and Addendum, Revised 6/23) in plain words: two brokerages from different companies sharing one side. Each paragraph explained, a filled-in sample, and a calculator for how the commission splits and who signs.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t461/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T145 additions */
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.cmp div{border:1px solid var(--line);border-radius:10px;padding:12px}
+.cmp .k{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.cmp .v{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums;margin-top:2px}
+.cmp p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.cards{display:grid;gap:10px}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
+.card b{font-weight:500;font-size:15px}
+.card span{font-size:14px;color:var(--muted)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a,.card a,.cmp a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+/* T172 additions */
+.seg.wrap3{flex-wrap:wrap}
+.seg.wrap3 button{flex:1 1 45%;border-bottom:1px solid var(--line)}
+.total .v.path{font-size:38px;line-height:1.1}
+.docs{display:grid;gap:8px}
+.docs label{display:flex;gap:10px;align-items:flex-start;font-size:15px}
+.docs input{width:18px;height:18px;margin-top:3px;accent-color:var(--brass);flex:none}
+.docs label.done span{color:var(--muted);text-decoration:line-through}
+.gcal{color:var(--brass);text-decoration:none;font-size:14px}
+</style>
+<style>
+/* Forms C.A.R. group additions (T460–T474) */
+.toc{display:flex;flex-wrap:wrap;gap:8px}
+.toc a{font-size:13px;color:var(--fg);text-decoration:none;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:6px 12px}
+.toc a:hover{border-color:var(--brass)}
+.para{border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.para[open]{border-color:var(--brass)}
+.para summary{list-style:none;cursor:pointer;display:flex;gap:10px;align-items:baseline;padding:12px 14px;font-weight:500;font-size:15px}
+.para summary::-webkit-details-marker{display:none}
+.para summary::after{content:'+';margin-left:auto;color:var(--muted);font-weight:400}
+.para[open] summary::after{content:'–'}
+.pn{flex:none;min-width:34px;font-family:var(--display);font-size:20px;line-height:1;color:var(--brass)}
+.para .pb{padding:0 14px 14px;display:grid;gap:8px;font-size:15px}
+.para .pb p{margin:0}
+.para .ex{font-size:14px;color:var(--muted);background:var(--brass-soft);border-radius:8px;padding:8px 10px}
+.para .ex b{color:var(--fg);font-weight:500}
+.para.flash{animation:fl 1.2s ease}
+@keyframes fl{0%{box-shadow:0 0 0 3px var(--brass)}100%{box-shadow:0 0 0 0 transparent}}
+.paras{display:grid;gap:8px}
+.paper{background:#FFFEFA;color:#2B2925;border:1px solid #D9D2C3;border-radius:4px;padding:16px 14px;box-shadow:0 2px 10px rgba(0,0,0,.06);display:grid;gap:8px;font-size:13px;overflow:hidden}
+.paper .ph{text-align:center;display:grid;gap:2px;border-bottom:2px solid #2B2925;padding-bottom:8px}
+.paper .ph b{font-family:var(--display);font-size:20px;font-weight:500;letter-spacing:.02em}
+.paper .ph span{font-size:11px;color:#7A7468}
+.pf{display:grid;gap:4px;text-align:left;width:100%;background:transparent;border:1px dashed #D9D2C3;border-radius:4px;padding:7px 9px;font:inherit;font-size:13px;color:#2B2925;cursor:pointer}
+.pf:hover,.pf:focus-visible{border-color:#B8955A;background:#FBF6EC}
+.pf .t{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#7A7468;display:flex;gap:6px}
+.pf .t i{font-style:normal;color:#B8955A;font-weight:600}
+.pf .r{display:flex;flex-wrap:wrap;gap:2px 10px;min-width:0}
+.pf .r span{min-width:0;overflow-wrap:anywhere}
+.pf u{text-decoration:none;border-bottom:1px solid #2B2925;font-family:'Courier New',monospace;font-size:12.5px;overflow-wrap:anywhere}
+.pf .bx{font-family:'Courier New',monospace}
+.pf.sig u{display:inline-block;min-width:90px}
+.pcols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+@media (max-width:420px){.pcols{grid-template-columns:1fr}}
+.pnote{font-size:12px;color:var(--muted);margin:0}
+.vid video{width:100%;border-radius:12px;background:#000;aspect-ratio:9/16;max-height:70vh;object-fit:contain}
+.myths{display:grid;gap:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;border-radius:999px;padding:3px 10px;background:var(--brass-soft);color:var(--fg)}
+.chip.no{background:transparent;border:1px solid var(--line);color:var(--muted);text-decoration:line-through}
+.warnbox{font-size:14px;color:var(--warn);border:1px solid var(--warn);border-radius:10px;padding:10px 12px}
+.warnbox.hide{display:none}
+.okbox{font-size:14px;color:var(--ok);border:1px solid var(--ok);border-radius:10px;padding:10px 12px}
+.sec-t{font-family:var(--display);font-weight:400;font-size:28px;line-height:1.15;margin:0}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:12px 4px}
+.siglist{margin:0;padding-left:18px;display:grid;gap:4px;font-size:15px}
+.siglist li.no{color:var(--muted);text-decoration:line-through}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools · T461</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Two different brokerages working the same side? That's Form ABA.</h1>
+    <p class="sub" data-i="sub">Form ABA ties a second brokerage into your listing or buyer agreement, and says how the two share the work and the commission.</p>
+  </header>
+  <nav class="toc" aria-label="On this page">
+    <a href="#explain" data-i="toc1">What each part says</a><a href="#paper-sec" data-i="toc2">Sample sheet</a><a href="#tool" data-i="toc3">Tool</a><a href="#vid" data-i="toc4">Video</a>
+  </nav>
+
+  <section class="panel" id="explain">
+    <h2 data-i="ex_t">What each part says</h2>
+    <p class="hint" data-i="ex_h">Tap a part to open it. Same order as the real form.</p>
+    <div class="paras">
+      <details class="para" id="ph"><summary><span class="pn">↑</span><span data-i="ph_n">Top of the form: which agreement</span></summary><div class="pb"><p data-i="ph_s">ABA is an addendum. The default is the Listing Agreement; otherwise check Purchase Agreement, Buyer Representation Agreement or Other. Then the date of that agreement, the two parties to it, and the property.</p><p class="ex" data-i="ph_e"><b>Example:</b> Seller A listed 1234 Example Lane, San Jose, CA 95100 with Brokerage Y on 12/01/2026. Seller A's cousin is an agent at Brokerage K and wants to help. ABA attaches to that listing.</p></div></details>
+      <details class="para" id="p1"><summary><span class="pn">1</span><span data-i="p1_n">Listing Agreement: co-listing brokers</span></summary><div class="pb"><p data-i="p1_s">Fill this when ABA attaches to a listing. Broker 1 and Broker 2 become co-listing brokers for the seller. A: pay is split equally, unless you check the box and write another split. B: they share responsibility equally and jointly, unless you write it another way. C: or check the box to use an attached agreement.</p><p class="ex" data-i="p1_e"><b>Like two friends running one lemonade stand:</b> the sign says both names. Brokerage Y and Brokerage K co-list 1234 Example Lane, 60/40 on pay, equal on work.</p></div></details>
+      <details class="para" id="p2"><summary><span class="pn">2</span><span data-i="p2_n">Buyer Representation Agreement: co-buyer brokers</span></summary><div class="pb"><p data-i="p2_s">The same idea for the buyer side. When ABA attaches to a buyer agreement, the two brokers become co-buyer brokers. Same three choices: pay split, responsibility, or an attached agreement.</p><p class="ex" data-i="p2_e"><b>Example:</b> Buyer B moves from Southern California and keeps the agent there (Brokerage K) but also signs with Brokerage Y, which knows San Jose. ABA on the buyer agreement, paragraph 2.</p></div></details>
+      <details class="para" id="p3"><summary><span class="pn">3</span><span data-i="p3_n">Purchase Agreement or other: check ONE box</span></summary><div class="pb"><p data-i="p3_s">Used when ABA attaches to the purchase contract or another paper. Box A: several brokers for the seller, who are already parties to a listing (or other agreement) where they agreed to share. Box B: several brokers for the buyer, who have agreed to share. One box only; if both apply, use a separate ABA for each.</p><p class="ex" data-i="p3_e"><b>Example:</b> The offer on 1234 Example Lane is accepted. The two co-listing brokers attach ABA to the Purchase Agreement and check 3A, pointing to the 12/01/2026 listing.</p></div></details>
+      <details class="para" id="p4"><summary><span class="pn">4</span><span data-i="p4_n">The agents for each broker</span></summary><div class="pb"><p data-i="p4_s">One agent for Broker 1 and one for Broker 2, each with a DRE license number. If either brokerage uses several agents, partners or a team, check the box and attach Form AAA for them.</p><p class="ex" data-i="p4_e"><b>Example:</b> Agent X (Brokerage Y), DRE #0000001; Agent M (Brokerage K), DRE #0000009. Made-up numbers.</p></div></details>
+      <details class="para" id="p5"><summary><span class="pn">5</span><span data-i="p5_n">One broker named means both are named</span></summary><div class="pb"><p data-i="p5_s">Wherever Broker 1 or Broker 2 is named in the agreement or related papers as the representative, the other broker counts as named too. Buyers don't need to sign if only paragraph 1 is filled. Sellers don't need to sign if only paragraph 2 is filled.</p><p class="ex" data-i="p5_e"><b>Example:</b> The MLS and the disclosures say Brokerage Y. With ABA, that also covers Brokerage K.</p></div></details>
+      <details class="para" id="psig"><summary><span class="pn">✎</span><span data-i="psig_n">Signatures</span></summary><div class="pb"><p data-i="psig_s">Each brokerage signs as a firm with its DRE number, and the line under it is "By (Broker/Office Manager)". Then lines for two sellers and two buyers, skipped as paragraph 5 allows.</p><p class="ex" data-i="psig_e"><b>Example:</b> Brokerage Y signs By its broker, Brokerage K signs By its office manager, Seller A signs. No buyer line, because only paragraph 1 is used.</p></div></details>
+    </div>
+  </section>
+
+  <section class="panel" id="paper-sec">
+    <h2 data-i="pp_t">Sample sheet, filled in</h2>
+    <p class="hint" data-i="pp_h">Tap any box to jump to what it means. It follows the tool below.</p>
+    <div class="paper" id="paper"></div>
+    <p class="pnote" data-i="pp_note">Simplified illustration, not the real form. The real form is published by C.A.R. (California Association of REALTORS®); your agent has it.</p>
+  </section>
+
+  <h2 class="sec-t" id="tool" data-i="tl_t">Who gets how much, who signs</h2>
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="agr"><span data-i="l_agr">ABA attaches to</span></label>
+      <div class="ctl"><select id="agr">
+        <option value="la" selected data-i="o_la">Listing Agreement (para 1)</option><option value="bra" data-i="o_bra">Buyer Representation Agreement (para 2)</option>
+        <option value="pas" data-i="o_pas">Purchase Agreement / Other — brokers for seller (3A)</option><option value="pab" data-i="o_pab">Purchase Agreement / Other — brokers for buyer (3B)</option></select></div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="price"><span data-i="l_price">Price</span></label>
+        <div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" min="0" step="10000" value="1250000"></div>
+      </div>
+      <div class="field">
+        <label for="pct"><span data-i="l_pct">Commission in that agreement</span></label>
+        <div class="ctl"><input id="pct" type="number" inputmode="decimal" min="0" max="10" step="0.25" value="2.5"><span class="post">%</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="flat"><span data-i="l_flat">Or a flat amount</span> <small data-i="l_flat_s">(leave 0 to use %)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="flat" type="number" inputmode="numeric" min="0" step="500" value="0"></div>
+      </div>
+      <div class="field">
+        <label for="share"><span data-i="l_share">Broker 1 share</span> <small data-i="l_share_s">(50 = split equally)</small></label>
+        <div class="ctl"><input id="share" type="number" inputmode="decimal" min="0" max="100" step="5" value="50"><span class="post">%</span></div>
+      </div>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_resp">Responsibility</span>
+      <div class="seg" role="group" id="respSeg">
+        <button type="button" data-v="eq" aria-pressed="true" data-i="r_eq">Equal and joint</button>
+        <button type="button" data-v="oth" aria-pressed="false" data-i="r_oth">Written another way</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_k">Commission to share</div>
+      <div class="v"><span id="total">$0</span></div>
+    </div>
+    <div class="cmp">
+      <div><div class="k" data-i="n_b1">Brokerage Y (Broker 1)</div><div class="v" id="b1">$0</div><p id="b1s"></p></div>
+      <div><div class="k" data-i="n_b2">Brokerage K (Broker 2)</div><div class="v" id="b2">$0</div><p id="b2s"></p></div>
+    </div>
+    <div class="bar"><i class="b1" id="bar1" style="width:50%"></i><i class="b2" id="bar2" style="width:50%"></i></div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_para">Paragraph to fill</b><small id="oSplit"></small></span><span class="a" id="oPara">1</span></div>
+    </div>
+    <div class="field"><span class="fl" data-i="n_sig">Who signs</span><ul class="siglist" id="sigList"></ul></div>
+    <div class="note" id="note"></div>
+  </section>
+
+  <section class="panel vid" id="vid">
+    <h2 data-i="v_t">45-second video</h2>
+    <video src="explain.mp4" controls playsinline preload="metadata" poster="poster.jpg" aria-label="45-second explainer video"></video>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol>
+      <li data-i="ns0">Before anyone signs, ask both agents one thing: who calls me, who prices, who shows, who negotiates. Put the answer in 1B or 2B, not in a text.</li>
+      <li data-i="ns1">Several agents inside one of the brokerages? That is Form AAA: <a href="/t460/">T460</a>.</li>
+      <li data-i="ns2">Selling? See what you take home after commission in <a href="/t21/">T21</a>. Rental or commercial listing: <a href="/t462/">T462</a>.</li>
+      <li data-i="ns3">Every other form, in plain words: <a href="/t402/">T402 Forms library</a>.</li>
+    </ol>
+  </section>
+  <section class="panel">
+    <h2 data-i="my_t">What many people get wrong</h2>
+    <div class="myths">
+      <p class="myth" data-i="my0"><b>"Two brokerages means I pay two commissions."</b> No. ABA shares the compensation already in your agreement between the two brokers. It adds no new fee.</p>
+      <p class="myth" data-i="my1"><b>"Split the money equally, so the work is equal too."</b> Pay (A) and responsibility (B) are separate boxes. In 23 years, the co-listings that went bad were the ones where everybody wrote 50/50 and nobody wrote who answers the phone on Saturday.</p>
+      <p class="myth" data-i="my2"><b>"My agent signed it, so it's done."</b> The signature line for each firm is "By (Broker/Office Manager)". The brokerage signs, through its broker or office manager.</p>
+    </div>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Text Ken</a>
+    <a class="btn" id="videoBtn" href="#vid" data-i="b_video">Watch the 45-second video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this result</h2>
+    <p data-i="f_sub">Your numbers in one email to Ken. He answers himself. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_src">Sources:</span> C.A.R. Form ABA, Additional Broker Acknowledgement and Addendum (Revised 6/23) · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=2079.19" target="_blank" rel="noopener">Civil Code §2079.19 (sharing compensation)</a> · <a href="https://www2.dre.ca.gov/PublicASP/pplinfo.asp" target="_blank" rel="noopener">DRE license lookup</a></span>
+    <span data-i="ft_est">Educational information, not legal or tax advice. Explained from C.A.R. Form ABA (Revised 6/23); the form you actually sign controls. Numbers are estimates. For legal questions, talk to a real estate attorney.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/t402/" data-i="ft_lib">T402 Forms library</a> · <a href="/cong-cu/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Rules — from C.A.R. Form ABA (Revised 6/23), read 06/11/2026 =====
+   Para 1 (Listing) / 2 (Buyer Rep): A compensation split equally unless box checked; B equally and jointly share responsibility unless box checked; C attached agreement.
+   Para 3 (Purchase Agreement/Other): check ONE (A brokers for seller, B brokers for buyer); more than one → separate forms.
+   Para 4: one agent + DRE per broker; box → multiple agents per attached AAA.
+   Para 5: buyer signatures not necessary if only para 1 completed; seller signatures not necessary if only para 2 completed.
+   Signatures: each firm "By (Broker/Office Manager)". Commission math here is the tool's estimate (price × % or flat), not a form term. */
+const RULES={ EQUAL_SHARE:50 };
+
+const I18N={
+"en": {
+"toc1": "What each part says",
+"toc2": "Sample sheet",
+"toc3": "Tool",
+"toc4": "Video",
+"ex_t": "What each part says",
+"ex_h": "Tap a part to open it. Same order as the real form.",
+"pp_t": "Sample sheet, filled in",
+"pp_h": "Tap any box to jump to what it means. It follows the tool below.",
+"pp_note": "Simplified illustration, not the real form. The real form is published by C.A.R. (California Association of REALTORS®); your agent has it.",
+"v_t": "45-second video",
+"ns_t": "Next steps",
+"my_t": "What many people get wrong",
+"b_email": "Email me the result",
+"b_sms": "Text Ken",
+"b_video": "Watch the 45-second video",
+"f_title": "Email this result",
+"f_sub": "Your numbers in one email to Ken. He answers himself. No spam.",
+"f_name": "Name",
+"f_phone": "Phone (optional)",
+"f_send": "Send",
+"f_ok": "Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",
+"f_or": "Or text:",
+"f_copy": "Copy",
+"ft_src": "Sources:",
+"ft_upd": "Updated",
+"ft_all": "All tools",
+"ft_lib": "T402 Forms library",
+"lang": "Tiếng Việt",
+"title_doc": "Two brokerages, one side: Form ABA",
+"title": "Two different brokerages working the same side? That's Form ABA.",
+"sub": "Form ABA ties a second brokerage into your listing or buyer agreement, and says how the two share the work and the commission.",
+"tl_t": "Who gets how much, who signs",
+"l_agr": "ABA attaches to",
+"o_la": "Listing Agreement (para 1)",
+"o_bra": "Buyer Representation Agreement (para 2)",
+"o_pas": "Purchase Agreement / Other — brokers for seller (3A)",
+"o_pab": "Purchase Agreement / Other — brokers for buyer (3B)",
+"l_price": "Price",
+"l_pct": "Commission in that agreement",
+"l_flat": "Or a flat amount",
+"l_flat_s": "(leave 0 to use %)",
+"l_share": "Broker 1 share",
+"l_share_s": "(50 = split equally)",
+"l_resp": "Responsibility",
+"r_eq": "Equal and joint",
+"r_oth": "Written another way",
+"r_k": "Commission to share",
+"n_b1": "Brokerage Y (Broker 1)",
+"n_b2": "Brokerage K (Broker 2)",
+"n_para": "Paragraph to fill",
+"n_sig": "Who signs",
+"ft_est": "Educational information, not legal or tax advice. Explained from C.A.R. Form ABA (Revised 6/23); the form you actually sign controls. Numbers are estimates. For legal questions, talk to a real estate attorney.",
+"ph_n": "Top of the form: which agreement",
+"ph_s": "ABA is an addendum. The default is the Listing Agreement; otherwise check Purchase Agreement, Buyer Representation Agreement or Other. Then the date of that agreement, the two parties to it, and the property.",
+"ph_e": "<b>Example:</b> Seller A listed 1234 Example Lane, San Jose, CA 95100 with Brokerage Y on 12/01/2026. Seller A's cousin is an agent at Brokerage K and wants to help. ABA attaches to that listing.",
+"p1_n": "Listing Agreement: co-listing brokers",
+"p1_s": "Fill this when ABA attaches to a listing. Broker 1 and Broker 2 become co-listing brokers for the seller. A: pay is split equally, unless you check the box and write another split. B: they share responsibility equally and jointly, unless you write it another way. C: or check the box to use an attached agreement.",
+"p1_e": "<b>Like two friends running one lemonade stand:</b> the sign says both names. Brokerage Y and Brokerage K co-list 1234 Example Lane, 60/40 on pay, equal on work.",
+"p2_n": "Buyer Representation Agreement: co-buyer brokers",
+"p2_s": "The same idea for the buyer side. When ABA attaches to a buyer agreement, the two brokers become co-buyer brokers. Same three choices: pay split, responsibility, or an attached agreement.",
+"p2_e": "<b>Example:</b> Buyer B moves from Southern California and keeps the agent there (Brokerage K) but also signs with Brokerage Y, which knows San Jose. ABA on the buyer agreement, paragraph 2.",
+"p3_n": "Purchase Agreement or other: check ONE box",
+"p3_s": "Used when ABA attaches to the purchase contract or another paper. Box A: several brokers for the seller, who are already parties to a listing (or other agreement) where they agreed to share. Box B: several brokers for the buyer, who have agreed to share. One box only; if both apply, use a separate ABA for each.",
+"p3_e": "<b>Example:</b> The offer on 1234 Example Lane is accepted. The two co-listing brokers attach ABA to the Purchase Agreement and check 3A, pointing to the 12/01/2026 listing.",
+"p4_n": "The agents for each broker",
+"p4_s": "One agent for Broker 1 and one for Broker 2, each with a DRE license number. If either brokerage uses several agents, partners or a team, check the box and attach Form AAA for them.",
+"p4_e": "<b>Example:</b> Agent X (Brokerage Y), DRE #0000001; Agent M (Brokerage K), DRE #0000009. Made-up numbers.",
+"p5_n": "One broker named means both are named",
+"p5_s": "Wherever Broker 1 or Broker 2 is named in the agreement or related papers as the representative, the other broker counts as named too. Buyers don't need to sign if only paragraph 1 is filled. Sellers don't need to sign if only paragraph 2 is filled.",
+"p5_e": "<b>Example:</b> The MLS and the disclosures say Brokerage Y. With ABA, that also covers Brokerage K.",
+"psig_n": "Signatures",
+"psig_s": "Each brokerage signs as a firm with its DRE number, and the line under it is \"By (Broker/Office Manager)\". Then lines for two sellers and two buyers, skipped as paragraph 5 allows.",
+"psig_e": "<b>Example:</b> Brokerage Y signs By its broker, Brokerage K signs By its office manager, Seller A signs. No buyer line, because only paragraph 1 is used.",
+"ns0": "Before anyone signs, ask both agents one thing: who calls me, who prices, who shows, who negotiates. Put the answer in 1B or 2B, not in a text.",
+"ns1": "Several agents inside one of the brokerages? That is Form AAA: <a href=\"/t460/\">T460</a>.",
+"ns2": "Selling? See what you take home after commission in <a href=\"/t21/\">T21</a>. Rental or commercial listing: <a href=\"/t462/\">T462</a>.",
+"ns3": "Every other form, in plain words: <a href=\"/t402/\">T402 Forms library</a>.",
+"my0": "<b>\"Two brokerages means I pay two commissions.\"</b> No. ABA shares the compensation already in your agreement between the two brokers. It adds no new fee.",
+"my1": "<b>\"Split the money equally, so the work is equal too.\"</b> Pay (A) and responsibility (B) are separate boxes. In 23 years, the co-listings that went bad were the ones where everybody wrote 50/50 and nobody wrote who answers the phone on Saturday.",
+"my2": "<b>\"My agent signed it, so it's done.\"</b> The signature line for each firm is \"By (Broker/Office Manager)\". The brokerage signs, through its broker or office manager.",
+"eq": "split equally (box 1A as printed)",
+"uneq": "box checked: {a}% / {b}%",
+"of": "of the total",
+"para": {
+"la": "1 — Co-listing Brokers",
+"bra": "2 — Co-Buyer Brokers",
+"pas": "3A — Multiple Brokers Representing Seller",
+"pab": "3B — Multiple Brokers Representing Buyer"
+},
+"sb1": "Broker 1, signed \"By\" the Broker/Office Manager",
+"sb2": "Broker 2, signed \"By\" the Broker/Office Manager",
+"ss": "Seller(s)",
+"sbu": "Buyer(s)",
+"skip_b": " — not needed when only paragraph 1 is filled (para 5)",
+"skip_s": " — not needed when only paragraph 2 is filled (para 5)",
+"note_la": "Each brokerage then pays its own agent by its own office agreement. That split is not in ABA.",
+"note_pa": "Paragraph 5 exempts nobody for paragraph 3, so plan on every party signing. In 3A the two brokers must already have a listing (or other) agreement to share; in 3B, an agreement to share.",
+"resp_eq": "Responsibility: shared equally and jointly (1B/2B as printed).",
+"resp_oth": "Responsibility: box checked, written out another way (1B/2B). Get it specific: who prices, who shows, who negotiates.",
+"p_head": "ADDITIONAL BROKER ACKNOWLEDGEMENT",
+"p_sub": "ABA · sample only",
+"p_t0": "Attaches to",
+"p_date": "dated 12/01/2026",
+"p_btw": "Between Seller A and Brokerage Y",
+"p_btwb": "Between Buyer B and Brokerage Y",
+"p_prop": "Property: 1234 Example Lane, San Jose, CA 95100",
+"p_t1": "Listing Agreement · co-listing",
+"p_t2": "Buyer Representation · co-buyer brokers",
+"p_t3": "Purchase Agreement / Other · check one",
+"p_comp": "A. Pay",
+"p_resp": "B. Responsibility",
+"p_att": "C. Attached agreement",
+"p_eq": "split equally",
+"p_ej": "equally and jointly",
+"p_other": "other: {x}",
+"p_3a": "A: several brokers for seller (have a listing agreement dated 12/01/2026)",
+"p_3b": "B: several brokers for buyer (have an agreement to share)",
+"p_blank": "(not used)",
+"p_t4": "agents for each broker",
+"p_aaa": "more agents? attach AAA",
+"p_t5": "one broker named = both named",
+"p_5": "Wherever Broker 1 or Broker 2 is named as representative, the other counts as named too",
+"p_tsig": "Signatures",
+"p_skip": "(not needed)",
+"labels": {
+"pa": "Purchase Agreement",
+"la": "Listing Agreement",
+"bra": "Buyer Representation Agreement",
+"oth": "Other"
+},
+"sms": "Hi Ken, I used the Form ABA tool (T461) on tools.kenlamrealty.com: {tot} commission, Broker 1 {b1}, Broker 2 {b2}. I have a question.",
+"subj": "Form ABA — {tot} split {sh} — {nm}",
+"body": "Name: {nm}\nEmail: {e}\nPhone: {ph}\n\nAttached to: {ag}\nParagraph: {pa}\nPrice: {pr}\nCommission: {cm}\nTotal to share: {tot}\nBroker 1: {b1}\nBroker 2: {b2}\nWho signs:\n{sg}\n\nSent from tool T461 tools.kenlamrealty.com"
+},
+"vi": {
+"toc1": "Từng phần nói gì",
+"toc2": "Phiếu minh họa",
+"toc3": "Tool",
+"toc4": "Video",
+"ex_t": "Từng phần nói gì",
+"ex_h": "Bấm vào từng phần để mở. Đi đúng thứ tự như form thật.",
+"pp_t": "Phiếu minh họa, điền sẵn",
+"pp_h": "Bấm vào ô nào thì nhảy tới phần giải thích ô đó. Phiếu đổi theo tool ở dưới.",
+"pp_note": "Minh họa đơn giản, không phải form thật. Form thật do C.A.R. (Hiệp hội Realtor California) phát hành, agent của bạn có.",
+"v_t": "Video 45 giây",
+"ns_t": "Bước tiếp theo",
+"my_t": "Nhiều người hiểu sai",
+"b_email": "Gửi kết quả qua email",
+"b_sms": "Nhắn Ken",
+"b_video": "Xem video 45 giây",
+"f_title": "Gửi kết quả này qua email",
+"f_sub": "Số của bạn gom vào 1 email gửi Ken. Ken tự trả lời. Không spam.",
+"f_name": "Tên",
+"f_phone": "Phone (không bắt buộc)",
+"f_send": "Gửi",
+"f_ok": "Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.",
+"f_or": "Hoặc nhắn tin:",
+"f_copy": "Copy",
+"ft_src": "Nguồn:",
+"ft_upd": "Cập nhật",
+"ft_all": "Tất cả tools",
+"ft_lib": "T402 Thư viện forms",
+"lang": "English",
+"title_doc": "Thêm broker khác văn phòng: form ABA",
+"title": "Hai brokerage khác nhau cùng lo một bên? Đó là form ABA.",
+"sub": "Form ABA gắn thêm một brokerage thứ hai vào listing hay buyer agreement của bạn, và ghi hai bên chia việc, chia commission ra sao.",
+"tl_t": "Ai nhận bao nhiêu, ai ký",
+"l_agr": "ABA gắn vào",
+"o_la": "Listing Agreement (đoạn 1)",
+"o_bra": "Buyer Representation Agreement (đoạn 2)",
+"o_pas": "Purchase Agreement / giấy khác — broker bên bán (3A)",
+"o_pab": "Purchase Agreement / giấy khác — broker bên mua (3B)",
+"l_price": "Giá nhà",
+"l_pct": "Commission ghi trong hợp đồng đó",
+"l_flat": "Hoặc số cố định",
+"l_flat_s": "(để 0 thì tính theo %)",
+"l_share": "Phần của Broker 1",
+"l_share_s": "(50 = chia đều)",
+"l_resp": "Trách nhiệm",
+"r_eq": "Chia đều, cùng chịu",
+"r_oth": "Ghi cách khác",
+"r_k": "Commission đem chia",
+"n_b1": "Brokerage Y (Broker 1)",
+"n_b2": "Brokerage K (Broker 2)",
+"n_para": "Đoạn phải điền",
+"n_sig": "Ai ký",
+"ft_est": "Thông tin giáo dục, không phải tư vấn luật hay thuế. Giải thích theo C.A.R. Form ABA (Revised 6/23); form bạn thật sự ký mới là bản quyết định. Con số chỉ là ước tính. Chuyện pháp lý, hỏi luật sư địa ốc.",
+"ph_n": "Đầu form: gắn vào hợp đồng nào",
+"ph_s": "ABA là phụ lục (addendum). Mặc định gắn vào Listing Agreement; không thì tick Purchase Agreement, Buyer Representation Agreement hoặc giấy khác. Rồi ghi ngày của hợp đồng đó, hai bên ký hợp đồng đó, và địa chỉ nhà.",
+"ph_e": "<b>Ví dụ:</b> Người bán A ký listing 1234 Example Lane, San Jose, CA 95100 với Brokerage Y ngày 01/12/2026. Người bà con của A làm agent ở Brokerage K, muốn phụ. ABA gắn vào listing đó.",
+"p1_n": "Listing Agreement: hai broker cùng listing",
+"p1_s": "Điền đoạn này khi ABA gắn vào listing. Broker 1 và Broker 2 thành hai broker cùng listing cho người bán. A: tiền chia đều, trừ khi tick ô và ghi cách chia khác. B: trách nhiệm chia đều và cùng chịu, trừ khi ghi cách khác. C: hoặc tick ô để theo một giấy đính kèm.",
+"p1_e": "<b>Giống hai đứa bạn chung một quầy nước chanh:</b> bảng hiệu ghi tên cả hai. Brokerage Y và Brokerage K cùng listing 1234 Example Lane, tiền chia 60/40, việc chia đều.",
+"p2_n": "Buyer Representation Agreement: hai broker cùng lo người mua",
+"p2_s": "Cùng ý đó nhưng cho bên mua. ABA gắn vào buyer agreement thì hai broker thành hai broker cùng lo cho người mua. Cũng ba lựa chọn: chia tiền, chia trách nhiệm, hoặc theo giấy đính kèm.",
+"p2_e": "<b>Ví dụ:</b> Người mua B dọn từ Nam Cali lên, muốn giữ agent cũ ở Brokerage K nhưng cũng ký với Brokerage Y rành San Jose. ABA gắn vào buyer agreement, đoạn 2.",
+"p3_n": "Purchase Agreement hay giấy khác: tick MỘT ô",
+"p3_s": "Dùng khi ABA gắn vào hợp đồng mua bán hay giấy khác. Ô A: nhiều broker cho bên bán, đã cùng ký listing (hoặc giấy khác) có thỏa thuận chia nhau. Ô B: nhiều broker cho bên mua, đã có thỏa thuận chia nhau. Chỉ một ô; cả hai cùng có thì mỗi cái một tờ ABA.",
+"p3_e": "<b>Ví dụ:</b> Offer cho 1234 Example Lane được nhận. Hai broker cùng listing gắn ABA vào Purchase Agreement, tick ô 3A, ghi listing ngày 01/12/2026.",
+"p4_n": "Agent của từng broker",
+"p4_s": "Ghi một agent cho Broker 1 và một agent cho Broker 2, mỗi người kèm số DRE. Brokerage nào dùng nhiều agent, partner hay team thì tick ô và kèm form AAA cho họ.",
+"p4_e": "<b>Ví dụ:</b> Agent X (Brokerage Y), DRE #0000001; Agent M (Brokerage K), DRE #0000009. Số bịa.",
+"p5_n": "Tên một broker là tên cả hai",
+"p5_s": "Chỗ nào trong hợp đồng hay giấy liên quan ghi Broker 1 hoặc Broker 2 làm đại diện, broker kia cũng coi như có tên. Chỉ điền đoạn 1 thì người mua khỏi ký. Chỉ điền đoạn 2 thì người bán khỏi ký.",
+"p5_e": "<b>Ví dụ:</b> MLS và disclosure ghi Brokerage Y. Có ABA rồi thì Brokerage K cũng được tính.",
+"psig_n": "Chữ ký",
+"psig_s": "Mỗi brokerage ký tên công ty kèm số DRE, dòng dưới là \"By (Broker/Office Manager)\". Rồi chỗ cho 2 người bán và 2 người mua, ai được miễn thì theo đoạn 5.",
+"psig_e": "<b>Ví dụ:</b> Brokerage Y ký qua broker, Brokerage K ký qua office manager, Người bán A ký. Không cần người mua, vì chỉ dùng đoạn 1.",
+"ns0": "Trước khi ký, hỏi hai agent một câu: ai gọi tôi, ai định giá, ai dẫn coi, ai thương lượng. Ghi câu trả lời vào ô 1B hay 2B, đừng để trong tin nhắn.",
+"ns1": "Một brokerage có nhiều agent cùng lo? Đó là form AAA: <a href=\"/t460/\">T460</a>.",
+"ns2": "Đang bán? Coi tiền cầm về sau commission ở <a href=\"/t21/\">T21</a>. Listing nhà cho thuê hay thương mại: <a href=\"/t462/\">T462</a>.",
+"ns3": "Các form khác, giải thích dễ hiểu: <a href=\"/t402/\">T402 Thư viện forms</a>.",
+"my0": "<b>\"Hai brokerage là tôi trả hai lần commission.\"</b> Không. ABA chia phần commission đã có trong hợp đồng của bạn cho hai broker. Nó không thêm khoản phí nào.",
+"my1": "<b>\"Tiền chia đều thì việc cũng chia đều.\"</b> Tiền (ô A) và trách nhiệm (ô B) là hai ô riêng. 23 năm, mấy cái co-listing hư tôi thấy đều giống nhau: ai cũng ghi 50/50, không ai ghi ai bắt điện thoại sáng thứ Bảy.",
+"my2": "<b>\"Agent tôi ký rồi là xong.\"</b> Dòng ký của mỗi công ty ghi \"By (Broker/Office Manager)\". Brokerage ký, qua broker hoặc office manager của họ.",
+"eq": "chia đều (ô 1A như in sẵn)",
+"uneq": "tick ô khác: {a}% / {b}%",
+"of": "của tổng",
+"para": {
+"la": "1 — Co-listing Brokers",
+"bra": "2 — Co-Buyer Brokers",
+"pas": "3A — nhiều broker cho bên bán",
+"pab": "3B — nhiều broker cho bên mua"
+},
+"sb1": "Broker 1, ký dòng \"By\" là Broker/Office Manager",
+"sb2": "Broker 2, ký dòng \"By\" là Broker/Office Manager",
+"ss": "Người bán",
+"sbu": "Người mua",
+"skip_b": " — khỏi ký khi chỉ điền đoạn 1 (đoạn 5)",
+"skip_s": " — khỏi ký khi chỉ điền đoạn 2 (đoạn 5)",
+"note_la": "Sau đó mỗi brokerage trả cho agent của mình theo giấy riêng trong văn phòng. Phần chia đó không nằm trong ABA.",
+"note_pa": "Đoạn 5 không miễn ai cho đoạn 3, nên tính là mọi bên đều ký. Ở 3A hai broker phải đã có listing (hoặc giấy khác) chia nhau; ở 3B phải đã có thỏa thuận chia nhau.",
+"resp_eq": "Trách nhiệm: chia đều và cùng chịu (1B/2B như in sẵn).",
+"resp_oth": "Trách nhiệm: tick ô, ghi cách khác (1B/2B). Ghi cho rõ: ai định giá, ai dẫn coi nhà, ai thương lượng.",
+"p_head": "ADDITIONAL BROKER ACKNOWLEDGEMENT",
+"p_sub": "ABA · bản minh họa",
+"p_t0": "Gắn vào",
+"p_date": "ngày 01/12/2026",
+"p_btw": "Giữa Người bán A và Brokerage Y",
+"p_btwb": "Giữa Người mua B và Brokerage Y",
+"p_prop": "Nhà: 1234 Example Lane, San Jose, CA 95100",
+"p_t1": "Listing Agreement · co-listing",
+"p_t2": "Buyer Representation · co-buyer",
+"p_t3": "Purchase Agreement / giấy khác · tick một ô",
+"p_comp": "A. Tiền",
+"p_resp": "B. Trách nhiệm",
+"p_att": "C. Giấy đính kèm",
+"p_eq": "chia đều",
+"p_ej": "chia đều, cùng chịu",
+"p_other": "khác: {x}",
+"p_3a": "A: nhiều broker cho bên bán (đã có listing ngày 01/12/2026)",
+"p_3b": "B: nhiều broker cho bên mua (đã có thỏa thuận chia)",
+"p_blank": "(không dùng)",
+"p_t4": "agent của từng broker",
+"p_aaa": "thêm agent? kèm AAA",
+"p_t5": "tên một broker = tên cả hai",
+"p_5": "Chỗ nào ghi Broker 1 hoặc Broker 2 làm đại diện, broker kia cũng coi như có tên",
+"p_tsig": "Chữ ký",
+"p_skip": "(khỏi ký)",
+"labels": {
+"pa": "Purchase Agreement",
+"la": "Listing Agreement",
+"bra": "Buyer Representation Agreement",
+"oth": "giấy khác (Other)"
+},
+"sms": "Chào Ken, tôi vừa dùng tool form ABA (T461) trên tools.kenlamrealty.com: commission {tot}, Broker 1 {b1}, Broker 2 {b2}. Cho tôi hỏi thêm.",
+"subj": "Form ABA — {tot} chia {sh} — {nm}",
+"body": "Tên: {nm}\nEmail: {e}\nPhone: {ph}\n\nGắn vào: {ag}\nĐoạn: {pa}\nGiá nhà: {pr}\nCommission: {cm}\nTổng đem chia: {tot}\nBroker 1: {b1}\nBroker 2: {b2}\nAi ký:\n{sg}\n\nGửi từ tool T461 tools.kenlamrealty.com"
+}
+};
+let lang='en';
+lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?Math.max(0,v):0};
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+const strip=s=>String(s).replace(/<[^>]+>/g,'').replace(/&amp;/g,'&');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let last={};
+function seg(id,cb){ $(id).addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return;
+  $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); cb(b.dataset.v); calc();}); }
+function go(pid){ const el=$(pid); if(!el) return; el.open=true; el.scrollIntoView({behavior:'smooth',block:'start'});
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+$('paper').addEventListener('click',e=>{const b=e.target.closest('[data-go]'); if(b) go(b.dataset.go);});
+
+let resp='eq';
+function model(i){
+  const total=i.flat>0?i.flat:i.price*i.pct/100;
+  const sh=Math.min(100,Math.max(0,i.share));
+  const b1=Math.round(total*sh/100*100)/100, b2=Math.round((total-b1)*100)/100;
+  const need={b1:true,b2:true,seller:i.agr!=='bra',buyer:i.agr!=='la'};
+  return {total,b1,b2,sh,equal:Math.abs(sh-RULES.EQUAL_SHARE)<1e-9,need};
+}
+window.__model=model;
+function calc(){
+  const d=I18N[lang], agr=$('agr').value;
+  const i={agr,price:num('price'),pct:num('pct'),flat:num('flat'),share:num('share')};
+  const m=model(i);
+  $('total').textContent=fmt(m.total);
+  $('b1').textContent=fmt(m.b1); $('b2').textContent=fmt(m.b2);
+  $('b1s').textContent=m.sh+'% '+d.of; $('b2s').textContent=(100-m.sh)+'% '+d.of;
+  $('bar1').style.width=m.sh+'%'; $('bar2').style.width=(100-m.sh)+'%';
+  $('oPara').textContent=d.para[agr].split(' — ')[0];
+  const split=m.equal?d.eq:fill(d.uneq,{a:m.sh,b:100-m.sh});
+  $('oSplit').textContent=d.para[agr]+' · '+split+' · '+(resp==='eq'?d.resp_eq:d.resp_oth);
+  const rows=[[d.sb1,true,''],[d.sb2,true,''],[d.ss,m.need.seller,d.skip_s],[d.sbu,m.need.buyer,d.skip_b]];
+  $('sigList').innerHTML=rows.map(r=>'<li class="'+(r[1]?'':'no')+'">'+esc(r[0])+(r[1]?'':esc(r[2]))+'</li>').join('');
+  $('note').textContent=(agr==='la'||agr==='bra')?d.note_la:d.note_pa;
+  /* paper */
+  const ck=v=>'<span class="bx">'+(v?'☒':'☐')+'</span> ';
+  const top=agr==='la'?'la':(agr==='bra'?'bra':'pa');
+  const sec=(key,go,title,on,body)=>'<button type="button" class="pf" data-go="'+go+'"><span class="t"><i>'+key+'</i>'+esc(title)+'</span><span class="r" style="display:grid">'+(on?body:'<span>'+esc(d.p_blank)+'</span>')+'</span></button>';
+  const ab=()=>'<span>'+esc(d.p_comp)+': '+(m.equal?esc(d.p_eq):ck(true)+esc(fill(d.p_other,{x:m.sh+'/'+(100-m.sh)})))+' · <u>'+fmt(m.b1)+' / '+fmt(m.b2)+'</u></span>'+
+    '<span>'+esc(d.p_resp)+': '+(resp==='eq'?esc(d.p_ej):ck(true)+esc(fill(d.p_other,{x:'…'})))+'</span><span>'+ck(false)+esc(d.p_att)+'</span>'+
+    '<span>Brokerage Y (Broker 1) + Brokerage K (Broker 2)</span>';
+  const sgn=(lab,name,ok)=>'<span>'+esc(lab)+': <u>'+(ok?esc(name):esc(d.p_skip))+'</u></span>';
+  $('paper').innerHTML='<div class="ph"><b>'+d.p_head+'</b><span>'+d.p_sub+'</span></div>'+
+   '<button type="button" class="pf" data-go="ph"><span class="t"><i>↑</i>'+esc(d.p_t0)+'</span><span class="r">'+
+     ['la','pa','bra','oth'].map(k=>'<span>'+ck(top===k)+esc(d.labels[k])+'</span>').join('')+'</span><span class="r"><span><u>'+esc(d.p_date)+'</u></span><span>'+esc(agr==='bra'||agr==='pab'?d.p_btwb:d.p_btw)+'</span></span><span class="r"><span>'+esc(d.p_prop)+'</span></span></button>'+
+   sec('1','p1',d.p_t1,agr==='la',ab())+sec('2','p2',d.p_t2,agr==='bra',ab())+
+   sec('3','p3',d.p_t3,agr==='pas'||agr==='pab','<span>'+ck(agr==='pas')+esc(d.p_3a)+'</span><span>'+ck(agr==='pab')+esc(d.p_3b)+'</span><span>Brokerage Y (Broker 1) + Brokerage K (Broker 2)</span>')+
+   '<div class="pcols">'+sec('4','p4',d.p_t4,true,'<span>Broker 1: Agent X · DRE <u>#0000001</u></span><span>Broker 2: Agent M · DRE <u>#0000009</u></span><span>'+ck(false)+esc(d.p_aaa)+'</span>')+
+   sec('5','p5',d.p_t5,true,'<span>'+esc(d.p_5)+'</span>')+'</div>'+
+   '<button type="button" class="pf sig" data-go="psig"><span class="t"><i>✎</i>'+esc(d.p_tsig)+'</span><span class="r" style="display:grid">'+
+     sgn('Broker 1','Brokerage Y · By Broker/Office Manager',true)+sgn('Broker 2','Brokerage K · By Broker/Office Manager',true)+
+     sgn(d.ss,lang==='vi'?'Người bán A':'Seller A',m.need.seller)+sgn(d.sbu,lang==='vi'?'Người mua B':'Buyer B',m.need.buyer)+'</span></button>';
+  last={tot:fmt(m.total),b1:fmt(m.b1),b2:fmt(m.b2),sh:m.sh+'/'+(100-m.sh),ag:$('agr').selectedOptions[0].textContent,pa:d.para[agr],
+    pr:fmt(i.price),cm:i.flat>0?fmt(i.flat):i.pct+'%',sg:rows.map(r=>(r[1]?'[x] ':'[ ] ')+r[0]+(r[1]?'':r[2])).join('\n')};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+}
+seg('respSeg',v=>resp=v);
+['price','pct','flat','share'].forEach(id=>$(id).addEventListener('input',calc)); $('agr').addEventListener('change',calc);
+
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; document.title=d.title_doc+' · Ken Lam Tools'; calc();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const v=Object.assign({},last,{nm:n,e,ph});
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,v))+'&body='+encodeURIComponent(fill(d.body,v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+$('videoBtn').addEventListener('click',e=>{e.preventDefault(); $('vid').scrollIntoView({behavior:'smooth'}); const v=document.querySelector('#vid video'); try{const p=v.play(); if(p&&p.catch)p.catch(()=>{});}catch(_){} });
+applyLang();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
