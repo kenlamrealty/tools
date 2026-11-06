@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bán nhà trong trust (TA) · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T145 additions */
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.cmp div{border:1px solid var(--line);border-radius:10px;padding:12px}
+.cmp .k{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.cmp .v{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums;margin-top:2px}
+.cmp p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.cards{display:grid;gap:10px}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
+.card b{font-weight:500;font-size:15px}
+.card span{font-size:14px;color:var(--muted)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a,.card a,.cmp a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+
+
+/* T43x form-explainer additions */
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.wrap{grid-template-columns:minmax(0,1fr)}
+.wrap>*{min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px;min-width:0}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.panel p{margin:0}
+.quick{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+@media (max-width:420px){.quick{grid-template-columns:minmax(0,1fr)}}
+.quick>div{border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.quick .k{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.quick .v{font-size:15px;margin-top:2px;overflow-wrap:anywhere}
+.seg.wrapN{flex-wrap:wrap}
+.seg.wrapN button{flex:1 1 45%;border-bottom:1px solid var(--line)}
+.seg button{min-width:0}
+textarea.ta{width:100%;min-height:110px;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:10px;padding:12px;font:inherit;font-size:16px;resize:vertical}
+textarea.ta:focus{outline:none;border-color:var(--brass)}
+.ctl input[type=text],.ctl input[type=date]{font-size:18px}
+.total .v.word{font-size:36px;line-height:1.12;text-wrap:balance;overflow-wrap:anywhere}
+.total .v.ok{color:var(--ok)} .total .v.warn{color:var(--warn)}
+.line .a{white-space:normal;text-align:right}
+.list{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.list li{overflow-wrap:anywhere}
+.chk{display:grid;gap:8px}
+.chk label{display:flex;gap:10px;align-items:flex-start;font-size:15px;min-width:0}
+.chk label span{min-width:0;overflow-wrap:anywhere}
+.chk input{width:18px;height:18px;margin-top:3px;accent-color:var(--brass);flex:none}
+.chk label.done span{color:var(--muted);text-decoration:line-through}
+.chk small{display:block;color:var(--muted);font-size:13px}
+details.acc{border:1px solid var(--line);border-radius:10px;padding:0 14px;background:var(--panel)}
+details.acc summary{cursor:pointer;padding:12px 0;font-weight:500;font-size:15px}
+details.acc[open] summary{border-bottom:1px solid var(--line)}
+details.acc div{padding:10px 0 14px;font-size:15px;color:var(--fg)}
+.accs{display:grid;gap:8px}
+.sim{border:1px dashed var(--brass);border-radius:12px;padding:14px;display:grid;gap:8px;background:var(--bg);min-width:0}
+.sim .st{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.sim .sr{display:grid;grid-template-columns:minmax(0,40%) minmax(0,1fr);gap:10px;font-size:14px;border-bottom:1px solid var(--line);padding-bottom:6px}
+@media (max-width:420px){.sim .sr{grid-template-columns:minmax(0,1fr);gap:2px}}
+.sim .sr span:first-child{color:var(--muted)}
+.sim .sr span:last-child{overflow-wrap:anywhere;font-family:'Courier New',monospace;font-size:14px}
+.sim pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;font-family:'Courier New',monospace;font-size:14px}
+.ken{font-size:15px;margin:0;background:var(--brass-soft);border-radius:10px;padding:12px 14px}
+.ken b{font-weight:500}
+.vid{justify-items:center}
+.vid h2{justify-self:start}
+.vid video{width:100%;max-width:360px;aspect-ratio:9/16;border-radius:12px;background:#000}
+.law{margin:0;font-size:15px}
+.copyr{font-size:12px}
+.pbtn{justify-self:start}
+@media print{
+  body{background:#fff;color:#000;padding:0}
+  .wrap>*:not(.printable){display:none!important}
+  .printable{border:0;padding:0}
+  .printable .pbtn{display:none}
+}
+
+
+</style>
+<meta name="description" content="Bán nhà nằm trong trust ở California: khi nào trustee phải làm TDS, và những việc vẫn bắt buộc (máy báo khói, CO, bình nước nóng, sơn chì, vùng nguy hiểm, khấu trừ thuế, Megan&#x27;s Law). Giải thích Form TA.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t437/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:title" content="Bán nhà trong trust (TA) · Ken Lam Tools">
+<meta property="og:description" content="Bán nhà nằm trong trust ở California: khi nào trustee phải làm TDS, và những việc vẫn bắt buộc (máy báo khói, CO, bình nước nóng, sơn chì, vùng nguy hiểm, khấu trừ thuế, Megan&#x27;s Law). Giải thích Form TA.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t437/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title">Bán nhà trong trust (Form TA)</h1>
+    <p class="sub" data-i="sub">Trust giống cái hộp giữ căn nhà giùm người khác. Người cầm chìa khóa hộp là trustee (người quản lý trust). Lúc bán, trustee đứng ra làm người bán. Form TA nói trustee được bỏ bớt giấy nào, và giấy nào vẫn phải làm như mọi người bán khác.</p>
+  </header>
+
+  <section class="panel" aria-labelledby="qT">
+    <h2 id="qT" data-i="q_t">Khung nhanh</h2>
+    <div class="quick"><div><div class="k" data-i="q_who">Ai đưa</div><div class="v" data-i="qv_who">Agent bên bán đưa cho trustee lúc ký listing. Sau đó đưa cho người mua.</div></div><div><div class="k" data-i="q_sign">Ai ký</div><div class="v" data-i="qv_sign">Trustee (người bán), broker bên bán lúc listing. Người mua ký khi bán.</div></div><div><div class="k" data-i="q_when">Lúc nào</div><div class="v" data-i="qv_when">Lúc ký listing, và khi có người mua.</div></div><div><div class="k" data-i="q_req">Có bắt buộc không</div><div class="v" data-i="qv_req">Form không ghi là bắt buộc. Nó là bản thông báo (advisory). Ký là xác nhận đã nhận, đã đọc.</div></div><div><div class="k" data-i="q_pages">Mấy trang</div><div class="v" data-i="qv_pages">2 trang</div></div><div><div class="k" data-i="q_rev">Bản</div><div class="v" data-i="qv_rev">Reviewed 6/25</div></div></div>
+  </section>
+
+  <section class="panel inputs" aria-labelledby="toolT">
+    <h2 id="toolT" data-i="tool_t">Có phải làm TDS không?</h2>
+    <p class="hint" data-i="tool_h">TDS là bản người bán tự khai tình trạng nhà. Trả lời 3 câu cho từng trustee. Chỉ cần một trustee đủ 3 điều là trustee đó phải làm.</p>
+    <div class="field">
+      <span class="fl" data-i="l_q1">1. Trustee là người thật (một cá nhân)?</span>
+      <div class="seg" role="group" id="q1Seg">
+        <button type="button" data-v="y" aria-pressed="true" data-i="yes">Có</button>
+        <button type="button" data-v="n" aria-pressed="false" data-i="no">Không</button>
+        <button type="button" data-v="u" aria-pressed="false" data-i="unk">Không chắc</button>
+      </div>
+      <p class="hint" data-i="h_q1">Không phải ngân hàng, công ty hay tổ chức đứng làm trustee.</p>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_q2">2. Trust loại revocable (còn sửa, hủy được)?</span>
+      <div class="seg" role="group" id="q2Seg">
+        <button type="button" data-v="y" aria-pressed="true" data-i="yes">Có</button>
+        <button type="button" data-v="n" aria-pressed="false" data-i="no">Không</button>
+        <button type="button" data-v="u" aria-pressed="false" data-i="unk">Không chắc</button>
+      </div>
+      <p class="hint" data-i="h_q2">Living trust của vợ chồng còn sống thường là revocable. Coi trang đầu bản trust, hoặc hỏi luật sư soạn trust.</p>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_q3">3. Trustee là chủ cũ của nhà, hoặc đã ở trong nhà trong vòng 1 năm qua?</span>
+      <div class="seg" role="group" id="q3Seg">
+        <button type="button" data-v="y" aria-pressed="true" data-i="yes">Có</button>
+        <button type="button" data-v="n" aria-pressed="false" data-i="no">Không</button>
+        <button type="button" data-v="u" aria-pressed="false" data-i="unk">Không chắc</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="yr"><span data-i="l_yr">Năm xây nhà</span></label>
+        <div class="ctl"><input id="yr" type="number" inputmode="numeric" min="1850" max="2030" step="1" value="1972"></div>
+      </div>
+      <div class="field">
+        <span class="fl" data-i="l_gas">Có đồ dùng gas, lò sưởi, hoặc garage dính liền nhà?</span>
+        <div class="seg" role="group" id="gasSeg">
+          <button type="button" data-v="y" aria-pressed="true" data-i="yes">Có</button>
+          <button type="button" data-v="n" aria-pressed="false" data-i="no">Không</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_k">Kết quả</div>
+      <div class="v word" id="verdict">—</div>
+    </div>
+    <p class="law" id="why"></p>
+    <div class="lines">
+      <div class="line"><span class="n"><b>TDS</b></span><span class="a" id="oTds">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_oth">NHD và giấy khác</b></span><span class="a" id="oOth">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_esd">Bản ESD (khai thay cho người được miễn)</b></span><span class="a" id="oEsd">—</span></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="mustT">
+    <h2 id="mustT" data-i="must_t">Việc VẪN bắt buộc (tick khi xong)</h2>
+    <p class="hint" data-i="must_h">Dù được miễn TDS hay không, mấy việc này form ghi rõ là không được miễn.</p>
+    <div class="chk" id="mustList"></div>
+  </section>
+
+
+  <section class="panel" aria-labelledby="accT">
+    <h2 id="accT" data-i="acc_t">Giải thích từng phần</h2>
+    <div class="accs">
+      <details class="acc"><summary data-i="acc1_h">Phần mở đầu: trustee là người bán</summary><div data-i="acc1_b">Nhà nằm trong trust (revocable hay irrevocable đều vậy). Khi bán, trustee được coi là người bán. Form nói trước: được miễn vài thứ, nhưng nhiều thứ khác vẫn phải làm. Và nêu luôn 3 điều kiện làm trustee phải làm TDS.</div></details>
+      <details class="acc"><summary data-i="acc2_h">1A(1). Có thể khỏi làm TDS và NHD form</summary><div data-i="acc2_b">Thường thì trustee không phải điền và ký bản TDS (tự khai tình trạng nhà) và bản NHD (vùng thiên tai). Nhưng vẫn phải làm các việc trong form ghi ở phần sau.</div></details>
+      <details class="acc"><summary data-i="acc3_h">1A(2). Khi nào trustee PHẢI làm TDS</summary><div data-i="acc3_b">Khi đủ cả 3: trustee là người thật, trust là revocable, và trustee là chủ cũ hoặc đã ở trong nhà trong 1 năm trước. Có nhiều trustee thì ai đủ 3 điều người đó phải làm, dù người kia không.</div></details>
+      <details class="acc"><summary data-i="acc4_h">1B. Mấy bản khai khác cũng có thể được miễn</summary><div data-i="acc4_b">Nếu không rơi vào 1A(2): có thể khỏi đưa bản khai Mello-Roos, thông báo bond 1915, thông báo thuế bổ sung (Supplemental Property Tax), thông báo phí chuyển nhượng tư, và sách hướng dẫn an toàn động đất.</div></details>
+      <details class="acc"><summary data-i="acc5_h">1C. Người được miễn vẫn nên điền ESD</summary><div data-i="acc5_b">Được miễn vẫn có bổn phận khai theo luật và theo hợp đồng. Form khuyên mạnh dùng bản ESD (Exempt Seller Disclosure) để khai cho gọn.</div></details>
+      <details class="acc"><summary data-i="acc6_h">2A. Khai điều quan trọng mình biết</summary><div data-i="acc6_b">Không có TDS thì vẫn phải nói những gì mình biết làm giảm giá trị hay sức hút căn nhà. Đây là cái người ta hay quên nhất.</div></details>
+      <details class="acc"><summary data-i="acc7_h">2B. Vùng nguy hiểm</summary><div data-i="acc7_b">Vẫn phải khai nhà có nằm trong vùng đường nứt động đất, vùng địa chấn, vùng cháy, vùng lụt hay không. Miễn cái form NHD chứ không miễn việc khai.</div></details>
+      <details class="acc"><summary data-i="acc8_h">2C–2D. Máy báo khói và bình nước nóng</summary><div data-i="acc8_b">Nhà 1–4 căn phải có smoke alarm chạy được; ai trả tiền thì thương lượng. Bình nước nóng phải được cột giằng, và người bán đưa giấy xác nhận.</div></details>
+      <details class="acc"><summary data-i="acc9_h">2E. Sơn chì (nhà trước 1978)</summary><div data-i="acc9_b">Khai sơn chì đã biết, đưa báo cáo nếu có, đưa sách hướng dẫn về sơn chì, và cho người mua 10 ngày để kiểm.</div></details>
+      <details class="acc"><summary data-i="acc10_h">2F. Máy báo khí CO</summary><div data-i="acc10_b">Nhà 1–4 căn có đồ đốt gas/nhiên liệu, lò sưởi hoặc garage dính liền thì phải gắn máy báo CO được State Fire Marshal duyệt.</div></details>
+      <details class="acc"><summary data-i="acc11_h">2G. Đồ tiết kiệm nước</summary><div data-i="acc11_b">Nhà ở xây trước 1/1/1994 phải có vòi và toilet tiết kiệm nước. Người bán khai luật này và nói nhà có đồ không đạt hay không. Chi tiết ở form WCMD.</div></details>
+      <details class="acc"><summary data-i="acc12_h">2H. Khấu trừ thuế khi bán</summary><div data-i="acc12_b">Vẫn phải đưa thông tin về khấu trừ thuế liên bang (FIRPTA) và California. Theo form, phía liên bang trustee có thể bị coi là non-resident (người không cư trú) dù người thụ hưởng là công dân. Phía tiểu bang, trust có thể được miễn khấu trừ nếu đủ vài điều kiện (trust revocable trước khi người mất qua đời, nhà là nơi ở chính của người mất, trustee chọn cách tính theo IRC §645), nhưng vẫn phải điền giấy chứng nhận.</div></details>
+      <details class="acc"><summary data-i="acc13_h">2I. Megan's Law</summary><div data-i="acc13_b">Hợp đồng nhà ở vẫn phải có câu thông báo về trang meganslaw.ca.gov. Người bán và agent không bắt buộc phải tra. Muốn biết thì người mua tự tra trong thời gian inspection contingency (thời gian được kiểm nhà và rút lui).</div></details>
+      <details class="acc"><summary data-i="acc14_h">3A–3B. Luật địa phương và chuyện người mất</summary><div data-i="acc14_b">Thành phố, county có thể đòi thêm (vòi tiết kiệm nước, van ngắt gas, máy báo khói...). Phải hỏi xem bán bởi trustee có được miễn không. Nếu bán vì người ở trong nhà qua đời mà người mua muốn biết chi tiết, hỏi thẳng người bán.</div></details>
+      <details class="acc"><summary data-i="acc15_h">4A–4B. Bổn phận của agent</summary><div data-i="acc15_b">Agent vẫn phải đi coi kỹ những chỗ vào được và khai điều thấy (có thể dùng form AVID). Và vẫn phải đưa giấy khai đại diện cho ai (Form AD).</div></details>
+      <details class="acc"><summary data-i="acc16_h">Chữ ký</summary><div data-i="acc16_b">Người bán ký lúc listing, cùng broker bên bán. Người mua ký lúc bán. Ký là xác nhận đã nhận bản sao và đã đọc hiểu.</div></details>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="exT">
+    <h2 id="exT" data-i="ex_t">Ví dụ với 1234 Example Lane</h2>
+    <p data-i="ex_story">Bà Mai Trần đặt căn 1234 Example Lane vào "Mai Tran Living Trust", loại revocable. Bà tự làm trustee và vẫn ở trong nhà. Nay bà bán. Ba câu hỏi đều là "Có", nên bà phải làm TDS như chủ nhà bình thường. Nhà xây năm 1972 (ví dụ) nên có thêm phần sơn chì. Có garage dính liền nên phải có máy báo CO. Anh Tâm & chị Hoa Nguyễn mua, Ken Lam là agent bên mua. Ken nhắc escrow lo giấy khấu trừ thuế sớm, vì người bán là trustee.</p>
+    <div class="sim">
+      <div class="st" data-i="ex_sim">Bản mô phỏng (dữ liệu giả, không phải form thật)</div>
+      <div class="sr"><span data-i="sim1_l">Property</span><span data-i="sim1_v">1234 Example Lane, San Jose, CA 95100</span></div>
+      <div class="sr"><span data-i="sim2_l">Người bán (trustee)</span><span data-i="sim2_v">Bà Mai Trần, trustee của Mai Tran Living Trust</span></div>
+      <div class="sr"><span data-i="sim3_l">3 câu hỏi</span><span data-i="sim3_v">Người thật: Có · Revocable: Có · Đang ở trong nhà: Có → phải làm TDS</span></div>
+      <div class="sr"><span data-i="sim4_l">Ký lúc listing</span><span data-i="sim4_v">Mai Trần, trustee — 05/01/2026 (ví dụ)</span></div>
+      <div class="sr"><span data-i="sim5_l">Ký lúc bán (người mua)</span><span data-i="sim5_v">Tâm Nguyễn, Hoa Nguyễn — 02/06/2026 (ví dụ)</span></div>
+      <div class="sr"><span data-i="sim6_l">Agent bên mua</span><span data-i="sim6_v">Ken Lam, BRG Realty Corp</span></div>
+      <div class="sr"><span data-i="sim7_l">Việc kèm theo</span><span data-i="sim7_v">TDS, sơn chì (nhà 1972), máy báo CO, bình nước nóng, giấy khấu trừ thuế</span></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="myT">
+    <h2 id="myT" data-i="my_t">Nhiều người hiểu sai</h2>
+    <p class="myth" data-i="my1"><b>"Nhà trust bán as-is, khỏi khai gì."</b> Sai. Được miễn TDS thì vẫn phải khai điều quan trọng mình biết, vùng nguy hiểm, máy báo khói, CO, bình nước nóng, sơn chì.</p>
+      <p class="myth" data-i="my2"><b>"Trustee nào cũng được miễn TDS."</b> Không. Trustee là người thật, trust revocable, lại là chủ cũ hoặc ở trong nhà trong 1 năm qua thì phải làm. Living trust của chính chủ nhà thường rơi vào đúng trường hợp này.</p>
+      <p class="myth" data-i="my3"><b>"Người thụ hưởng là công dân Mỹ thì khỏi lo khấu trừ thuế."</b> Form nói phía liên bang trustee có thể bị coi là người không cư trú. Lo giấy tờ với escrow sớm.</p>
+    <p class="ken" data-i="ken1"><b>Kinh nghiệm Ken:</b> Bán nhà trust, cái làm tôi lo nhất không phải TDS. Là người bán nghĩ "mình được miễn" rồi im luôn. Miễn form chứ đâu có miễn nói thật. Tôi khuyên trustee cứ điền ESD cho đàng hoàng: người mua yên tâm trả giá, sau này ít chuyện.</p>
+  </section>
+
+  <section class="panel steps" aria-labelledby="nsT">
+    <h2 id="nsT" data-i="ns_t">Bước tiếp theo</h2>
+    <ol>
+      <li data-i="ns1">Người mua: xin TDS hoặc ESD sớm, đọc kỹ trước khi bỏ contingency (điều kiện được rút lui).</li>
+      <li data-i="ns2">Agent đại diện cho ai? Coi <a href="/t431/">Form AD (T431)</a>.</li>
+      <li data-i="ns3">Sắp chuyển tiền cọc? Đọc <a href="/t436/">Lừa đảo wire (T436)</a> trước.</li>
+      <li data-i="ns4">Gần close: <a href="/t439/">Đi kiểm nhà lần cuối (T439)</a>.</li>
+      <li data-i="ns5">Mọi form khác: <a href="/t430/">Mọi form giải nghĩa (T430)</a>.</li>
+    </ol>
+  </section>
+
+  <section class="panel vid" aria-labelledby="vidT">
+    <h2 id="vidT" data-i="vid_t">Xem video 45 giây</h2>
+    <video src="video.mp4" poster="poster.jpg" controls playsinline preload="metadata"></video>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Gửi kết quả qua email</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Hỏi Ken</a>
+    <a class="btn" href="/t430/" data-i="b_all">Mọi form giải nghĩa</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Gửi kết quả này về email</h2>
+    <p data-i="f_sub">Kết quả trong 1 email gửi Ken. Ken coi giùm và trả lời. Không spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Tên</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Số phone (không bắt buộc)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Đã mở email. Bấm Gửi là xong. Nếu không mở được, chép số ở dưới nhắn Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Hoặc nhắn tin:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Chép số</button></div>
+  </section>
+
+  <footer>
+    <span class="copyr" data-i="copyr">Form TA là của California Association of REALTORS®. Trang này chỉ giải thích, không thay thế form hay tư vấn luật.</span>
+    <span data-i="ft_est">Thông tin chung, không phải tư vấn luật hay thuế. Hợp đồng và form thật của bạn mới là cái quyết định. Có tranh chấp thì hỏi luật sư.</span>
+    <span class="who">Ken Lam · Broker Associate · BRG Realty Corp · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 06/11/2026 · <a href="/t430/" data-i="ft_hub">Mọi form giải nghĩa</a> · <a href="/cong-cu/" data-i="ft_all">Tất cả tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Mặc định / thời hạn — sửa ở đây ===== */
+const CFG={"LEAD_BEFORE_YEAR": 1978, "LEAD_INSPECT_DAYS": 10, "WATER_FIXTURE_BEFORE_YEAR": 1994, "OCCUPANT_LOOKBACK_YEARS": 1};
+const PAGE={code:'T437',path:'/t437/',form:'TA'};
+const I18N={
+"vi": {
+"q_t": "Khung nhanh",
+"q_who": "Ai đưa",
+"q_sign": "Ai ký",
+"q_when": "Lúc nào",
+"q_req": "Có bắt buộc không",
+"q_pages": "Mấy trang",
+"q_rev": "Bản",
+"acc_t": "Giải thích từng phần",
+"ex_t": "Ví dụ với 1234 Example Lane",
+"ex_sim": "Bản mô phỏng (dữ liệu giả, không phải form thật)",
+"my_t": "Nhiều người hiểu sai",
+"ns_t": "Bước tiếp theo",
+"vid_t": "Xem video 45 giây",
+"b_email": "Gửi kết quả qua email",
+"b_sms": "Hỏi Ken",
+"b_all": "Mọi form giải nghĩa",
+"f_title": "Gửi kết quả này về email",
+"f_sub": "Kết quả trong 1 email gửi Ken. Ken coi giùm và trả lời. Không spam.",
+"f_name": "Tên",
+"f_phone": "Số phone (không bắt buộc)",
+"f_send": "Gửi",
+"f_ok": "Đã mở email. Bấm Gửi là xong. Nếu không mở được, chép số ở dưới nhắn Ken.",
+"f_or": "Hoặc nhắn tin:",
+"f_copy": "Chép số",
+"ft_upd": "Cập nhật",
+"ft_all": "Tất cả tools",
+"ft_hub": "Mọi form giải nghĩa",
+"lang": "English",
+"ft_est": "Thông tin chung, không phải tư vấn luật hay thuế. Hợp đồng và form thật của bạn mới là cái quyết định. Có tranh chấp thì hỏi luật sư.",
+"doc_title": "Bán nhà trong trust (TA) · Ken Lam Tools",
+"title": "Bán nhà trong trust (Form TA)",
+"sub": "Trust giống cái hộp giữ căn nhà giùm người khác. Người cầm chìa khóa hộp là trustee (người quản lý trust). Lúc bán, trustee đứng ra làm người bán. Form TA nói trustee được bỏ bớt giấy nào, và giấy nào vẫn phải làm như mọi người bán khác.",
+"qv_who": "Agent bên bán đưa cho trustee lúc ký listing. Sau đó đưa cho người mua.",
+"qv_sign": "Trustee (người bán), broker bên bán lúc listing. Người mua ký khi bán.",
+"qv_when": "Lúc ký listing, và khi có người mua.",
+"qv_req": "Form không ghi là bắt buộc. Nó là bản thông báo (advisory). Ký là xác nhận đã nhận, đã đọc.",
+"qv_pages": "2 trang",
+"qv_rev": "Reviewed 6/25",
+"tool_t": "Có phải làm TDS không?",
+"tool_h": "TDS là bản người bán tự khai tình trạng nhà. Trả lời 3 câu cho từng trustee. Chỉ cần một trustee đủ 3 điều là trustee đó phải làm.",
+"l_q1": "1. Trustee là người thật (một cá nhân)?",
+"h_q1": "Không phải ngân hàng, công ty hay tổ chức đứng làm trustee.",
+"l_q2": "2. Trust loại revocable (còn sửa, hủy được)?",
+"h_q2": "Living trust của vợ chồng còn sống thường là revocable. Coi trang đầu bản trust, hoặc hỏi luật sư soạn trust.",
+"l_q3": "3. Trustee là chủ cũ của nhà, hoặc đã ở trong nhà trong vòng 1 năm qua?",
+"yes": "Có",
+"no": "Không",
+"unk": "Không chắc",
+"l_yr": "Năm xây nhà",
+"l_gas": "Có đồ dùng gas, lò sưởi, hoặc garage dính liền nhà?",
+"r_k": "Kết quả",
+"n_oth": "NHD và giấy khác",
+"n_esd": "Bản ESD (khai thay cho người được miễn)",
+"must_t": "Việc VẪN bắt buộc (tick khi xong)",
+"must_h": "Dù được miễn TDS hay không, mấy việc này form ghi rõ là không được miễn.",
+"noyr": "Chưa nhập năm xây nên hiện luôn cho chắc.",
+"V": {
+"must": "Phải làm TDS",
+"exempt": "Có thể được miễn TDS",
+"unsure": "Chưa chắc, hỏi trước"
+},
+"W": {
+"must": "Đủ cả 3 điều: trustee là người thật, trust revocable, và trustee là chủ cũ hoặc ở trong nhà trong 1 năm qua. Trustee này phải làm TDS và các bản khai khác như một chủ nhà bình thường.",
+"exempt": "Có ít nhất một câu \"Không\", nên theo form TA người bán có thể được miễn TDS và NHD form. Miễn form không có nghĩa là miễn nói thật. Coi danh sách bên dưới.",
+"unsure": "Còn câu \"Không chắc\". Hỏi luật sư soạn trust hoặc agent bên bán cho chắc trước khi quyết định có làm TDS hay không. Nếu sau này cả 3 đều là \"Có\" thì phải làm."
+},
+"TDS": {
+"must": "Bắt buộc",
+"exempt": "Có thể miễn",
+"unsure": "Chưa rõ"
+},
+"OTH": {
+"must": "Làm như chủ nhà thường",
+"exempt": "Có thể miễn",
+"unsure": "Chưa rõ"
+},
+"esd_yes": "Form khuyến khích mạnh",
+"esd_must": "Không cần (đã làm TDS)",
+"M": {
+"mf": "Khai mọi điều quan trọng mình biết làm ảnh hưởng giá trị hoặc sức hút căn nhà (Known Material Fact). <small>Đoạn 2A<\/small>",
+"hz": "Khai vùng nguy hiểm: đường nứt động đất, vùng địa chấn, vùng cháy rừng, vùng lụt. <small>Đoạn 2B<\/small>",
+"sm": "Có smoke alarm (máy báo khói) chạy được. Ai trả tiền thì hai bên thương lượng. <small>Đoạn 2C<\/small>",
+"wh": "Bình nước nóng phải cột/giằng chắc, người bán đưa giấy xác nhận cho người mua. <small>Đoạn 2D<\/small>",
+"lead": "Nhà xây trước 1978: khai sơn chì đã biết, đưa báo cáo nếu có, đưa sách hướng dẫn về sơn chì, cho người mua {n} ngày để kiểm. <small>Đoạn 2E<\/small>",
+"co": "Gắn máy báo khí CO (carbon monoxide) loại được State Fire Marshal duyệt, vì nhà có đồ dùng gas, lò sưởi hoặc garage dính liền. <small>Đoạn 2F<\/small>",
+"wc": "Nhà ở xây trước 1994: phải có vòi, toilet tiết kiệm nước; khai cho người mua luật này và nhà có đồ không đạt hay không (form WCMD). <small>Đoạn 2G<\/small>",
+"wd": "Giấy tờ khấu trừ thuế khi bán (FIRPTA liên bang và thuế California). Trustee có thể bị coi là người không cư trú dù người thụ hưởng là công dân. Phía tiểu bang có trường hợp được miễn khấu trừ nhưng vẫn phải điền giấy. <small>Đoạn 2H<\/small>",
+"meg": "Hợp đồng phải có câu thông báo Megan's Law (danh sách người phạm tội tình dục trên meganslaw.ca.gov). <small>Đoạn 2I<\/small>",
+"loc": "Kiểm luật địa phương (thành phố, county) có đòi gì thêm khi sang tên không, và bán bởi trustee có được miễn không. <small>Đoạn 3A<\/small>",
+"avid": "Agent phải tự đi coi kỹ các chỗ vào được và khai điều thấy (có thể dùng form AVID). <small>Đoạn 4A<\/small>",
+"agy": "Agent phải đưa giấy khai và xác nhận đại diện cho ai (Form AD). <small>Đoạn 4B<\/small>"
+},
+"e_head": "KẾT QUẢ FORM TA (bán nhà trong trust)",
+"sms": "Chào Ken, tôi vừa dùng tool Form TA (bán nhà trong trust) trên tools.kenlamrealty.com: {s}. Cho tôi hỏi thêm.",
+"subj": "Form TA — {r} — {n}",
+"body": "Tên: {n}\nEmail: {e}\nPhone: {ph}\n\n{sum}\n\nGửi từ tool {code} tools.kenlamrealty.com{path}",
+"ex_story": "Bà Mai Trần đặt căn 1234 Example Lane vào \"Mai Tran Living Trust\", loại revocable. Bà tự làm trustee và vẫn ở trong nhà. Nay bà bán. Ba câu hỏi đều là \"Có\", nên bà phải làm TDS như chủ nhà bình thường. Nhà xây năm 1972 (ví dụ) nên có thêm phần sơn chì. Có garage dính liền nên phải có máy báo CO. Anh Tâm & chị Hoa Nguyễn mua, Ken Lam là agent bên mua. Ken nhắc escrow lo giấy khấu trừ thuế sớm, vì người bán là trustee.",
+"copyr": "Form TA là của California Association of REALTORS®. Trang này chỉ giải thích, không thay thế form hay tư vấn luật.",
+"acc1_h": "Phần mở đầu: trustee là người bán",
+"acc1_b": "Nhà nằm trong trust (revocable hay irrevocable đều vậy). Khi bán, trustee được coi là người bán. Form nói trước: được miễn vài thứ, nhưng nhiều thứ khác vẫn phải làm. Và nêu luôn 3 điều kiện làm trustee phải làm TDS.",
+"acc2_h": "1A(1). Có thể khỏi làm TDS và NHD form",
+"acc2_b": "Thường thì trustee không phải điền và ký bản TDS (tự khai tình trạng nhà) và bản NHD (vùng thiên tai). Nhưng vẫn phải làm các việc trong form ghi ở phần sau.",
+"acc3_h": "1A(2). Khi nào trustee PHẢI làm TDS",
+"acc3_b": "Khi đủ cả 3: trustee là người thật, trust là revocable, và trustee là chủ cũ hoặc đã ở trong nhà trong 1 năm trước. Có nhiều trustee thì ai đủ 3 điều người đó phải làm, dù người kia không.",
+"acc4_h": "1B. Mấy bản khai khác cũng có thể được miễn",
+"acc4_b": "Nếu không rơi vào 1A(2): có thể khỏi đưa bản khai Mello-Roos, thông báo bond 1915, thông báo thuế bổ sung (Supplemental Property Tax), thông báo phí chuyển nhượng tư, và sách hướng dẫn an toàn động đất.",
+"acc5_h": "1C. Người được miễn vẫn nên điền ESD",
+"acc5_b": "Được miễn vẫn có bổn phận khai theo luật và theo hợp đồng. Form khuyên mạnh dùng bản ESD (Exempt Seller Disclosure) để khai cho gọn.",
+"acc6_h": "2A. Khai điều quan trọng mình biết",
+"acc6_b": "Không có TDS thì vẫn phải nói những gì mình biết làm giảm giá trị hay sức hút căn nhà. Đây là cái người ta hay quên nhất.",
+"acc7_h": "2B. Vùng nguy hiểm",
+"acc7_b": "Vẫn phải khai nhà có nằm trong vùng đường nứt động đất, vùng địa chấn, vùng cháy, vùng lụt hay không. Miễn cái form NHD chứ không miễn việc khai.",
+"acc8_h": "2C–2D. Máy báo khói và bình nước nóng",
+"acc8_b": "Nhà 1–4 căn phải có smoke alarm chạy được; ai trả tiền thì thương lượng. Bình nước nóng phải được cột giằng, và người bán đưa giấy xác nhận.",
+"acc9_h": "2E. Sơn chì (nhà trước 1978)",
+"acc9_b": "Khai sơn chì đã biết, đưa báo cáo nếu có, đưa sách hướng dẫn về sơn chì, và cho người mua 10 ngày để kiểm.",
+"acc10_h": "2F. Máy báo khí CO",
+"acc10_b": "Nhà 1–4 căn có đồ đốt gas/nhiên liệu, lò sưởi hoặc garage dính liền thì phải gắn máy báo CO được State Fire Marshal duyệt.",
+"acc11_h": "2G. Đồ tiết kiệm nước",
+"acc11_b": "Nhà ở xây trước 1/1/1994 phải có vòi và toilet tiết kiệm nước. Người bán khai luật này và nói nhà có đồ không đạt hay không. Chi tiết ở form WCMD.",
+"acc12_h": "2H. Khấu trừ thuế khi bán",
+"acc12_b": "Vẫn phải đưa thông tin về khấu trừ thuế liên bang (FIRPTA) và California. Theo form, phía liên bang trustee có thể bị coi là non-resident (người không cư trú) dù người thụ hưởng là công dân. Phía tiểu bang, trust có thể được miễn khấu trừ nếu đủ vài điều kiện (trust revocable trước khi người mất qua đời, nhà là nơi ở chính của người mất, trustee chọn cách tính theo IRC §645), nhưng vẫn phải điền giấy chứng nhận.",
+"acc13_h": "2I. Megan's Law",
+"acc13_b": "Hợp đồng nhà ở vẫn phải có câu thông báo về trang meganslaw.ca.gov. Người bán và agent không bắt buộc phải tra. Muốn biết thì người mua tự tra trong thời gian inspection contingency (thời gian được kiểm nhà và rút lui).",
+"acc14_h": "3A–3B. Luật địa phương và chuyện người mất",
+"acc14_b": "Thành phố, county có thể đòi thêm (vòi tiết kiệm nước, van ngắt gas, máy báo khói...). Phải hỏi xem bán bởi trustee có được miễn không. Nếu bán vì người ở trong nhà qua đời mà người mua muốn biết chi tiết, hỏi thẳng người bán.",
+"acc15_h": "4A–4B. Bổn phận của agent",
+"acc15_b": "Agent vẫn phải đi coi kỹ những chỗ vào được và khai điều thấy (có thể dùng form AVID). Và vẫn phải đưa giấy khai đại diện cho ai (Form AD).",
+"acc16_h": "Chữ ký",
+"acc16_b": "Người bán ký lúc listing, cùng broker bên bán. Người mua ký lúc bán. Ký là xác nhận đã nhận bản sao và đã đọc hiểu.",
+"sim1_l": "Property",
+"sim1_v": "1234 Example Lane, San Jose, CA 95100",
+"sim2_l": "Người bán (trustee)",
+"sim2_v": "Bà Mai Trần, trustee của Mai Tran Living Trust",
+"sim3_l": "3 câu hỏi",
+"sim3_v": "Người thật: Có · Revocable: Có · Đang ở trong nhà: Có → phải làm TDS",
+"sim4_l": "Ký lúc listing",
+"sim4_v": "Mai Trần, trustee — 05/01/2026 (ví dụ)",
+"sim5_l": "Ký lúc bán (người mua)",
+"sim5_v": "Tâm Nguyễn, Hoa Nguyễn — 02/06/2026 (ví dụ)",
+"sim6_l": "Agent bên mua",
+"sim6_v": "Ken Lam, BRG Realty Corp",
+"sim7_l": "Việc kèm theo",
+"sim7_v": "TDS, sơn chì (nhà 1972), máy báo CO, bình nước nóng, giấy khấu trừ thuế",
+"my1": "<b>\"Nhà trust bán as-is, khỏi khai gì.\"<\/b> Sai. Được miễn TDS thì vẫn phải khai điều quan trọng mình biết, vùng nguy hiểm, máy báo khói, CO, bình nước nóng, sơn chì.",
+"my2": "<b>\"Trustee nào cũng được miễn TDS.\"<\/b> Không. Trustee là người thật, trust revocable, lại là chủ cũ hoặc ở trong nhà trong 1 năm qua thì phải làm. Living trust của chính chủ nhà thường rơi vào đúng trường hợp này.",
+"my3": "<b>\"Người thụ hưởng là công dân Mỹ thì khỏi lo khấu trừ thuế.\"<\/b> Form nói phía liên bang trustee có thể bị coi là người không cư trú. Lo giấy tờ với escrow sớm.",
+"ken1": "<b>Kinh nghiệm Ken:<\/b> Bán nhà trust, cái làm tôi lo nhất không phải TDS. Là người bán nghĩ \"mình được miễn\" rồi im luôn. Miễn form chứ đâu có miễn nói thật. Tôi khuyên trustee cứ điền ESD cho đàng hoàng: người mua yên tâm trả giá, sau này ít chuyện.",
+"ns1": "Người mua: xin TDS hoặc ESD sớm, đọc kỹ trước khi bỏ contingency (điều kiện được rút lui).",
+"ns2": "Agent đại diện cho ai? Coi <a href=\"/t431/\">Form AD (T431)<\/a>.",
+"ns3": "Sắp chuyển tiền cọc? Đọc <a href=\"/t436/\">Lừa đảo wire (T436)<\/a> trước.",
+"ns4": "Gần close: <a href=\"/t439/\">Đi kiểm nhà lần cuối (T439)<\/a>.",
+"ns5": "Mọi form khác: <a href=\"/t430/\">Mọi form giải nghĩa (T430)<\/a>."
+},
+"en": {
+"q_t": "Quick facts",
+"q_who": "Who gives it",
+"q_sign": "Who signs",
+"q_when": "When",
+"q_req": "Required?",
+"q_pages": "Pages",
+"q_rev": "Version",
+"acc_t": "Section by section",
+"ex_t": "Example: 1234 Example Lane",
+"ex_sim": "Mock-up (made-up data, not the real form)",
+"my_t": "What people get wrong",
+"ns_t": "Next steps",
+"vid_t": "Watch the 45-second video",
+"b_email": "Email me the result",
+"b_sms": "Ask Ken",
+"b_all": "All forms explained",
+"f_title": "Email this result",
+"f_sub": "Your result in one email to Ken. He looks it over and writes back. No spam.",
+"f_name": "Name",
+"f_phone": "Phone (optional)",
+"f_send": "Send",
+"f_ok": "Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",
+"f_or": "Or text:",
+"f_copy": "Copy",
+"ft_upd": "Updated",
+"ft_all": "All tools",
+"ft_hub": "All forms explained",
+"lang": "Tiếng Việt",
+"ft_est": "General information, not legal or tax advice. Your actual contract and forms control. If there is a dispute, talk to a lawyer.",
+"doc_title": "Selling a home held in a trust (TA) · Ken Lam Tools",
+"title": "Selling a home held in a trust (Form TA)",
+"sub": "A trust is like a box that holds the house for someone else. The person with the key to the box is the trustee. When the house is sold, the trustee acts as the seller. Form TA says which papers the trustee may skip, and which ones every seller still has to do.",
+"qv_who": "The listing agent gives it to the trustee at listing, then to the buyer.",
+"qv_sign": "Trustee (seller) and listing broker at listing. Buyer signs at the sale.",
+"qv_when": "At listing, and again when there is a buyer.",
+"qv_req": "The form does not say it is required. It is an advisory. Signing means you got it and read it.",
+"qv_pages": "2 pages",
+"qv_rev": "Reviewed 6/25",
+"tool_t": "Does the seller have to do a TDS?",
+"tool_h": "TDS is the seller's own statement about the home's condition. Answer 3 questions for each trustee. If even one trustee meets all 3, that trustee must do it.",
+"l_q1": "1. Is the trustee a real person (an individual)?",
+"h_q1": "Not a bank, company or other entity acting as trustee.",
+"l_q2": "2. Is the trust revocable (can still be changed or cancelled)?",
+"h_q2": "A living trust of a couple who are both alive is usually revocable. Check the first page of the trust, or ask the lawyer who wrote it.",
+"l_q3": "3. Is the trustee a former owner, or did they live in the home in the past year?",
+"yes": "Yes",
+"no": "No",
+"unk": "Not sure",
+"l_yr": "Year built",
+"l_gas": "Gas appliance, fireplace, or attached garage?",
+"r_k": "Result",
+"n_oth": "NHD and other papers",
+"n_esd": "ESD (statement for exempt sellers)",
+"must_t": "Still required (tick as you go)",
+"must_h": "Exempt from the TDS or not, the form says these are not waived.",
+"noyr": "No year entered, so it shows to be safe.",
+"V": {
+"must": "TDS required",
+"exempt": "May be exempt from TDS",
+"unsure": "Not sure yet, ask first"
+},
+"W": {
+"must": "All 3 are true: the trustee is a real person, the trust is revocable, and the trustee is a former owner or lived there in the past year. This trustee must do the TDS and the other disclosures any regular owner would.",
+"exempt": "At least one answer is \"No\", so under Form TA the seller may be exempt from the TDS and the NHD form. Being exempt from a form is not being exempt from telling the truth. See the list below.",
+"unsure": "Some answers are \"Not sure\". Ask the lawyer who wrote the trust or the listing agent before deciding on the TDS. If all 3 turn out to be \"Yes\", it is required."
+},
+"TDS": {
+"must": "Required",
+"exempt": "May be exempt",
+"unsure": "Unclear"
+},
+"OTH": {
+"must": "Same as any owner",
+"exempt": "May be exempt",
+"unsure": "Unclear"
+},
+"esd_yes": "Strongly encouraged",
+"esd_must": "Not needed (TDS done)",
+"M": {
+"mf": "Disclose every important fact you know that affects the value or appeal of the home (Known Material Fact). <small>Para 2A<\/small>",
+"hz": "Disclose hazard zones: earthquake fault, seismic hazard, fire hazard areas, flood zones. <small>Para 2B<\/small>",
+"sm": "Working smoke alarms. Who pays is up to buyer and seller. <small>Para 2C<\/small>",
+"wh": "Water heater properly braced or strapped, with a written statement from the seller. <small>Para 2D<\/small>",
+"lead": "Built before 1978: disclose known lead paint, hand over any reports, give the lead paint pamphlet, give the buyer {n} days to inspect. <small>Para 2E<\/small>",
+"co": "Install a carbon monoxide (CO) device approved by the State Fire Marshal, because the home has gas appliances, a fireplace or an attached garage. <small>Para 2F<\/small>",
+"wc": "Home built before 1994: water-saving faucets and toilets required; tell the buyer about the law and whether any fixtures fall short (Form WCMD). <small>Para 2G<\/small>",
+"wd": "Tax withholding paperwork (federal FIRPTA and California). A trustee can be treated as a non-resident even if every beneficiary is a citizen. On the state side the trust may be exempt from withholding, but still fills out the form. <small>Para 2H<\/small>",
+"meg": "The contract must include the Megan's Law notice (registered sex offender info at meganslaw.ca.gov). <small>Para 2I<\/small>",
+"loc": "Check city and county rules for extra transfer requirements, and whether trustee sales are exempt. <small>Para 3A<\/small>",
+"avid": "Agents must do a careful visual inspection of accessible areas and disclose what they see (Form AVID can be used). <small>Para 4A<\/small>",
+"agy": "Agents must give the agency disclosure and confirmation (Form AD). <small>Para 4B<\/small>"
+},
+"e_head": "FORM TA RESULT (selling a home held in a trust)",
+"sms": "Hi Ken, I used the Form TA (trust sale) tool on tools.kenlamrealty.com: {s}. I have a question.",
+"subj": "Form TA — {r} — {n}",
+"body": "Name: {n}\nEmail: {e}\nPhone: {ph}\n\n{sum}\n\nSent from tool {code} tools.kenlamrealty.com{path}",
+"ex_story": "Mrs. Mai Tran put 1234 Example Lane into the \"Mai Tran Living Trust\", a revocable trust. She is her own trustee and still lives in the home. Now she is selling. All three questions are \"Yes\", so she must do a TDS like any owner. The home was built in 1972 (example), so the lead paint steps apply. It has an attached garage, so a CO alarm is required. Tam & Hoa Nguyen are buying, with Ken Lam as their agent. Ken reminds escrow to start the withholding paperwork early because the seller is a trustee.",
+"copyr": "Form TA belongs to the California Association of REALTORS®. This page only explains it. It does not replace the form or legal advice.",
+"acc1_h": "Opening: the trustee is the seller",
+"acc1_b": "The home is held in a trust, revocable or irrevocable. For the sale, the trustee is treated as the seller. The form says up front: some things may be waived, many others are not. It also lists the 3 conditions that make a trustee do a TDS.",
+"acc2_h": "1A(1). May skip the TDS and NHD forms",
+"acc2_b": "Usually the trustee does not have to fill out and sign the TDS (seller condition statement) or the NHD (natural hazard statement). The other duties in the form still apply.",
+"acc3_h": "1A(2). When the trustee MUST do a TDS",
+"acc3_b": "When all 3 are true: the trustee is a real person, the trust is revocable, and the trustee is a former owner or lived in the home within the past year. With several trustees, whoever meets all 3 must do it, even if the others do not.",
+"acc4_h": "1B. Some other notices may be waived too",
+"acc4_b": "If 1A(2) does not apply: the seller may skip the Mello-Roos notice, the 1915 bond notice, the supplemental property tax notice, the private transfer fee notice, and the earthquake safety guide.",
+"acc5_h": "1C. Exempt sellers should still use the ESD",
+"acc5_b": "Exempt sellers still have duties under law and the contract. The form strongly encourages using the ESD (Exempt Seller Disclosure).",
+"acc6_h": "2A. Disclose known material facts",
+"acc6_b": "Even without a TDS, the seller must tell what they know that lowers the value or appeal of the home. This is the one people forget most.",
+"acc7_h": "2B. Hazard zones",
+"acc7_b": "The seller still discloses earthquake fault, seismic, fire and flood zones. Skipping the NHD form does not skip the disclosure.",
+"acc8_h": "2C–2D. Smoke alarms and water heater",
+"acc8_b": "Homes with 1–4 units need working smoke alarms; who pays is negotiable. The water heater must be braced or strapped, with a written statement from the seller.",
+"acc9_h": "2E. Lead paint (homes before 1978)",
+"acc9_b": "Disclose known lead paint, share any reports, give the lead pamphlet, and give the buyer a 10-day chance to inspect.",
+"acc10_h": "2F. Carbon monoxide devices",
+"acc10_b": "In 1–4 unit homes with a fuel-burning appliance, fireplace or attached garage, the owner must install a CO device approved by the State Fire Marshal.",
+"acc11_h": "2G. Water-conserving fixtures",
+"acc11_b": "Single-family homes built before 1/1/1994 need water-saving fixtures. The seller explains the law and says whether any fixtures do not comply. Details in Form WCMD.",
+"acc12_h": "2H. Tax withholding",
+"acc12_b": "The seller still gives information on federal (FIRPTA) and California withholding. Per the form, on the federal side a trustee can be treated as a non-resident even if all beneficiaries are citizens. On the state side the trust may be exempt from withholding if certain conditions are met (revocable before the death, last used as the decedent's main home, trustee elects IRC §645), but the certificate is still filled out.",
+"acc13_h": "2I. Megan's Law",
+"acc13_b": "Home sale contracts still carry the notice about meganslaw.ca.gov. Seller and agents do not have to check it. A buyer who wants to know should look during the inspection contingency.",
+"acc14_h": "3A–3B. Local law and a death in the home",
+"acc14_b": "Cities and counties may add rules (low-flow fixtures, gas shut-off valves, smoke detectors). Check whether trustee sales are exempt. If the home is sold because an occupant died and the buyer has questions about it, ask the seller directly.",
+"acc15_h": "4A–4B. Agent duties",
+"acc15_b": "Agents still do a careful visual inspection of accessible areas and disclose what they see (Form AVID). And they still give the agency disclosure (Form AD).",
+"acc16_h": "Signatures",
+"acc16_b": "Sellers sign at listing, with the listing broker. Buyers sign at the sale. Signing confirms you got a copy and read it.",
+"sim1_l": "Property",
+"sim1_v": "1234 Example Lane, San Jose, CA 95100",
+"sim2_l": "Seller (trustee)",
+"sim2_v": "Mrs. Mai Tran, trustee of the Mai Tran Living Trust",
+"sim3_l": "3 questions",
+"sim3_v": "Real person: Yes · Revocable: Yes · Lives there: Yes → TDS required",
+"sim4_l": "Signed at listing",
+"sim4_v": "Mai Tran, trustee — 01/05/2026 (example)",
+"sim5_l": "Signed at sale (buyers)",
+"sim5_v": "Tam Nguyen, Hoa Nguyen — 06/02/2026 (example)",
+"sim6_l": "Buyer's agent",
+"sim6_v": "Ken Lam, BRG Realty Corp",
+"sim7_l": "Also needed",
+"sim7_v": "TDS, lead paint (1972 home), CO alarm, water heater, withholding forms",
+"my1": "<b>\"A trust sale is as-is, nothing to disclose.\"<\/b> Wrong. Even without a TDS, the seller still discloses known material facts, hazard zones, smoke and CO alarms, the water heater, lead paint.",
+"my2": "<b>\"Every trustee is exempt from the TDS.\"<\/b> No. A real-person trustee of a revocable trust who owned or lived in the home in the past year must do it. A homeowner's own living trust usually lands right here.",
+"my3": "<b>\"All beneficiaries are U.S. citizens, so no withholding worries.\"<\/b> The form says a trustee can be treated as a non-resident for federal purposes. Start the paperwork with escrow early.",
+"ken1": "<b>Ken's take:<\/b> In a trust sale, the TDS is not what worries me. It is the seller who hears \"exempt\" and stops talking. You are exempt from a form, not from the truth. I tell trustees to fill out the ESD properly. Buyers bid with more confidence, and there is less trouble later.",
+"ns1": "Buyers: ask for the TDS or ESD early and read it before removing contingencies.",
+"ns2": "Who does the agent work for? See <a href=\"/t431/\">Form AD (T431)<\/a>.",
+"ns3": "About to wire the deposit? Read <a href=\"/t436/\">Wire fraud (T436)<\/a> first.",
+"ns4": "Close to closing: <a href=\"/t439/\">Final walk-through (T439)<\/a>.",
+"ns5": "Every other form: <a href=\"/t430/\">All forms explained (T430)<\/a>."
+}
+};
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fill=(s,v)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+const strip=s=>String(s).replace(/<small>/g,' (').replace(/<\/small>/g,')').replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let last={r:'',short:'',sum:''};
+function seg(id,cb){ $(id).addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return;
+  $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); cb(b.dataset.v); calc();}); }
+function fmtDate(dt){ return dt.toLocaleDateString(lang==='vi'?'vi-VN':'en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}); }
+/* ===== Tool riêng của trang ===== */
+
+let q1='y',q2='y',q3='y',gas='y',ticked={};
+function tool(d){
+  const yr=parseInt($('yr').value,10), hasYr=isFinite(yr)&&yr>1800;
+  const a=[q1,q2,q3]; let v;
+  if(a.every(x=>x==='y')) v='must'; else if(a.includes('n')) v='exempt'; else v='unsure';
+  const el=$('verdict'); el.textContent=d.V[v]; el.className='v word '+(v==='must'?'warn':(v==='exempt'?'ok':''));
+  $('why').innerHTML=d.W[v];
+  $('oTds').textContent=d.TDS[v]; $('oOth').textContent=d.OTH[v]; $('oEsd').textContent=v==='must'?d.esd_must:d.esd_yes;
+  const keys=['mf','hz','sm','wh'];
+  if(!hasYr||yr<CFG.LEAD_BEFORE_YEAR) keys.push('lead');
+  if(gas==='y') keys.push('co');
+  if(!hasYr||yr<CFG.WATER_FIXTURE_BEFORE_YEAR) keys.push('wc');
+  keys.push('wd','meg','loc','avid','agy');
+  const txt=k=>fill(d.M[k],{n:CFG.LEAD_INSPECT_DAYS});
+  $('mustList').innerHTML=keys.map(k=>'<label class="'+(ticked[k]?'done':'')+'"><input type="checkbox" data-k="'+k+'"'+(ticked[k]?' checked':'')+'><span>'+txt(k)+((k==='lead'||k==='wc')&&!hasYr?'<small>'+d.noyr+'</small>':'')+'</span></label>').join('');
+  const ans=x=>x==='y'?d.yes:(x==='n'?d.no:d.unk);
+  const short=d.V[v]+' ('+ans(q1)+'/'+ans(q2)+'/'+ans(q3)+')';
+  const sum=d.e_head+'\n'+strip(d.l_q1)+': '+ans(q1)+'\n'+strip(d.l_q2)+': '+ans(q2)+'\n'+strip(d.l_q3)+': '+ans(q3)+'\n'+strip(d.l_yr)+': '+(hasYr?yr:'—')+'\n'+strip(d.l_gas)+': '+ans(gas)+
+    '\n\n'+d.r_k+': '+d.V[v]+'\n'+strip(d.W[v])+'\nTDS: '+d.TDS[v]+'\n'+d.n_oth+': '+d.OTH[v]+'\n\n'+strip(d.must_t)+':\n'+keys.map(k=>(ticked[k]?'[x] ':'[ ] ')+strip(txt(k))).join('\n');
+  return {r:d.V[v],short,sum};
+}
+
+/* ===== Chung ===== */
+function calc(){
+  const d=I18N[lang]; const o=tool(d)||{}; last=o;
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,{s:o.short||''}));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  document.querySelectorAll('[data-ph]').forEach(el=>{const k=el.getAttribute('data-ph'); if(typeof d[k]==='string') el.placeholder=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; document.title=strip(d.doc_title); calc();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const v={n,e,ph,r:strip(last.r||''),sum:strip(last.sum||''),code:PAGE.code,path:PAGE.path};
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,v))+'&body='+encodeURIComponent(fill(d.body,v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+
+seg('q1Seg',v=>q1=v); seg('q2Seg',v=>q2=v); seg('q3Seg',v=>q3=v); seg('gasSeg',v=>gas=v);
+$('yr').addEventListener('input',calc);
+$('mustList').addEventListener('change',e=>{const k=e.target.dataset.k; if(!k) return; ticked[k]=e.target.checked; calc();});
+
+applyLang();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

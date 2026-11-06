@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trang viết thêm TOA · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T145 additions */
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.cmp div{border:1px solid var(--line);border-radius:10px;padding:12px}
+.cmp .k{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.cmp .v{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums;margin-top:2px}
+.cmp p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.cards{display:grid;gap:10px}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
+.card b{font-weight:500;font-size:15px}
+.card span{font-size:14px;color:var(--muted)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a,.card a,.cmp a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+
+
+/* T43x form-explainer additions */
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.wrap{grid-template-columns:minmax(0,1fr)}
+.wrap>*{min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px;min-width:0}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.panel p{margin:0}
+.quick{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+@media (max-width:420px){.quick{grid-template-columns:minmax(0,1fr)}}
+.quick>div{border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.quick .k{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.quick .v{font-size:15px;margin-top:2px;overflow-wrap:anywhere}
+.seg.wrapN{flex-wrap:wrap}
+.seg.wrapN button{flex:1 1 45%;border-bottom:1px solid var(--line)}
+.seg button{min-width:0}
+textarea.ta{width:100%;min-height:110px;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:10px;padding:12px;font:inherit;font-size:16px;resize:vertical}
+textarea.ta:focus{outline:none;border-color:var(--brass)}
+.ctl input[type=text],.ctl input[type=date]{font-size:18px}
+.total .v.word{font-size:36px;line-height:1.12;text-wrap:balance;overflow-wrap:anywhere}
+.total .v.ok{color:var(--ok)} .total .v.warn{color:var(--warn)}
+.line .a{white-space:normal;text-align:right}
+.list{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.list li{overflow-wrap:anywhere}
+.chk{display:grid;gap:8px}
+.chk label{display:flex;gap:10px;align-items:flex-start;font-size:15px;min-width:0}
+.chk label span{min-width:0;overflow-wrap:anywhere}
+.chk input{width:18px;height:18px;margin-top:3px;accent-color:var(--brass);flex:none}
+.chk label.done span{color:var(--muted);text-decoration:line-through}
+.chk small{display:block;color:var(--muted);font-size:13px}
+details.acc{border:1px solid var(--line);border-radius:10px;padding:0 14px;background:var(--panel)}
+details.acc summary{cursor:pointer;padding:12px 0;font-weight:500;font-size:15px}
+details.acc[open] summary{border-bottom:1px solid var(--line)}
+details.acc div{padding:10px 0 14px;font-size:15px;color:var(--fg)}
+.accs{display:grid;gap:8px}
+.sim{border:1px dashed var(--brass);border-radius:12px;padding:14px;display:grid;gap:8px;background:var(--bg);min-width:0}
+.sim .st{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.sim .sr{display:grid;grid-template-columns:minmax(0,40%) minmax(0,1fr);gap:10px;font-size:14px;border-bottom:1px solid var(--line);padding-bottom:6px}
+@media (max-width:420px){.sim .sr{grid-template-columns:minmax(0,1fr);gap:2px}}
+.sim .sr span:first-child{color:var(--muted)}
+.sim .sr span:last-child{overflow-wrap:anywhere;font-family:'Courier New',monospace;font-size:14px}
+.sim pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;font-family:'Courier New',monospace;font-size:14px}
+.ken{font-size:15px;margin:0;background:var(--brass-soft);border-radius:10px;padding:12px 14px}
+.ken b{font-weight:500}
+.vid{justify-items:center}
+.vid h2{justify-self:start}
+.vid video{width:100%;max-width:360px;aspect-ratio:9/16;border-radius:12px;background:#000}
+.law{margin:0;font-size:15px}
+.copyr{font-size:12px}
+.pbtn{justify-self:start}
+@media print{
+  body{background:#fff;color:#000;padding:0}
+  .wrap>*:not(.printable){display:none!important}
+  .printable{border:0;padding:0}
+  .printable .pbtn{display:none}
+}
+
+
+</style>
+<meta name="description" content="Form TOA (Text Overflow Addendum) là gì, viết sao cho đúng: số TOA, paragraph, chữ ký hai bên. Soạn thử bản nháp và xem lỗi hay gặp.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t438/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:title" content="Trang viết thêm TOA · Ken Lam Tools">
+<meta property="og:description" content="Form TOA (Text Overflow Addendum) là gì, viết sao cho đúng: số TOA, paragraph, chữ ký hai bên. Soạn thử bản nháp và xem lỗi hay gặp.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t438/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title">Trang viết thêm (Form TOA)</h1>
+    <p class="sub" data-i="sub">Giống như viết bài kiểm tra mà hết chỗ, cô cho thêm một tờ giấy, ghi "tiếp câu 3". TOA là tờ giấy thêm đó. Ô trong hợp đồng chật quá thì viết tiếp ở đây, ghi rõ nó thuộc paragraph (đoạn) nào.</p>
+  </header>
+
+  <section class="panel" aria-labelledby="qT">
+    <h2 id="qT" data-i="q_t">Khung nhanh</h2>
+    <div class="quick"><div><div class="k" data-i="q_who">Ai đưa</div><div class="v" data-i="qv_who">Agent của bên đang viết điều khoản (bên mua khi làm offer, bên bán khi làm counter).</div></div><div><div class="k" data-i="q_sign">Ai ký</div><div class="v" data-i="qv_sign">Người mua và người bán (mỗi bên tới 2 người). Có ghi ngày.</div></div><div><div class="k" data-i="q_when">Lúc nào</div><div class="v" data-i="qv_when">Khi ô trong hợp đồng hoặc counter offer không đủ chỗ viết.</div></div><div><div class="k" data-i="q_req">Có bắt buộc không</div><div class="v" data-i="qv_req">Không bắt buộc. Chỉ dùng khi cần thêm chỗ. Đã dùng thì nó thành một phần của giấy chính.</div></div><div><div class="k" data-i="q_pages">Mấy trang</div><div class="v" data-i="qv_pages">1 trang</div></div><div><div class="k" data-i="q_rev">Bản</div><div class="v" data-i="qv_rev">Revised 6/23</div></div></div>
+  </section>
+
+  <section class="panel inputs" aria-labelledby="toolT">
+    <h2 id="toolT" data-i="tool_t">Soạn thử một trang TOA</h2>
+    <p class="hint" data-i="tool_h">Nhập số TOA, paragraph và nội dung. Bản nháp hiện ngay bên dưới, kèm lỗi hay gặp. Đây là bản tập viết, không phải form thật.</p>
+    <div class="row2">
+      <div class="field">
+        <label for="toaNo"><span data-i="l_no">Số TOA (No.)</span></label>
+        <div class="ctl"><input id="toaNo" type="text" inputmode="numeric" maxlength="4" value="1"></div>
+      </div>
+      <div class="field">
+        <label for="para"><span data-i="l_para">Paragraph số mấy</span></label>
+        <div class="ctl"><input id="para" type="text" maxlength="40" value="8B" data-ph="ph_para"></div>
+      </div>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_doc">Kèm theo giấy nào</span>
+      <div class="seg" role="group" id="docSeg">
+        <button type="button" data-v="rpa" aria-pressed="true" data-i="d_rpa">Hợp đồng mua</button>
+        <button type="button" data-v="co" aria-pressed="false" data-i="d_co">Counter offer</button>
+        <button type="button" data-v="other" aria-pressed="false" data-i="d_other">Giấy khác</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="body"><span data-i="l_body">Nội dung viết thêm</span></label>
+      <textarea class="ta" id="body" rows="5" data-ph="ph_body"></textarea>
+      <p class="hint" id="cnt"></p>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_sig">Ai đã ký TOA?</span>
+      <div class="seg wrapN" role="group" id="sigSeg">
+        <button type="button" data-v="none" aria-pressed="true" data-i="s_none">Chưa ai</button>
+        <button type="button" data-v="buyer" aria-pressed="false" data-i="s_buyer">Người mua</button>
+        <button type="button" data-v="seller" aria-pressed="false" data-i="s_seller">Người bán</button>
+        <button type="button" data-v="both" aria-pressed="false" data-i="s_both">Cả hai bên</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_k">Tình trạng</div>
+      <div class="v word" id="verdict">—</div>
+    </div>
+    <ul class="list" id="errs"></ul>
+    <div class="sim">
+      <div class="st" data-i="dr_t">Bản nháp mẫu (để tập, không phải form thật)</div>
+      <pre id="draft"></pre>
+    </div>
+    <div class="note" id="tips"></div>
+  </section>
+
+
+  <section class="panel" aria-labelledby="accT">
+    <h2 id="accT" data-i="acc_t">Giải thích từng phần</h2>
+    <div class="accs">
+      <details class="acc"><summary data-i="acc1_h">Đầu trang: số TOA</summary><div data-i="acc1_b">Trên cùng có chỗ ghi số (No.). Dùng nhiều trang TOA thì đánh 1, 2, 3 cho dễ gọi tên.</div></details>
+      <details class="acc"><summary data-i="acc2_h">Property, Buyer, Seller</summary><div data-i="acc2_b">Ghi địa chỉ căn nhà, tên người mua và người bán. Ghi y như giấy chính.</div></details>
+      <details class="acc"><summary data-i="acc3_h">Phần trống để viết</summary><div data-i="acc3_b">Gần hết trang là dòng trống. Đây là chỗ viết tiếp điều khoản. Mở đầu nên ghi paragraph nào của giấy chính.</div></details>
+      <details class="acc"><summary data-i="acc4_h">Câu nối với giấy chính</summary><div data-i="acc4_b">Câu in sẵn ở dưới nói: những gì viết trong TOA được đưa vào đúng paragraph mà giấy chính nhắc tới. Nên giấy chính phải ghi "xem TOA số…".</div></details>
+      <details class="acc"><summary data-i="acc5_h">Xác nhận đã nhận bản sao</summary><div data-i="acc5_b">Người ký xác nhận đã nhận một bản TOA. Giữ bản sao chung với hợp đồng.</div></details>
+      <details class="acc"><summary data-i="acc6_h">Chữ ký</summary><div data-i="acc6_b">Hai dòng cho người mua, hai dòng cho người bán, mỗi dòng có ngày.</div></details>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="exT">
+    <h2 id="exT" data-i="ex_t">Ví dụ với 1234 Example Lane</h2>
+    <p data-i="ex_story">Anh Tâm & chị Hoa Nguyễn viết offer cho 1234 Example Lane. Anh chị muốn bà Mai Trần để lại tủ lạnh, máy giặt, máy sấy và cái đèn chùm phòng khách. Ô trong hợp đồng không đủ chỗ. Ken ghi ở paragraph về đồ đi kèm nhà (ví dụ 8B): "xem TOA số 1". Rồi viết đủ ý trong TOA số 1, ghi luôn là các món phải còn chạy tốt ngày close. Anh chị ký khi gửi offer. Bà Mai Trần ký khi chấp nhận.</p>
+    <div class="sim">
+      <div class="st" data-i="ex_sim">Bản mô phỏng (dữ liệu giả, không phải form thật)</div>
+      <div class="sr"><span data-i="sim1_l">TOA No.</span><span data-i="sim1_v">1</span></div>
+      <div class="sr"><span data-i="sim2_l">Property</span><span data-i="sim2_v">1234 Example Lane, San Jose, CA 95100</span></div>
+      <div class="sr"><span data-i="sim3_l">Buyer</span><span data-i="sim3_v">Anh Tâm & chị Hoa Nguyễn</span></div>
+      <div class="sr"><span data-i="sim4_l">Seller</span><span data-i="sim4_v">Bà Mai Trần</span></div>
+      <div class="sr"><span data-i="sim5_l">Nội dung</span><span data-i="sim5_v">Paragraph 8B (ví dụ): để lại tủ lạnh, máy giặt, máy sấy, đèn chùm phòng khách, không tính tiền; phải còn chạy tốt ngày close.</span></div>
+      <div class="sr"><span data-i="sim6_l">Trong hợp đồng chính</span><span data-i="sim6_v">Ở paragraph 8B ghi: "xem TOA số 1"</span></div>
+      <div class="sr"><span data-i="sim7_l">Ký</span><span data-i="sim7_v">Tâm Nguyễn, Hoa Nguyễn — 03/03/2026 · Mai Trần — 04/03/2026 (ví dụ)</span></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="myT">
+    <h2 id="myT" data-i="my_t">Nhiều người hiểu sai</h2>
+    <p class="myth" data-i="my1"><b>"Viết ở TOA là xong, khỏi nhắc trong hợp đồng."</b> TOA nối vào paragraph mà giấy chính nhắc tới. Giấy chính không nhắc thì dễ cãi nhau TOA thuộc chỗ nào.</p>
+      <p class="myth" data-i="my2"><b>"Một bên ký là đủ."</b> TOA có dòng ký cho cả người mua lẫn người bán. Một bên ký mới là phía mình đồng ý; muốn ràng buộc cả hai thì bên kia cũng ký (ngoài form, nguyên tắc hợp đồng chung).</p>
+      <p class="myth" data-i="my3"><b>"TOA dùng để sửa hợp đồng đã ký."</b> TOA chỉ là trang viết tiếp, kèm theo một giấy khác. Muốn đổi điều đã ký thì cần giấy sửa đổi hai bên cùng ký, như AEA (ngoài form).</p>
+    <p class="ken" data-i="ken1"><b>Kinh nghiệm Ken:</b> TOA là chỗ người ta viết vội nhất. Mà chỗ viết vội là chỗ cãi nhau sau này. Tôi viết mỗi ý một câu: ai, làm gì, bao nhiêu tiền, hạn ngày nào. Đọc lên mà còn phải giải thích thêm là tôi viết lại.</p>
+  </section>
+
+  <section class="panel steps" aria-labelledby="nsT">
+    <h2 id="nsT" data-i="ns_t">Bước tiếp theo</h2>
+    <ol>
+      <li data-i="ns1">Đổi ý, muốn rút offer hay counter chưa được chấp nhận? Coi <a href="/t440/">Rút lại offer (T440)</a>.</li>
+      <li data-i="ns2">Mua đất trống? Coi <a href="/t432/">Hợp đồng VLPA (T432)</a>.</li>
+      <li data-i="ns3">Gần close: <a href="/t439/">Đi kiểm nhà lần cuối (T439)</a>.</li>
+      <li data-i="ns4">Mọi form khác: <a href="/t430/">Mọi form giải nghĩa (T430)</a>.</li>
+    </ol>
+  </section>
+
+  <section class="panel vid" aria-labelledby="vidT">
+    <h2 id="vidT" data-i="vid_t">Xem video 45 giây</h2>
+    <video src="video.mp4" poster="poster.jpg" controls playsinline preload="metadata"></video>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Gửi kết quả qua email</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Hỏi Ken</a>
+    <a class="btn" href="/t430/" data-i="b_all">Mọi form giải nghĩa</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Gửi kết quả này về email</h2>
+    <p data-i="f_sub">Kết quả trong 1 email gửi Ken. Ken coi giùm và trả lời. Không spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Tên</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Số phone (không bắt buộc)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Đã mở email. Bấm Gửi là xong. Nếu không mở được, chép số ở dưới nhắn Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Hoặc nhắn tin:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Chép số</button></div>
+  </section>
+
+  <footer>
+    <span class="copyr" data-i="copyr">Form TOA là của California Association of REALTORS®. Trang này chỉ giải thích, không thay thế form hay tư vấn luật.</span>
+    <span data-i="ft_est">Thông tin chung, không phải tư vấn luật hay thuế. Hợp đồng và form thật của bạn mới là cái quyết định. Có tranh chấp thì hỏi luật sư.</span>
+    <span class="who">Ken Lam · Broker Associate · BRG Realty Corp · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 06/11/2026 · <a href="/t430/" data-i="ft_hub">Mọi form giải nghĩa</a> · <a href="/cong-cu/" data-i="ft_all">Tất cả tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Mặc định / thời hạn — sửa ở đây ===== */
+const CFG={"LINES": 29, "CHARS_PER_LINE": 100, "MIN_CHARS": 10, "EX_ADDRESS": "1234 Example Lane, San Jose, CA 95100"};
+const PAGE={code:'T438',path:'/t438/',form:'TOA'};
+const I18N={
+"vi": {
+"q_t": "Khung nhanh",
+"q_who": "Ai đưa",
+"q_sign": "Ai ký",
+"q_when": "Lúc nào",
+"q_req": "Có bắt buộc không",
+"q_pages": "Mấy trang",
+"q_rev": "Bản",
+"acc_t": "Giải thích từng phần",
+"ex_t": "Ví dụ với 1234 Example Lane",
+"ex_sim": "Bản mô phỏng (dữ liệu giả, không phải form thật)",
+"my_t": "Nhiều người hiểu sai",
+"ns_t": "Bước tiếp theo",
+"vid_t": "Xem video 45 giây",
+"b_email": "Gửi kết quả qua email",
+"b_sms": "Hỏi Ken",
+"b_all": "Mọi form giải nghĩa",
+"f_title": "Gửi kết quả này về email",
+"f_sub": "Kết quả trong 1 email gửi Ken. Ken coi giùm và trả lời. Không spam.",
+"f_name": "Tên",
+"f_phone": "Số phone (không bắt buộc)",
+"f_send": "Gửi",
+"f_ok": "Đã mở email. Bấm Gửi là xong. Nếu không mở được, chép số ở dưới nhắn Ken.",
+"f_or": "Hoặc nhắn tin:",
+"f_copy": "Chép số",
+"ft_upd": "Cập nhật",
+"ft_all": "Tất cả tools",
+"ft_hub": "Mọi form giải nghĩa",
+"lang": "English",
+"ft_est": "Thông tin chung, không phải tư vấn luật hay thuế. Hợp đồng và form thật của bạn mới là cái quyết định. Có tranh chấp thì hỏi luật sư.",
+"doc_title": "Trang viết thêm TOA · Ken Lam Tools",
+"title": "Trang viết thêm (Form TOA)",
+"sub": "Giống như viết bài kiểm tra mà hết chỗ, cô cho thêm một tờ giấy, ghi \"tiếp câu 3\". TOA là tờ giấy thêm đó. Ô trong hợp đồng chật quá thì viết tiếp ở đây, ghi rõ nó thuộc paragraph (đoạn) nào.",
+"qv_who": "Agent của bên đang viết điều khoản (bên mua khi làm offer, bên bán khi làm counter).",
+"qv_sign": "Người mua và người bán (mỗi bên tới 2 người). Có ghi ngày.",
+"qv_when": "Khi ô trong hợp đồng hoặc counter offer không đủ chỗ viết.",
+"qv_req": "Không bắt buộc. Chỉ dùng khi cần thêm chỗ. Đã dùng thì nó thành một phần của giấy chính.",
+"qv_pages": "1 trang",
+"qv_rev": "Revised 6/23",
+"tool_t": "Soạn thử một trang TOA",
+"tool_h": "Nhập số TOA, paragraph và nội dung. Bản nháp hiện ngay bên dưới, kèm lỗi hay gặp. Đây là bản tập viết, không phải form thật.",
+"l_no": "Số TOA (No.)",
+"l_para": "Paragraph số mấy",
+"ph_para": "vd 8B",
+"l_doc": "Kèm theo giấy nào",
+"d_rpa": "Hợp đồng mua",
+"d_co": "Counter offer",
+"d_other": "Giấy khác",
+"l_body": "Nội dung viết thêm",
+"ph_body": "Viết từng ý một câu: ai, làm gì, bao nhiêu tiền, hạn ngày nào.",
+"l_sig": "Ai đã ký TOA?",
+"s_none": "Chưa ai",
+"s_buyer": "Người mua",
+"s_seller": "Người bán",
+"s_both": "Cả hai bên",
+"r_k": "Tình trạng",
+"v_ok": "Sẵn sàng",
+"v_err1": "Còn 1 lỗi cần sửa",
+"v_errs": "Còn {n} lỗi cần sửa",
+"dr_t": "Bản nháp mẫu (để tập, không phải form thật)",
+"dr_att": "Kèm theo",
+"dr_empty": "(chưa có nội dung)",
+"dr_inc": "Các điều trên được đưa vào paragraph đã ghi trong giấy chính. Các bên xác nhận đã nhận bản sao.",
+"signed": "(đã ký)",
+"tips_t": "Nhắc:",
+"cnt": "{c} ký tự · khoảng {l}/{m} dòng của 1 trang TOA",
+"E": {
+"no": "Quên số TOA. Có 2–3 trang TOA thì không biết trang nào là trang nào.",
+"para": "Chưa ghi paragraph số mấy. TOA phải chỉ rõ nó viết tiếp cho đoạn nào.",
+"body": "Nội dung trống hoặc quá ngắn.",
+"long": "Dài hơn 1 trang TOA (khoảng {l} dòng). Tách sang TOA số kế tiếp, đánh số nối tiếp.",
+"sig_none": "Chưa ai ký. TOA cần chữ ký người mua và người bán.",
+"sig_seller": "Thiếu chữ ký người bán.",
+"sig_buyer": "Thiếu chữ ký người mua."
+},
+"T": {
+"repeat": "Nên ghi lại \"paragraph {p}\" ngay đầu nội dung cho khỏi lộn.",
+"link": "Trong giấy chính, ngay ở paragraph {p}, ghi \"xem TOA số {n}\". Câu cuối của TOA nói nó thuộc paragraph được nhắc trong giấy chính, nên giấy chính phải nhắc tới nó.",
+"names": "Địa chỉ và tên người mua, người bán phải giống hệt giấy chính."
+},
+"ex_buyer": "Anh Tâm & chị Hoa Nguyễn",
+"ex_seller": "Bà Mai Trần",
+"ex_body_default": "Paragraph 8B: Người bán để lại tủ lạnh, máy giặt, máy sấy và đèn chùm phòng khách, không tính thêm tiền. Các món này phải còn chạy tốt vào ngày close.",
+"e_head": "BẢN NHÁP TOA (Text Overflow Addendum)",
+"sms": "Chào Ken, tôi đang soạn thử TOA trên tools.kenlamrealty.com: {s}. Ken coi giùm.",
+"subj": "Form TOA — {r} — {n}",
+"body": "Tên: {n}\nEmail: {e}\nPhone: {ph}\n\n{sum}\n\nGửi từ tool {code} tools.kenlamrealty.com{path}",
+"ex_story": "Anh Tâm & chị Hoa Nguyễn viết offer cho 1234 Example Lane. Anh chị muốn bà Mai Trần để lại tủ lạnh, máy giặt, máy sấy và cái đèn chùm phòng khách. Ô trong hợp đồng không đủ chỗ. Ken ghi ở paragraph về đồ đi kèm nhà (ví dụ 8B): \"xem TOA số 1\". Rồi viết đủ ý trong TOA số 1, ghi luôn là các món phải còn chạy tốt ngày close. Anh chị ký khi gửi offer. Bà Mai Trần ký khi chấp nhận.",
+"copyr": "Form TOA là của California Association of REALTORS®. Trang này chỉ giải thích, không thay thế form hay tư vấn luật.",
+"acc1_h": "Đầu trang: số TOA",
+"acc1_b": "Trên cùng có chỗ ghi số (No.). Dùng nhiều trang TOA thì đánh 1, 2, 3 cho dễ gọi tên.",
+"acc2_h": "Property, Buyer, Seller",
+"acc2_b": "Ghi địa chỉ căn nhà, tên người mua và người bán. Ghi y như giấy chính.",
+"acc3_h": "Phần trống để viết",
+"acc3_b": "Gần hết trang là dòng trống. Đây là chỗ viết tiếp điều khoản. Mở đầu nên ghi paragraph nào của giấy chính.",
+"acc4_h": "Câu nối với giấy chính",
+"acc4_b": "Câu in sẵn ở dưới nói: những gì viết trong TOA được đưa vào đúng paragraph mà giấy chính nhắc tới. Nên giấy chính phải ghi \"xem TOA số…\".",
+"acc5_h": "Xác nhận đã nhận bản sao",
+"acc5_b": "Người ký xác nhận đã nhận một bản TOA. Giữ bản sao chung với hợp đồng.",
+"acc6_h": "Chữ ký",
+"acc6_b": "Hai dòng cho người mua, hai dòng cho người bán, mỗi dòng có ngày.",
+"sim1_l": "TOA No.",
+"sim1_v": "1",
+"sim2_l": "Property",
+"sim2_v": "1234 Example Lane, San Jose, CA 95100",
+"sim3_l": "Buyer",
+"sim3_v": "Anh Tâm & chị Hoa Nguyễn",
+"sim4_l": "Seller",
+"sim4_v": "Bà Mai Trần",
+"sim5_l": "Nội dung",
+"sim5_v": "Paragraph 8B (ví dụ): để lại tủ lạnh, máy giặt, máy sấy, đèn chùm phòng khách, không tính tiền; phải còn chạy tốt ngày close.",
+"sim6_l": "Trong hợp đồng chính",
+"sim6_v": "Ở paragraph 8B ghi: \"xem TOA số 1\"",
+"sim7_l": "Ký",
+"sim7_v": "Tâm Nguyễn, Hoa Nguyễn — 03/03/2026 · Mai Trần — 04/03/2026 (ví dụ)",
+"my1": "<b>\"Viết ở TOA là xong, khỏi nhắc trong hợp đồng.\"<\/b> TOA nối vào paragraph mà giấy chính nhắc tới. Giấy chính không nhắc thì dễ cãi nhau TOA thuộc chỗ nào.",
+"my2": "<b>\"Một bên ký là đủ.\"<\/b> TOA có dòng ký cho cả người mua lẫn người bán. Một bên ký mới là phía mình đồng ý; muốn ràng buộc cả hai thì bên kia cũng ký (ngoài form, nguyên tắc hợp đồng chung).",
+"my3": "<b>\"TOA dùng để sửa hợp đồng đã ký.\"<\/b> TOA chỉ là trang viết tiếp, kèm theo một giấy khác. Muốn đổi điều đã ký thì cần giấy sửa đổi hai bên cùng ký, như AEA (ngoài form).",
+"ken1": "<b>Kinh nghiệm Ken:<\/b> TOA là chỗ người ta viết vội nhất. Mà chỗ viết vội là chỗ cãi nhau sau này. Tôi viết mỗi ý một câu: ai, làm gì, bao nhiêu tiền, hạn ngày nào. Đọc lên mà còn phải giải thích thêm là tôi viết lại.",
+"ns1": "Đổi ý, muốn rút offer hay counter chưa được chấp nhận? Coi <a href=\"/t440/\">Rút lại offer (T440)<\/a>.",
+"ns2": "Mua đất trống? Coi <a href=\"/t432/\">Hợp đồng VLPA (T432)<\/a>.",
+"ns3": "Gần close: <a href=\"/t439/\">Đi kiểm nhà lần cuối (T439)<\/a>.",
+"ns4": "Mọi form khác: <a href=\"/t430/\">Mọi form giải nghĩa (T430)<\/a>."
+},
+"en": {
+"q_t": "Quick facts",
+"q_who": "Who gives it",
+"q_sign": "Who signs",
+"q_when": "When",
+"q_req": "Required?",
+"q_pages": "Pages",
+"q_rev": "Version",
+"acc_t": "Section by section",
+"ex_t": "Example: 1234 Example Lane",
+"ex_sim": "Mock-up (made-up data, not the real form)",
+"my_t": "What people get wrong",
+"ns_t": "Next steps",
+"vid_t": "Watch the 45-second video",
+"b_email": "Email me the result",
+"b_sms": "Ask Ken",
+"b_all": "All forms explained",
+"f_title": "Email this result",
+"f_sub": "Your result in one email to Ken. He looks it over and writes back. No spam.",
+"f_name": "Name",
+"f_phone": "Phone (optional)",
+"f_send": "Send",
+"f_ok": "Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",
+"f_or": "Or text:",
+"f_copy": "Copy",
+"ft_upd": "Updated",
+"ft_all": "All tools",
+"ft_hub": "All forms explained",
+"lang": "Tiếng Việt",
+"ft_est": "General information, not legal or tax advice. Your actual contract and forms control. If there is a dispute, talk to a lawyer.",
+"doc_title": "Text overflow addendum (TOA) · Ken Lam Tools",
+"title": "Text overflow addendum (Form TOA)",
+"sub": "Like running out of room on a test, and the teacher hands you an extra sheet that says \"continued from question 3\". The TOA is that extra sheet. When a box in the contract is too small, you keep writing here and say which paragraph it belongs to.",
+"qv_who": "The agent for the side writing the terms (buyer side with an offer, seller side with a counter).",
+"qv_sign": "Buyers and sellers (up to 2 each), with dates.",
+"qv_when": "When a box in the contract or counter offer is too small.",
+"qv_req": "Not required. Only used when you need more room. Once used, it becomes part of the main document.",
+"qv_pages": "1 page",
+"qv_rev": "Revised 6/23",
+"tool_t": "Draft a practice TOA",
+"tool_h": "Enter the TOA number, paragraph and text. A draft shows below with common mistakes flagged. This is practice, not the real form.",
+"l_no": "TOA number (No.)",
+"l_para": "Paragraph number",
+"ph_para": "e.g. 8B",
+"l_doc": "Attached to",
+"d_rpa": "Purchase agreement",
+"d_co": "Counter offer",
+"d_other": "Other document",
+"l_body": "Extra text",
+"ph_body": "One point per sentence: who, does what, how much, by what date.",
+"l_sig": "Who has signed the TOA?",
+"s_none": "No one",
+"s_buyer": "Buyer",
+"s_seller": "Seller",
+"s_both": "Both sides",
+"r_k": "Status",
+"v_ok": "Ready",
+"v_err1": "1 issue to fix",
+"v_errs": "{n} issues to fix",
+"dr_t": "Sample draft (practice, not the real form)",
+"dr_att": "Attached to",
+"dr_empty": "(no text yet)",
+"dr_inc": "The terms above become part of the paragraph(s) referred to in the main document. The parties confirm they received a copy.",
+"signed": "(signed)",
+"tips_t": "Reminders:",
+"cnt": "{c} characters · about {l}/{m} lines of one TOA page",
+"E": {
+"no": "Missing TOA number. With 2–3 TOA pages, nobody can tell which is which.",
+"para": "No paragraph number. The TOA has to say which paragraph it continues.",
+"body": "Text is empty or too short.",
+"long": "Longer than one TOA page (about {l} lines). Continue on the next numbered TOA.",
+"sig_none": "Nobody has signed. The TOA needs buyer and seller signatures.",
+"sig_seller": "Seller signature missing.",
+"sig_buyer": "Buyer signature missing."
+},
+"T": {
+"repeat": "Repeat \"paragraph {p}\" at the start of the text so nothing gets mixed up.",
+"link": "In the main document, right at paragraph {p}, write \"see TOA No. {n}\". The TOA's last line ties it to the paragraph the main document refers to, so the main document has to refer to it.",
+"names": "Address and buyer/seller names must match the main document exactly."
+},
+"ex_buyer": "Tam & Hoa Nguyen",
+"ex_seller": "Mrs. Mai Tran",
+"ex_body_default": "Paragraph 8B: Seller leaves the refrigerator, washer, dryer and living room chandelier at no extra cost. These items must be in working order on the closing date.",
+"e_head": "TOA DRAFT (Text Overflow Addendum)",
+"sms": "Hi Ken, I am drafting a TOA on tools.kenlamrealty.com: {s}. Can you take a look?",
+"subj": "Form TOA — {r} — {n}",
+"body": "Name: {n}\nEmail: {e}\nPhone: {ph}\n\n{sum}\n\nSent from tool {code} tools.kenlamrealty.com{path}",
+"ex_story": "Tam & Hoa Nguyen are writing an offer on 1234 Example Lane. They want Mrs. Mai Tran to leave the refrigerator, washer, dryer and the living room chandelier. The box in the contract is too small. Ken writes \"see TOA No. 1\" in the paragraph about included items (8B, as an example), then spells it all out on TOA No. 1, including that the items must work on closing day. Tam and Hoa sign with the offer. Mrs. Tran signs when she accepts.",
+"copyr": "Form TOA belongs to the California Association of REALTORS®. This page only explains it. It does not replace the form or legal advice.",
+"acc1_h": "Top: the TOA number",
+"acc1_b": "The top has a blank for the number (No.). With several TOAs, number them 1, 2, 3 so each can be named.",
+"acc2_h": "Property, Buyer, Seller",
+"acc2_b": "The home address and the buyer and seller names. Write them exactly as on the main document.",
+"acc3_h": "The blank lines",
+"acc3_b": "Most of the page is blank lines for the extra terms. Start by naming the paragraph of the main document.",
+"acc4_h": "The tie-in sentence",
+"acc4_b": "The printed line at the bottom says the TOA terms become part of the paragraph(s) the main document refers to. So the main document must say \"see TOA No. …\".",
+"acc5_h": "Receipt of a copy",
+"acc5_b": "Signers confirm they got a copy. Keep it with the contract.",
+"acc6_h": "Signatures",
+"acc6_b": "Two lines for buyers, two for sellers, each with a date.",
+"sim1_l": "TOA No.",
+"sim1_v": "1",
+"sim2_l": "Property",
+"sim2_v": "1234 Example Lane, San Jose, CA 95100",
+"sim3_l": "Buyer",
+"sim3_v": "Tam & Hoa Nguyen",
+"sim4_l": "Seller",
+"sim4_v": "Mrs. Mai Tran",
+"sim5_l": "Text",
+"sim5_v": "Paragraph 8B (example): leaves refrigerator, washer, dryer, living room chandelier at no cost; must work on closing day.",
+"sim6_l": "In the main contract",
+"sim6_v": "At paragraph 8B: \"see TOA No. 1\"",
+"sim7_l": "Signed",
+"sim7_v": "Tam Nguyen, Hoa Nguyen — 03/03/2026 · Mai Tran — 03/04/2026 (example)",
+"my1": "<b>\"Write it on the TOA and you're done.\"<\/b> The TOA attaches to the paragraph the main document refers to. If the main document says nothing, people can argue about where it belongs.",
+"my2": "<b>\"One side signing is enough.\"<\/b> The TOA has lines for both buyers and sellers. One signature only shows that side agrees; to bind both, the other side signs too (outside the form, general contract rule).",
+"my3": "<b>\"A TOA changes a signed contract.\"<\/b> A TOA is only extra room attached to another document. To change signed terms you need an amendment both sides sign, such as an AEA (outside the form).",
+"ken1": "<b>Ken's take:<\/b> The TOA is where people write in the biggest hurry. And rushed writing is where the fights start later. I write one point per sentence: who, does what, how much, by when. If I have to explain it out loud, I rewrite it.",
+"ns1": "Changed your mind on an offer or counter not yet accepted? See <a href=\"/t440/\">Withdrawing an offer (T440)<\/a>.",
+"ns2": "Buying land? See <a href=\"/t432/\">VLPA purchase agreement (T432)<\/a>.",
+"ns3": "Close to closing: <a href=\"/t439/\">Final walk-through (T439)<\/a>.",
+"ns4": "Every other form: <a href=\"/t430/\">All forms explained (T430)<\/a>."
+}
+};
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fill=(s,v)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+const strip=s=>String(s).replace(/<small>/g,' (').replace(/<\/small>/g,')').replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let last={r:'',short:'',sum:''};
+function seg(id,cb){ $(id).addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return;
+  $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); cb(b.dataset.v); calc();}); }
+function fmtDate(dt){ return dt.toLocaleDateString(lang==='vi'?'vi-VN':'en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}); }
+/* ===== Tool riêng của trang ===== */
+
+let doc='rpa', sig='none';
+function tool(d){
+  const no=$('toaNo').value.trim(), para=$('para').value.trim(), body=$('body').value.trim();
+  const errs=[];
+  if(!no) errs.push(d.E.no);
+  if(!para) errs.push(d.E.para);
+  if(body.length<CFG.MIN_CHARS) errs.push(d.E.body);
+  if(body.length>CFG.LINES*CFG.CHARS_PER_LINE) errs.push(fill(d.E.long,{l:CFG.LINES}));
+  if(sig==='none') errs.push(d.E.sig_none); else if(sig==='buyer') errs.push(d.E.sig_seller); else if(sig==='seller') errs.push(d.E.sig_buyer);
+  const tips=[];
+  if(para && body && body.indexOf(para)<0) tips.push(fill(d.T.repeat,{p:para}));
+  tips.push(fill(d.T.link,{n:no||'…',p:para||'…'}));
+  tips.push(d.T.names);
+  const v=$('verdict');
+  const r=errs.length?fill(errs.length===1?d.v_err1:d.v_errs,{n:errs.length}):d.v_ok;
+  v.textContent=r; v.className='v word '+(errs.length?'warn':'ok');
+  $('errs').innerHTML=errs.map(e=>'<li>'+e+'</li>').join('');
+  $('tips').innerHTML='<b>'+d.tips_t+'</b><br>'+tips.join('<br>');
+  const lines=Math.ceil(body.length/CFG.CHARS_PER_LINE);
+  $('cnt').textContent=fill(d.cnt,{c:body.length,l:lines,m:CFG.LINES});
+  const s=k=>(sig==='both'||sig===k)?d.signed:'________________';
+  const draft='TEXT OVERFLOW ADDENDUM No. '+(no||'___')+'\n'+d.dr_att+': '+d['d_'+doc]+' · paragraph '+(para||'___')+'\n'+
+    'Property: '+CFG.EX_ADDRESS+'\nBuyer: '+d.ex_buyer+'\nSeller: '+d.ex_seller+'\n\n'+(body||d.dr_empty)+'\n\n'+d.dr_inc+'\n\n'+
+    'Buyer  '+s('buyer')+'  Date ____\nSeller '+s('seller')+'  Date ____';
+  $('draft').textContent=draft;
+  const short=r+' (TOA '+(no||'?')+', paragraph '+(para||'?')+')';
+  const sum=d.e_head+'\n'+r+'\n'+errs.map(e=>'- '+strip(e)).join('\n')+'\n\n'+draft+'\n\n'+tips.map(t=>'* '+strip(t)).join('\n');
+  return {r,short,sum};
+}
+
+/* ===== Chung ===== */
+function calc(){
+  const d=I18N[lang]; const o=tool(d)||{}; last=o;
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,{s:o.short||''}));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  document.querySelectorAll('[data-ph]').forEach(el=>{const k=el.getAttribute('data-ph'); if(typeof d[k]==='string') el.placeholder=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; document.title=strip(d.doc_title); calc();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const v={n,e,ph,r:strip(last.r||''),sum:strip(last.sum||''),code:PAGE.code,path:PAGE.path};
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,v))+'&body='+encodeURIComponent(fill(d.body,v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+
+seg('docSeg',v=>doc=v); seg('sigSeg',v=>sig=v);
+['toaNo','para','body'].forEach(id=>$(id).addEventListener('input',calc));
+$('body').value=I18N[lang].ex_body_default;
+
+applyLang();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
