@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AVID Explained · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="C.A.R. Form AVID in plain words: what the agent must look at under Civil Code §2079, what they don't check, who signs, and the 2-year deadline.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t544/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:title" content="AVID Explained · Ken Lam Tools">
+<meta property="og:description" content="Is an AVID required, does it cover your worry (roof, attic, mold, permits…), who to call instead, and the 2-year deadline.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t544/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+html.embed .kl-back{display:none}
+html.embed body{padding-top:8px}
+/* T312 additions */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--fg);cursor:pointer}
+.chk input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;flex:none}
+.grp{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:8px}
+.grp .gh{font-size:13px;font-weight:500;color:var(--fg)}
+.grp .gh small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.grp details{font-size:13px;color:var(--muted)}
+.grp details summary{cursor:pointer;color:var(--brass)}
+.grp details ul{margin:6px 0 0;padding-left:18px;display:grid;gap:3px}
+.grp .ctl input{font-size:18px}
+.grp .row2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.grp .ctl{padding:0 8px}
+.mini{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.vd{display:grid;gap:0;border-top:1px solid var(--line)}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.line .n{flex:1 1 auto}
+.line .a.ok{color:var(--ok)}
+.line .a.bad{color:var(--warn)}
+.pill{display:inline-block;font-size:12px;border-radius:999px;padding:2px 9px;margin-left:6px;vertical-align:middle;border:1px solid currentColor}
+.pill.ok{color:var(--ok)}.pill.bad{color:var(--warn)}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px;scroll-margin-top:12px}
+.box h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.box ul,.box ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.box a{color:var(--brass)}
+.dates{display:grid;gap:0;border-top:1px solid var(--line)}
+.cd{display:grid;gap:14px}
+.pg{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 16px 6px;display:grid;gap:4px}
+.pg .ph{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:2px solid var(--brass);padding-bottom:8px;margin-bottom:4px}
+.pg .ph h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.pg .ph span{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+details.li{border-bottom:1px solid var(--line);scroll-margin-top:12px}
+details.li>summary{list-style:none;display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:10px 0;cursor:pointer;font-size:15px}
+details.li>summary::-webkit-details-marker{display:none}
+details.li>summary .n{min-width:0;flex:1 1 auto}
+details.li>summary .n b{font-weight:500}
+details.li>summary .n i{font-style:normal;display:inline-block;min-width:20px;color:var(--brass);font-weight:600}
+details.li>summary .n small{display:block;font-size:12px;color:var(--muted)}
+details.li>summary .a::after{content:'＋';color:var(--brass);font-size:13px}
+details.li[open]>summary .a::after{content:'－'}
+details.li[open]{background:linear-gradient(var(--brass-soft),var(--brass-soft)) no-repeat;background-size:3px 100%}
+.ex{display:grid;gap:8px;padding:0 0 14px 12px;font-size:14px;line-height:1.5}
+.ex p{margin:0}
+.ex .t{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);font-weight:600;margin-bottom:1px}
+.ex .ask{background:var(--brass-soft);border-radius:8px;padding:8px 10px}
+.ex .lk{font-size:12px}
+.ex .lk a{color:var(--brass);text-decoration:none}
+.ex .lk button{border:0;background:none;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;padding:0;margin-left:8px}
+.cl{list-style:none;margin:0;padding:0;display:grid;gap:0;border-top:1px solid var(--line)}
+.cl li{border-bottom:1px solid var(--line);padding:10px 0;scroll-margin-top:12px}
+.cl label{display:flex;gap:10px;align-items:flex-start;font-size:15px;cursor:pointer}
+.cl input{width:20px;height:20px;accent-color:var(--brass);margin:2px 0 0;flex:none}
+.cl small{display:block;font-size:13px;color:var(--muted)}
+.cl input:checked+span b{text-decoration:line-through;text-decoration-color:var(--brass)}
+.prog{font-size:13px;color:var(--muted)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.next a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.lead{font-size:13px;color:var(--muted);margin:0}
+footer .src a{overflow-wrap:anywhere}
+
+/* T5xx forms series */
+.kick{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:2px 0 0}
+.box p{margin:0;font-size:15px}
+.box .eli{display:grid;gap:8px}
+.sec{font-family:var(--display);font-weight:400;font-size:28px;margin:0}
+.ex .fill{border:1px dashed var(--line);border-radius:8px;padding:8px 10px;background:var(--bg)}
+.tbl{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px}
+.tbl th{text-align:left;font-weight:500;color:var(--muted);font-size:12px;padding:6px 6px 6px 0;border-bottom:1px solid var(--line)}
+.tbl td{vertical-align:top;padding:8px 6px 8px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.tbl td b{font-weight:500}
+.field select{width:100%;border:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;padding:12px 4px;min-width:0}
+.seg.v{flex-direction:column}
+.seg.v button{text-align:left;border-bottom:1px solid var(--line)}
+.seg.v button:last-child{border-bottom:0}
+.seg button{line-height:1.3}
+.big2{font-family:var(--display);font-weight:400;font-size:44px;line-height:1.05;margin-top:4px}
+.big2.ok{color:var(--ok)}.big2.bad{color:var(--warn)}
+.res-sub{margin:6px 0 0;font-size:15px}
+.vid video{width:100%;border-radius:12px;background:#000}
+.cks{display:grid;gap:8px}
+.line .a.ok{color:var(--ok)}.line .a.bad{color:var(--warn)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← Tất cả tool</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <p class="kick" data-i="kick"></p>
+    <h1 data-i="title"></h1>
+    <p class="sub" data-i="sub"></p>
+  </header>
+
+  <section class="box" aria-label="Plain words">
+    <h2 data-i="eli_t"></h2>
+    <div class="eli" data-i="eli"></div>
+  </section>
+
+  <section class="inputs" aria-label="Inputs">
+    <h2 class="sec" data-i="tl_t"></h2>
+    <div class="field">
+      <label data-i="l_pt">Loại nhà</label>
+      <div class="seg v" data-k="pt" role="group">
+        <button type="button" data-v="res" aria-pressed="true" data-i="pt_res"></button>
+        <button type="button" data-v="big" aria-pressed="false" data-i="pt_big"></button>
+        <button type="button" data-v="land" aria-pressed="false" data-i="pt_land"></button>
+      </div>
+    </div>
+    <div class="field">
+      <label data-i="l_tds">Seller có được miễn làm TDS không?</label>
+      <div class="seg v" data-k="tds" role="group">
+        <button type="button" data-v="no" aria-pressed="true" data-i="tds_no"></button>
+        <button type="button" data-v="yes" aria-pressed="false" data-i="tds_yes"></button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="concern" data-i="l_concern">Bạn đang lo chuyện gì?</label>
+      <div class="ctl"><select id="concern"></select></div>
+    </div>
+    <div class="field">
+      <label for="close"><span data-i="l_close">Ngày close</span> <small data-i="l_close_s"></small></label>
+      <div class="ctl"><input id="close" type="date" value="2026-12-15"></div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite" id="result">
+    <div class="total">
+      <div class="k" data-i="r_k">AVID</div>
+      <div class="big2" id="big">—</div>
+      <p class="res-sub" id="why"></p>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="r_who">Ai làm</b><small id="whoS"></small></span><span class="a" id="whoA"></span></div>
+      <div class="line"><span class="n"><b id="cN"></b><small id="cS"></small></span><span class="a" id="cA"></span></div>
+      <div class="line"><span class="n"><b data-i="r_dl">Hạn chót kiện agent về phần kiểm tra bằng mắt</b><small data-i="r_dl_s"></small></span><span class="a" id="dl"></span></div>
+    </div>
+    <div class="note" id="verdict"></div>
+  </section>
+
+
+  <section class="cd" aria-label="Form walkthrough">
+    <h2 class="sec" data-i="fs_t"></h2>
+    <p class="lead" data-i="fs_l"></p>
+    <div class="cd" id="formsim"></div>
+    <p class="lead" data-i="fs_disc"></p>
+  </section>
+
+  <section class="box" aria-label="Who signs">
+    <h2 data-i="sg_t"></h2>
+    <table class="tbl" id="signT"></table>
+  </section>
+
+  <section class="box" aria-label="Myths">
+    <h2 data-i="my_t"></h2>
+    <div id="myths" style="display:grid;gap:12px"></div>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_t"></h2>
+    <ol data-i="nx"></ol>
+  </section>
+
+  <section class="box vid" aria-label="Video">
+    <h2 data-i="v_t"></h2>
+    <video src="video.mp4" controls playsinline preload="metadata" poster=""></video>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email kết quả cho tôi</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Hỏi Ken</a>
+    <a class="btn" id="videoBtn" href="video.mp4" target="_blank" rel="noopener" data-i="b_video">Mở video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title"></h2>
+    <p data-i="f_sub"></p>
+    <div class="field"><label for="fname"><span data-i="f_name">Tên</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok"></div>
+    <div class="copyrow"><span data-i="f_or">Hoặc nhắn tin:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <p class="note" data-i="disc"></p>
+
+  <footer>
+    <span class="src"><span data-i="ft_src">Sources (checked 06/11/2026):</span> <a href="https://california.public.law/codes/civil_code_section_2079" target="_blank" rel="noopener">Civil Code §2079</a> · <a href="https://california.public.law/codes/civil_code_section_2079.3" target="_blank" rel="noopener">§2079.3 (limits)</a> · <a href="https://california.public.law/codes/civil_code_section_2079.4" target="_blank" rel="noopener">§2079.4 (2 years)</a> · <a href="https://california.public.law/codes/civil_code_section_2079.5" target="_blank" rel="noopener">§2079.5 (buyer care)</a> · <a href="https://www.car.org/-/media/CAR/Documents/Transaction-Center/PDF/SLIDE-DECKS---LEGAL-TOOLS/Slide-Deck---Agent-Visual-Inspection-and--Disclosure-Forms.pdf" target="_blank" rel="noopener">C.A.R. AVID slide deck</a> · <a href="/t70/">T70 inspection price estimates</a> · C.A.R. Form AVID (Revised 6/24)</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/t402/" data-i="all_forms">Mọi forms địa ốc</a> · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* shared strings (forms series) */
+const CI={
+ en:{lang:'Tiếng Việt',back:'← All tools',
+  fs_t:'Read this form, section by section',fs_l:'Tap a section. Each one shows what it says in plain words, a filled-in example and what to ask your agent.',
+  fs_disc:'Our own plain-English walkthrough, not the C.A.R. form itself. Get the real form from your agent or escrow.',
+  L_say:'What it says',L_ex:'Example (filled in)',L_q:'Ask your agent',L_link:'Copy link',L_copied:'Copied ✓',
+  sg_t:'Who signs, when, and where it goes',sg_who:'Who',sg_when:'When',sg_where:'Then it goes to',
+  my_t:'What people get wrong',nx_t:'Next steps',v_t:'Watch the 45-second video',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Open the video',
+  f_title:'Email this to yourself',f_sub:'Ken will reply and go over it with you. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, text Ken the number below.",f_or:'Or text:',f_copy:'Copy',
+  disc:'This is a plain-language explanation and estimate, not legal or tax advice. For your deal, ask a California real estate attorney, a CPA or the agency named on the form.',
+  ft_src:'Sources (checked 06/11/2026):',ft_upd:'Updated',ft_all:'All tools',
+  all_forms:'All real estate forms explained'},
+ vi:{lang:'English',back:'← Tất cả tool',
+  fs_t:'Đọc form này từng đoạn',fs_l:'Bấm vào từng đoạn. Mỗi đoạn có: form nói gì bằng lời dễ hiểu, ví dụ đã điền sẵn, và câu nên hỏi agent.',
+  fs_disc:'Đây là phần giải thích của mình, không phải tờ form C.A.R. Form thật thì xin agent hoặc escrow.',
+  L_say:'Form nói gì',L_ex:'Ví dụ (đã điền)',L_q:'Hỏi agent',L_link:'Copy link',L_copied:'Đã copy ✓',
+  sg_t:'Ai ký, khi nào, ký xong đi đâu',sg_who:'Ai',sg_when:'Khi nào',sg_where:'Ký xong đi đâu',
+  my_t:'Nhiều người hiểu sai',nx_t:'Bước tiếp theo',v_t:'Xem video 45 giây',
+  b_email:'Email kết quả cho tôi',b_sms:'Hỏi Ken',b_video:'Mở video',
+  f_title:'Gửi kết quả này vào email',f_sub:'Ken sẽ trả lời và coi giùm với bạn. Không spam.',f_name:'Tên',f_phone:'Số phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Email đã mở. Bấm Send là xong. Nếu không mở được, nhắn Ken số bên dưới.',f_or:'Hoặc nhắn tin:',f_copy:'Copy',
+  disc:'Đây là phần giải thích và ước tính cho dễ hiểu, không phải tư vấn luật hay thuế. Với deal của bạn, hỏi luật sư địa ốc California, CPA, hoặc cơ quan ghi trên form.',
+  ft_src:'Nguồn (kiểm ngày 06/11/2026):',ft_upd:'Cập nhật',ft_all:'Tất cả tool',
+  all_forms:'Mọi forms địa ốc'}
+};
+
+/* ===== shared page code (T5xx forms series) ===== */
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const fill=(s,o)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const S={};
+let last={};
+
+/* ===== RULES — sửa 1 chỗ ở đây (checked 06/11/2026) =====
+   Civil Code §2079(a): licensed broker/salesperson owes a prospective BUYER of residential real property of 1–4 units
+     (or a manufactured home) a reasonably competent and diligent VISUAL inspection of the property offered, and must
+     disclose facts materially affecting value or desirability that it would reveal. Applies to the broker with the seller
+     listing contract and the broker who cooperates with that broker. https://california.public.law/codes/civil_code_section_2079
+   §2079.3: not areas reasonably and normally inaccessible, not off-site, not public records/permits; condo/PUD/co-op = unit only.
+   §2079.4: lawsuit for breach must start within 2 years from possession = earliest of recording, close of escrow or occupancy.
+   §2079.5: buyer still has a duty of reasonable care.
+   AVID header (Revised 6/24): use when a TDS is required OR when the seller is exempt from the TDS.
+   PRACTICE (ESTIMATE): each agent in the deal (listing + buyer's) does their own walk-through and own AVID. KEN DUYỆT.
+   Inspection prices = same Bay Area ESTIMATE ranges as /t70/ (checked 10/2026).
+*/
+const R={SOL_YEARS:2};
+const CONCERNS=[
+ {id:'stain',cov:1,cost:[550,900],en:['Water stains, cracks or damage I can see','Visible in a normally accessible room. The agent should write it down.','Home inspector'],vi:['Vết nước, vết nứt, hư hỏng nhìn thấy được','Thấy được trong phòng đi vào bình thường. Agent phải ghi ra.','Home inspector']},
+ {id:'roof',cov:0,cost:[200,400],en:['Roof or attic','The agent will not climb onto the roof or into the attic.','Roof inspector'],vi:['Mái nhà hoặc attic','Agent không leo lên mái, không chui vô attic.','Thợ kiểm mái (roof inspector)']},
+ {id:'under',cov:0,cost:[550,900],en:['Under the house / foundation','The agent will not go beneath the house.','Home inspector, then a structural engineer if needed'],vi:['Dưới gầm nhà / móng','Agent không chui xuống gầm nhà.','Home inspector, cần thì gọi kỹ sư kết cấu']},
+ {id:'sys',cov:0,cost:[550,900],en:['Do the systems work? (electric, plumbing, heat, AC, pool)','The agent will not run appliances or systems to test them.','Home inspector (pool: pool inspector)'],vi:['Hệ thống có chạy không? (điện, nước, heater, AC, hồ bơi)','Agent không bật máy, không chạy thử hệ thống.','Home inspector (hồ bơi: thợ kiểm hồ bơi)']},
+ {id:'size',cov:0,cost:null,en:['Square footage, lot lines, easements','The agent will not measure or find boundary lines.','Licensed land surveyor; county records'],vi:['Diện tích, ranh giới đất, easement','Agent không đo, không xác định ranh đất.','Surveyor có license; hồ sơ county']},
+ {id:'env',cov:0,cost:[300,700],en:['Mold, asbestos, lead paint, radon','The agent will not decide if hazards exist. A visible stain still gets noted.','Mold / environmental tester'],vi:['Mold, asbestos, sơn chì, radon','Agent không xác định có chất độc hay không. Vết ố thấy được thì vẫn ghi.','Công ty test mold / môi trường']},
+ {id:'permit',cov:0,cost:null,en:['Permits, zoning, city records','By law the agent doesn\'t pull permits or check public records.','City permit office (see T92)'],vi:['Permit, zoning, hồ sơ city','Theo luật, agent không phải đi xin hồ sơ permit hay coi hồ sơ công.','Văn phòng permit của city (coi T92)']},
+ {id:'hoa',cov:0,cost:null,en:['Condo / HOA common areas','Only the unit for sale. Not the pool, roof or halls the HOA owns.','HOA documents and reserve study'],vi:['Khu chung của condo / HOA','Chỉ căn đang bán. Không gồm hồ bơi, mái, hành lang của HOA.','Giấy tờ HOA và reserve study']},
+ {id:'cost',cov:0,cost:null,en:['What caused it and what it costs to fix','The agent writes what is seen, but won\'t find the cause or price the repair.','Inspector + licensed contractor bids'],vi:['Nguyên nhân và tiền sửa','Agent ghi cái thấy, nhưng không tìm nguyên nhân, không báo giá sửa.','Inspector + báo giá thợ có license']}
+];
+const INPUTS=['concern','close'];
+/*CALC-START*/
+function avidNeeded(pt){ return pt==='res'; }
+function deadline(iso){ const [y,m,d]=iso.split('-').map(Number); const x=new Date(Date.UTC(y+R.SOL_YEARS,m-1,d)); if(x.getUTCMonth()!==m-1) x.setUTCDate(0); return x; }
+/*CALC-END*/
+const fdate=d=>lang==='vi'?String(d.getUTCDate()).padStart(2,'0')+'/'+String(d.getUTCMonth()+1).padStart(2,'0')+'/'+d.getUTCFullYear():d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'});
+function onLang(){ const s=$('concern'), v=s.value||'stain'; s.innerHTML=CONCERNS.map(c=>'<option value="'+c.id+'">'+esc(c[lang][0])+'</option>').join(''); s.value=v; }
+function calc(){
+  const d=I18N[lang], need=avidNeeded(S.pt), ex=S.tds==='yes', c=CONCERNS.find(x=>x.id===$('concern').value)||CONCERNS[0], t=c[lang];
+  $('big').textContent=need?d.big_yes:d.big_no; $('big').className='big2 '+(need?'ok':'bad');
+  $('why').textContent=need?(ex?d.why_ex:d.why_yes):d['why_'+S.pt];
+  $('whoA').textContent=need?d.who_n:'—'; $('whoS').textContent=need?d.who_s:d.who_none;
+  $('cN').textContent=t[0];
+  $('cA').textContent=c.cov?d.c_yes:d.c_no; $('cA').className='a '+(c.cov?'ok':'bad');
+  $('cS').textContent=t[1]+' '+fill(d.c_call,{w:t[2]})+(c.cost?' '+fill(d.c_cost,{lo:fmt(c.cost[0]),hi:fmt(c.cost[1])}):'');
+  const iso=$('close').value||'2026-12-15', dl=deadline(iso);
+  $('dl').textContent=need?fdate(dl):'—';
+  $('verdict').innerHTML=need?fill(d.v_yes,{d:fdate(dl)}):d.v_no;
+  last={pt:d['pt_'+S.pt],tds:ex?d.tds_yes:d.tds_no,c:t[0],cov:c.cov?d.c_yes:d.c_no,dl:need?fdate(dl):'—'};
+}
+const FORM=[
+ {en:{h:'Agent Visual Inspection Disclosure',p:'Page 1 of 3'},vi:{h:'Bản khai agent kiểm tra bằng mắt',p:'Trang 1/3'},items:[
+  {id:'avid-prop',no:'1',en:{n:'Property & who inspected',s:'City, county, address · units · brokerage',
+     say:"Names the home, its city and county. If it's a duplex to fourplex or has extra units, an AVID covers every unit (or only the units listed). Then the brokerage firm that did the inspection.",
+     ex:"City: San Jose · County: Santa Clara · 1234 Example Lane, San Jose, CA 95100 · single-family, no extra units · Inspection performed by: BRG Realty Corp.",
+     q:"Does this AVID cover the ADU in the back too?"},
+   vi:{n:'Căn nhà & ai kiểm tra',s:'City, county, địa chỉ · số căn · công ty môi giới',
+     say:"Ghi căn nhà, city và county. Nếu là duplex tới fourplex hay có thêm căn phụ, AVID phải làm cho mọi căn (hoặc chỉ các căn ghi ra). Sau đó ghi tên công ty môi giới đã đi kiểm tra.",
+     ex:"City: San Jose · County: Santa Clara · 1234 Example Lane, San Jose, CA 95100 · nhà 1 căn, không có căn phụ · Người kiểm tra: BRG Realty Corp.",
+     q:"AVID này có gồm luôn căn ADU phía sau không?"}},
+  {id:'avid-duty',no:'2',en:{n:"The agent's legal duty",s:'Civil Code §2079: look, then tell the buyer',
+     say:"California law says an agent must do a reasonably competent, diligent visual walk-through of the normally accessible areas, then tell the buyer about anything seen that affects value or desirability. It applies no matter whom the agent represents. Covers 1–4 unit homes, condos and mobile homes, plus lease-options and ground leases on them.",
+     ex:"Ken Lam (BRG Realty Corp, listing agent) walks every room of 1234 Example Lane on 10/05/2026 and writes down what he sees.",
+     q:"Did you and the other agent each do your own walk-through?"},
+   vi:{n:'Trách nhiệm của agent theo luật',s:'Civil Code §2079: nhìn kỹ, rồi nói cho người mua',
+     say:"Luật California bắt agent đi coi bằng mắt một cách cẩn thận, có năng lực, ở những chỗ đi vào bình thường được, rồi báo cho người mua mọi thứ thấy được có ảnh hưởng tới giá trị hay sự đáng mua. Agent đại diện bên nào cũng phải làm. Áp dụng cho nhà 1–4 căn, condo, mobile home, và cả thuê có quyền mua (lease-option), ground lease của các loại nhà đó.",
+     ex:"Ken Lam (BRG Realty Corp, agent bên bán) đi hết từng phòng của 1234 Example Lane ngày 05/10/2026 và ghi lại những gì thấy.",
+     q:"Anh/chị và agent bên kia mỗi người có tự đi coi riêng không?"}},
+  {id:'avid-notreq',no:'3',en:{n:"What the law doesn't require",s:'Hard-to-reach areas · off-site · public records · common areas',
+     say:"The agent doesn't have to check areas you can't normally get to, anything off the property, public records or permits, or the common areas of a condo or planned development.",
+     ex:"The neighbor's tree leaning over the fence and the city's planned road widening are off-site. They're not part of this AVID.",
+     q:"Who checks permits for the garage conversion?"},
+   vi:{n:'Những gì luật không bắt kiểm',s:'Chỗ khó vào · ngoài khu đất · hồ sơ công · khu chung',
+     say:"Agent không phải kiểm chỗ bình thường không vào được, những gì ngoài khu đất, hồ sơ công hay permit, hoặc khu chung của condo hay khu planned development.",
+     ex:"Cây nhà hàng xóm nghiêng qua hàng rào, hay city định nới đường: đều ở ngoài khu đất. Không thuộc tờ AVID này.",
+     q:"Ai kiểm permit cho cái garage đã sửa thành phòng?"}},
+  {id:'avid-limits',no:'4',en:{n:'Inspection limits',s:'Roof · interior · exterior · systems · size · hazards · off-site · analysis',
+     say:"A long list of what the agent won't do: climb on the roof or into the attic; move furniture, rugs or pictures, look up chimneys or in cabinets, open locked doors; go under the house, climb hillsides or look behind bushes and fences; run appliances or systems; measure square footage or find boundary lines; test for mold, asbestos, lead, radon or soil; guarantee views, zoning, schools or nearby projects; or say what caused a problem and what it costs to fix.",
+     ex:"Ken notes 'water stain on ceiling, front bedroom' but does not open the attic hatch to find the leak, and does not guess a repair price.",
+     q:"Since you didn't go in the attic, who should?"},
+   vi:{n:'Giới hạn khi kiểm tra',s:'Mái · trong nhà · ngoài nhà · hệ thống · diện tích · chất độc · ngoài khu đất · phân tích',
+     say:"Một danh sách dài những gì agent không làm: leo mái, chui attic; dời đồ đạc, thảm, tranh, nhìn lên ống khói, mở tủ, mở cửa khóa; chui gầm nhà, leo dốc, nhìn sau bụi cây, hàng rào; bật thử máy móc, hệ thống; đo diện tích, tìm ranh đất; test mold, asbestos, chì, radon, đất; bảo đảm view, zoning, trường học hay công trình gần đó; hay nói nguyên nhân và tiền sửa.",
+     ex:"Ken ghi 'vết nước trên trần, phòng ngủ phía trước' nhưng không mở nắp attic tìm chỗ dột, và không đoán tiền sửa.",
+     q:"Anh/chị không vào attic, vậy ai nên vào?"}},
+  {id:'avid-mean',no:'5',en:{n:'What this means to you',s:'Not a home inspection · buyer must protect themself',
+     say:"The agent's walk-through doesn't replace other inspections or the seller's own disclosures. The law says the buyer must use reasonable care too. The form tells the buyer to read the seller's disclosures, get inspections from other professionals, and go over their findings with them. Skipping that is acting against the broker's advice. Buyer initials each page.",
+     ex:"Anh Minh & Chị Lan initial page 1: MN / LN. They book a home inspection for 10/16/2026.",
+     q:"Which inspections do you recommend for a 1962 house?"},
+   vi:{n:'Điều này có nghĩa gì với bạn',s:'Không thay inspection · người mua phải tự lo cho mình',
+     say:"Lần đi coi của agent không thay được inspection khác, cũng không thay lời khai của seller. Luật nói người mua cũng phải cẩn thận hợp lý. Form dặn người mua: đọc disclosures của seller, thuê chuyên gia kiểm tra, và nói chuyện với họ về kết quả. Không làm là đi ngược lời khuyên của broker. Người mua ký tắt mỗi trang.",
+     ex:"Anh Minh & Chị Lan ký tắt trang 1: MN / LN. Hai anh chị đặt lịch home inspection ngày 16/10/2026.",
+     q:"Nhà xây 1962 thì anh/chị khuyên làm những inspection nào?"}}]},
+ {en:{h:'Room by room',p:'Page 2 of 3'},vi:{h:'Từng phòng',p:'Trang 2/3'},items:[
+  {id:'avid-rooms',no:'6',en:{n:'Entry, living, dining, kitchen, other rooms, halls',s:'One box per room (common areas excluded)',
+     say:"The agent writes what they saw in each room, based on a visual look at the normally accessible areas. For 2–4 units, the page names which unit it's for.",
+     ex:"Living Room: hardwood scratched near the slider; about 6-inch water stain on the ceiling by the front window. Kitchen: one cracked backsplash tile behind the stove. Hall: no issues observed.",
+     q:"Is the stain old or active? Was it ever repaired?"},
+   vi:{n:'Lối vào, phòng khách, phòng ăn, bếp, phòng khác, hành lang',s:'Mỗi phòng 1 ô (không gồm khu chung)',
+     say:"Agent ghi những gì thấy trong từng phòng, dựa trên việc nhìn những chỗ vào được bình thường. Nhà 2–4 căn thì ghi trang này cho căn số mấy.",
+     ex:"Living Room: sàn gỗ trầy gần cửa kéo; vết nước cỡ 6 inch trên trần gần cửa sổ trước. Kitchen: 1 viên gạch backsplash nứt sau bếp. Hall: không thấy gì.",
+     q:"Vết nước đó cũ hay đang dột? Đã sửa lần nào chưa?"}},
+  {id:'avid-bed',no:'7',en:{n:'Bedrooms & baths',s:'Numbered boxes, one per bedroom and bath',
+     say:"Each bedroom and bathroom gets its own lines. Same rule: only what's visible.",
+     ex:"Bedroom #2: window won't stay open. Bath #2: no exhaust fan; small dark spots on the caulk around the tub.",
+     q:"Should someone test those dark spots in Bath #2?"},
+   vi:{n:'Phòng ngủ & phòng tắm',s:'Có đánh số, mỗi phòng 1 ô',
+     say:"Mỗi phòng ngủ, phòng tắm có dòng riêng. Vẫn luật cũ: chỉ ghi cái thấy được.",
+     ex:"Bedroom #2: cửa sổ mở không giữ được. Bath #2: không có quạt hút; vài đốm đen trên keo quanh bồn tắm.",
+     q:"Mấy đốm đen ở Bath #2 có nên cho người test không?"}}]},
+ {en:{h:'Outside, sign-off & receipt',p:'Page 3 of 3'},vi:{h:'Bên ngoài, ký tên & xác nhận nhận',p:'Trang 3/3'},items:[
+  {id:'avid-out',no:'8',en:{n:'Other rooms, garage, exterior & yard',s:'Plus an addendum box for more structures',
+     say:"Extra 'Other' boxes, a checkbox for an addendum with more rooms or structures, then the garage or parking (common areas excluded) and the exterior and yard front, sides and back.",
+     ex:"Garage: about 4-ft crack in the slab; water heater strapped. Exterior: tree branches touching the back roof; left side fence leaning.",
+     q:"Should a roofer look at where those branches touch?"},
+   vi:{n:'Phòng khác, garage, bên ngoài & sân',s:'Có ô phụ lục nếu còn công trình khác',
+     say:"Thêm vài ô 'Other', một ô đánh dấu nếu có phụ lục cho phòng hay công trình khác, rồi tới garage hay chỗ đậu xe (không gồm khu chung) và mặt ngoài nhà, sân trước, hai bên, sau.",
+     ex:"Garage: sàn bê tông nứt dài khoảng 4 ft; máy nước nóng có strap. Exterior: nhánh cây chạm mái phía sau; hàng rào bên trái nghiêng.",
+     q:"Có nên cho thợ mái coi chỗ nhánh cây chạm không?"}},
+  {id:'avid-known',no:'9',en:{n:'Other observed or known conditions',s:'Things the agent saw or already knows',
+     say:"A catch-all for anything not covered above: things the agent noticed or already knows about the property.",
+     ex:"Seller said the garage took in a little water during the Jan 2023 storm. Strong pet odor in the family room carpet.",
+     q:"Is the 2023 water event also on the seller's TDS?"},
+   vi:{n:'Điều khác thấy được hoặc đã biết',s:'Những gì agent thấy hoặc đã biết',
+     say:"Ô gom hết những gì chưa ghi ở trên: điều agent để ý thấy, hay đã biết về căn nhà.",
+     ex:"Seller cho biết garage bị vô nước chút ít trong cơn bão tháng 1/2023. Mùi thú nuôi nặng ở thảm phòng family.",
+     q:"Vụ vô nước 2023 có ghi trong TDS của seller không?"}},
+  {id:'avid-signoff',no:'10',en:{n:'Inspection details & agent signature',s:'Firm · agent · date/time · weather · who was there',
+     say:"The firm, the agent who walked it, date and time, the weather and anyone else present. The agent signs. A reminder follows: agents aren't home inspectors or contractors, and nothing was tested.",
+     ex:"BRG Realty Corp · Ken Lam · 10/05/2026, 10:00 AM · sunny, dry · present: Bác Hùng Tran (seller). Signed: Ken Lam, 10/05/2026.",
+     q:"It was dry that day. Could a leak only show in the rain?"},
+   vi:{n:'Thông tin lần kiểm tra & chữ ký agent',s:'Công ty · agent · ngày giờ · thời tiết · ai có mặt',
+     say:"Tên công ty, agent đi coi, ngày giờ, thời tiết và người khác có mặt. Agent ký tên. Sau đó là lời nhắc: agent không phải home inspector hay nhà thầu, và không thử nghiệm gì hết.",
+     ex:"BRG Realty Corp · Ken Lam · 05/10/2026, 10:00 AM · nắng, khô · có mặt: Bác Hùng Tran (seller). Ký: Ken Lam, 05/10/2026.",
+     q:"Hôm đó trời khô. Có chỗ dột chỉ lộ ra khi mưa không?"}},
+  {id:'avid-ack',no:'11',en:{n:'Buyer, seller & other broker acknowledge',s:'Buyer signs · seller and other broker optional',
+     say:"Buyers sign that they read, understood and got a copy. The seller's initials and the other broker's signature are optional, just proof they received it.",
+     ex:"Buyer: Minh Nguyen, 10/14/2026 · Lan Nguyen, 10/14/2026. Seller: HT. Other broker (buyer's side) signs receipt.",
+     q:"Do I have the other agent's AVID too?"},
+   vi:{n:'Người mua, người bán & broker kia xác nhận',s:'Người mua ký · seller và broker kia không bắt buộc',
+     say:"Người mua ký là đã đọc, hiểu và nhận bản sao. Seller ký tắt và broker bên kia ký thì không bắt buộc, chỉ để chứng minh đã nhận.",
+     ex:"Buyer: Minh Nguyen, 14/10/2026 · Lan Nguyen, 14/10/2026. Seller: HT. Broker bên kia (bên mua) ký đã nhận.",
+     q:"Tôi đã có AVID của agent bên kia chưa?"}}]}
+];
+const I18N={
+ en:Object.assign({},CI.en,{
+  kick:'C.A.R. Form AVID · Revised 6/24',title:'Agent Visual Inspection Disclosure (AVID), explained',
+  sub:'What your agent saw when they walked the home, written down room by room, and what they did not check.',
+  eli_t:'In plain words',
+  eli:"<p>Before you buy, the agent has to walk through the house with open eyes and write down what they see. A stain on the ceiling. A crack in the garage floor. That paper is the AVID.</p><p>It's a look, not a test. No ladder, no attic, no turning on the heater.</p><p>Think of a friend who walks a used car lot with you. They'll point out the dent and the bald tire. They won't take the engine apart. You still need the mechanic: the home inspector.</p>",
+  tl_t:'Quick check: is an AVID needed, and what does it cover?',
+  l_pt:'Type of property',pt_res:'1–4 units: house, duplex–fourplex, condo, or mobile home',pt_big:'5+ units or commercial',pt_land:'Vacant land',
+  l_tds:'Is the seller exempt from the TDS?',tds_no:'No, the seller fills out a TDS (normal sale)',tds_yes:'Yes: probate, some trusts, foreclosure, etc.',
+  l_concern:'What are you worried about?',l_close:'Close of escrow date',l_close_s:'(or recording or move-in, whichever comes first)',
+  r_k:'AVID under Civil Code §2079',big_yes:'Required',big_no:'Not required by §2079',
+  why_yes:'Residential 1–4 units: every agent in the deal owes you a visual inspection.',
+  why_ex:'Even when the seller is exempt from the TDS, the AVID is still used. The form says so at the top.',
+  why_big:'§2079 covers 1–4 unit homes and mobile homes. A 5+ unit or commercial building is outside it, but agents still must disclose what they know.',
+  why_land:'Vacant land is outside §2079. Agents still must disclose known material facts.',
+  r_who:'Who does it',who_n:'Each agent',who_s:'Listing agent and buyer\'s agent: usually each does their own walk-through and AVID (common practice).',who_none:'No AVID duty here.',
+  c_yes:'Covered',c_no:'Not covered',c_call:'Call: {w}.',c_cost:'Usually {lo}–{hi} (ESTIMATE, Bay Area).',
+  r_dl:'Last day to sue an agent over the visual inspection',r_dl_s:'2 years from possession (Civil Code §2079.4). Earlier if you moved in or recorded first.',
+  v_yes:'Ask for the AVID with the disclosure package, read every room, then hire inspectors for what the agent couldn\'t see. Any claim about the walk-through must be filed by <b>{d}</b>.',
+  v_no:'No §2079 AVID here, but agents still must tell you material facts they know. Get your own inspections.',
+  nx:'<li>Ask for every AVID (one from each agent) with the disclosures: <a href="/t151/">T151 Request disclosures</a>.</li><li>Mark each stain, crack or smell on the AVID, then pick inspections in <a href="/t70/">T70 Which inspections</a>.</li><li>Read the seller\'s own TDS next to it: <a href="/t28/">T28 Seller disclosures explained</a>.</li><li>Every other form: <a href="/t402/">All real estate forms</a>.</li>',
+  sign:[['Each agent who walked it','After the walk-through, before or with the disclosure package','Buyer, through the disclosure package (often sent by the TC)'],['Buyer(s)','Initials each page, signs page 3 during the review period','Back to the agents; copy in the escrow file'],['Seller','Optional initials (receipt)','Listing file'],['Other broker','Optional signature (receipt)','Their file']],
+  myths:["<b>\"A clean AVID means a clean house.\"</b> A one-line AVID that says 'no issues' worries me more than three full pages. A careful agent writes a lot. Short usually means rushed.",
+   "<b>\"The agent looked, so I can skip the inspector.\"</b> The form says the opposite, in capital letters. Agents don't climb, don't test and don't price repairs. The AVID tells you where to send the inspector.",
+   "<b>\"Probate or trust sale, so no AVID.\"</b> Wrong. The seller can be exempt from the TDS. The agent's duty to look and tell doesn't go away, and the form is built for exactly that case."],
+  subj:'AVID question: {c}',body:'Hi Ken,\n\nAVID check (T544):\nProperty: {pt}\nTDS: {tds}\nWorried about: {c} ({cov})\nDeadline (2 years): {dl}\n\nName: {n}\nEmail: {e}\nPhone: {ph}',
+  sms:'Hi Ken, AVID question (T544): {c} — {cov}. Can you help?'}),
+ vi:Object.assign({},CI.vi,{
+  kick:'C.A.R. Form AVID · bản Revised 6/24',title:'Bản khai agent kiểm tra bằng mắt (AVID)',
+  sub:'Agent thấy gì khi đi coi căn nhà, ghi ra từng phòng, và những gì agent không kiểm.',
+  eli_t:'Nói cho dễ hiểu',
+  eli:'<p>Trước khi bạn mua, agent phải đi một vòng căn nhà, mở mắt thật kỹ, rồi ghi ra những gì thấy. Vết nước trên trần. Vết nứt dưới sàn garage. Tờ giấy đó là AVID.</p><p>Chỉ là nhìn, không phải thử. Không leo thang, không chui attic, không bật heater.</p><p>Giống đi mua xe cũ với một người bạn rành. Họ chỉ cho mình chỗ móp, bánh xe mòn. Họ không tháo máy ra coi. Mình vẫn cần thợ máy: đó là home inspector.</p>',
+  tl_t:'Kiểm tra nhanh: có cần AVID không, nó kiểm những gì?',
+  l_pt:'Loại nhà',pt_res:'1–4 căn: nhà, duplex tới fourplex, condo, hoặc mobile home',pt_big:'Từ 5 căn trở lên hoặc thương mại',pt_land:'Đất trống',
+  l_tds:'Seller có được miễn làm TDS không?',tds_no:'Không, seller có làm TDS (bán bình thường)',tds_yes:'Có: probate (di sản qua tòa), vài loại trust, foreclosure…',
+  l_concern:'Bạn đang lo chuyện gì?',l_close:'Ngày close escrow',l_close_s:'(hoặc ngày record hay ngày dọn vô, ngày nào tới trước)',
+  r_k:'AVID theo Civil Code §2079',big_yes:'Bắt buộc',big_no:'§2079 không bắt buộc',
+  why_yes:'Nhà ở 1–4 căn: agent nào trong deal cũng phải kiểm tra bằng mắt cho bạn.',
+  why_ex:'Dù seller được miễn TDS, AVID vẫn dùng như thường. Đầu tờ form ghi rõ vậy.',
+  why_big:'§2079 chỉ cho nhà 1–4 căn và mobile home. Chung cư từ 5 căn hay nhà thương mại nằm ngoài, nhưng agent vẫn phải nói những gì mình biết.',
+  why_land:'Đất trống nằm ngoài §2079. Agent vẫn phải nói những sự thật quan trọng mình biết.',
+  r_who:'Ai làm',who_n:'Mỗi agent',who_s:'Agent bên bán và agent bên mua: thường mỗi người tự đi coi và làm AVID riêng (cách làm phổ biến).',who_none:'Ở đây không có nghĩa vụ AVID.',
+  c_yes:'Có kiểm',c_no:'Không kiểm',c_call:'Gọi: {w}.',c_cost:'Thường {lo}–{hi} (ƯỚC TÍNH, Bay Area).',
+  r_dl:'Hạn chót kiện agent về phần kiểm tra bằng mắt',r_dl_s:'2 năm từ ngày nhận nhà (Civil Code §2079.4). Sớm hơn nếu đã dọn vô hay record trước.',
+  v_yes:'Xin AVID chung với bộ disclosures, đọc từng phòng, rồi thuê inspector cho những chỗ agent không thấy được. Muốn khiếu kiện về lần đi coi thì phải nộp trước <b>{d}</b>.',
+  v_no:'Không có AVID theo §2079, nhưng agent vẫn phải nói những sự thật quan trọng mình biết. Tự làm inspection.',
+  nx:'<li>Xin đủ AVID (mỗi agent một tờ) chung với disclosures: <a href="/t151/">T151 Xin disclosures</a>.</li><li>Đánh dấu từng vết nước, vết nứt, mùi lạ trên AVID, rồi chọn inspection ở <a href="/t70/">T70 Nên làm inspection gì</a>.</li><li>Đọc TDS của seller đặt kế bên: <a href="/t28/">T28 Disclosures người bán là gì</a>.</li><li>Các form khác: <a href="/t402/">Mọi forms địa ốc</a>.</li>',
+  sign:[['Mỗi agent đã đi coi','Sau khi đi coi, trước hoặc cùng lúc gửi bộ disclosures','Người mua, qua bộ disclosures (thường do TC gửi)'],['Người mua','Ký tắt mỗi trang, ký trang 3 trong thời gian xem xét','Gửi lại agent; bản sao vào hồ sơ escrow'],['Người bán','Ký tắt, không bắt buộc (đã nhận)','Hồ sơ bên bán'],['Broker bên kia','Ký, không bắt buộc (đã nhận)','Hồ sơ của họ']],
+  myths:['<b>"AVID trống trơn là nhà tốt."</b> Tờ AVID ghi đúng 1 dòng "không thấy gì" làm tôi lo hơn tờ ghi kín 3 trang. Agent kỹ thì ghi nhiều. Ghi ít thường là đi coi vội.',
+   '<b>"Agent coi rồi, khỏi thuê inspector."</b> Form ghi ngược lại, bằng chữ in hoa. Agent không leo, không thử, không báo giá sửa. AVID chỉ cho bạn biết nên đưa inspector tới chỗ nào.',
+   '<b>"Bán probate hay trust thì khỏi AVID."</b> Sai. Seller có thể được miễn TDS. Nghĩa vụ nhìn và nói của agent thì vẫn còn, và tờ form làm ra đúng cho trường hợp đó.'],
+  subj:'Hỏi về AVID: {c}',body:'Chào anh Ken,\n\nKiểm tra AVID (T544):\nLoại nhà: {pt}\nTDS: {tds}\nĐang lo: {c} ({cov})\nHạn chót (2 năm): {dl}\n\nTên: {n}\nEmail: {e}\nPhone: {ph}',
+  sms:'Chào anh Ken, em hỏi AVID (T544): {c} — {cov}. Anh giúp em với.'})
+};
+
+function buildForm(){
+  const d=I18N[lang], open=new Set([...document.querySelectorAll('details.li[open]')].map(x=>x.id));
+  let h='';
+  for(const p of FORM){
+    h+='<article class="pg"><div class="ph"><h2>'+esc(p[lang].h)+'</h2><span>'+esc(p[lang].p)+'</span></div>';
+    for(const it of p.items){ const e=it[lang];
+      h+='<details class="li" id="'+it.id+'"'+(open.has(it.id)?' open':'')+'><summary><span class="n"><i>'+esc(it.no)+'</i> <b>'+esc(e.n)+'</b><small>'+esc(e.s)+'</small></span><span class="a"></span></summary>'+
+        '<div class="ex"><p><span class="t">'+d.L_say+'</span>'+esc(e.say)+'</p>'+
+        '<p class="fill"><span class="t">'+d.L_ex+'</span>'+esc(e.ex)+'</p>'+
+        '<p class="ask"><span class="t">'+d.L_q+'</span>“'+esc(e.q)+'”</p>'+
+        '<span class="lk"><a href="#'+it.id+'">#'+it.id+'</a><button type="button" data-cp="'+it.id+'">'+d.L_link+'</button></span></div></details>';
+    }
+    h+='</article>';
+  }
+  $('formsim').innerHTML=h;
+  $('signT').innerHTML='<thead><tr><th>'+d.sg_who+'</th><th>'+d.sg_when+'</th><th>'+d.sg_where+'</th></tr></thead><tbody>'+
+    d.sign.map(r=>'<tr><td><b>'+r[0]+'</b></td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>').join('')+'</tbody>';
+  $('myths').innerHTML=d.myths.map(m=>'<p class="myth">'+m+'</p>').join('');
+}
+function setSeg(k,v){S[k]=v;document.querySelectorAll('.seg[data-k="'+k+'"] button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));}
+document.querySelectorAll('.seg[data-k]').forEach(g=>{
+  const k=g.dataset.k; const on=g.querySelector('button[aria-pressed="true"]')||g.querySelector('button'); S[k]=on.dataset.v;
+  g.addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; setSeg(k,b.dataset.v); run();});
+});
+function run(){ calc(); const d=I18N[lang]; $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last)); klSend(); }
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; $('klBack').textContent=d.back;
+  if(typeof onLang==='function') onLang();
+  buildForm(); run();
+}
+const EMBED=/[?&]embed=1/.test(location.search);
+let klSend=()=>{};
+if(EMBED){ document.documentElement.classList.add('embed'); let lastH=0;
+  klSend=()=>{ const w=document.querySelector('.wrap'); const h=Math.ceil(w.getBoundingClientRect().bottom+window.scrollY+40); if(Math.abs(h-lastH)<4) return; lastH=h; try{ parent.postMessage({klToolsHeight:h},'*'); }catch(e){} };
+  window.addEventListener('resize',()=>klSend()); new ResizeObserver(()=>klSend()).observe(document.body);
+  document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('a[href]'); if(!a) return; const h=a.getAttribute('href'); if(h.startsWith('#')||a.target==='_blank'||/^(mailto|sms|tel):/.test(h)) return; if(h.startsWith('/')) a.href='https://tools.kenlamrealty.com'+h; a.target='_top'; },true); }
+INPUTS.forEach(id=>{$(id).addEventListener('input',run);$(id).addEventListener('change',run);});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus(); klSend();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], o=Object.assign({},last,{n:$('fname').value.trim()||'—',e:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'});
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,o))+'&body='+encodeURIComponent(fill(d.body,o));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false; klSend();
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+$('formsim').addEventListener('click',async e=>{const b=e.target.closest('[data-cp]'); if(!b) return; e.preventDefault();
+  const u=location.origin+location.pathname+'#'+b.dataset.cp; try{await navigator.clipboard.writeText(u);}catch(x){} b.textContent=I18N[lang].L_copied; try{history.replaceState(null,'','#'+b.dataset.cp);}catch(x){} });
+$('formsim').addEventListener('toggle',()=>klSend(),true);
+function openHash(){ const h=decodeURIComponent(location.hash.slice(1)); if(!h) return; const el=document.getElementById(h); if(!el) return; if(el.tagName==='DETAILS') el.open=true; setTimeout(()=>el.scrollIntoView({block:'start'}),30); }
+window.addEventListener('hashchange',openHash);
+applyLang(); openHash();
+
+</script>
+</body>
+</html>
