@@ -324,7 +324,7 @@ footer .src a{word-break:break-word}
         <div class="line"><span class="n"><b data-i="r_ld">Most seller can keep if buyer defaults</b><small id="ldWhy"></small></span><span class="a" id="ld">$0</span></div>
         <div class="line"><span class="n"><b data-i="r_coe">Close of escrow</b><small id="coeWhy"></small></span><span class="a" id="coeD"></span></div>
       </div>
-      <div class="note" id="assume" data-i="assume">Dates use the form's default days, if your contract did not change them. Day 0 is the Acceptance date. If a deadline falls on Saturday or Sunday it moves to Monday (32I). Legal holidays are not subtracted here: check the calendar.</div>
+      <div class="note" id="assume" data-i="assume">Dates use the form's default days, if your contract did not change them. Day 0 is the Acceptance date. A deadline on Saturday, Sunday or a California legal holiday moves to the next business day (32I).</div>
     </div>
 
     <div class="dl" id="tl"></div>
@@ -405,6 +405,19 @@ const F={
   PRORATE_MONTH:30          // ¶20: prorations on a 30-day month
 };
 
+/* Ngày lễ California (copy y từ T437 CPA, Gov. Code § 6700; KEN DUYỆT). ¶32I(4): hạn rơi T7/CN/Legal Holiday dời sang ngày làm việc kế; ¶32J: deposit = business days. */
+function nthDow(y,m,dow,n){ const d=new Date(y,m,1); let c=0; while(true){ if(d.getDay()===dow){ c++; if(c===n) return new Date(d); } d.setDate(d.getDate()+1); } }
+function lastDow(y,m,dow){ const d=new Date(y,m+1,0); while(d.getDay()!==dow) d.setDate(d.getDate()-1); return d; }
+const HCACHE={};
+function holidays(y){ if(HCACHE[y]) return HCACHE[y];
+  const list=[new Date(y,0,1),nthDow(y,0,1,3),new Date(y,1,12),nthDow(y,1,1,3),new Date(y,2,31),lastDow(y,4,1),new Date(y,5,19),new Date(y,6,4),nthDow(y,8,1,1),nthDow(y,8,5,4),nthDow(y,9,1,2),new Date(y,10,11)];
+  const th=nthDow(y,10,4,4); list.push(th, addD(th,1), new Date(y,11,25));
+  const set=new Set(); list.forEach(d=>{ set.add(+d); if(d.getDay()===0) set.add(+addD(d,1)); });
+  return HCACHE[y]=set; }
+const isOff=d=>d.getDay()===0||d.getDay()===6||holidays(d.getFullYear()).has(+new Date(d.getFullYear(),d.getMonth(),d.getDate()));
+function perf(d){ let x=d, moved=false; while(isOff(x)){ x=addD(x,1); moved=true; } return [x,moved]; }   /* 32I(4) */
+function bizAdd(d,n){ let x=d, c=0; while(c<n){ x=addD(x,1); if(!isOff(x)) c++; } return x; }        /* 32J: deposit = business days */
+
 const PARAS=[
  {n:'¶1–2',vi:['Ai mua, căn nào, ai đại diện','Tên buyer, địa chỉ, APN, và xác nhận agent của mỗi bên.','Buyer ghi tên mình hoặc tên công ty, LLC, trust. Agent không phải là một bên của hợp đồng (¶1D). Đoạn 2 xác nhận ai là agent của ai, có dual agency hay không, và nhắc hai bên đã nhận form AD.'],
   en:['Who is buying, which property, who represents whom','Buyer name, address, APN, and each side’s agent.','The buyer can be a person, a company, an LLC or a trust. Agents are not parties to the contract (¶1D). Paragraph 2 confirms who represents whom, including dual agency, and that both sides received the AD form.']},
@@ -475,13 +488,13 @@ const I18N={
   l_price:'Giá mua',l_dep:'Tiền cọc ban đầu',l_units:'Số căn',l_occ:'Buyer sẽ ở một căn?',o_no:'Không, đầu tư',o_yes:'Có',
   l_3r:'Giấy tenant thêm, đánh dấu ở 3R',c_ie:'Sổ thu chi (12 tháng)',c_tec:'Tenant Estoppel Certificate (TEC)',
   r_dep:'Tiền cọc phải vào escrow',r_ld:'Seller giữ tối đa nếu buyer bỏ ngang',r_coe:'Ngày close escrow',
-  assume:'Ngày tính theo số ngày mặc định của form, <b>nếu hợp đồng không sửa số ngày</b>. Ngày 0 là ngày Acceptance. Hạn rơi thứ Bảy, Chủ Nhật thì dời qua thứ Hai (32I). Trang này chưa trừ ngày lễ: coi lịch lại.',
+  assume:'Ngày tính theo số ngày mặc định của form, <b>nếu hợp đồng không sửa số ngày</b>. Ngày 0 là ngày Acceptance. Hạn rơi thứ Bảy, Chủ Nhật hay ngày lễ California thì dời qua ngày làm việc kế (32I). Tiền cọc tính ngày làm việc, bỏ T7, CN và ngày lễ (32J).',
   dep_when:'Hạn: {d} · 3 ngày làm việc, bằng wire (3D(1), 5A)',dep_pct:'= {p}% giá mua (chỉ để tính)',
   ld_occ:'Buyer ở 1 căn: tối đa 3% giá = {cap}. Dư trả lại (¶36). Chỉ khi cả hai ký tắt ¶36.',ld_inv:'Mua đầu tư: seller giữ tiền cọc đã đóng (¶36). Chỉ khi cả hai ký tắt ¶36.',
-  coe_why:'{n} ngày sau Acceptance (số anh chị nhập)',coe_shift:' · dời khỏi cuối tuần',
+  coe_why:'{n} ngày sau Acceptance (số anh chị nhập)',coe_shift:' · dời khỏi cuối tuần/ngày lễ',
   day:'Ngày {n}',dep_tag:'3 ngày làm việc',d0:'Ngày 0',left_in:'còn {n} ngày',left_today:'hôm nay',left_ago:'đã qua {n} ngày',
   t_acc:'Acceptance',p_acc:'Ngày hợp đồng có hiệu lực. Mọi hạn chót đếm từ đây.',
-  t_dep:'Tiền cọc vào escrow',p_dep:'{m} wire thẳng cho escrow. 3 ngày làm việc, không tính T7, CN (3D(1)).',
+  t_dep:'Tiền cọc vào escrow',p_dep:'{m} wire thẳng cho escrow. 3 ngày làm việc, không tính T7, CN, ngày lễ (3D(1), 32J).',
   t_d3:'Giấy chứng minh, giấy ủy quyền',p_d3:'Nếu chưa kèm offer: chứng minh tiền và thư loan (3H). Ký thay LLC/trust: giấy ủy quyền (31). Copy hợp đồng cho escrow (22C).',
   t_d7:'Seller giao giấy tờ',p_d7:'Disclosures, mọi hợp đồng thuê, bảng tiền thuê và tiền cọc tenant, ai nợ tiền thuê (12A), danh sách đồ đạc (9B(8)), prelim (16A). Báo khói, CO, bình nước nóng (3N(4)).',
   p_d7_ie:' Sổ thu chi 12 tháng (12B).',p_d7_tec:' Estoppel gửi tenant ký; ký không kịp thì giao bản chưa ký (12C).',
@@ -507,13 +520,13 @@ const I18N={
   l_price:'Purchase price',l_dep:'Initial deposit',l_units:'Number of units',l_occ:'Buyer will live in one unit?',o_no:'No, investment',o_yes:'Yes',
   l_3r:'Extra tenant papers checked in 3R',c_ie:'Income &amp; expense statements (12 months)',c_tec:'Tenant Estoppel Certificates (TEC)',
   r_dep:'Initial deposit due to escrow',r_ld:'Most the seller can keep if buyer defaults',r_coe:'Close of escrow',
-  assume:'Dates use the form’s default days, <b>if your contract did not change them</b>. Day 0 is the Acceptance date. A deadline on Saturday or Sunday moves to Monday (32I). Legal holidays are not subtracted here: check the calendar.',
+  assume:'Dates use the form’s default days, <b>if your contract did not change them</b>. Day 0 is the Acceptance date. A deadline on Saturday, Sunday or a California legal holiday moves to the next business day (32I). The deposit counts business days, skipping weekends and holidays (32J).',
   dep_when:'Due: {d} · 3 business days, by wire (3D(1), 5A)',dep_pct:'= {p}% of price (math only)',
   ld_occ:'Buyer lives in a unit: capped at 3% of price = {cap}. Excess returned (¶36). Only if both initialed ¶36.',ld_inv:'Investment purchase: seller keeps the deposit actually paid (¶36). Only if both initialed ¶36.',
-  coe_why:'{n} days after Acceptance (your number)',coe_shift:' · moved off the weekend',
+  coe_why:'{n} days after Acceptance (your number)',coe_shift:' · moved off a weekend/holiday',
   day:'Day {n}',dep_tag:'3 business days',d0:'Day 0',left_in:'in {n} days',left_today:'today',left_ago:'{n} days ago',
   t_acc:'Acceptance',p_acc:'The contract takes effect. Every deadline counts from here.',
-  t_dep:'Deposit to escrow',p_dep:'{m} wired directly to escrow. 3 business days, weekends not counted (3D(1)).',
+  t_dep:'Deposit to escrow',p_dep:'{m} wired directly to escrow. 3 business days, weekends and holidays not counted (3D(1), 32J).',
   t_d3:'Proof of funds, authority papers',p_d3:'If not attached to the offer: proof of funds and loan letter (3H). Signing for an LLC or trust: proof of authority (31). Copy of contract to escrow (22C).',
   t_d7:'Seller delivers documents',p_d7:'Disclosures, all leases, rent statement with tenant deposits, delinquent rents (12A), personal property inventory (9B(8)), prelim (16A). Smoke, CO alarms, water heater bracing (3N(4)).',
   p_d7_ie:' Income and expense statements, 12 months (12B).',p_d7_tec:' Estoppels sent to tenants; if not signed in time, the unsigned ones are delivered (12C).',
@@ -546,11 +559,11 @@ function initTool(){
 function ripaCalc(accISO,coeDays,price,dep,occYes){
   const a=parseD(accISO); if(!a) return null;
   const r={acc:a};
-  r.dep=addBiz(a,F.DEP_BIZ_DAYS);
-  r.d3=wkShift(addD(a,F.VERIFY_DAYS));
-  r.d7=wkShift(addD(a,F.SELLER_DOCS_DAYS));
-  r.d17=wkShift(addD(a,F.CONT_DAYS));
-  r.coeRaw=addD(a,coeDays); r.coe=wkShift(r.coeRaw);
+  r.dep=bizAdd(a,F.DEP_BIZ_DAYS);
+  r.d3=perf(addD(a,F.VERIFY_DAYS))[0];
+  r.d7=perf(addD(a,F.SELLER_DOCS_DAYS))[0];
+  r.d17=perf(addD(a,F.CONT_DAYS))[0];
+  r.coeRaw=addD(a,coeDays); r.coe=perf(r.coeRaw)[0];
   r.fv=addD(r.coe,-F.FINAL_VERIFY_BEFORE);
   r.pct=price>0?dep/price*100:0;
   r.ld=occYes?Math.min(dep,price*F.LD_OCC_CAP):dep;
