@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SXA Explained · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="C.A.R. Seller's Intent to Exchange Addendum (SXA, Reviewed 6/25) explained in plain English and Vietnamese: what the buyer and seller agree to in a 1031 exchange, plus a 45/180-day calculator.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t500/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="SXA: Seller's Intent to Exchange, explained · Ken Lam Tools">
+<meta property="og:description" content="Pick buyer or seller and your closing date. See what the 1031 addendum means for you and your 45/180-day dates.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t500/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px;min-width:0}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.facts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.facts>div{border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.facts .k{font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.facts .v{font-size:14px;margin-top:2px}
+@media (max-width:380px){.facts{grid-template-columns:1fr}}
+details.sec{border-top:1px solid var(--line);padding:10px 0}
+details.sec:last-child{border-bottom:1px solid var(--line)}
+details.sec summary{cursor:pointer;font-weight:500;font-size:15px;list-style:none;display:flex;gap:10px;align-items:baseline}
+details.sec summary::-webkit-details-marker{display:none}
+details.sec summary .n{color:var(--brass);font-variant-numeric:tabular-nums;min-width:2.6em;font-size:13px}
+details.sec summary::after{content:'+';margin-left:auto;color:var(--muted)}
+details.sec[open] summary::after{content:'–'}
+details.sec p{margin:8px 0 0;font-size:15px}
+details.sec p.ex{font-size:14px;color:var(--muted);background:var(--brass-soft);border-radius:8px;padding:8px 10px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap}
+.toolbar button{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.ctl input[type=date]{font-size:17px}
+.chk{display:flex;gap:10px;align-items:center;font-size:14px;cursor:pointer}
+.chk input{width:18px;height:18px;accent-color:var(--brass)}
+.dl{display:grid;gap:0;border-top:1px solid var(--line)}
+.dl .r{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.dl .r .t b{font-weight:500}
+.dl .r .t small{display:block;font-size:12px;color:var(--muted)}
+.dl .r .d{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap;text-align:right}
+.dl .r .d small{display:block;font-weight:400;font-size:12px;color:var(--muted)}
+.dl .r.key .d{color:var(--brass)}
+.tag{display:inline-block;font-size:11px;border:1px solid var(--line);border-radius:999px;padding:0 7px;margin-left:6px;color:var(--muted);font-weight:400;vertical-align:1px}
+.todo{margin:0;padding-left:20px;display:grid;gap:6px;font-size:15px}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a{color:var(--brass)}
+.qz{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+.qz:first-of-type{border-top:0;padding-top:0}
+.qz p{margin:0;font-weight:500;font-size:15px}
+.qz .opts{display:grid;gap:6px}
+.qz button{border:1px solid var(--line);background:var(--panel);color:var(--fg);font:inherit;font-size:14px;text-align:left;padding:10px 12px;border-radius:10px;cursor:pointer}
+.qz button.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.qz button.wrong{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
+.qz .fb{font-size:14px;color:var(--muted);margin:0}
+video.guide{width:100%;max-width:360px;aspect-ratio:9/16;border-radius:12px;background:#000;justify-self:center}
+.hol{font-size:12px;color:var(--muted)}
+.law{margin:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Forms · T500</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">SXA: the seller wants to do a 1031 exchange</h1>
+    <p class="sub" data-i="sub">A one-page add-on to the purchase contract. The seller says "I plan to roll this sale into another property to defer tax," and the buyer agrees to help, at no cost and no risk.</p>
+  </header>
+
+  <section class="panel" aria-label="Quick facts">
+    <div class="facts">
+      <div><div class="k" data-i="f1k">Who gives it</div><div class="v" data-i="f1v">The seller's side, usually with a counter offer</div></div>
+      <div><div class="k" data-i="f2k">Who signs</div><div class="v" data-i="f2v">Seller and buyer</div></div>
+      <div><div class="k" data-i="f3k">When you see it</div><div class="v" data-i="f3v">Selling an investment or rental property</div></div>
+      <div><div class="k" data-i="f4k">Required?</div><div class="v" data-i="f4v">No. Only if the seller wants a 1031 exchange</div></div>
+      <div><div class="k" data-i="f5k">Pages</div><div class="v" data-i="f5v">1 page, 8 short paragraphs</div></div>
+      <div><div class="k" data-i="f6k">Version</div><div class="v" data-i="f6v">SXA Reviewed 6/25 (current)</div></div>
+    </div>
+    <p class="hint" data-i="ver">Version check: SXA was not on C.A.R.'s December 2025 or June 2026 lists of revised forms. "Reviewed 6/25" is still the current version. Its twin for buyers is the BXA.</p>
+  </section>
+
+  <section class="panel" aria-label="What it means for you">
+    <h2 data-i="c_title">What this form means for you</h2>
+    <div class="seg" role="group" id="roleSeg">
+      <button type="button" data-v="s" aria-pressed="true" data-i="r_s">I'm the seller</button>
+      <button type="button" data-v="b" aria-pressed="false" data-i="r_b">I'm the buyer</button>
+    </div>
+    <div class="field"><label for="coe" data-i="l_coe">Closing date of this sale (close of escrow)</label><div class="ctl"><input id="coe" type="date"></div></div>
+    <div class="field"><span class="fl" data-i="l_opt">Paragraph 4: if the seller can't line up the next property in time…</span>
+      <div class="ctl"><select id="opt">
+        <option value="A" data-i="o_a">A. Close anyway, no extra time (default)</option>
+        <option value="B" data-i="o_b">B. Push closing back up to ___ days</option>
+        <option value="C" data-i="o_c">C. Cancel, buyer gets deposit back</option>
+        <option value="D" data-i="o_d">D. Other (written in)</option>
+      </select></div></div>
+    <div class="field" id="extWrap"><label for="ext" data-i="l_ext">Maximum extension written in 4B</label><div class="ctl"><input id="ext" type="number" inputmode="numeric" min="1" max="180" value="15"><span class="post" data-i="days">days</span></div></div>
+    <label class="chk"><input type="checkbox" id="found"> <span data-i="k_found">The replacement property is already named in paragraph 2</span></label>
+    <label class="chk"><input type="checkbox" id="oos"> <span data-i="k_oos">Replacement property is outside California</span></label>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total"><div class="k" id="vLabel"></div><div class="v" id="vHead" style="font-size:34px;line-height:1.15">—</div></div>
+    <p class="law" id="vText" style="margin:0;font-size:15px"></p>
+    <div class="dl" id="dl"></div>
+    <div class="note" id="vNote"></div>
+  </section>
+
+  <section class="panel steps">
+    <h2 id="todoH">—</h2>
+    <ol class="todo" id="todo"></ol>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="s_title">What the form says, paragraph by paragraph</h2>
+    <p class="hint" data-i="s_hint">Plain-language summary in the form's order. Not the form's wording. Read the real form before you sign.</p>
+    <div class="toolbar"><button type="button" id="openAll" data-i="open_all">Open all</button><button type="button" id="closeAll" data-i="close_all">Close all</button></div>
+    <div id="secs"></div>
+  </section>
+
+  <section class="panel" aria-label="Quiz">
+    <h2 data-i="q_title">Did you get it? 3 quick questions</h2>
+    <div id="quiz"></div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="m_title">Many people get this wrong</h2>
+    <div id="myths" style="display:grid;gap:12px"></div>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol id="nsList"></ol>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="v_title">45-second video</h2>
+    <video class="guide" src="guide.mp4" controls playsinline preload="metadata" aria-label="SXA video guide"></video>
+    <a class="btn" href="/t500/guide.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 45-sec video</a>
+  </section>
+
+  <section class="actions">
+    <a class="btn primary" id="emailBtn" href="mailto:ken@kenlamrealty.com" data-i="b_email">Email Ken my result</a>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Text Ken a question</a>
+    <a class="btn" href="/t402/" data-i="b_lib">← Forms library</a>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_src">Sources:</span>
+      C.A.R. Form SXA, Seller's Intent to Exchange Addendum, Reviewed 6/25 ·
+      <a href="https://www.irs.gov/instructions/i8824" target="_blank" rel="noopener">IRS Form 8824 instructions (45/180 days)</a> ·
+      <a href="https://www.ftb.ca.gov/forms/2025/2025-3840-instructions.html" target="_blank" rel="noopener">FTB 3840 instructions</a> ·
+      <a href="https://cdaronline.org/carformsrelease/" target="_blank" rel="noopener">Dec 2025 C.A.R. release list</a> ·
+      <a href="https://cdaronline.org/?p=13911" target="_blank" rel="noopener">June 2026 release list</a>
+      <span data-i="ft_chk">(checked 06/11/2026)</span></span>
+    <span data-i="ft_est">General information, not legal or tax advice. A 1031 exchange has strict rules; work with a qualified intermediary and a CPA or tax attorney before you close. Dates shown are estimates.</span>
+    <span class="who">Ken Lam · BRG Realty Corp · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/t402/" data-i="ft_lib">Forms library</a> · <a href="/cong-cu/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Rules — edit here (checked 06/11/2026) =====
+   SXA Reviewed 6/25, para 1–8 (C.A.R.). Not in Dec 2025 or June 2026 revised-forms lists (cdaronline.org).
+   IRS Form 8824 instructions: replacement property identified within 45 days after transfer; received within
+   180 days OR by due date of tax return (including extensions), whichever earlier; since 2018 real property only.
+   Count: day after transfer = day 1 (Treas. Reg. 1.1031(k)-1(b)); no weekend/holiday rollover (ESTIMATE wording, KEN DUYỆT).
+   Return due date assumed April 15 of next year for calendar-year individual filers (ESTIMATE; moves if weekend/holiday).
+   FTB 3840: CA property exchanged for out-of-state property -> file FTB 3840 that year and every later year until gain recognized. */
+const RULE={identify:45, acquire:180, taxDueMonth:3, taxDueDay:15};
+
+const SEC=[
+ {n:'Top',en:['Which deal it attaches to','Names the purchase agreement (or other contract), its date, the property, the buyer and the seller. Everything else in the main contract stays the same.',''],
+  vi:['Gắn vào hợp đồng nào','Ghi hợp đồng mua bán (hoặc hợp đồng khác), ngày ký, căn nhà, người mua và người bán. Mọi điều khác trong hợp đồng chính giữ nguyên.','']},
+ {n:'1',en:['Seller\'s intent to exchange','The seller plans to use this sale as part of a like-kind exchange under Internal Revenue Code §1031. "Intent" is the key word: it says what the seller plans, not that the exchange is approved or will work.','Like trading in a car: you sell one investment property and roll the money into the next one, so the tax waits.'],
+  vi:['Người bán muốn đổi nhà','Người bán dự định dùng vụ bán này để đổi sang bất động sản cùng loại theo điều 1031 của luật thuế liên bang. Chữ quan trọng là "dự định": form nói người bán muốn làm, không có nghĩa sở thuế đã duyệt hay chắc chắn thành.','Giống đổi xe cũ lấy xe mới: bán một căn đầu tư, dồn tiền qua căn kế, tiền thuế được hoãn lại.']},
+ {n:'2',en:['The other property','Either the replacement property is described here, or a box says the seller will find and pick it later and do what it takes to sign a contract for it.',''],
+  vi:['Căn nhà sẽ mua','Hoặc ghi rõ căn sẽ mua ở đây, hoặc đánh dấu ô: người bán sẽ tự tìm, tự chọn sau, và lo ký hợp đồng mua căn đó.','']},
+ {n:'3',en:['Buyer cooperates','A: the buyer never has to take title to the seller\'s next property, even for a moment, unless agreed in writing. B: the buyer signs reasonable extra papers the seller asks for, at no cost to the buyer, as long as the rest of the contract is being met.','In practice the buyer signs a short form agreeing that the seller\'s rights are assigned to a qualified intermediary. Five minutes, no money.'],
+  vi:['Người mua hợp tác','A: người mua không bao giờ phải đứng tên căn kế của người bán, dù chỉ một lúc, trừ khi đồng ý bằng giấy. B: người mua ký thêm giấy tờ hợp lý người bán xin, không tốn đồng nào, miễn các điều khác của hợp đồng vẫn đúng.','Thực tế người mua ký một tờ ngắn đồng ý chuyển quyền của người bán qua công ty trung gian (QI). Năm phút, không tốn tiền.']},
+ {n:'4',en:['If the exchange falls apart','If, through no fault of the seller, the next property isn\'t found, picked, under contract or bought by closing: A (no checkbox, so the default) the sale closes on time anyway; or, if checked, B closing is extended up to a number of days written in; C the deal is canceled and the buyer gets the deposit back; D something else written in.','Unless B, C or D is checked, the buyer\'s closing date does not move because of the exchange.'],
+  vi:['Nếu đổi nhà không thành','Nếu không phải lỗi người bán mà tới ngày close vẫn chưa tìm, chưa chọn, chưa ký hay chưa mua được căn kế: A (không có ô, nên là mặc định) vẫn close đúng hạn; hoặc nếu đánh dấu, B dời close tối đa số ngày ghi vào; C hủy deal, trả cọc cho người mua; D cách khác ghi vào.','Không đánh dấu B, C hay D thì ngày close của người mua không bị dời vì chuyện đổi nhà.']},
+ {n:'5',en:['Seller covers the risk','The seller protects the buyer and the agents from any liability and extra attorney, accountant or other costs connected with the exchange.','If the exchange causes an extra escrow fee or a legal bill, that is the seller\'s to pay.'],
+  vi:['Người bán chịu rủi ro','Người bán bảo vệ người mua và các agent khỏi mọi trách nhiệm, tiền luật sư, tiền kế toán hay chi phí khác liên quan tới việc đổi nhà.','Đổi nhà làm phát sinh phí escrow hay tiền luật sư? Người bán trả.']},
+ {n:'6',en:['Additional terms','Blank lines for anything else the two sides agree to.',''],
+  vi:['Điều khoản thêm','Dòng trống để ghi thêm điều hai bên thỏa thuận.','']},
+ {n:'7',en:['Tax and legal warning','Finding and naming the next property is the exchanging party\'s job; signing this addendum does not do it. For a delayed exchange, federal law requires the next property to be identified within 45 days after the old one transfers, and bought generally within 180 days, which can be shorter in some cases. How the exchange is set up has big tax and legal effects. See a California real estate attorney or tax advisor.','Close Jan 10? Day 45 is Feb 24. Day 180 is July 9, unless your tax return is due first.'],
+  vi:['Cảnh báo thuế và luật','Tìm và chỉ định căn kế là việc của người đổi nhà; ký phụ lục này không tự làm chuyện đó. Đổi kiểu không cùng lúc thì luật liên bang bắt phải chỉ định căn kế trong 45 ngày sau khi căn cũ sang tên, và thường phải mua xong trong 180 ngày, có khi ngắn hơn. Cách sắp xếp vụ đổi có hậu quả lớn về thuế và luật. Hỏi luật sư địa ốc California hoặc người tư vấn thuế.','Close ngày 10/1? Ngày 45 là 24/2. Ngày 180 là 9/7, trừ khi hạn khai thuế tới trước.']},
+ {n:'8',en:['Agents give no tax advice','Both sides agree no agent told them whether the properties qualify for an exchange. Get that answer from an attorney or CPA.',''],
+  vi:['Agent không tư vấn thuế','Hai bên xác nhận không agent nào nói căn nhà có đủ điều kiện đổi 1031 hay không. Câu đó phải hỏi luật sư hoặc CPA.','']},
+ {n:'Sign',en:['Signatures','Seller and buyer each sign and date, confirming they got a copy and agree.',''],
+  vi:['Chữ ký','Người bán và người mua ký, ghi ngày, xác nhận đã nhận bản sao và đồng ý.','']}
+];
+const QUIZ=[
+ {en:['Nothing is checked in paragraph 4 and the seller can\'t find a replacement in time. What happens?',['Closing is pushed back 30 days','The sale closes on time anyway','The deal is canceled'],1,'Option A has no checkbox. It is the default: close without extra time.'],
+  vi:['Đoạn 4 không đánh dấu gì, người bán tìm không kịp căn kế. Chuyện gì xảy ra?',['Close dời 30 ngày','Vẫn close đúng hạn','Hủy deal'],1,'Mục A không có ô đánh dấu. Đó là mặc định: close, không thêm ngày.']},
+ {en:['As the buyer, do you have to put the seller\'s next property in your name for a while?',['Yes, briefly','Only if the seller pays you','No, not unless you agree in writing'],2,'Paragraph 3A protects the buyer from taking title to the other property.'],
+  vi:['Là người mua, mình có phải đứng tên căn kế của người bán một thời gian không?',['Có, một chút','Chỉ khi người bán trả tiền','Không, trừ khi mình đồng ý bằng giấy'],2,'Đoạn 3A bảo vệ người mua khỏi phải đứng tên căn kia.']},
+ {en:['The sale closes Jan 10, 2027. When is day 45 to identify the replacement?',['Feb 24, 2027','Feb 25, 2027','April 15, 2027'],0,'Count 45 calendar days after the transfer: Feb 24. The IRS clock does not stop for weekends, and tax day is a different rule.'],
+  vi:['Close ngày 10/1/2027. Ngày thứ 45 để chỉ định căn kế là ngày nào?',['24/2/2027','25/2/2027','15/4/2027'],0,'Đếm 45 ngày lịch sau ngày sang tên: 24/2. Đồng hồ IRS không ngừng vì cuối tuần, còn ngày khai thuế là luật khác.']}
+];
+const MYTH={
+ en:['<b>"The SXA makes my sale a 1031 exchange."</b> No. It only tells the buyer what you plan and gets their cooperation. The exchange itself is set up with a qualified intermediary before you close.',
+     '<b>"I can take the money and buy the next place later."</b> If the sale money touches your hands, the exchange is usually blown. It must go to the intermediary.',
+     '<b>"Buyer, this costs you money or risk."</b> It shouldn\'t. The buyer pays nothing for the extra papers and doesn\'t take title to anything else; the seller covers exchange costs.',
+     '<b>"My home of 20 years qualifies."</b> A 1031 is for property held for investment or business. Your own home usually uses a different tax break.'],
+ vi:['<b>"Ký SXA là vụ bán thành 1031 rồi."</b> Không. Nó chỉ báo cho người mua biết mình định làm và xin họ hợp tác. Việc đổi phải lập với công ty trung gian (QI) trước khi close.',
+     '<b>"Cầm tiền về rồi từ từ mua căn khác."</b> Tiền bán mà về tay mình là thường hỏng 1031. Tiền phải nằm ở công ty trung gian.',
+     '<b>"Người mua sẽ tốn tiền hoặc gánh rủi ro."</b> Không nên vậy. Người mua ký giấy không tốn đồng nào, không phải đứng tên căn nào khác; chi phí đổi nhà người bán chịu.',
+     '<b>"Nhà mình ở 20 năm cũng đổi 1031 được."</b> 1031 dành cho nhà giữ để đầu tư hay kinh doanh. Nhà mình ở thường dùng loại miễn thuế khác.']
+};
+const NS={
+ en:['Seller: call a qualified intermediary and a CPA before you sign the SXA, not after.','Decide paragraph 4 on purpose. Default A means the buyer won\'t wait.','Buyer: read paragraph 4. If B or C is checked, your closing date or your deal can change.','Write the 45-day and 180-day dates on your calendar the day escrow closes.'],
+ vi:['Người bán: gọi công ty trung gian (QI) và CPA trước khi ký SXA, đừng đợi sau.','Chọn đoạn 4 cho có chủ ý. Mặc định A nghĩa là người mua không chờ.','Người mua: đọc đoạn 4. Có đánh dấu B hay C thì ngày close hoặc cả deal có thể đổi.','Ngày close xong là ghi ngay ngày 45 và ngày 180 lên lịch.']
+};
+const I18N={
+ en:{title:'SXA: the seller wants to do a 1031 exchange',sub:'A one-page add-on to the purchase contract. The seller says "I plan to roll this sale into another property to defer tax," and the buyer agrees to help, at no cost and no risk.',
+  f1k:'Who gives it',f1v:"The seller's side, usually with a counter offer",f2k:'Who signs',f2v:'Seller and buyer',f3k:'When you see it',f3v:'Selling an investment or rental property',f4k:'Required?',f4v:'No. Only if the seller wants a 1031 exchange',f5k:'Pages',f5v:'1 page, 8 short paragraphs',f6k:'Version',f6v:'SXA Reviewed 6/25 (current)',
+  ver:'Version check: SXA was not on C.A.R.\'s December 2025 or June 2026 lists of revised forms. "Reviewed 6/25" is still the current version. Its twin for buyers is the BXA.',
+  c_title:'What this form means for you',r_s:"I'm the seller",r_b:"I'm the buyer",l_coe:'Closing date of this sale (close of escrow)',l_opt:"Paragraph 4: if the seller can't line up the next property in time…",
+  o_a:'A. Close anyway, no extra time (default)',o_b:'B. Push closing back up to ___ days',o_c:'C. Cancel, buyer gets deposit back',o_d:'D. Other (written in)',l_ext:'Maximum extension written in 4B',days:'days',
+  k_found:'The replacement property is already named in paragraph 2',k_oos:'Replacement property is outside California',
+  s_title:'What the form says, paragraph by paragraph',s_hint:"Plain-language summary in the form's order. Not the form's wording. Read the real form before you sign.",open_all:'Open all',close_all:'Close all',
+  q_title:'Did you get it? 3 quick questions',q_ok:'Right.',q_no:'Not quite.',m_title:'Many people get this wrong',ns_t:'Next steps',v_title:'45-second video',b_video:'Watch 45-sec video',
+  b_email:'Email Ken my result',b_sms:'Text Ken a question',b_lib:'← Forms library',ft_src:'Sources:',ft_chk:'(checked 06/11/2026)',
+  ft_est:'General information, not legal or tax advice. A 1031 exchange has strict rules; work with a qualified intermediary and a CPA or tax attorney before you close. Dates shown are estimates.',
+  ft_upd:'Updated',ft_lib:'Forms library',ft_all:'All tools',lang:'Tiếng Việt',
+  lab_s:'For you, the seller',lab_b:'For you, the buyer',
+  head:{A:{s:'You close on time, exchange or not',b:'Your closing date stays put'},B:{s:'You can delay closing up to {x} days',b:'Closing may slide up to {x} days'},C:{s:'No replacement = no sale',b:'The deal can be canceled; you get your deposit back'},D:{s:'Read the custom term in 4D',b:'Read the custom term in 4D'}},
+  txt:{A:{s:'Option A is the default. If your replacement isn\'t ready, this sale still closes and your exchange may fail. Line up the next property early.',b:'The exchange is the seller\'s problem. You sign a few papers at no cost and close on the contract date.'},
+       B:{s:'You get breathing room, but only up to {x} days past the contract closing date, and only if the delay is not your fault. Your 45/180-day clock starts when this sale actually closes.',b:'If the seller\'s exchange stalls, closing can move up to {x} days, to {d} at the latest. Talk to your lender about rate lock and loan approval dates.'},
+       C:{s:'If you can\'t complete the next purchase in time, the deal is canceled and the buyer gets the deposit back. Safest for your taxes, riskiest for the sale.',b:'If the seller can\'t line up their next property, the deal can be canceled with your deposit returned. Keep a backup plan.'},
+       D:{s:'Something custom is written in 4D. Make sure your CPA and intermediary read it.',b:'Something custom is written in 4D. Have your agent explain exactly what it does to your closing date and deposit.'}},
+  r_coe:'This sale closes',r_ext:'Latest extended closing (4B)',r_45:'Day 45: identify replacement in writing',r_180:'Day 180: finish buying replacement',r_tax:'Tax return due (calendar-year individual)',
+  s_45:'45 days after transfer, no weekend rollover',s_180:'or your tax return due date, whichever is earlier',s_tax:'file an extension to keep the full 180 days',s_coe:'the 45/180 clock starts here',s_ext:'only if delay is not seller\'s fault',
+  warnTax:'Your 180 days run past April 15. File a tax extension, or your deadline becomes the return due date.',
+  noteFound:'Paragraph 2 names the replacement property, so the buyer knows what the exchange depends on.',noteTbd:'Paragraph 2 says "to be located by Seller". Nothing is lined up yet, so paragraph 4 matters more.',
+  noteOos:'Out-of-state replacement: California requires form FTB 3840 for the year of the exchange and every year after, until the deferred gain is reported.',
+  todo_s:'What the seller must do',todo_b:'What the buyer must do',
+  todoS:['Hire a qualified intermediary before closing. Sale money must go to them, not to you.','Tell escrow early that this is a 1031 exchange.','Identify the replacement in writing within 45 days of closing.','Finish buying it within 180 days (or by your tax return due date, if earlier).','Pay any extra costs the exchange causes. The buyer shouldn\'t pay a dime.','Get tax and legal advice. Your agent can\'t tell you if it qualifies.'],
+  todoB:['Read paragraph 4 so you know what happens if the exchange stalls.','Sign the reasonable extra papers (often an assignment notice). It should cost you nothing.','Don\'t agree to take title to any other property.','If 4B is checked, tell your lender the closing could move.','Keep doing your own contingencies on time. The SXA doesn\'t change them.'],
+  sms:'Hi Ken, I used the SXA 1031 tool (T500). I am the {r}, closing {c}, option {o}. I have a question.',
+  subj:'T500 SXA 1031 — {r} — {c}',body:'Role: {r}\nClosing: {c}\nParagraph 4 option: {o}\n\n{list}\n\nSent from tool T500 tools.kenlamrealty.com/t500/',seller:'seller',buyer:'buyer'},
+ vi:{title:'SXA: người bán muốn đổi nhà 1031',sub:'Tờ phụ lục một trang gắn vào hợp đồng mua bán. Người bán nói "tôi định dồn tiền bán căn này qua căn khác để hoãn thuế", và người mua đồng ý giúp, không tốn tiền, không gánh rủi ro.',
+  f1k:'Ai đưa',f1v:'Bên người bán, thường kèm counter offer',f2k:'Ai ký',f2v:'Người bán và người mua',f3k:'Khi nào gặp',f3v:'Khi bán nhà đầu tư hoặc nhà cho thuê',f4k:'Bắt buộc?',f4v:'Không. Chỉ khi người bán muốn làm 1031',f5k:'Số trang',f5v:'1 trang, 8 đoạn ngắn',f6k:'Phiên bản',f6v:'SXA Reviewed 6/25 (mới nhất)',
+  ver:'Kiểm phiên bản: SXA không có trong danh sách form sửa của C.A.R. đợt 12/2025 và 6/2026. Bản "Reviewed 6/25" vẫn là bản hiện hành. Form anh em cho người mua là BXA.',
+  c_title:'Form này nghĩa là gì với mình',r_s:'Tôi là người bán',r_b:'Tôi là người mua',l_coe:'Ngày close của vụ bán này',l_opt:'Đoạn 4: nếu người bán không kịp lo căn kế…',
+  o_a:'A. Vẫn close, không thêm ngày (mặc định)',o_b:'B. Dời close tối đa ___ ngày',o_c:'C. Hủy, trả cọc cho người mua',o_d:'D. Cách khác (ghi tay)',l_ext:'Số ngày dời tối đa ghi ở 4B',days:'ngày',
+  k_found:'Căn sẽ mua đã ghi tên ở đoạn 2',k_oos:'Căn sẽ mua nằm ngoài California',
+  s_title:'Form nói gì, từng đoạn một',s_hint:'Tóm tắt bằng lời thường theo đúng thứ tự form. Không phải nguyên văn. Đọc form thật trước khi ký.',open_all:'Mở hết',close_all:'Đóng hết',
+  q_title:'Mình hiểu đúng chưa? 3 câu hỏi nhanh',q_ok:'Đúng rồi.',q_no:'Chưa đúng.',m_title:'Nhiều người hiểu sai',ns_t:'Bước tiếp theo',v_title:'Video 45 giây',b_video:'Xem video 45 giây',
+  b_email:'Email kết quả cho Ken',b_sms:'Nhắn Ken hỏi',b_lib:'← Thư viện forms',ft_src:'Nguồn:',ft_chk:'(tra ngày 06/11/2026)',
+  ft_est:'Thông tin chung, không phải tư vấn luật hay thuế. 1031 có luật rất chặt; làm với công ty trung gian (QI) và CPA hoặc luật sư thuế trước khi close. Ngày tính ra là ước tính.',
+  ft_upd:'Cập nhật',ft_lib:'Thư viện forms',ft_all:'Tất cả tools',lang:'English',
+  lab_s:'Với mình, người bán',lab_b:'Với mình, người mua',
+  head:{A:{s:'Close đúng hạn, đổi được hay không',b:'Ngày close của mình giữ nguyên'},B:{s:'Mình được dời close tối đa {x} ngày',b:'Close có thể trễ tối đa {x} ngày'},C:{s:'Không có căn kế = không bán',b:'Deal có thể hủy; mình được trả cọc'},D:{s:'Đọc điều ghi tay ở 4D',b:'Đọc điều ghi tay ở 4D'}},
+  txt:{A:{s:'Mục A là mặc định. Căn kế chưa xong thì vụ bán này vẫn close, và vụ 1031 có thể hỏng. Lo căn kế sớm.',b:'Chuyện đổi nhà là việc của người bán. Mình ký vài tờ giấy không tốn tiền và close đúng ngày trong hợp đồng.'},
+       B:{s:'Mình có thêm thời gian, nhưng chỉ tối đa {x} ngày sau ngày close trong hợp đồng, và chỉ khi trễ không phải lỗi mình. Đồng hồ 45/180 ngày bắt đầu từ ngày vụ bán này close thật.',b:'Người bán kẹt chuyện đổi nhà thì close có thể dời tối đa {x} ngày, trễ nhất là {d}. Hỏi lender về hạn khóa lãi suất và hạn duyệt vay.'},
+       C:{s:'Không mua kịp căn kế thì deal bị hủy, người mua lấy lại cọc. An toàn nhất cho thuế, rủi ro nhất cho vụ bán.',b:'Người bán không lo kịp căn kế thì deal có thể hủy, mình lấy lại cọc. Nên có kế hoạch dự phòng.'},
+       D:{s:'Có điều ghi tay ở 4D. Nhờ CPA và công ty trung gian đọc kỹ.',b:'Có điều ghi tay ở 4D. Nhờ agent giải thích rõ nó ảnh hưởng ngày close và tiền cọc ra sao.'}},
+  r_coe:'Vụ bán này close',r_ext:'Ngày close trễ nhất nếu dời (4B)',r_45:'Ngày 45: chỉ định căn kế bằng giấy',r_180:'Ngày 180: mua xong căn kế',r_tax:'Hạn khai thuế (cá nhân, năm dương lịch)',
+  s_45:'45 ngày sau sang tên, không dời vì cuối tuần',s_180:'hoặc hạn khai thuế, ngày nào tới trước',s_tax:'xin gia hạn khai thuế để giữ đủ 180 ngày',s_coe:'đồng hồ 45/180 bắt đầu từ đây',s_ext:'chỉ khi trễ không phải lỗi người bán',
+  warnTax:'180 ngày của mình kéo qua khỏi 15/4. Phải xin gia hạn khai thuế, không thì hạn chót thành ngày khai thuế.',
+  noteFound:'Đoạn 2 đã ghi căn sẽ mua, người mua biết vụ đổi dựa vào căn nào.',noteTbd:'Đoạn 2 ghi "người bán sẽ tìm". Chưa có gì chắc, nên đoạn 4 càng quan trọng.',
+  noteOos:'Căn kế ở ngoài California: tiểu bang bắt khai form FTB 3840 năm đổi và mỗi năm sau đó, cho tới khi khoản lời hoãn thuế được khai ra.',
+  todo_s:'Người bán phải làm gì',todo_b:'Người mua phải làm gì',
+  todoS:['Thuê công ty trung gian (QI) trước khi close. Tiền bán phải vô QI, không về tay mình.','Báo escrow sớm đây là vụ 1031.','Chỉ định căn kế bằng giấy trong 45 ngày sau close.','Mua xong trong 180 ngày (hoặc trước hạn khai thuế nếu tới trước).','Trả mọi chi phí phát sinh do đổi nhà. Người mua không tốn đồng nào.','Hỏi tư vấn thuế và luật. Agent không nói được nhà mình có đủ điều kiện không.'],
+  todoB:['Đọc đoạn 4 để biết chuyện gì xảy ra nếu người bán kẹt.','Ký mấy tờ giấy hợp lý (thường là giấy báo chuyển quyền cho QI). Không tốn tiền.','Đừng đồng ý đứng tên căn nhà nào khác.','Nếu có đánh dấu 4B, báo lender ngày close có thể dời.','Vẫn lo contingency của mình đúng hạn. SXA không đổi mấy hạn đó.'],
+  sms:'Chào Ken, tôi vừa dùng tool SXA 1031 (T500). Tôi là {r}, close {c}, mục {o}. Cho tôi hỏi thêm.',
+  subj:'T500 SXA 1031 — {r} — {c}',body:'Vai trò: {r}\nNgày close: {c}\nĐoạn 4 chọn: {o}\n\n{list}\n\nGửi từ tool T500 tools.kenlamrealty.com/t500/',seller:'người bán',buyer:'người mua'}
+};
+
+let lang='en'; try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+let role='s';
+const $=id=>document.getElementById(id);
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const D=(y,m,d)=>new Date(y,m,d,12);
+const key=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const add=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;};
+function parse(v){ if(!v) return null; const p=v.split('-').map(Number); return D(p[0],p[1]-1,p[2]); }
+function fmt(d){ return d.toLocaleDateString(lang==='vi'?'vi-VN':'en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}); }
+let last={list:''};
+function calc(){
+  const t=I18N[lang], o=$('opt').value, x=Math.max(1,parseInt($('ext').value,10)||15), coe=parse($('coe').value);
+  $('extWrap').classList.toggle('hide',o!=='B');
+  $('vLabel').textContent=role==='s'?t.lab_s:t.lab_b;
+  $('vHead').textContent=fill(t.head[o][role],{x});
+  const rows=[];
+  let extD=null;
+  if(coe){
+    rows.push([t.r_coe,t.s_coe,coe,1]);
+    if(o==='B'){ extD=add(coe,x); rows.push([t.r_ext,t.s_ext,extD,0]); }
+    if(role==='s'){
+      const d45=add(coe,RULE.identify), d180=add(coe,RULE.acquire), tax=D(coe.getFullYear()+1,RULE.taxDueMonth,RULE.taxDueDay);
+      rows.push([t.r_45,t.s_45,d45,1]); rows.push([t.r_180,t.s_180,d180,1]);
+      if(d180>tax) rows.push([t.r_tax,t.s_tax,tax,0]);
+    }
+  }
+  $('vText').textContent=fill(t.txt[o][role],{x,d:extD?fmt(extD):'—'});
+  rows.sort((a,b)=>a[2]-b[2]);
+  $('dl').innerHTML=rows.map(r=>'<div class="r'+(r[3]?' key':'')+'"><div class="t"><b>'+esc(r[0])+'</b><small>'+esc(r[1])+'</small></div><div class="d">'+fmt(r[2])+'</div></div>').join('');
+  const notes=[$('found').checked?t.noteFound:t.noteTbd];
+  if(role==='s'&&coe&&add(coe,RULE.acquire)>D(coe.getFullYear()+1,RULE.taxDueMonth,RULE.taxDueDay)) notes.unshift(t.warnTax);
+  if($('oos').checked) notes.push(t.noteOos);
+  $('vNote').innerHTML=notes.map(esc).join('<br><br>');
+  $('todoH').textContent=role==='s'?t.todo_s:t.todo_b;
+  $('todo').innerHTML=(role==='s'?t.todoS:t.todoB).map(s=>'<li>'+esc(s)+'</li>').join('');
+  last={r:role==='s'?t.seller:t.buyer,c:coe?fmt(coe):'—',o,list:rows.map(r=>fmt(r[2])+' — '+r[0]).join('\n'),rows:rows.map(r=>[r[0],key(r[2])])};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(t.sms,last));
+  $('emailBtn').href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(t.subj,last))+'&body='+encodeURIComponent(fill(t.body,last));
+}
+function renderSecs(){
+  const open=[...document.querySelectorAll('#secs details')].map(d=>d.open);
+  $('secs').innerHTML=SEC.map((s,i)=>{const c=s[lang]; return '<details class="sec"'+(open[i]?' open':'')+'><summary><span class="n">'+esc(s.n)+'</span><span>'+esc(c[0])+'</span></summary><p>'+esc(c[1])+'</p>'+(c[2]?'<p class="ex">'+esc(c[2])+'</p>':'')+'</details>';}).join('');
+}
+function renderQuiz(){
+  $('quiz').innerHTML=QUIZ.map((q,i)=>{const c=q[lang]; return '<div class="qz" data-q="'+i+'"><p>'+(i+1)+'. '+esc(c[0])+'</p><div class="opts">'+c[1].map((o,j)=>'<button type="button" data-j="'+j+'">'+esc(o)+'</button>').join('')+'</div><p class="fb" aria-live="polite"></p></div>';}).join('');
+}
+$('quiz').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; const box=b.closest('.qz'), q=QUIZ[+box.dataset.q][lang], j=+b.dataset.j, t=I18N[lang];
+  box.querySelectorAll('button').forEach(x=>x.classList.remove('right','wrong')); b.classList.add(j===q[2]?'right':'wrong');
+  if(j!==q[2]) box.querySelectorAll('button')[q[2]].classList.add('right');
+  box.querySelector('.fb').textContent=(j===q[2]?t.q_ok:t.q_no)+' '+q[3];});
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  $('myths').innerHTML=MYTH[lang].map(m=>'<p class="myth">'+m+'</p>').join('');
+  $('nsList').innerHTML=NS[lang].map(m=>'<li>'+esc(m)+'</li>').join('');
+  renderSecs(); renderQuiz(); calc();
+}
+$('roleSeg').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; role=b.dataset.v;
+  $('roleSeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); calc();});
+['coe','opt','ext','found','oos'].forEach(id=>{$(id).addEventListener('input',calc);$(id).addEventListener('change',calc);});
+$('openAll').onclick=()=>document.querySelectorAll('#secs details').forEach(d=>d.open=true);
+$('closeAll').onclick=()=>document.querySelectorAll('#secs details').forEach(d=>d.open=false);
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+(function(){const n=add(new Date(),30); $('coe').value=key(n);})();
+window.__t500={last:()=>last};
+applyLang();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
