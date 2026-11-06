@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cho phép dùng hình & video (PVR)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+.xal{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:12px}.xal h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0}.mhl{list-style:none;margin:0;padding:0;display:grid;gap:10px}.mhl li{display:grid;gap:2px;border-top:1px solid var(--line);padding-top:10px}.mhl li:first-child{border-top:0;padding-top:0}.mhl a{color:var(--fg);text-decoration:none;font-weight:500}.mhl a b{color:var(--brass);font-weight:600;margin-right:4px}.mhl span{color:var(--muted);font-size:14px}
+</style>
+<meta name="description" content="C.A.R. Form PVR giải thích từng đoạn, có tool: ai có trong hình, dùng vào việc gì → cần mấy chữ ký, phải điền gì vào form.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t488/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="T488 · Form PVR: cho phép dùng hình &amp; video · Ken Lam Tools">
+<meta property="og:description" content="C.A.R. Form PVR giải thích từng đoạn, có tool: ai có trong hình, dùng vào việc gì → cần mấy chữ ký, phải điền gì vào form.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t488/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions + Giải nghĩa forms */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{font-size:12px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 10px;color:var(--muted)}
+.chip b{color:var(--fg);font-weight:500}
+.sec{display:grid;gap:12px;min-width:0}
+.sec>h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0;line-height:1.15}
+.sec>p.lead{margin:0;font-size:14px;color:var(--muted)}
+.paper{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 16px 8px;display:grid;gap:0;min-width:0}
+.paper .ph{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;border-bottom:2px solid var(--fg);padding-bottom:8px;margin-bottom:4px}
+.paper .ph b{font-size:13px;letter-spacing:.08em;text-transform:uppercase;font-weight:600}
+.paper .ph small{font-size:11px;color:var(--warn)}
+.para{border-bottom:1px dashed var(--line)}
+.para:last-child{border-bottom:0}
+.para summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-items:baseline;padding:11px 2px}
+.para summary::-webkit-details-marker{display:none}
+.para .pn{font-size:12px;font-weight:600;color:var(--brass);min-width:2.2em;font-variant-numeric:tabular-nums}
+.para .pt{font-size:14px;font-weight:500;min-width:0}
+.para .pv{grid-column:2/3;font-size:13px;color:var(--muted);min-width:0;overflow-wrap:anywhere}
+.para .pi{color:var(--muted);font-size:14px;transition:transform .15s}
+.para[open] .pi{transform:rotate(45deg)}
+.para .pb{padding:0 2px 12px calc(2.2em + 12px);display:grid;gap:6px;font-size:14px;line-height:1.5}
+.para .pb p{margin:0}
+.para .pb b{color:var(--brass);font-weight:500}
+@media (max-width:420px){.para .pb{padding-left:2px}}
+.tool{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:14px;min-width:0}
+.tool h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0;line-height:1.15}
+.tool .seg{flex-wrap:wrap}
+.tool .seg button{min-width:0;flex:1 1 auto}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.4;cursor:pointer}
+.chk input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;flex:none}
+.chks{display:grid;gap:10px}
+.verdict{border-radius:12px;padding:14px 16px;background:var(--brass-soft);display:grid;gap:4px}
+.verdict .k{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.verdict .v{font-family:var(--display);font-size:44px;line-height:1.05}
+.verdict .s{font-size:15px}
+.verdict.warn{background:transparent;border:1px solid var(--warn)}
+.verdict.warn .v{color:var(--warn)}
+.flags{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.flags li{font-size:14px;line-height:1.5;border-left:3px solid var(--brass);padding:2px 0 2px 10px}
+.flags li.w{border-left-color:var(--warn)}
+.flags li b{font-weight:500}
+.cmp{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center}
+.cmp .h{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.cmp .lb{font-size:13px;font-weight:500;color:var(--muted)}
+.cmp .ctl{padding:0 8px}
+.cmp .ctl input{font-size:16px;padding:10px 4px}
+.cmp .ctl input[type=date]{font-size:14px;min-height:44px}
+@media (max-width:420px){.cmp{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.cmp .lb{grid-column:1/-1;margin-top:4px}.cmp .h0{display:none}}
+.qz{display:grid;gap:6px;border-top:1px solid var(--line);padding-top:12px}
+.qz:first-of-type{border-top:0;padding-top:0}
+.qz .q{font-size:15px;font-weight:500}
+.qz .fb{font-size:13px;line-height:1.5;color:var(--muted)}
+.qz .fb b{font-weight:600}
+.qz .fb.ok b{color:var(--ok)}
+.qz .fb.no b{color:var(--warn)}
+.seg button.right{background:var(--brass-soft);color:var(--fg);font-weight:500}
+.seg button.wrongp{color:var(--warn);font-weight:500}
+.vid{display:grid;gap:10px;justify-items:center}
+.vid h2{justify-self:start}
+.vid video{width:100%;max-width:360px;aspect-ratio:9/16;border-radius:12px;display:block;background:#0c1b28;border:1px solid var(--line)}
+.disc{font-size:13px;color:var(--muted);margin:0}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <div class="eyebrow" data-i="eyebrow"></div>
+    <h1 data-i="title"></h1>
+    <p class="sub" data-i="sub"></p>
+    <div class="chips" id="chips"></div>
+  </header>
+
+  <section class="sec" aria-label="Form">
+    <h2 data-i="mock_t"></h2>
+    <p class="lead" data-i="mock_lead"></p>
+    <div class="paper">
+      <div class="ph"><b id="mockTitle"></b><small data-i="mock_tag"></small></div>
+      <div id="paras"></div>
+    </div>
+  </section>
+
+  <section class="tool" aria-label="Tool" aria-live="polite">
+
+    <h2 data-i="t_h"></h2>
+    <p class="disc" data-i="t_lead"></p>
+    <div class="field"><label for="adults" data-i="l_adults"></label>
+      <div class="ctl"><input id="adults" type="number" inputmode="numeric" min="0" max="20" step="1" value="2"><span class="post" data-i="u_people"></span></div></div>
+    <div class="field"><label data-i="l_kids"></label>
+      <div class="seg" data-g="kids" role="group"><button type="button" data-v="none" data-i="o_none"></button><button type="button" data-v="own" data-i="o_kids_own"></button><button type="button" data-v="other" data-i="o_kids_other"></button></div></div>
+    <div class="field"><label data-i="l_pets"></label>
+      <div class="seg" data-g="pets" role="group"><button type="button" data-v="none" data-i="o_none2"></button><button type="button" data-v="own" data-i="o_pets_own"></button><button type="button" data-v="other" data-i="o_pets_other"></button></div></div>
+    <div class="field"><label data-i="l_use"></label>
+      <div class="seg" data-g="use" role="group"><button type="button" data-v="sale" data-i="o_use_sale"></button><button type="button" data-v="std" data-i="o_use_std"></button><button type="button" data-v="any" data-i="o_use_any"></button></div></div>
+    <label class="chk"><input type="checkbox" id="inside"><span data-i="l_inside"></span></label>
+    <div class="verdict" id="verdict"><div class="k" id="vk"></div><div class="v" id="vv"></div><div class="s" id="vs"></div></div>
+    <h3 style="font-family:var(--display);font-weight:400;font-size:22px;margin:0" data-i="fill_h"></h3>
+    <ul class="flags" id="flags"></ul>
+
+  </section>
+
+  <p class="myth" id="myth"></p>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title"></h2>
+    <ol id="nextList"></ol>
+  </section>
+
+  <section class="vid" aria-label="Video">
+    <h2 style="font-family:var(--display);font-weight:400;font-size:28px;margin:0" data-i="v_t"></h2>
+    <video src="web.mp4" controls playsinline preload="metadata"></video>
+  </section>
+
+  <section class="actions">
+    <a class="btn primary" id="emailBtn" href="mailto:ken@kenlamrealty.com" data-i="b_email"></a>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms"></a>
+    <a class="btn" id="videoBtn" href="web.mp4" target="_blank" rel="noopener" data-i="b_video"></a>
+    <a class="btn" href="/t402/" data-i="b_all"></a>
+  </section>
+
+  <footer>
+    <span class="src"><span data-i="ft_src"></span> (06/11/2026): <a href="https://www.car.org/transactions/standard-forms" target="_blank" rel="noopener">C.A.R. Form PVR (Revised 6/23)</a> · <a href="https://www.car.org/transactions/standard-forms" target="_blank" rel="noopener">C.A.R. Form RLA (6/26) ¶12</a> · <a href="https://california.public.law/codes/civil_code_section_3344" target="_blank" rel="noopener">Civil Code §3344</a> · <a href="https://california.public.law/codes/business_and_professions_code_section_10140.8" target="_blank" rel="noopener">B&amp;P §10140.8 (AB 723)</a> · <a href="https://www.hunton.com/privacy-and-cybersecurity-law-blog/california-adds-injunctive-relief-to-its-right-of-publicity-statute-and-extends-liability-to-digital-replicas" target="_blank" rel="noopener">SB 683 (Hunton)</a></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · BRG Realty Corp · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a> · 408-666-2825</span>
+    <span><span data-i="ft_upd"></span>: 06/11/2026 · <a href="/t402/" data-i="ft_all"></a> · <a href="/cong-cu/" data-i="ft_tools"></a></span>
+    <span data-i="ft_disc"></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số cố định — sửa ở đây =====
+   SUBJECT_LINES 5: form PVR 6/23 có 5 dòng ký cho Subject (đếm trên form).
+   ADULT_AGE 18: đoạn 4A/4B của form (18 tuổi trở lên = người lớn).
+   MIN_DAMAGES 750: Civil Code §3344 — dùng hình người để quảng cáo không có đồng ý: ít nhất $750 hoặc thiệt hại thật (FACTS 06/11/2026, VERIFIED).
+   ALTERED_FROM 1/1/2026: B&P §10140.8 (AB 723) — hình nhà chỉnh bằng phần mềm/AI phải ghi rõ + link hình gốc. */
+const SUBJECT_LINES=5, ADULT_AGE=18, MIN_DAMAGES=750, UPDATED='06/11/2026';
+const I18N={"vi": {"mock_t": "Form minh họa", "mock_lead": "Bấm vào từng đoạn để xem: nó nói gì, nghĩa là gì, ví dụ.", "mock_tag": "Ví dụ minh họa — không phải form thật", "k_say": "Nó nói gì:", "k_mean": "Nghĩa là gì:", "k_ex": "Ví dụ:", "nx_title": "Bước tiếp theo", "v_t": "Video 45 giây", "b_email": "Gửi kết quả cho Ken qua email", "b_sms": "Nhắn hỏi Ken", "b_video": "Xem video 45 giây", "b_all": "Tất cả forms", "ft_src": "Nguồn", "ft_upd": "Cập nhật", "ft_all": "Tất cả forms", "ft_tools": "Tất cả tools", "ft_disc": "Thông tin chung, không phải tư vấn pháp lý. Hỏi luật sư cho trường hợp riêng. Ken Lam là broker, không phải luật sư. Form C.A.R. có bản quyền; trang này chỉ giải thích bằng lời của mình.", "lang": "English", "back": "← Tất cả tools", "mail_tail": "Gửi từ tools.kenlamrealty.com. Thông tin chung, không phải tư vấn pháp lý.", "sms_pre": "Chào Ken, tôi vừa xem tool trên tools.kenlamrealty.com:", "doc_title": "T488 · Form PVR: cho phép dùng hình & video", "eyebrow": "Giải nghĩa forms · C.A.R. Form PVR", "title": "Cho phép dùng hình & video (PVR)", "sub": "Ai có mặt trong hình thì ký tờ này. Ký rồi là cho agent đem hình đi quảng cáo, không đòi tiền, không kiện.", "chips": [["Ai ký", "Người trong hình + agent"], ["Khi nào", "Trước khi quay/đăng"], ["Số trang", "1"], ["Bản", "6/23"]], "mock_title": "Photo and Video Agreement and Release", "paras": [{"n": "—", "t": "Hai bên: Subject và REL", "v": "Subject: Anh Minh & Chị Hạnh Example · REL: Agent Example", "say": "Thỏa thuận giữa người lớn có trong hình (Subject) — ký cho mình và cho con nhỏ, thú cưng ghi ở đoạn 4 — với agent (Real Estate Licensee) và công ty môi giới của agent.", "mean": "Bên được dùng hình không chỉ là cá nhân agent. Công ty môi giới cũng có phần.", "ex": "Anh Minh & Chị Hạnh Example ký với Agent Example."}, {"n": "1", "t": "Images — hình gì", "v": "Video 60 giây + 25 tấm hình, 10/11/2026, 1234 Example Lane", "say": "Agent đã chụp, quay hay thu âm (tự làm hoặc thuê người) với sự đồng ý của Subject. Chỗ trống mô tả đó là hình gì; có ô check nếu mô tả nằm ở trang đính kèm.", "mean": "Ghi càng rõ càng tốt: loại, ngày, chỗ, có ai. Ghi \"hình nhà\" thôi là sau này dễ cãi.", "ex": "\"1 video tour 60 giây + 25 tấm hình chụp 10/11/2026 tại 1234 Example Lane, San Jose, CA 95100.\""}, {"n": "2A", "t": "Permitted Use — dùng vào việc gì", "v": "☐ “mục đích hợp pháp khác” — không check", "say": "Agent được dùng để quảng cáo bán nhà của Subject, hoặc quảng bá việc môi giới của agent. Có ô tùy chọn \"và mọi mục đích hợp pháp khác\". Mọi phương tiện, kể cả cái chưa có: internet, mạng xã hội, TV, radio, MLS, báo, billboard, flyer…", "mean": "Không check ô thì vẫn rộng: bán nhà và quảng cáo cho agent, kể cả sau khi nhà bán xong. Check ô là gần như không giới hạn.", "ex": "Nhà Example chỉ cho dùng để bán nhà và cho agent đăng trang của mình. Không check ô."}, {"n": "2B", "t": "Chỉnh sửa", "v": "Theo ý agent", "say": "Hình có thể được chỉnh, copy, đăng, phân phối, cắt, làm đẹp hay sửa khác theo ý agent.", "mean": "Anh chị không duyệt từng bản edit, trừ khi ghi điều đó vào đoạn 5. Luật mới từ 1/1/2026 (B&P §10140.8): hình nhà chỉnh bằng phần mềm hay AI (thêm bớt đồ đạc, đổi sơn, cảnh ngoài cửa sổ) phải ghi rõ đã chỉnh và có link hình gốc. Chỉnh sáng, màu, cắt khung thì không tính.", "ex": "Agent cắt video 60 giây thành reel 15 giây, thêm nhạc. Không cần hỏi lại."}, {"n": "3", "t": "Ownership — hình là của ai", "v": "Của agent · không tiền bản quyền", "say": "Agent là chủ của hình và mọi bản làm ra từ hình đó. Subject không đòi tiền hay royalty, trừ khi tờ này ghi khác.", "mean": "Hình không phải của chủ nhà. Muốn bản gốc hay muốn được trả tiền thì ghi vào đoạn 5.", "ex": "Chị Hạnh Example muốn giữ video làm kỷ niệm → ghi ở đoạn 5."}, {"n": "4A", "t": "Người lớn (18+) có trong hình", "v": "Anh Minh Example, Chị Hạnh Example", "say": "Ghi tên những người từ 18 tuổi trở lên có trong hình.", "mean": "Ai lớn có mặt thì có tên và nên ký. Form có 5 dòng ký cho Subject.", "ex": "Anh Minh Example, Chị Hạnh Example."}, {"n": "4B", "t": "Trẻ em dưới 18", "v": "Bé Na Example (8 tuổi), con của Subject", "say": "Ghi tên người dưới 18 tuổi có trong hình — chỉ những em là con của Subject, hoặc Subject là người giám hộ (guardian).", "mean": "Con mình thì mình ký thay. Cháu, con hàng xóm, bạn của con thì cha mẹ đứa đó phải ký tờ riêng.", "ex": "Bé Na Example, 8 tuổi, con của Anh Minh & Chị Lan."}, {"n": "4C", "t": "Thú cưng và đồ đạc", "v": "Con chó Lu — của Subject", "say": "Thú cưng, nhà, đồ đạc có trong hình là của Subject.", "mean": "Ký là anh chị nói \"những thứ này của tôi\". Chó gửi nuôi giùm, tranh mượn của bạn thì đừng để lọt vô hình.", "ex": "Con chó Lu là của nhà Example."}, {"n": "5", "t": "Additional Terms — điều khoản thêm", "v": "Không chiếu rõ mặt bé Na; xin gỡ trong 30 ngày; gửi bản gốc", "say": "Chỗ trống để hai bên ghi thêm điều kiện.", "mean": "Đây là chỗ anh chị giữ quyền: che mặt trẻ em, gỡ sau ngày X, không chạy quảng cáo trả tiền, xin bản copy.", "ex": "\"Không chiếu rõ mặt bé Na. Gỡ khỏi mạng xã hội trong 30 ngày sau khi Subject yêu cầu bằng văn bản.\""}, {"n": "6", "t": "Effect of Release — ký rồi thì sao", "v": "Bỏ quyền kiện · Subject bồi thường nếu khai sai", "say": "Subject (cho mình, con nhỏ và thú cưng mình có quyền đại diện) bỏ quyền khiếu nại, kiện về việc dùng hình theo tờ này. Subject bồi thường và bảo vệ agent, kể cả phí luật sư hợp lý, nếu chính Subject vi phạm điều quan trọng, hoặc người thứ ba kiện vì chuyện đó.", "mean": "Đoạn nặng nhất. Ký thay đứa nhỏ mà mình không có quyền → người ta kiện agent thì mình chịu.", "ex": "Bé hàng xóm lọt vào video, Anh Minh tự ký thay → cha mẹ bé kiện → Anh Minh có thể phải trả phí luật sư cho agent."}, {"n": "7", "t": "Broker Identity and Rights", "v": "Broker Example Inc. · Lic.# 00000000 (số giả)", "say": "Nếu agent là salesperson hay broker-associate làm dưới broker khác, ghi tên công ty và số license. Quyền hình giữa agent và broker do họ tự thỏa thuận riêng bằng giấy.", "mean": "Agent đổi công ty thì hình theo ai là chuyện giữa họ. Quyền của anh chị trong tờ này không đổi.", "ex": "Broker Example Inc., Lic.# 00000000."}, {"n": "✍", "t": "Chữ ký", "v": "2 Subject + agent · 10/11/2026", "say": "Tối đa 5 Subject ký và ghi ngày. Agent ký, ghi số DRE, địa chỉ, email, phone. Ký = đã đọc, hiểu, nhận bản copy và đồng ý.", "mean": "Xin bản copy sau khi ký và giữ lại.", "ex": "Anh Minh Example và Chị Hạnh Example ký 10/11/2026."}], "t_h": "Hình của anh chị cần PVR ra sao?", "t_lead": "Chọn ai có trong hình và dùng vào việc gì. Ra liền: mấy chữ ký, điền chỗ nào.", "l_adults": "Mấy người lớn (18+) có trong hình hay video?", "u_people": "người", "l_kids": "Có trẻ em dưới 18 tuổi không?", "o_none": "Không", "o_kids_own": "Con mình", "o_kids_other": "Con người khác", "l_pets": "Có thú cưng không?", "o_none2": "Không", "o_pets_own": "Của mình", "o_pets_other": "Của người khác", "l_use": "Cho dùng vào việc gì?", "o_use_sale": "Chỉ bán căn này", "o_use_std": "Bán nhà + agent quảng cáo", "o_use_any": "Mọi việc hợp pháp", "l_inside": "Quay bên trong nhà, có đồ đạc hay hình gia đình", "v_k0": "Kết quả", "v_v0": "Thường không cần PVR", "v_s0": "Không có người hay thú cưng trong hình. Hình nhà để bán thường đã nằm trong hợp đồng listing (RLA đoạn 12).", "v_k1": "Cần ký PVR", "v_v1": "{n} chữ ký", "v_s1": "{s} Subject + agent. Cần {c} tờ PVR (mỗi tờ 5 dòng Subject).", "fill_h": "Điền vào đâu", "f_rla": "Hình nhà trống: RLA đoạn 12 nói seller cho broker chụp và dùng hình nhà, kể cả sau khi bán. Muốn giới hạn thì nói với agent lúc ký listing.", "f_inside0": "Quay bên trong: cất hình gia đình, giấy tờ, thuốc men trước khi chụp. Hình lên mạng rồi là không ai kiểm soát được ai xem.", "f_p1": "<b>Đoạn 1:</b> ghi loại hình, ngày, địa chỉ, có ai. Ví dụ: “Video 60 giây + 25 tấm hình, 10/11/2026, 1234 Example Lane”.", "f_2a_std": "<b>Đoạn 2A:</b> để trống ô “mọi mục đích hợp pháp khác”. Vẫn cho bán nhà + agent quảng cáo.", "f_2a_any": "<b>Đoạn 2A:</b> check ô “mọi mục đích hợp pháp khác”. Gần như không còn giới hạn — chắc chắn anh chị muốn vậy?", "f_4a": "<b>Đoạn 4A:</b> ghi tên đủ {n} người lớn. Mỗi người ký 1 dòng Subject.", "f_copies": "<b>Hơn {l} người lớn:</b> form chỉ có {l} dòng Subject. Dùng {c} tờ PVR.", "f_4b_own": "<b>Đoạn 4B:</b> ghi tên và tuổi con mình. Cha hoặc mẹ (hay guardian) ký thay.", "f_parent": "<b>Cha mẹ không có mặt trong hình:</b> vẫn phải có cha hoặc mẹ ký là Subject để ký thay con.", "f_4b_other": "<b>Con người khác:</b> đoạn 4B không cho mình ký thay. Cha mẹ của em đó ký tờ PVR riêng — hoặc đừng để em lọt vào hình.", "f_4c_own": "<b>Đoạn 4C:</b> ký là xác nhận thú cưng, đồ đạc trong hình là của mình.", "f_4c_other": "<b>Thú cưng của người khác:</b> đoạn 4C nói mọi thứ trong hình là của Subject. Xin chủ của nó ký, hoặc để nó ra ngoài khung hình.", "f_5": "<b>Đoạn 5 — gợi ý ghi:</b>", "p5_sale": "Chỉ dùng để bán 1234 Example Lane; ngưng dùng sau khi close.", "p5_kids": "Không chiếu rõ mặt trẻ em.", "p5_inside": "Che hình gia đình, giấy tờ cá nhân trước khi đăng.", "p5_copy": "Agent gửi Subject bản gốc để dùng cá nhân.", "f_7": "<b>Đoạn 7:</b> agent ghi tên công ty môi giới và số license của broker.", "f_law": "<b>Vì sao cần giấy:</b> Civil Code §3344 cấm dùng hình người để quảng cáo khi chưa có đồng ý; trẻ em cần cha mẹ hoặc người giám hộ đồng ý. Vi phạm: ít nhất {m} hoặc thiệt hại thật, cộng phí luật sư.", "yes": "có", "no": "không", "sum": "PVR: {v}. Người lớn: {a}. Trẻ em: {k}. Thú cưng: {p}. Dùng: {u}. Quay bên trong: {in}.", "mail_subj": "T488 · Kết quả PVR", "myth": "<b>Nhiều người hiểu sai:</b> “Ký PVR rồi thì hình là của tôi.” Không. Đoạn 3 nói hình là của agent. Muốn có bản gốc, ghi vào đoạn 5.", "next": ["Trước buổi quay, liệt kê ai sẽ có mặt — nhất là trẻ em và thú cưng.", "Đọc đoạn 2A và đoạn 5. Có giới hạn gì thì ghi rõ ra.", "Ký trước khi quay, không phải sau khi đăng. Xin bản copy.", "Hỏi Ken nếu chưa chắc ai phải ký."]}, "en": {"mock_t": "Sample form", "mock_lead": "Tap each paragraph to see what it says, what it means, and an example.", "mock_tag": "Sample only — not the real form", "k_say": "What it says:", "k_mean": "What it means:", "k_ex": "Example:", "nx_title": "Next steps", "v_t": "45-second video", "b_email": "Email my result to Ken", "b_sms": "Text Ken a question", "b_video": "Watch the 45-sec video", "b_all": "All forms", "ft_src": "Sources", "ft_upd": "Updated", "ft_all": "All forms", "ft_tools": "All tools", "ft_disc": "General information, not legal advice. Ask a lawyer about your own situation. Ken Lam is a broker, not a lawyer. C.A.R. forms are copyrighted; this page explains them in our own words.", "lang": "Tiếng Việt", "back": "← All tools", "mail_tail": "Sent from tools.kenlamrealty.com. General information, not legal advice.", "sms_pre": "Hi Ken, I just used a tool on tools.kenlamrealty.com:", "doc_title": "T488 · Form PVR: photo & video release, explained", "eyebrow": "Forms explained · C.A.R. Form PVR", "title": "Photo & video release (PVR)", "sub": "Whoever appears in the photos or video signs this. It lets the agent use them in marketing — no payment, no claims later.", "chips": [["Who signs", "People in the images + agent"], ["When", "Before filming or posting"], ["Pages", "1"], ["Revision", "6/23"]], "mock_title": "Photo and Video Agreement and Release", "paras": [{"n": "—", "t": "The parties: Subject and REL", "v": "Subject: Minh & Hạnh Example · REL: Agent Example", "say": "An agreement between the adult(s) in the images (the \"Subject\") — signing for themselves and any minor child or pet listed in paragraph 4 — and the real estate licensee plus the brokerage the licensee works through.", "mean": "The party allowed to use the images is not only the individual agent. The brokerage is included.", "ex": "Minh & Hạnh Example sign with Agent Example."}, {"n": "1", "t": "Images — what was captured", "v": "60-sec video + 25 photos, 11/10/2026, 1234 Example Lane", "say": "With the Subject’s permission, the agent (directly or through others) took photos, video, audio or other images. A blank describes them; a box lets you attach the description instead.", "mean": "Be specific: type, date, place, who is in them. Writing just \"house photos\" invites arguments later.", "ex": "\"One 60-second tour video + 25 photos taken 11/10/2026 at 1234 Example Lane, San Jose, CA 95100.\""}, {"n": "2A", "t": "Permitted Use", "v": "☐ “any other lawful purpose” — not checked", "say": "The agent may use the images to market the Subject’s property, or to market and promote the agent’s real estate business. An optional box adds \"any other lawful purpose\". Any media, including media not yet invented: internet, social media, TV, radio, MLS, print, billboards, flyers.", "mean": "Even unchecked, it is broad: selling the home and advertising the agent, even after the sale. Checking the box removes nearly all limits.", "ex": "The Example family allows use for the sale and the agent’s own pages only. Box left unchecked."}, {"n": "2B", "t": "Editing", "v": "At the agent’s discretion", "say": "Images may be edited, copied, published, distributed, cropped, enhanced or otherwise altered at the agent’s discretion.", "mean": "You do not approve each edit unless you write that into paragraph 5. New from 1/1/2026 (B&P §10140.8): property photos changed by software or AI (adding or removing furniture, paint, the view) must say so and link to the original. Normal light, color and cropping edits do not count.", "ex": "The agent cuts the 60-second video into a 15-second reel with music. No new approval needed."}, {"n": "3", "t": "Ownership", "v": "Agent owns them · no royalties", "say": "The agent owns the images and anything made from them, and keeps all rights. The Subject is owed no payment or royalties unless this release says otherwise.", "mean": "The images are not the homeowner’s. Want the original file, or payment? Write it into paragraph 5.", "ex": "Hạnh Example wants a copy of the video as a keepsake → add it in paragraph 5."}, {"n": "4A", "t": "Adults (18+) in the images", "v": "Minh Example, Hạnh Example", "say": "List the people in the images who are 18 or older.", "mean": "Every adult who appears should be named and sign. The form has 5 Subject signature lines.", "ex": "Minh Example, Hạnh Example."}, {"n": "4B", "t": "Children under 18", "v": "Na Example (age 8), Subject’s child", "say": "List minors in the images — only those who are the adult Subject’s children, or for whom the Subject is the appointed guardian.", "mean": "You can sign for your own child. A niece, a neighbor’s kid or your child’s friend needs their own parent to sign a separate release.", "ex": "Na Example, age 8, child of Minh & Lan."}, {"n": "4C", "t": "Pets and property", "v": "Lu the dog — belongs to Subject", "say": "Any pets or real or personal property in the images belong to the adult Subject.", "mean": "Signing says \"these are mine.\" A dog you are pet-sitting or art borrowed from a friend should stay out of frame.", "ex": "Lu the dog belongs to the Example family."}, {"n": "5", "t": "Additional Terms", "v": "No clear shots of Na’s face; takedown within 30 days; copy of original", "say": "Blank lines for any extra conditions both sides agree to.", "mean": "This is where you keep control: hide children’s faces, take down after a date, no paid ads, get a copy.", "ex": "\"No clear shots of Na’s face. Remove from social media within 30 days of Subject’s written request.\""}, {"n": "6", "t": "Effect of Release", "v": "Claims released · Subject indemnifies if wrong", "say": "The Subject, for themselves and any minor or pet they act for, releases all claims about use of the images under these terms. The Subject also indemnifies and defends the agent, including reasonable attorney fees, if the Subject materially breaches the release or a third party claims so.", "mean": "The heaviest paragraph. Sign for a child you have no authority over, and if someone sues the agent, you pay.", "ex": "A neighbor’s child appears and Minh signs for her → her parents sue → Minh may owe the agent’s legal fees."}, {"n": "7", "t": "Broker Identity and Rights", "v": "Broker Example Inc. · Lic.# 00000000 (fake)", "say": "If the agent is a salesperson or broker-associate working under another broker, list that firm and license number. Image rights between agent and broker are handled in their own separate written agreement.", "mean": "If the agent changes firms, who keeps the images is between them. Your rights here do not change.", "ex": "Broker Example Inc., Lic.# 00000000."}, {"n": "✍", "t": "Signatures", "v": "2 Subjects + agent · 11/10/2026", "say": "Up to 5 Subjects sign and date. The agent signs with DRE license number, address, email and phone. Signing means you read, understood, received a copy and agree.", "mean": "Ask for your copy after signing and keep it.", "ex": "Minh Example and Hạnh Example sign on 11/10/2026."}], "t_h": "What does your PVR need?", "t_lead": "Pick who is in the images and how they will be used. See how many signatures and what to fill in.", "l_adults": "How many adults (18+) appear in the photos or video?", "u_people": "people", "l_kids": "Any children under 18?", "o_none": "No", "o_kids_own": "My own child", "o_kids_other": "Someone else’s child", "l_pets": "Any pets?", "o_none2": "No", "o_pets_own": "Mine", "o_pets_other": "Someone else’s", "l_use": "What may they be used for?", "o_use_sale": "This sale only", "o_use_std": "Sale + agent marketing", "o_use_any": "Any lawful purpose", "l_inside": "Filmed inside the home, with belongings or family photos", "v_k0": "Result", "v_v0": "Usually no PVR needed", "v_s0": "No people or pets in the images. Listing photos of the home are usually covered by the listing agreement (RLA paragraph 12).", "v_k1": "PVR needed", "v_v1": "{n} signatures", "v_s1": "{s} Subject(s) + the agent. You need {c} PVR form(s) (5 Subject lines each).", "fill_h": "What to fill in", "f_rla": "Empty-home photos: RLA paragraph 12 says the seller lets the broker take and use photos of the home, even after the sale. Want limits? Raise it when you sign the listing.", "f_inside0": "Filming inside: put away family photos, papers and medicine first. Once online, no one controls who sees it.", "f_p1": "<b>Paragraph 1:</b> describe type, date, address and who appears. Example: “60-sec video + 25 photos, 11/10/2026, 1234 Example Lane”.", "f_2a_std": "<b>Paragraph 2A:</b> leave the “any other lawful purpose” box unchecked. Still covers the sale + agent marketing.", "f_2a_any": "<b>Paragraph 2A:</b> check “any other lawful purpose”. Almost no limits left — sure you want that?", "f_4a": "<b>Paragraph 4A:</b> list all {n} adults. Each signs a Subject line.", "f_copies": "<b>More than {l} adults:</b> the form has only {l} Subject lines. Use {c} PVR forms.", "f_4b_own": "<b>Paragraph 4B:</b> list your child’s name and age. A parent or guardian signs for them.", "f_parent": "<b>Parent not in the images:</b> a parent still signs as a Subject to sign for the child.", "f_4b_other": "<b>Someone else’s child:</b> paragraph 4B does not let you sign for them. Their parent signs a separate PVR — or keep the child out of frame.", "f_4c_own": "<b>Paragraph 4C:</b> signing confirms the pets and belongings shown are yours.", "f_4c_other": "<b>Someone else’s pet:</b> paragraph 4C says everything shown belongs to the Subject. Get the owner to sign, or keep the pet out of frame.", "f_5": "<b>Paragraph 5 — suggested terms:</b>", "p5_sale": "Use only to sell 1234 Example Lane; stop using after closing.", "p5_kids": "No clear shots of children’s faces.", "p5_inside": "Blur family photos and personal papers before posting.", "p5_copy": "Agent sends Subject the original files for personal use.", "f_7": "<b>Paragraph 7:</b> the agent fills in the brokerage name and broker license number.", "f_law": "<b>Why the paper matters:</b> Civil Code §3344 bars using a person’s image in advertising without consent; a minor needs a parent’s or guardian’s consent. Violations: at least {m} or actual damages, plus attorney fees.", "yes": "yes", "no": "no", "sum": "PVR: {v}. Adults: {a}. Children: {k}. Pets: {p}. Use: {u}. Filmed inside: {in}.", "mail_subj": "T488 · My PVR result", "myth": "<b>Common mistake:</b> “Once I sign, the photos are mine.” No. Paragraph 3 says the agent owns them. Want the originals? Write it into paragraph 5.", "next": ["Before the shoot, list who will be there — especially children and pets.", "Read paragraphs 2A and 5. Write down any limits you want.", "Sign before filming, not after posting. Keep your copy.", "Not sure who must sign? Ask Ken."]}};
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=n=>(n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+function setSeg(group,val){ document.querySelectorAll('[data-g="'+group+'"] button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===val?'true':'false')); }
+function segVal(group){ const b=document.querySelector('[data-g="'+group+'"] button[aria-pressed="true"]'); return b?b.dataset.v:''; }
+document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('.seg[data-g] button'); if(!b) return; setSeg(b.parentElement.dataset.g,b.dataset.v); update(); });
+function renderStatic(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('chips').innerHTML=d.chips.map(c=>'<span class="chip">'+c[0]+': <b>'+c[1]+'</b></span>').join('');
+  $('mockTitle').textContent=d.mock_title;
+  $('paras').innerHTML=d.paras.map(p=>'<details class="para"><summary><span class="pn">'+p.n+'</span><span class="pt">'+p.t+'</span><span class="pi" aria-hidden="true">+</span><span class="pv">'+p.v+'</span></summary><div class="pb"><p><b>'+d.k_say+'</b> '+p.say+'</p><p><b>'+d.k_mean+'</b> '+p.mean+'</p><p><b>'+d.k_ex+'</b> '+p.ex+'</p></div></details>').join('');
+  $('myth').innerHTML=d.myth;
+  $('nextList').innerHTML=d.next.map(x=>'<li>'+x+'</li>').join('');
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  $('klBack').textContent=d.back;
+  document.title=d.doc_title;
+}
+function setContact(summary){
+  const d=I18N[lang];
+  $('emailBtn').href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(d.mail_subj)+'&body='+encodeURIComponent(summary+'\n\n'+d.mail_tail);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(d.sms_pre+' '+summary.split('\n')[0]);
+}
+
+/* Hàm thuần: tính chữ ký + chỗ cần điền. Test bằng Playwright. */
+function pvr(i){
+  const adults=Math.max(0,Math.floor(i.adults||0));
+  const needParentSign = i.kids==='own' && adults===0;           // con mình có trong hình mà cha mẹ không có mặt: cha mẹ vẫn ký là Subject
+  const subjects = adults + (needParentSign?1:0);
+  const copies = subjects>0 ? Math.ceil(subjects/SUBJECT_LINES) : 0;
+  const extraForms = (i.kids==='other'?1:0);                       // cha mẹ của trẻ khác ký tờ riêng
+  const anyone = subjects>0 || i.kids!=='none' || i.pets!=='none';
+  return {adults,subjects,copies,extraForms,needParentSign,anyone,
+          signatures: subjects + (anyone?1:0) + (i.kids==='other'?1:0)};  // + agent; + ít nhất 1 cha mẹ trẻ khác
+}
+function update(){
+  const d=I18N[lang];
+  const inp={adults:num('adults'),kids:segVal('kids'),pets:segVal('pets'),use:segVal('use'),inside:$('inside').checked};
+  const r=pvr(inp);
+  const V=$('verdict');
+  let flags=[];
+  if(!r.anyone){
+    V.className='verdict'; $('vk').textContent=d.v_k0; $('vv').textContent=d.v_v0; $('vs').innerHTML=d.v_s0;
+    flags.push(['',d.f_rla]);
+    if(inp.inside) flags.push(['',d.f_inside0]);
+  } else {
+    V.className='verdict'; $('vk').textContent=d.v_k1;
+    $('vv').textContent=d.v_v1.replace('{n}',r.signatures);
+    $('vs').innerHTML=d.v_s1.replace('{s}',r.subjects).replace('{c}',r.copies);
+    flags.push(['',d.f_p1]);
+    flags.push(['',inp.use==='any'?d.f_2a_any:d.f_2a_std]);
+    if(r.adults>0) flags.push(['',d.f_4a.replace('{n}',r.adults)]);
+    if(r.copies>1) flags.push(['w',d.f_copies.replace('{c}',r.copies).replace(/{l}/g,SUBJECT_LINES)]);
+    if(inp.kids==='own') flags.push(['',d.f_4b_own]);
+    if(r.needParentSign) flags.push(['w',d.f_parent]);
+    if(inp.kids==='other') flags.push(['w',d.f_4b_other]);
+    if(inp.pets==='own') flags.push(['',d.f_4c_own]);
+    if(inp.pets==='other') flags.push(['w',d.f_4c_other]);
+    const p5=[];
+    if(inp.use==='sale') p5.push(d.p5_sale);
+    if(inp.kids!=='none') p5.push(d.p5_kids);
+    if(inp.inside) p5.push(d.p5_inside);
+    p5.push(d.p5_copy);
+    flags.push(['',d.f_5+' '+p5.map(x=>'“'+x+'”').join(' ')]);
+    flags.push(['',d.f_7]);
+    flags.push(['',d.f_law.replace('{m}',fmt(MIN_DAMAGES))]);
+  }
+  $('flags').innerHTML=flags.map(f=>'<li class="'+f[0]+'">'+f[1]+'</li>').join('');
+  const kidsT={none:d.o_none,own:d.o_kids_own,other:d.o_kids_other}[inp.kids], petsT={none:d.o_none2,own:d.o_pets_own,other:d.o_pets_other}[inp.pets];
+  const useT={sale:d.o_use_sale,std:d.o_use_std,any:d.o_use_any}[inp.use];
+  const sum=d.sum.replace('{v}',$('vv').textContent).replace('{a}',r.adults).replace('{k}',kidsT).replace('{p}',petsT).replace('{u}',useT).replace('{in}',inp.inside?d.yes:d.no);
+  setContact(sum);
+  window.__last=r;
+}
+['adults','inside'].forEach(id=>$(id).addEventListener('input',update));
+$('inside').addEventListener('change',update);
+
+function applyLang(){ renderStatic(); update(); }
+$('langBtn').onclick=()=>{ lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang(); };
+setSeg('kids','own'); setSeg('pets','own'); setSeg('use','std'); $('inside').checked=true;
+applyLang();
+</script>
+</body>
+</html>

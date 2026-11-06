@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Báo người thuê về vùng ngập (TFHD)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+.xal{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:12px}.xal h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0}.mhl{list-style:none;margin:0;padding:0;display:grid;gap:10px}.mhl li{display:grid;gap:2px;border-top:1px solid var(--line);padding-top:10px}.mhl li:first-child{border-top:0;padding-top:0}.mhl a{color:var(--fg);text-decoration:none;font-weight:500}.mhl a b{color:var(--brass);font-weight:600;margin-right:4px}.mhl span{color:var(--muted);font-size:14px}
+</style>
+<meta name="description" content="C.A.R. Form TFHD giải thích từng đoạn. Trả lời 4 câu có/không → biết check ô nào, kèm link MyHazards.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t492/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="T492 · Form TFHD: báo người thuê về vùng ngập · Ken Lam Tools">
+<meta property="og:description" content="C.A.R. Form TFHD giải thích từng đoạn. Trả lời 4 câu có/không → biết check ô nào, kèm link MyHazards.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t492/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions + Giải nghĩa forms */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{font-size:12px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 10px;color:var(--muted)}
+.chip b{color:var(--fg);font-weight:500}
+.sec{display:grid;gap:12px;min-width:0}
+.sec>h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0;line-height:1.15}
+.sec>p.lead{margin:0;font-size:14px;color:var(--muted)}
+.paper{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 16px 8px;display:grid;gap:0;min-width:0}
+.paper .ph{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;border-bottom:2px solid var(--fg);padding-bottom:8px;margin-bottom:4px}
+.paper .ph b{font-size:13px;letter-spacing:.08em;text-transform:uppercase;font-weight:600}
+.paper .ph small{font-size:11px;color:var(--warn)}
+.para{border-bottom:1px dashed var(--line)}
+.para:last-child{border-bottom:0}
+.para summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-items:baseline;padding:11px 2px}
+.para summary::-webkit-details-marker{display:none}
+.para .pn{font-size:12px;font-weight:600;color:var(--brass);min-width:2.2em;font-variant-numeric:tabular-nums}
+.para .pt{font-size:14px;font-weight:500;min-width:0}
+.para .pv{grid-column:2/3;font-size:13px;color:var(--muted);min-width:0;overflow-wrap:anywhere}
+.para .pi{color:var(--muted);font-size:14px;transition:transform .15s}
+.para[open] .pi{transform:rotate(45deg)}
+.para .pb{padding:0 2px 12px calc(2.2em + 12px);display:grid;gap:6px;font-size:14px;line-height:1.5}
+.para .pb p{margin:0}
+.para .pb b{color:var(--brass);font-weight:500}
+@media (max-width:420px){.para .pb{padding-left:2px}}
+.tool{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:14px;min-width:0}
+.tool h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0;line-height:1.15}
+.tool .seg{flex-wrap:wrap}
+.tool .seg button{min-width:0;flex:1 1 auto}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.4;cursor:pointer}
+.chk input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;flex:none}
+.chks{display:grid;gap:10px}
+.verdict{border-radius:12px;padding:14px 16px;background:var(--brass-soft);display:grid;gap:4px}
+.verdict .k{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.verdict .v{font-family:var(--display);font-size:44px;line-height:1.05}
+.verdict .s{font-size:15px}
+.verdict.warn{background:transparent;border:1px solid var(--warn)}
+.verdict.warn .v{color:var(--warn)}
+.flags{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.flags li{font-size:14px;line-height:1.5;border-left:3px solid var(--brass);padding:2px 0 2px 10px}
+.flags li.w{border-left-color:var(--warn)}
+.flags li b{font-weight:500}
+.cmp{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center}
+.cmp .h{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.cmp .lb{font-size:13px;font-weight:500;color:var(--muted)}
+.cmp .ctl{padding:0 8px}
+.cmp .ctl input{font-size:16px;padding:10px 4px}
+.cmp .ctl input[type=date]{font-size:14px;min-height:44px}
+@media (max-width:420px){.cmp{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.cmp .lb{grid-column:1/-1;margin-top:4px}.cmp .h0{display:none}}
+.qz{display:grid;gap:6px;border-top:1px solid var(--line);padding-top:12px}
+.qz:first-of-type{border-top:0;padding-top:0}
+.qz .q{font-size:15px;font-weight:500}
+.qz .fb{font-size:13px;line-height:1.5;color:var(--muted)}
+.qz .fb b{font-weight:600}
+.qz .fb.ok b{color:var(--ok)}
+.qz .fb.no b{color:var(--warn)}
+.seg button.right{background:var(--brass-soft);color:var(--fg);font-weight:500}
+.seg button.wrongp{color:var(--warn);font-weight:500}
+.vid{display:grid;gap:10px;justify-items:center}
+.vid h2{justify-self:start}
+.vid video{width:100%;max-width:360px;aspect-ratio:9/16;border-radius:12px;display:block;background:#0c1b28;border:1px solid var(--line)}
+.disc{font-size:13px;color:var(--muted);margin:0}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <div class="eyebrow" data-i="eyebrow"></div>
+    <h1 data-i="title"></h1>
+    <p class="sub" data-i="sub"></p>
+    <div class="chips" id="chips"></div>
+  </header>
+
+  <section class="sec" aria-label="Form">
+    <h2 data-i="mock_t"></h2>
+    <p class="lead" data-i="mock_lead"></p>
+    <div class="paper">
+      <div class="ph"><b id="mockTitle"></b><small data-i="mock_tag"></small></div>
+      <div id="paras"></div>
+    </div>
+  </section>
+
+  <section class="tool" aria-label="Tool" aria-live="polite">
+
+    <h2 data-i="t_h"></h2>
+    <p class="disc" data-i="t_lead"></p>
+    <div class="field"><label data-i="q_a"></label>
+      <div class="seg" data-g="a" role="group"><button type="button" data-v="no" data-i="o_no"></button><button type="button" data-v="yes" data-i="o_yes"></button></div></div>
+    <div class="field"><label data-i="q_b"></label>
+      <div class="seg" data-g="b" role="group"><button type="button" data-v="no" data-i="o_no"></button><button type="button" data-v="yes" data-i="o_yes"></button></div></div>
+    <div class="field"><label data-i="q_c"></label>
+      <div class="seg" data-g="c" role="group"><button type="button" data-v="no" data-i="o_no"></button><button type="button" data-v="yes" data-i="o_yes"></button></div></div>
+    <div class="field"><label data-i="q_d"></label>
+      <div class="seg" data-g="d" role="group"><button type="button" data-v="no" data-i="o_no"></button><button type="button" data-v="yes" data-i="o_yes"></button></div></div>
+    <div class="field"><label data-i="q_mh"></label>
+      <div class="seg" data-g="mh" role="group"><button type="button" data-v="none" data-i="o_mh0"></button><button type="button" data-v="clear" data-i="o_mh1"></button><button type="button" data-v="flood" data-i="o_mh2"></button></div></div>
+    <div class="verdict" id="verdict"><div class="k" data-i="v_k"></div><div class="v" id="vv"></div><div class="s" id="vs"></div></div>
+    <ul class="flags" id="flags"></ul>
+
+  </section>
+
+  <p class="myth" id="myth"></p>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title"></h2>
+    <ol id="nextList"></ol>
+  </section>
+
+  <section class="vid" aria-label="Video">
+    <h2 style="font-family:var(--display);font-weight:400;font-size:28px;margin:0" data-i="v_t"></h2>
+    <video src="web.mp4" controls playsinline preload="metadata"></video>
+  </section>
+
+  <section class="actions">
+    <a class="btn primary" id="emailBtn" href="mailto:ken@kenlamrealty.com" data-i="b_email"></a>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms"></a>
+    <a class="btn" id="videoBtn" href="web.mp4" target="_blank" rel="noopener" data-i="b_video"></a>
+    <a class="btn" href="/t402/" data-i="b_all"></a>
+  </section>
+
+  <footer>
+    <span class="src"><span data-i="ft_src"></span> (06/11/2026): <a href="https://www.car.org/transactions/standard-forms" target="_blank" rel="noopener">C.A.R. Form TFHD (Revised 6/23)</a> · <a href="http://myhazards.caloes.ca.gov" target="_blank" rel="noopener">Cal OES MyHazards</a> · <a href="https://law.justia.com/codes/california/2021/code-gov/title-2/division-1/chapter-7/article-5/section-8589-45" target="_blank" rel="noopener">Gov. Code §8589.45</a></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · BRG Realty Corp · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a> · 408-666-2825</span>
+    <span><span data-i="ft_upd"></span>: 06/11/2026 · <a href="/t402/" data-i="ft_all"></a> · <a href="/cong-cu/" data-i="ft_tools"></a></span>
+    <span data-i="ft_disc"></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số cố định =====
+   4 điều A–D: chữ trên form TFHD 6/23 đoạn 1 (có 1 điều đúng là "coi như nằm trong vùng ngập").
+   MYHAZARDS: link in trên form, đoạn 2. Luật: Government Code §8589.45 (AB 646): mọi hợp đồng thuê nhà ở ký từ 1/7/2018, không miễn, chữ ≥ cỡ 8.
+   Luật định nghĩa "biết thật sự" = B, C hoặc D. MyHazards báo vùng ngập → tool KHUYÊN check ô 2 (không phải luật bắt) — KEN DUYỆT. (FACTS 06/11/2026) */
+const SCEN=['a','b','c','d'], LAW_FROM='2018-07-01', MYHAZARDS='http://myhazards.caloes.ca.gov', UPDATED='06/11/2026';
+const I18N={"vi": {"mock_t": "Form minh họa", "mock_lead": "Bấm vào từng đoạn để xem: nó nói gì, nghĩa là gì, ví dụ.", "mock_tag": "Ví dụ minh họa — không phải form thật", "k_say": "Nó nói gì:", "k_mean": "Nghĩa là gì:", "k_ex": "Ví dụ:", "nx_title": "Bước tiếp theo", "v_t": "Video 45 giây", "b_email": "Gửi kết quả cho Ken qua email", "b_sms": "Nhắn hỏi Ken", "b_video": "Xem video 45 giây", "b_all": "Tất cả forms", "ft_src": "Nguồn", "ft_upd": "Cập nhật", "ft_all": "Tất cả forms", "ft_tools": "Tất cả tools", "ft_disc": "Thông tin chung, không phải tư vấn pháp lý. Hỏi luật sư cho trường hợp riêng. Ken Lam là broker, không phải luật sư. Form C.A.R. có bản quyền; trang này chỉ giải thích bằng lời của mình.", "lang": "English", "back": "← Tất cả tools", "mail_tail": "Gửi từ tools.kenlamrealty.com. Thông tin chung, không phải tư vấn pháp lý.", "sms_pre": "Chào Ken, tôi vừa xem tool trên tools.kenlamrealty.com:", "doc_title": "T492 · Form TFHD: báo người thuê về vùng ngập", "eyebrow": "Giải nghĩa forms · C.A.R. Form TFHD", "title": "Báo người thuê về vùng ngập (TFHD)", "sub": "Chủ nhà cho thuê nói cho người thuê biết nhà có nằm trong vùng dễ ngập không. Và nhắc: bảo hiểm chủ nhà không đền đồ của người thuê.", "chips": [["Ai ký", "Người thuê + chủ nhà"], ["Khi nào", "Kèm hợp đồng thuê"], ["Số trang", "1"], ["Bản", "6/23"]], "mock_title": "Tenant Flood Hazard Disclosure", "paras": [{"n": "—", "t": "Gắn vào hợp đồng thuê nào", "v": "☑ RLMM · 15/11/2026 · 1234 Example Lane, San Jose, CA 95100", "say": "Các điều trong tờ này trở thành một phần của hợp đồng thuê: Residential Lease or Month-to-Month Rental Agreement, hoặc ô Residential Lease After Sale, hoặc ô Other. Ghi ngày hợp đồng, địa chỉ, tên người thuê và chủ nhà.", "mean": "TFHD không đứng một mình. Nó đi theo một hợp đồng thuê cụ thể.", "ex": "Tenant: Chị Thu Example. Housing Provider: Anh Minh & Chị Hạnh Example."}, {"n": "1", "t": "Có nằm trong vùng ngập không", "v": "☑ CÓ — vì C và D", "say": "Ô đầu: nhà không nằm trong vùng ngập đặc biệt hay vùng có thể ngập. HOẶC check ô thứ hai: có nằm. Nhà được coi là nằm trong vùng ngập nếu có bất kỳ điều nào: A) chủ nhà biết thật sự; B) chủ nhà nhận thư cơ quan nhà nước báo vậy; C) ngân hàng cho vay bắt mua bảo hiểm lũ; D) chủ nhà đang có bảo hiểm lũ.", "mean": "Chỉ cần một điều đúng là check ô thứ hai. Không cần đủ cả bốn. Luật §8589.45 định nghĩa “biết thật sự” bằng chính B, C, D.", "ex": "Ngân hàng của nhà Example bắt mua flood insurance (C), và họ đang mua (D) → check ô \"có\"."}, {"n": "2", "t": "Tự tra ở MyHazards", "v": "myhazards.caloes.ca.gov", "say": "Người thuê có thể tự tra các rủi ro, kể cả lũ, trên trang My Hazards của Office of Emergency Services.", "mean": "Không cần đợi chủ nhà. Gõ địa chỉ là thấy.", "ex": "Chị Thu Example gõ 1234 Example Lane vào MyHazards trước khi ký."}, {"n": "3", "t": "Bảo hiểm chủ nhà không đền đồ người thuê", "v": "Nên mua renter’s + flood insurance", "say": "Bảo hiểm của chủ nhà không trả cho đồ đạc riêng của người thuê. Form khuyên người thuê cân nhắc mua renter’s insurance và flood insurance để bảo vệ đồ đạc khỏi cháy, lũ và rủi ro khác.", "mean": "Nước vào, tivi, quần áo hư — chủ nhà không đền. Hỏi hãng bảo hiểm xem có gồm lũ không.", "ex": "Chị Thu Example hỏi hãng bảo hiểm về renter’s insurance và flood coverage."}, {"n": "4", "t": "Chủ nhà không phải nói thêm", "v": "Gov. Code §8589.45", "say": "Chủ nhà không bắt buộc cung cấp thêm thông tin về lũ; thông tin trong tờ này (theo Government Code §8589.45) được coi là đã báo cho người thuê. Luật áp dụng mọi hợp đồng thuê nhà ở ký từ 1/7/2018.", "mean": "Ký tờ này là phần \"báo về vùng ngập\" theo luật này coi như xong. Muốn biết thêm thì tự tra hoặc tự hỏi.", "ex": "Nhà Example đưa TFHD, Chị Thu ký → đủ phần báo theo §8589.45."}, {"n": "✍", "t": "Chữ ký", "v": "Tenant + Housing Provider · 15/11/2026", "say": "Hai bên ký là đồng ý các điều trên và xác nhận đã nhận bản copy. Có 2 dòng cho người thuê, 2 dòng cho chủ nhà.", "mean": "Giữ bản copy cùng hợp đồng thuê.", "ex": "Chị Thu Example, Anh Minh và Chị Hạnh Example ký 15/11/2026."}], "t_h": "Check ô nào ở đoạn 1?", "t_lead": "Dành cho chủ nhà. Trả lời 4 câu theo đúng điều A–D trên form. Có một câu “có” là check ô “có nằm trong vùng ngập”.", "q_a": "A. Anh chị có biết nhà nằm trong vùng ngập không?", "q_b": "B. Đã nhận thư của cơ quan nhà nước báo nhà nằm trong vùng ngập?", "q_c": "C. Ngân hàng cho vay có bắt mua bảo hiểm lũ (flood insurance)?", "q_d": "D. Anh chị đang có bảo hiểm lũ?", "q_mh": "Đã tra địa chỉ trên MyHazards chưa?", "o_no": "Không", "o_yes": "Có", "o_mh0": "Chưa tra", "o_mh1": "Tra rồi: không thấy", "o_mh2": "Tra rồi: có vùng ngập", "v_k": "Đoạn 1 — check ô", "v_in": "Ô 2: CÓ nằm trong vùng ngập", "v_out": "Ô 1: không nằm trong vùng ngập", "v_s_in": "Vì điều {l}. Chỉ cần một điều đúng là đủ.", "v_rec": "Nên check ô 2", "v_s_rec": "A–D đều “không”, nhưng MyHazards báo vùng ngập. Luật chỉ định nghĩa “biết” bằng B, C, D — nên đây là lời khuyên: nói thật với người thuê.", "v_s_out": "Không điều nào trong A–D đúng.", "f_a": "<b>A:</b> chủ nhà biết thật sự → coi như nằm trong vùng ngập.", "f_b": "<b>B:</b> có thư cơ quan nhà nước → coi như nằm trong vùng ngập. Giữ lá thư đó.", "f_c": "<b>C:</b> ngân hàng bắt mua flood insurance → coi như nằm trong vùng ngập.", "f_d": "<b>D:</b> đang có flood insurance → coi như nằm trong vùng ngập, kể cả khi anh chị tự mua cho chắc.", "f_mh": "<b>MyHazards báo vùng ngập:</b> người thuê cũng tra ra trong 10 giây. Ken khuyên nói thật và check ô 2.", "f_law": "<b>Luật:</b> Gov. Code §8589.45 áp dụng cho mọi hợp đồng thuê nhà ở ký từ 1/7/2018, không có trường hợp miễn. Thông báo phải in chữ ít nhất cỡ 8.", "f_check": "<b>Chưa tra:</b> gõ địa chỉ vào <a href=\"{u}\" target=\"_blank\" rel=\"noopener\">MyHazards</a> trước khi ký. Mất 1 phút.", "f_clear": "<b>MyHazards không thấy vùng ngập</b> và A–D đều “không” → ô 1. Vẫn ghi đúng ngày hợp đồng và đưa bản copy.", "f_234": "<b>Đoạn 2–4:</b> in sẵn, không cần điền. Hai bên ký và giữ bản copy.", "f_ins": "<b>Nhắc người thuê:</b> bảo hiểm chủ nhà không đền đồ của họ (đoạn 3). Khuyên hỏi renter’s và flood insurance.", "sum": "TFHD: {v}. Điều đúng: {l}. MyHazards: {m}.", "mail_subj": "T492 · Kết quả TFHD", "myth": "<b>Nhiều người hiểu sai:</b> “Không chắc thì check ô ‘không’.” Nếu đang đóng tiền flood insurance, hay ngân hàng bắt mua, form coi như anh chị biết. Check ô “có”.", "next": ["Chủ nhà: trả lời 4 câu A–D. Một câu “có” là check ô 2.", "Tra địa chỉ trên MyHazards trước khi ký.", "Người thuê: hỏi hãng bảo hiểm về renter’s insurance và flood coverage.", "Kẹp TFHD vào hợp đồng thuê, hai bên giữ bản copy."]}, "en": {"mock_t": "Sample form", "mock_lead": "Tap each paragraph to see what it says, what it means, and an example.", "mock_tag": "Sample only — not the real form", "k_say": "What it says:", "k_mean": "What it means:", "k_ex": "Example:", "nx_title": "Next steps", "v_t": "45-second video", "b_email": "Email my result to Ken", "b_sms": "Text Ken a question", "b_video": "Watch the 45-sec video", "b_all": "All forms", "ft_src": "Sources", "ft_upd": "Updated", "ft_all": "All forms", "ft_tools": "All tools", "ft_disc": "General information, not legal advice. Ask a lawyer about your own situation. Ken Lam is a broker, not a lawyer. C.A.R. forms are copyrighted; this page explains them in our own words.", "lang": "Tiếng Việt", "back": "← All tools", "mail_tail": "Sent from tools.kenlamrealty.com. General information, not legal advice.", "sms_pre": "Hi Ken, I just used a tool on tools.kenlamrealty.com:", "doc_title": "T492 · Form TFHD: tenant flood hazard disclosure, explained", "eyebrow": "Forms explained · C.A.R. Form TFHD", "title": "Tenant flood hazard disclosure (TFHD)", "sub": "A landlord tells the tenant whether the home is in a flood hazard area — and reminds them the owner’s insurance does not cover the tenant’s belongings.", "chips": [["Who signs", "Tenant + housing provider"], ["When", "With the lease"], ["Pages", "1"], ["Revision", "6/23"]], "mock_title": "Tenant Flood Hazard Disclosure", "paras": [{"n": "—", "t": "Which lease it attaches to", "v": "☑ RLMM · 11/15/2026 · 1234 Example Lane, San Jose, CA 95100", "say": "These terms become part of the lease: Residential Lease or Month-to-Month Rental Agreement, or the Residential Lease After Sale box, or Other. It lists the lease date, property, tenant and housing provider.", "mean": "The TFHD does not stand alone. It goes with a specific lease.", "ex": "Tenant: Thu Example. Housing Provider: Minh & Hạnh Example."}, {"n": "1", "t": "In a flood hazard area or not", "v": "☑ YES — because of C and D", "say": "First box: the property is not in a special flood hazard area or area of potential flooding. OR check the second box: it is. The property is deemed in one if any of these apply: A) the owner actually knows; B) the owner got written notice from a public agency; C) the owner’s mortgage holder requires flood insurance; D) the owner currently carries flood insurance.", "mean": "Just one is enough to check the second box. Not all four. §8589.45 defines “actual knowledge” by B, C and D themselves.", "ex": "The Example family’s lender requires flood insurance (C) and they carry it (D) → check “is located”."}, {"n": "2", "t": "Look it up on MyHazards", "v": "myhazards.caloes.ca.gov", "say": "The tenant may get hazard information, including flooding, from the Office of Emergency Services My Hazards tool.", "mean": "No need to wait for the owner. Type the address and see.", "ex": "Thu Example types 1234 Example Lane into MyHazards before signing."}, {"n": "3", "t": "Owner’s insurance does not cover tenant’s things", "v": "Consider renter’s + flood insurance", "say": "The owner’s insurance does not cover loss of the tenant’s belongings. The form recommends the tenant consider renter’s and flood insurance against fire, flood or other loss.", "mean": "Water comes in, the TV and clothes are ruined — the owner does not pay. Ask an insurer whether flood is included.", "ex": "Thu Example asks an insurer about renter’s insurance and flood coverage."}, {"n": "4", "t": "Owner need not say more", "v": "Gov. Code §8589.45", "say": "The owner is not required to give more flood information; the information here (under Government Code §8589.45) is deemed to inform the tenant. The law covers every residential lease signed on or after 7/1/2018.", "mean": "Signing completes the flood-notice part under that law. Want more? Look it up or ask.", "ex": "The Example family gives the TFHD, Thu signs → the §8589.45 notice is done."}, {"n": "✍", "t": "Signatures", "v": "Tenant + Housing Provider · 11/15/2026", "say": "Both sides sign to agree and confirm they received a copy. Two tenant lines, two housing-provider lines.", "mean": "Keep the copy with the lease.", "ex": "Thu Example, Minh and Hạnh Example sign on 11/15/2026."}], "t_h": "Which box in paragraph 1?", "t_lead": "For owners. Answer the 4 questions, which match items A–D on the form. One “yes” means you check “is located in a flood hazard area”.", "q_a": "A. Do you actually know the home is in a flood area?", "q_b": "B. Have you received written notice from a public agency saying so?", "q_c": "C. Does your mortgage lender require flood insurance?", "q_d": "D. Do you currently carry flood insurance?", "q_mh": "Have you looked up the address on MyHazards?", "o_no": "No", "o_yes": "Yes", "o_mh0": "Not yet", "o_mh1": "Yes: no flood zone", "o_mh2": "Yes: flood zone shown", "v_k": "Paragraph 1 — check box", "v_in": "Box 2: IS in a flood area", "v_out": "Box 1: not in a flood area", "v_s_in": "Because of item {l}. One is enough.", "v_rec": "Box 2 recommended", "v_s_rec": "A–D are all “no”, but MyHazards shows a flood area. The law defines “knowledge” only by B, C and D — so this is advice: be upfront with the tenant.", "v_s_out": "None of A–D applies.", "f_a": "<b>A:</b> the owner actually knows → deemed in a flood area.", "f_b": "<b>B:</b> written notice from a public agency → deemed in a flood area. Keep that letter.", "f_c": "<b>C:</b> lender requires flood insurance → deemed in a flood area.", "f_d": "<b>D:</b> you carry flood insurance → deemed in a flood area, even if you bought it just in case.", "f_mh": "<b>MyHazards shows a flood area:</b> your tenant can find that in 10 seconds too. Ken recommends being upfront and checking box 2.", "f_law": "<b>The law:</b> Gov. Code §8589.45 covers every residential lease signed on or after 7/1/2018, with no exemptions. The notice must be in at least 8-point type.", "f_check": "<b>Not checked yet:</b> enter the address on <a href=\"{u}\" target=\"_blank\" rel=\"noopener\">MyHazards</a> before signing. Takes a minute.", "f_clear": "<b>MyHazards shows no flood area</b> and A–D are all “no” → box 1. Still fill in the lease date and give a copy.", "f_234": "<b>Paragraphs 2–4:</b> preprinted, nothing to fill in. Both sides sign and keep a copy.", "f_ins": "<b>Remind the tenant:</b> the owner’s insurance does not cover their belongings (¶3). Suggest asking about renter’s and flood insurance.", "sum": "TFHD: {v}. Items that apply: {l}. MyHazards: {m}.", "mail_subj": "T492 · My TFHD result", "myth": "<b>Common mistake:</b> “If I’m not sure, I check ‘not located’.” If you pay for flood insurance, or your lender requires it, the form treats you as knowing. Check “is located”.", "next": ["Owners: answer A–D. One “yes” means box 2.", "Look up the address on MyHazards before signing.", "Tenants: ask an insurer about renter’s insurance and flood coverage.", "Attach the TFHD to the lease; both sides keep a copy."]}};
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=n=>(n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+function setSeg(group,val){ document.querySelectorAll('[data-g="'+group+'"] button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===val?'true':'false')); }
+function segVal(group){ const b=document.querySelector('[data-g="'+group+'"] button[aria-pressed="true"]'); return b?b.dataset.v:''; }
+document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('.seg[data-g] button'); if(!b) return; setSeg(b.parentElement.dataset.g,b.dataset.v); update(); });
+function renderStatic(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('chips').innerHTML=d.chips.map(c=>'<span class="chip">'+c[0]+': <b>'+c[1]+'</b></span>').join('');
+  $('mockTitle').textContent=d.mock_title;
+  $('paras').innerHTML=d.paras.map(p=>'<details class="para"><summary><span class="pn">'+p.n+'</span><span class="pt">'+p.t+'</span><span class="pi" aria-hidden="true">+</span><span class="pv">'+p.v+'</span></summary><div class="pb"><p><b>'+d.k_say+'</b> '+p.say+'</p><p><b>'+d.k_mean+'</b> '+p.mean+'</p><p><b>'+d.k_ex+'</b> '+p.ex+'</p></div></details>').join('');
+  $('myth').innerHTML=d.myth;
+  $('nextList').innerHTML=d.next.map(x=>'<li>'+x+'</li>').join('');
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  $('klBack').textContent=d.back;
+  document.title=d.doc_title;
+}
+function setContact(summary){
+  const d=I18N[lang];
+  $('emailBtn').href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(d.mail_subj)+'&body='+encodeURIComponent(summary+'\n\n'+d.mail_tail);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(d.sms_pre+' '+summary.split('\n')[0]);
+}
+
+function tfhd(i){
+  const hits=SCEN.filter(k=>i[k]==='yes');
+  const mhFlood=i.mh==='flood';
+  const inZone=hits.length>0||mhFlood;
+  return {hits,inZone,box:inZone?2:1,mhFlood,advisory:mhFlood&&!hits.length};
+}
+function update(){
+  const d=I18N[lang];
+  const i={a:segVal('a'),b:segVal('b'),c:segVal('c'),d:segVal('d'),mh:segVal('mh')};
+  const r=tfhd(i);
+  $('vv').textContent=r.advisory?d.v_rec:(r.inZone?d.v_in:d.v_out);
+  $('verdict').className='verdict'+(r.inZone?' warn':'');
+  $('vs').innerHTML=r.advisory?d.v_s_rec:r.inZone?d.v_s_in.replace('{l}',r.hits.map(x=>x.toUpperCase()).join(', ')||'A'):d.v_s_out;
+  const f=[];
+  r.hits.forEach(k=>f.push(['w',d['f_'+k]]));
+  if(r.mhFlood) f.push(['w',d.f_mh]);
+  if(i.mh==='none') f.push(['',d.f_check.replace('{u}',MYHAZARDS)]);
+  if(i.mh==='clear'&&!r.inZone) f.push(['',d.f_clear]);
+  f.push(['',d.f_234]); f.push(['',d.f_ins]); f.push(['',d.f_law]);
+  $('flags').innerHTML=f.map(x=>'<li class="'+x[0]+'">'+x[1]+'</li>').join('');
+  setContact(d.sum.replace('{v}',$('vv').textContent).replace('{l}',r.hits.map(x=>x.toUpperCase()).join(',')||'—').replace('{m}',{none:d.o_mh0,clear:d.o_mh1,flood:d.o_mh2}[i.mh]));
+  window.__last=r;
+}
+
+function applyLang(){ renderStatic(); update(); }
+$('langBtn').onclick=()=>{ lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang(); };
+['a','b','c','d'].forEach(k=>setSeg(k,'no')); setSeg('c','yes'); setSeg('mh','none');
+applyLang();
+</script>
+</body>
+</html>

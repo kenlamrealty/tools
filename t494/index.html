@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Thuê Ngắn Ngày VRA</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+.xal{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:12px}.xal h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0}.mhl{list-style:none;margin:0;padding:0;display:grid;gap:10px}.mhl li{display:grid;gap:2px;border-top:1px solid var(--line);padding-top:10px}.mhl li:first-child{border-top:0;padding-top:0}.mhl a{color:var(--fg);text-decoration:none;font-weight:500}.mhl a b{color:var(--brass);font-weight:600;margin-right:4px}.mhl span{color:var(--muted);font-size:14px}
+
+/* ---- Giải nghĩa forms (T480–T402) ---- */
+.wrap{max-width:620px}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:4px 10px;color:var(--muted);background:var(--panel);min-width:0}
+.chip b{color:var(--fg);font-weight:500}
+.sec{display:grid;gap:12px;min-width:0}
+.sec>h2{font-family:var(--display);font-weight:400;font-size:28px;line-height:1.15;margin:0}
+.sec>p.lead{margin:0;font-size:14px;color:var(--muted)}
+.mock{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 16px 6px;min-width:0}
+.mock-h{display:flex;justify-content:space-between;align-items:baseline;gap:6px 12px;flex-wrap:wrap;border-bottom:2px solid var(--fg);padding-bottom:10px;margin-bottom:4px}
+.mock-h b{font-size:14px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.stamp{font-size:11px;color:var(--warn);border:1px solid var(--warn);border-radius:6px;padding:2px 7px;letter-spacing:.02em}
+.mock-meta{font-size:13px;color:var(--muted);padding:8px 0;border-bottom:1px solid var(--line);display:grid;gap:2px}
+.mock-meta b{color:var(--fg);font-weight:500}
+.grp{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--brass);padding:14px 0 4px;font-weight:500}
+details.para{border-bottom:1px solid var(--line)}
+details.para summary{display:grid;grid-template-columns:2.6em minmax(0,1fr) auto;gap:2px 8px;padding:11px 0;cursor:pointer;list-style:none;align-items:baseline}
+details.para summary::-webkit-details-marker{display:none}
+details.para .pn{font-weight:600;color:var(--brass);font-variant-numeric:tabular-nums;font-size:14px}
+details.para .pt{font-size:15px;font-weight:500;min-width:0}
+details.para .pv{grid-column:2;font-size:13px;color:var(--muted);min-width:0;overflow-wrap:anywhere}
+details.para .pc{color:var(--muted);font-size:18px;line-height:1;transition:transform .15s}
+details.para[open] .pc{transform:rotate(45deg)}
+details.para .pb{display:grid;gap:8px;padding:0 0 14px 2.6em;font-size:14px;line-height:1.55}
+details.para .pb p{margin:0}
+details.para .pb b{font-weight:600;color:var(--fg)}
+details.para .pb .ex{background:var(--brass-soft);border-radius:8px;padding:8px 10px}
+@media (max-width:420px){details.para .pb{padding-left:0}}
+.xall{justify-self:start;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:13px;padding:5px 12px;border-radius:999px;cursor:pointer}
+.tool{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:14px;min-width:0}
+.tool h3{font-family:var(--display);font-weight:400;font-size:22px;margin:0}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;padding:12px 4px}
+.ctl input[type=text],.ctl input[type=date]{font-size:17px}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45;cursor:pointer}
+.chk input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;flex:none}
+.verdict{border-radius:10px;padding:12px 14px;font-size:15px;line-height:1.5}
+.verdict.ok{background:var(--brass-soft)}
+.verdict.bad{border:1px solid var(--warn)}
+.verdict.bad b{color:var(--warn)}
+.verdict b{font-weight:600}
+.sub2{font-size:13px;color:var(--muted);margin:0}
+.vidbox{display:grid;gap:10px;justify-items:center}
+.vidbox video{width:100%;max-width:360px;aspect-ratio:9/16;border-radius:14px;background:#0c1b28;border:1px solid var(--line);display:block}
+.lst{margin:0;padding-left:20px;display:grid;gap:8px;font-size:14px;line-height:1.5}
+.lst b{font-weight:600}
+.opinion{font-size:15px;line-height:1.55;background:var(--panel);border-left:3px solid var(--brass);padding:12px 16px;margin:0;border-radius:0 10px 10px 0}
+.law{font-size:13px;color:var(--muted);line-height:1.5}
+.law b{color:var(--fg);font-weight:500}
+</style>
+<meta name="description" content="C.A.R. Form VRA explained in Vietnamese and English: every paragraph of the vacation rental agreement, plus a stay cost and cancellation refund calculator.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t494/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Thuê Ngắn Ngày VRA · Ken Lam Tools">
+<meta property="og:description" content="C.A.R. Form VRA explained in Vietnamese and English: every paragraph of the vacation rental agreement, plus a stay cost and cancellation refund calculator.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t494/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/t402/" data-i="back">← Tất cả forms</a>
+  <header>
+    <div class="brand">
+      <span data-i="eyebrow">Giải nghĩa forms · C.A.R. Form VRA</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title">Thuê nhà ngắn ngày (VRA): trả bao nhiêu, hủy thì mất gì?</h1>
+    <p class="sub" data-i="sub">VRA là hợp đồng thuê nhà đi nghỉ, ở 30 ngày trở xuống. Tiền giữ chỗ không hoàn, và một ngày trong hợp đồng quyết định anh chị lấy lại được bao nhiêu khi hủy.</p>
+    <div class="chips" id="chips"></div>
+  </header>
+
+  <section class="sec" aria-label="Form">
+    <h2 data-i="f_title">Form minh họa</h2>
+    <p class="lead" data-i="f_lead"></p>
+    <div class="mock">
+      <div class="mock-h"><b data-i="mock_name"></b><span class="stamp" data-i="stamp">Ví dụ minh họa — không phải form thật</span></div>
+      <div class="mock-meta" id="mockMeta"></div>
+      <div id="paras"></div>
+    </div>
+    <button type="button" class="xall" id="xall" data-i="xall">Mở hết</button>
+  </section>
+
+  <section class="sec" aria-label="Tool">
+    <h2 data-i="t_title"></h2>
+    <p class="lead" data-i="t_lead"></p>
+    <div class="tool">
+      <div class="row2">
+        <div class="field"><label for="arr" data-i="l_arr">Ngày tới</label><div class="ctl"><input id="arr" type="date" value="2026-12-18"></div></div>
+        <div class="field"><label for="dep" data-i="l_dep">Ngày đi</label><div class="ctl"><input id="dep" type="date" value="2026-12-23"></div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="rate" data-i="l_rate">Giá mỗi đêm</label><div class="ctl"><span class="pre">$</span><input id="rate" type="number" inputmode="decimal" min="0" step="10" value="250"></div></div>
+        <div class="field"><label for="clean" data-i="l_clean">Phí dọn dẹp</label><div class="ctl"><span class="pre">$</span><input id="clean" type="number" inputmode="decimal" min="0" step="10" value="150"></div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="resv"><span data-i="l_resv">Tiền giữ chỗ</span> <small data-i="l_resv_s">(không hoàn)</small></label><div class="ctl"><span class="pre">$</span><input id="resv" type="number" inputmode="decimal" min="0" step="10" value="200"></div></div>
+        <div class="field"><label for="depo"><span data-i="l_depo">Tiền cọc</span> <small data-i="l_depo_s">(trả lại sau)</small></label><div class="ctl"><span class="pre">$</span><input id="depo" type="number" inputmode="decimal" min="0" step="50" value="500"></div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="tot"><span data-i="l_tot">Thuế lưu trú (TOT)</span> <small data-i="l_tot_s">(% trên rent)</small></label><div class="ctl"><input id="tot" type="number" inputmode="decimal" min="0" max="30" step="0.5"><span class="post">%</span></div></div>
+        <div class="field"><label for="due" data-i="l_due">Hạn trả cuối cùng (đoạn 5)</label><div class="ctl"><input id="due" type="date" value="2026-11-18"></div></div>
+      </div>
+      <div class="field"><label for="cxl"><span data-i="l_cxl">Nếu hủy, ngày hủy</span> <small data-i="l_cxl_s">(để trống = không hủy)</small></label><div class="ctl"><input id="cxl" type="date"></div></div>
+      <label class="chk"><input type="checkbox" id="totClean"><span data-i="l_totc">Tính TOT trên cả phí dọn dẹp (tùy thành phố — hỏi lại)</span></label>
+      <section class="result" aria-live="polite">
+        <div class="total"><div class="k" id="rK"></div><div class="v" id="rTotal">$0</div></div>
+        <div class="verdict" id="rVerdict"></div>
+        <div class="lines">
+          <div class="line"><span class="n"><b data-i="n_rent">Rent</b> <small id="sRent"></small></span><span class="a" id="oRent"></span></div>
+          <div class="line"><span class="n"><b data-i="n_clean">Phí dọn dẹp</b></span><span class="a" id="oClean"></span></div>
+          <div class="line"><span class="n"><b data-i="n_tot">Thuế lưu trú (TOT)</b> <small id="sTot"></small></span><span class="a" id="oTot"></span></div>
+          <div class="line"><span class="n"><b data-i="n_resv">Tiền giữ chỗ (không hoàn)</b></span><span class="a" id="oResv"></span></div>
+          <div class="line"><span class="n"><b data-i="n_depo">Tiền cọc (trả lại nếu không hư hại)</b></span><span class="a" id="oDepo"></span></div>
+          <div class="line sum"><span class="n"><b data-i="n_total">Tổng phải trả</b></span><span class="a" id="oTotal"></span></div>
+        </div>
+        <div class="lines">
+          <div class="line"><span class="n"><b data-i="n_hold">Ở lố 1 ngày</b> <small data-i="n_hold_s">1.5 × tiền thuê/ngày</small></span><span class="a" id="oHold"></span></div>
+          <div class="line"><span class="n"><b data-i="n_late">Trả phòng trễ</b> <small data-i="n_late_s">50% mức ở lố</small></span><span class="a" id="oLate"></span></div>
+          <div class="line"><span class="n"><b data-i="n_back">Hạn trả cọc</b> <small data-i="n_back_s">3 tuần sau ngày đi</small></span><span class="a" id="oBack"></span></div>
+        </div>
+        <div class="note" data-i="r_note"></div>
+      </section>
+    </div>
+  </section>
+
+  <section class="sec" aria-label="Myths">
+    <h2 data-i="w_title">Nhiều người hiểu sai</h2>
+    <ol class="lst" id="wrongs"></ol>
+  </section>
+
+  <section class="sec" aria-label="Opinion">
+    <h2 data-i="o_title">Ý kiến của Ken</h2>
+    <p class="opinion" data-i="opinion"></p>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Bước tiếp theo</h2>
+    <ol id="nexts"></ol>
+  </section>
+
+  <section class="sec vidbox" aria-label="Video">
+    <h2 data-i="v_title" style="justify-self:start">Video 45 giây</h2>
+    <video src="web.mp4" controls playsinline preload="metadata" aria-label="Video"></video>
+  </section>
+
+  <section class="actions">
+    <a class="btn primary" id="emailBtn" href="mailto:ken@kenlamrealty.com" data-i="b_email">Gửi kết quả cho Ken qua email</a>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Nhắn Ken</a>
+    <a class="btn" id="videoBtn" href="/t494/web.mp4" target="_blank" rel="noopener" data-i="b_video">Xem video 45 giây</a>
+    <a class="btn" href="/t402/" data-i="b_all">Tất cả forms</a>
+  </section>
+
+  <footer>
+    <span data-i="ft_dis"></span>
+    <span class="src"><span data-i="ft_src">Nguồn</span>:
+      <a href="https://www.car.org/" target="_blank" rel="noopener">C.A.R. Form VRA (rev 1/06)</a> ·
+      <a href="https://www.spur.org/voter-guide/2026-06/sj-measure-a-hotel-tax-increase" target="_blank" rel="noopener">San Jose Measure A (TOT 12%)</a> ·
+      <a href="https://www.meganslaw.ca.gov/" target="_blank" rel="noopener">Megan&#x27;s Law</a></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · BRG Realty Corp · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/t402/" data-i="b_all2">Tất cả forms</a> · <a href="/cong-cu/" data-i="ft_all">Tất cả tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số liệu — sửa ở đây khi luật đổi =====
+   Form VRA rev 1/06: giữ chỗ không hoàn (5A), hoàn theo hạn trả cuối (8), ở lố 1.5× (9), trả phòng trễ 50% (9), NSF $25 (13), cọc trả trong 3 tuần (7B).
+   SJ_TOT_PCT: thuế lưu trú (Transient Occupancy Tax) San Jose — từ /home/claude/forms/FACTS.md. null = chưa có, hiện "kiểm lại".
+   MAX_NIGHTS 30: tiêu đề form "30 days or less". */
+const HOLD_X=1.5, LATE_CO=0.5, NSF=25, DEP_WEEKS=3, MAX_NIGHTS=30;
+const SJ_TOT_PCT=12;
+const PARAS=[{"g": {"vi": "Trang 1 · Ai, ở đâu, bao lâu, trả gì", "en": "Page 1 · Who, where, how long, what you pay"}}, {"n": "1", "t": {"vi": "Người ở (Occupant)", "en": "Occupant"}, "v": {"vi": "Chị Thu Example", "en": "Thu Example"}, "s": {"vi": "Ghi tên người thuê. Form gọi là \"Occupant\" (người ở), không gọi là \"Tenant\".", "en": "Names the renter. The form calls them the \"Occupant\", not the \"Tenant\"."}, "m": {"vi": "Chữ này có lý do: thuê ngắn ngày là khách trọ, không phải người thuê nhà theo hợp đồng thuê thường.", "en": "The word matters: a short stay makes you a lodger, not a regular tenant under a lease."}, "e": {"vi": "Chị Thu Example thuê nhà cho cả nhà đi chơi.", "en": "Thu Example books the home for a family trip."}}, {"n": "2", "t": {"vi": "Căn nhà (có đồ đạc)", "en": "The furnished property"}, "v": {"vi": "1234 Example Lane, San Jose · 3 phòng ngủ / 2 phòng tắm", "en": "1234 Example Lane, San Jose · 3 bed / 2 bath"}, "s": {"vi": "Người ở thuê căn nhà có sẵn đồ đạc, chỉ để đi nghỉ. Ghi địa chỉ, thành phố, quận, số phòng ngủ và phòng tắm.", "en": "The occupant rents the furnished home for vacation use only. It lists the address, city, county, bedrooms and baths."}, "m": {"vi": "\"Chỉ để đi nghỉ\" nghĩa là không dọn vô ở luôn, không làm văn phòng.", "en": "\"Vacation only\" means you do not move in or run a business there."}, "e": {"vi": "1234 Example Lane, San Jose, Santa Clara County, CA 95100. 3 phòng ngủ, 2 phòng tắm.", "en": "1234 Example Lane, San Jose, Santa Clara County, CA 95100. 3 bed, 2 bath."}}, {"n": "3", "t": {"vi": "Ngày giờ tới và đi", "en": "Arrival and departure"}, "v": {"vi": "Tới 18/12/2026 4 PM · Đi 23/12/2026 11 AM", "en": "Arrive 12/18/2026 4 PM · Leave 12/23/2026 11 AM"}, "s": {"vi": "Ghi ngày và giờ tới, ngày và giờ rời đi. Tiêu đề form ghi rõ: dành cho ở 30 ngày trở xuống.", "en": "Lists arrival and departure dates and times. The form title says it is for stays of 30 days or less."}, "m": {"vi": "Giờ đi là giờ thật. Trễ là bị tính phí (đoạn 9). Ở trên 30 ngày thì không nên dùng form này; dùng hợp đồng thuê (RLMM).", "en": "Check-out time is real. Late means fees (paragraph 9). For more than 30 days, use a lease (RLMM), not this form."}, "e": {"vi": "5 đêm: 18 → 23 tháng 12.", "en": "5 nights: Dec 18 → 23."}}, {"n": "4", "t": {"vi": "Ai được ở, bao nhiêu người", "en": "Who may stay, and how many"}, "v": {"vi": "Tối đa 4 người lớn, 2 trẻ em", "en": "Up to 4 adults, 2 children"}, "s": {"vi": "Ghi tối đa bao nhiêu người lớn và trẻ em. Có thể đánh dấu và liệt kê tên khách được phép ở (Authorized Guests). Ngoài danh sách là không ai được ở. Vi phạm thì có thể bị buộc rời đi ngay, bị coi là vi phạm hợp đồng, và mất tiền cọc.", "en": "Sets the maximum adults and children. If checked, it lists the only Authorized Guests. Nobody else may stay. Break this and everyone can be told to leave at once, it is a breach, and the deposit is forfeited."}, "m": {"vi": "Đây là đoạn nhiều người dính nhất. Rủ thêm 2 người bạn ghé ngủ lại một đêm cũng là vi phạm.", "en": "This is the one people trip on most. Two friends sleeping over for one night is still a violation."}, "e": {"vi": "Ghi 4 người lớn, 2 trẻ em: Chị Thu, chồng, ba mẹ và 2 con.", "en": "4 adults, 2 children: Thu, her husband, her parents and 2 kids."}}, {"n": "5", "t": {"vi": "Các khoản phải trả", "en": "Payments"}, "v": {"vi": "Giữ chỗ $200 · Rent $1,250 · Cọc $500 · Dọn $150 · TOT", "en": "Reservation $200 · Rent $1,250 · Deposit $500 · Cleaning $150 · TOT"}, "s": {"vi": "(A) Nhà chỉ được giữ khi đã nhận CẢ tiền giữ chỗ VÀ hợp đồng có chữ ký. Tiền giữ chỗ là phí dịch vụ làm hợp đồng và KHÔNG hoàn lại. (B) Một bảng: tiền giữ chỗ, tiền thuê, tiền cọc, phí dọn dẹp, 2 dòng \"khác\", thuế lưu trú (Transient Occupancy Tax), tổng cộng, và hạn trả từng khoản.", "en": "(A) The home is not held until BOTH the reservation fee and the signed agreement arrive. The reservation fee pays for setting up the agreement and is NONREFUNDABLE. (B) A table: reservation fee, rent, security deposit, cleaning fee, two \"other\" lines, Transient Occupancy Tax, total, and a due date for each."}, "m": {"vi": "Ký mà chưa trả tiền giữ chỗ thì nhà chưa phải của anh chị. Và tiền giữ chỗ coi như mất, dù sau này hủy sớm.", "en": "Signing without paying the reservation fee does not hold the home. And the reservation fee is gone even if you cancel early."}, "e": {"vi": "5 đêm × $250 = $1,250 rent. TOT San Jose 12% (từ 01/10/2026, Measure A; trước đó 10%) trên rent. Xem tool bên dưới.", "en": "5 nights × $250 = $1,250 rent. San Jose TOT 12% (from 10/1/2026, Measure A; 10% before) on the rent. See the tool below."}}, {"n": "6", "t": {"vi": "Trả trễ: hủy hoặc phạt", "en": "Late payment: cancel or late charge"}, "v": {"vi": "Phí trễ $50", "en": "Late charge $50"}, "s": {"vi": "Nếu khoản nào chưa tới đúng hạn, chủ nhà (hoặc người đại diện) được chọn: hủy hợp đồng và hoàn mọi tiền trừ tiền giữ chỗ, hoặc tính phí trễ một số tiền ghi sẵn.", "en": "If any payment is late, the owner (or representative) may choose: cancel and refund everything except the reservation fee, or charge a set late fee."}, "m": {"vi": "Quyền chọn nằm ở phía chủ nhà, không phải ở anh chị.", "en": "The owner picks, not you."}, "e": {"vi": "Hạn trả rent 18/11. Ngày 20/11 chưa trả → chủ nhà có thể hủy (hoàn mọi tiền đã trả, trừ $200 giữ chỗ) hoặc tính thêm $50.", "en": "Rent due 11/18. Not paid by 11/20 → the owner may cancel (refund all but the $200) or add $50."}}, {"n": "7", "t": {"vi": "Tiền cọc", "en": "Security deposit"}, "v": {"vi": "$500 · giữ trong trust account", "en": "$500 · held in trust account"}, "s": {"vi": "(A) Chọn ai giữ cọc: chủ nhà, hay trust account của người đại diện. (B) Cọc được dùng để trả tiền còn nợ, phí check bị trả (NSF), sửa hư hại ngoài hao mòn bình thường, dọn dẹp, thay đồ mất. Trong 3 tuần sau khi rời đi, chủ nhà phải gửi bảng kê (nhận bao nhiêu, giữ lại bao nhiêu và vì sao, giữ chờ bill điện nước) và trả phần còn lại. (C) Không trả lãi trừ khi luật địa phương bắt. (D) Ai giữ cọc thì người đó chịu trách nhiệm trả.", "en": "(A) Choose who holds the deposit: the owner, or the representative's trust account. (B) It may cover unpaid amounts, NSF fees, damage beyond normal wear, cleaning, and missing items. Within 3 weeks after you leave, the owner must send an itemized statement (received, withheld and why, held for utility bills) and return the rest. (C) No interest unless local law requires it. (D) Whoever holds it is responsible for returning it."}, "m": {"vi": "3 tuần là theo form này. Dọn sạch, chụp hình lúc đi, là cách giữ cọc tốt nhất.", "en": "Three weeks is this form's rule. Clean up and take photos when you leave. That is the best way to get it back."}, "e": {"vi": "Đi ngày 23/12 → hạn trả cọc khoảng 13/01/2027.", "en": "Leave 12/23 → deposit back by about 01/13/2027."}}, {"n": "8", "t": {"vi": "Hủy và hoàn tiền", "en": "Cancellation and refund"}, "v": {"vi": "Hạn trả cuối cùng: 18/11/2026", "en": "Latest payment due date: 11/18/2026"}, "s": {"vi": "Hủy TRƯỚC hạn trả cuối cùng (Payment Due Date trễ nhất trong bảng đoạn 5): hoàn hết, trừ tiền giữ chỗ. Hủy SAU ngày đó: người ở chịu tiền thuê, hoa hồng của người đại diện, và chi phí quảng cáo, chuẩn bị để cho thuê lại.", "en": "Cancel BEFORE the latest Payment Due Date in the paragraph 5 table: everything back except the reservation fee. Cancel AFTER it: you owe the rent, the representative's commission, and the marketing and prep costs to re-rent."}, "m": {"vi": "Ngày quan trọng nhất trong hợp đồng không phải ngày tới. Là ngày trả cuối cùng. Qua ngày đó mà hủy là mất nhiều tiền.", "en": "The most important date is not arrival. It is the last payment date. Cancel after it and it costs real money."}, "e": {"vi": "Hủy 10/11 → nhận lại tất cả trừ $200. Hủy 01/12 → mất tiền thuê $1,250 (có thể cộng phí khác).", "en": "Cancel 11/10 → all back except $200. Cancel 12/01 → owe the $1,250 rent (maybe more fees)."}}, {"g": {"vi": "Trang 2 · Ở trong nhà", "en": "Page 2 · During the stay"}}, {"n": "9", "t": {"vi": "Ở lố giờ", "en": "Holding over"}, "v": {"vi": "1.5 × tiền thuê/ngày · trả phòng trễ 50%", "en": "1.5 × daily rent · late check-out 50%"}, "s": {"vi": "Không được ở lố hay đi trễ nếu chưa xin phép. Ở lố bị tính 1.5 lần tiền thuê mỗi ngày (hoặc số khác ghi vào), cộng thiệt hại, kể cả tiền chỗ ở cho khách kế tiếp bị mất phòng. Trả phòng trễ bị tính 50% của mức ở lố.", "en": "No staying over or late check-out without approval. Holding over costs 1.5 times the daily rent (or another amount written in), plus damages, including housing for the next guests you displaced. A late check-out costs 50% of that holdover rate."}, "m": {"vi": "Trễ vài giờ cũng có giá. Muốn ở thêm thì hỏi bằng tin nhắn trước.", "en": "Even a few hours late has a price. Ask in writing first."}, "e": {"vi": "Rent $250/đêm → ở lố 1 ngày $375; trả phòng trễ $187.50.", "en": "$250/night → one holdover day $375; late check-out $187.50."}}, {"n": "10", "t": {"vi": "Dọn dẹp", "en": "Cleaning"}, "v": {"vi": "Giao sạch · trả lại như lúc nhận", "en": "Delivered clean · return it the same"}, "s": {"vi": "Nhà giao cho người ở đã dọn chuyên nghiệp. Lúc đi phải trả lại như lúc nhận (trừ hao mòn bình thường). Không thì tiền dọn thêm trừ vào cọc.", "en": "The home is delivered professionally cleaned. Leave it the same, less normal wear. If not, extra cleaning comes out of the deposit."}, "m": {"vi": "Phí dọn dẹp ở đoạn 5 không có nghĩa là để bừa cũng được.", "en": "Paying a cleaning fee does not mean you can leave a mess."}, "e": {"vi": "Bỏ rác, rửa chén, gom khăn là đủ cho đa số chủ nhà.", "en": "Trash out, dishes done, towels gathered is enough for most owners."}}, {"n": "11", "t": {"vi": "Không thú cưng", "en": "No pets"}, "v": {"vi": "Không", "en": "None"}, "s": {"vi": "Không được đem thú cưng. Có thì người ở chịu mọi hư hại, có thể bị buộc rời đi, vi phạm hợp đồng, và mất cọc.", "en": "Pets are not allowed. If one is there, you pay all damage, may be removed, are in breach, and lose the deposit."}, "m": {"vi": "Muốn đem chó thì phải sửa hợp đồng bằng giấy trước (đoạn 31). Nói miệng không đủ.", "en": "Bringing a dog needs a written change first (paragraph 31). A verbal OK is not enough."}, "e": null}, {"n": "12", "t": {"vi": "Không hút thuốc", "en": "No smoking"}, "v": {"vi": "Không", "en": "None"}, "s": {"vi": "Không hút thuốc trong nhà. Hút thì chịu mọi hư hại (vết ố, cháy, mùi, dọn), có thể bị buộc rời đi, vi phạm, và mất cọc.", "en": "No smoking. If it happens, you pay for stains, burns, odors and cleanup, may be removed, are in breach, and lose the deposit."}, "m": {"vi": "Mùi thuốc là thứ chủ nhà phát hiện dễ nhất.", "en": "Smoke smell is the easiest thing for an owner to find."}, "e": null}, {"n": "13", "t": {"vi": "Check bị trả (NSF)", "en": "Bounced checks (NSF)"}, "v": {"vi": "$25", "en": "$25"}, "s": {"vi": "Check bị trả thì phí $25. Nếu không trả lại đúng hạn thì hợp đồng bị hủy.", "en": "A returned check costs $25. If the payment is not made by its due date, the agreement is canceled."}, "m": {"vi": "Một tờ check hỏng có thể làm mất luôn chỗ ở.", "en": "One bad check can cost you the booking."}, "e": null}, {"n": "14", "t": {"vi": "Tình trạng nhà", "en": "Condition of the home"}, "v": {"vi": "Chưa xem nhà trước", "en": "Has not viewed before"}, "s": {"vi": "Đánh dấu người ở đã hay chưa xem nhà. Khi tới, phải kiểm tra đồ đạc, thiết bị, cây cảnh, và báo bằng giấy ngay nếu có gì hư. Báo hư không cho quyền hủy hay đòi hoàn tiền.", "en": "Check whether you viewed the home first. On arrival, inspect furniture, appliances, fixtures and landscaping, and report anything broken in writing right away. Reporting repairs does not give you the right to cancel or get a refund."}, "m": {"vi": "Chụp hình và nhắn ngay trong giờ đầu. Đó là bằng chứng để khỏi bị trừ cọc.", "en": "Photo and text in the first hour. That protects your deposit."}, "e": {"vi": "Tới 4 PM thấy máy rửa chén hư → nhắn chủ nhà lúc 4:20 PM, kèm hình.", "en": "Arrive 4 PM, dishwasher broken → text the owner at 4:20 PM with a photo."}}, {"n": "15", "t": {"vi": "Điện nước", "en": "Utilities"}, "v": {"vi": "Chủ nhà trả hết", "en": "Owner pays all"}, "s": {"vi": "Chủ nhà trả mọi điện nước, trừ khi đánh dấu: người ở trả tiền điện thoại, hoặc khoản khác ghi vào.", "en": "The owner pays all utilities unless checked: occupant pays phone charges, or another item written in."}, "m": {"vi": "Đọc kỹ dòng \"khác\". Có nhà ghi sạc xe điện hay hồ bơi sưởi.", "en": "Read the \"other\" line. Some list EV charging or pool heating."}, "e": null}, {"n": "16", "t": {"vi": "Nội quy · không làm ăn", "en": "Rules · no commercial use"}, "v": {"vi": "Theo nội quy dán trong nhà", "en": "Per posted house rules"}, "s": {"vi": "Phải theo mọi nội quy dán trong nhà hoặc được gửi. Không làm phiền hàng xóm, không làm ăn hay việc phạm pháp (kể cả ma túy), không vi phạm luật, không phá hoại.", "en": "Follow all rules posted or delivered. No disturbing neighbors, no business or illegal use (including drugs), no breaking laws, no waste or nuisance."}, "m": {"vi": "Tiệc tùng ồn ào là \"làm phiền\" — đủ lý do để chủ nhà xử lý.", "en": "A loud party counts as a disturbance."}, "e": null}, {"n": "17", "t": {"vi": "Nhà trong HOA", "en": "Condo or HOA"}, "v": {"vi": "Không đánh dấu", "en": "Not checked"}, "s": {"vi": "Nếu đánh dấu: căn nằm trong condo hay khu có HOA. Người ở phải theo luật HOA, chủ nhà đưa bản nội quy, và người ở trả lại tiền phạt HOA do mình gây ra.", "en": "If checked: the unit is in an HOA. You follow HOA rules, the owner gives you a copy, and you repay HOA fines you cause."}, "m": {"vi": "Hồ bơi chung, chỗ đậu xe khách thường có giờ giấc. Hỏi trước.", "en": "Shared pools and guest parking often have hours. Ask."}, "e": null}, {"n": "18", "t": {"vi": "Giữ gìn nhà", "en": "Maintenance"}, "v": {"vi": "Báo hư ngay", "en": "Report problems right away"}, "s": {"vi": "Người ở phải dùng đúng cách, giữ sạch, và báo ngay khi có gì hư. Hư do mình hoặc khách gây ra (ngoài hao mòn) thì mình trả. Không báo kịp làm hư thêm cũng mình trả. Nghẹt ống thì mình trả, trừ khi do ống hư hay rễ cây.", "en": "Use things properly, keep them clean, and report problems right away. You pay for damage you or guests cause (beyond normal wear), damage from reporting late, and drain clogs unless caused by bad plumbing or tree roots."}, "m": {"vi": "Báo sớm rẻ hơn báo trễ. Đây là luật trong form.", "en": "Reporting early is cheaper than reporting late. That is written in."}, "e": null}, {"n": "19", "t": {"vi": "Không thay đổi gì", "en": "No alterations"}, "v": {"vi": "Không", "en": "None"}, "s": {"vi": "Không được dời đồ, sơn, dán, đổi ổ khóa, gắn ăng-ten, treo bảng, đóng đinh hay dán keo.", "en": "No moving furniture, painting, wallpaper, changing locks, antennas, signs, nails, screws or adhesives."}, "m": {"vi": "Dời cái ghế sofa cũng tính. Muốn dời gì thì hỏi.", "en": "Even moving the sofa counts. Ask first."}, "e": null}, {"n": "20", "t": {"vi": "Chủ nhà vào nhà", "en": "Owner entry"}, "v": {"vi": "Bất cứ lúc nào để sửa · báo trước khi dẫn người xem", "en": "Any time for repairs · reasonable notice for showings"}, "s": {"vi": "(A) Chủ nhà và người đại diện được vào bất cứ lúc nào để sửa chữa, bảo trì, kiểm tra người ở có làm đúng không, hoặc khi khẩn cấp. (B) Báo trước hợp lý để dẫn người mua, người thuê, ngân hàng, thẩm định, thợ vào xem.", "en": "(A) The owner and agents may enter at any time to make repairs, maintain, check compliance, or in an emergency. (B) With reasonable notice, they may show the home to buyers, renters, lenders, appraisers or contractors."}, "m": {"vi": "Khác hẳn hợp đồng thuê thường (RLMM cần báo trước 24 giờ bằng giấy). Thuê ngắn ngày thì chủ nhà vào dễ hơn nhiều.", "en": "Very different from a lease (the RLMM needs 24-hour written notice). In a vacation rental the owner can come in much more easily."}, "e": null}, {"n": "21", "t": {"vi": "Không cho thuê lại", "en": "No assignment or subletting"}, "v": {"vi": "Không", "en": "None"}, "s": {"vi": "Không được chuyển hợp đồng hay cho người khác thuê lại. Vi phạm thì mọi người có thể bị buộc rời đi, vi phạm hợp đồng, mất cọc.", "en": "No assigning or subletting. If you do, everyone may be removed, it is a breach, and the deposit is forfeited."}, "m": {"vi": "Thuê rồi đăng lại lên Airbnb kiếm lời là vi phạm thẳng.", "en": "Booking it and re-listing it on Airbnb for profit is a direct violation."}, "e": null}, {"n": "22", "t": {"vi": "Nhà không có sẵn", "en": "Unavailability"}, "v": {"vi": "Đổi căn tương tự hoặc hoàn hết", "en": "Comparable unit or full refund"}, "s": {"vi": "Nếu vì lý do ngoài tầm kiểm soát mà nhà không có sẵn, chủ nhà có thể đổi qua căn tương tự, hoặc hủy và hoàn TẤT CẢ tiền đã trả.", "en": "If, for reasons beyond their control, the home is unavailable, the owner may substitute a comparable unit or cancel and refund ALL payments."}, "m": {"vi": "Trường hợp này hoàn luôn cả tiền giữ chỗ.", "en": "Here even the reservation fee comes back."}, "e": {"vi": "Ống nước bể tuần trước khi tới → chủ nhà hoàn toàn bộ tiền đã trả, kể cả $200 giữ chỗ, hoặc đổi căn tương tự.", "en": "A pipe bursts the week before → the owner refunds every payment, even the $200 reservation fee, or offers a comparable home."}}, {"n": "23", "t": {"vi": "Lúc rời đi", "en": "When you leave"}, "v": {"vi": "Trả chìa · trống · dọn chỗ đậu xe", "en": "Keys back · empty · parking cleared"}, "s": {"vi": "Khi rời đi: trả mọi chìa khóa, remote; rời khỏi nhà, không còn ai; dọn chỗ đậu xe, kho; trả nhà như lúc nhận (trừ hao mòn bình thường).", "en": "When you leave: return all keys and remotes, leave the home empty of people, clear parking and storage, and return it in the condition you got it, less normal wear."}, "m": {"vi": "Mất remote garage là bị tính tiền (đoạn 30).", "en": "A lost garage remote gets charged (paragraph 30)."}, "e": null}, {"n": "24", "t": {"vi": "Đồ đạc và bị thương · bảo hiểm", "en": "Personal property, injury, insurance"}, "v": {"vi": "Nên mua bảo hiểm", "en": "Insurance recommended"}, "s": {"vi": "(A) Bảo hiểm chủ nhà (và HOA) không bảo vệ đồ đạc, xe của người ở và khách, và không bảo vệ bị thương trừ khi do tình trạng nhà. (B) Chủ nhà khuyên người ở tự mua bảo hiểm. (C) Người ở đồng ý bồi thường, bảo vệ chủ nhà và người đại diện khỏi các khiếu nại về mất mát, hư hại, thương tích của người ở và khách.", "en": "(A) The owner's (and HOA's) insurance does not cover your or guests' belongings or vehicles, nor injury unless caused by the home's condition. (B) The owner recommends you carry insurance. (C) You agree to indemnify and defend the owner and representative from claims for loss, damage or injury to you, your guests or belongings."}, "m": {"vi": "Đoạn C nặng hơn nhiều người nghĩ. Đi với trẻ nhỏ, hồ bơi, nên hỏi bảo hiểm du lịch hay renters của mình có che không.", "en": "Part C is heavier than people think. With kids or a pool, ask whether your travel or renters policy covers you."}, "e": null}, {"g": {"vi": "Trang 3 · Pháp lý và chữ ký", "en": "Page 3 · Legal terms and signatures"}}, {"n": "25", "t": {"vi": "Hòa giải", "en": "Mediation"}, "v": {"vi": "Hòa giải trước", "en": "Mediate first"}, "s": {"vi": "Có tranh chấp thì phải hòa giải trước khi ra trọng tài hay tòa. Phí hòa giải chia đều.", "en": "Disputes go to mediation before arbitration or court. Mediation fees are split equally."}, "m": {"vi": "Rẻ và nhanh hơn kiện.", "en": "Cheaper and faster than suing."}, "e": null}, {"n": "26", "t": {"vi": "Nhiễm methamphetamine", "en": "Methamphetamine contamination"}, "v": {"vi": "Không đánh dấu", "en": "Not checked"}, "s": {"vi": "Nếu đánh dấu: cơ quan y tế đã có lệnh cấm ở vì nhiễm meth, và chủ nhà đã đưa thông báo kèm lệnh trước khi ký.", "en": "If checked: a health official has ordered no occupancy due to meth contamination, and the owner gave the notice and order before signing."}, "m": {"vi": "Thấy đánh dấu ô này là dừng lại, hỏi kỹ.", "en": "If this is checked, stop and ask."}, "e": null}, {"n": "27", "t": {"vi": "Megan's Law", "en": "Megan's Law database"}, "v": {"vi": "Thông báo chuẩn", "en": "Standard notice"}, "s": {"vi": "Thông báo trang web meganslaw.ca.gov có thông tin người phạm tội tình dục đã đăng ký. Chủ nhà và broker không bắt buộc phải tra; người ở muốn biết thì tự tra.", "en": "Notice that meganslaw.ca.gov lists registered sex offenders. Owner and brokers need not check it; you can look it up yourself."}, "m": {"vi": "Đi với con nhỏ thì tốn 2 phút tra.", "en": "Traveling with kids? It takes two minutes to check."}, "e": null}, {"n": "28", "t": {"vi": "Trách nhiệm chung và riêng", "en": "Joint and individual obligations"}, "v": {"vi": "2 người ký", "en": "2 occupants signing"}, "s": {"vi": "Nhiều người ký thì mỗi người chịu trách nhiệm toàn bộ, chung và riêng.", "en": "With more than one occupant, each one is fully responsible, jointly and individually."}, "m": {"vi": "Chia tiền với bạn bè? Chủ nhà có quyền đòi một người trả hết.", "en": "Splitting with friends? The owner can collect it all from any one of you."}, "e": null}, {"n": "29", "t": {"vi": "Khách trọ ngắn ngày", "en": "Transient occupancy"}, "v": {"vi": "Theo số ngày ở đoạn 3", "en": "For the days in paragraph 3"}, "s": {"vi": "Người ở thuê với tư cách khách trọ (transient lodger) trong số ngày ở đoạn 3. Chủ nhà giữ đầy đủ quyền pháp lý, quyền chiếm hữu và quyền vào nhà.", "en": "You rent as a transient lodger for the days in paragraph 3. The owner keeps full legal, possession and access rights."}, "m": {"vi": "Đây là lý do thuê ngắn ngày không có các quyền của người thuê nhà thường: luật (Civil Code § 1940(b)) không coi khách trọ chịu thuế TOT là tenant. Ở quá 30 ngày thì câu chuyện khác, hỏi luật sư.", "en": "This is why a short stay does not carry regular tenant rights: Civil Code § 1940(b) does not treat a TOT-paying transient guest as a tenant. Past 30 days it is a different story; ask a lawyer."}, "e": null}, {"n": "30", "t": {"vi": "Chìa khóa · ổ khóa", "en": "Keys and locks"}, "v": {"vi": "2 chìa nhà · 1 remote garage", "en": "2 house keys · 1 garage remote"}, "s": {"vi": "Ghi số chìa nhà, remote garage, chìa thùng thư, chìa khu chung. Ghi ổ khóa đã đổi chưa. Tự đổi khóa thì phải đưa chìa cho chủ nhà; mất chìa thì người ở trả; không được tháo ổ khóa.", "en": "Lists house keys, garage remotes, mailbox and common-area keys, and whether locks were rekeyed. Rekey and you must hand over copies; you pay for lost keys; you may not remove locks."}, "m": {"vi": "Có hộp khóa số (lockbox) thì ghi vào dòng trống.", "en": "A lockbox goes on a blank line."}, "e": null}, {"n": "31", "t": {"vi": "Điều khoản khác · phụ lục", "en": "Other terms, attached supplements"}, "v": {"vi": "Check-in procedure", "en": "Check-in procedure"}, "s": {"vi": "Đánh dấu phụ lục đính kèm: hướng dẫn check-in, addendum, hoặc điều khoản khác viết tay.", "en": "Check attached items: check-in procedure, contract addendum, or other written terms."}, "m": {"vi": "Mọi lời hứa (đem chó, check-in sớm, thêm khách) phải nằm ở đây mới tính.", "en": "Every promise (a dog, early check-in, extra guests) must be written here to count."}, "e": null}, {"n": "32", "t": {"vi": "Toàn bộ hợp đồng", "en": "Entire contract"}, "v": {"vi": "Luật California · tòa Santa Clara County", "en": "California law · Santa Clara County forum"}, "s": {"vi": "Thời hạn là quan trọng. Hợp đồng này là toàn bộ thỏa thuận; lời hứa miệng trước đó không tính. Một điều khoản vô hiệu thì phần còn lại vẫn giữ. Bỏ qua vi phạm một lần không có nghĩa bỏ qua luôn. Theo luật California; kiện thì ở tòa của quận có căn nhà.", "en": "Time is of the essence. This is the whole deal; earlier verbal promises do not count. If one part is invalid the rest stands. Waiving one breach is not waiving the next. California law applies; lawsuits go in the county where the home is."}, "m": {"vi": "Tin nhắn \"OK cho em đem chó\" mà không vào hợp đồng là rủi ro.", "en": "A text saying \"sure, bring the dog\" that never made it into the contract is a risk."}, "e": null}, {"n": {"vi": "Ký", "en": "Sign"}, "t": {"vi": "Chữ ký và liên lạc", "en": "Signatures and contacts"}, "v": {"vi": "Chị Thu Example · liên hệ: Owner's Representative", "en": "Thu Example · contact: Owner's Representative"}, "s": {"vi": "Người ở ký, ghi địa chỉ, điện thoại, email. Cuối form ghi người liên lạc về căn nhà: chủ nhà hoặc người đại diện, kèm thông tin. Mỗi trang có chỗ ký tắt.", "en": "Occupants sign with address, phone, email. The bottom names who to contact about the home: owner or representative. Each page has initials."}, "m": {"vi": "Lưu số điện thoại người liên lạc trước khi lên đường.", "en": "Save the contact's number before you leave home."}, "e": null}];
+const COMMON={
+ vi:{back:'← Tất cả forms',f_title:'Form minh họa',stamp:'Ví dụ minh họa — không phải form thật',xall:'Mở hết',xnone:'Đóng hết',
+  says:'Nó nói gì',means:'Nghĩa là gì cho anh chị',ex:'Ví dụ',w_title:'Nhiều người hiểu sai',o_title:'Ý kiến của Ken',nx_title:'Bước tiếp theo',
+  v_title:'Video 45 giây',b_email:'Gửi kết quả cho Ken qua email',b_sms:'Nhắn Ken',b_video:'Xem video 45 giây',b_all:'Tất cả forms',b_all2:'Tất cả forms',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  ft_dis:'Thông tin chung, không phải tư vấn pháp lý. Hỏi luật sư cho trường hợp riêng. Ken là broker, không phải luật sư. Form C.A.R. có bản quyền; trang này chỉ giải thích bằng lời của Ken, không chép lại form.'},
+ en:{back:'← All forms',f_title:'Sample form',stamp:'Sample for illustration — not the real form',xall:'Open all',xnone:'Close all',
+  says:'What it says',means:'What it means for you',ex:'Example',w_title:'Common mistakes',o_title:"Ken's take",nx_title:'Next steps',
+  v_title:'45-second video',b_email:'Email my result to Ken',b_sms:'Text Ken',b_video:'Watch the 45-sec video',b_all:'All forms',b_all2:'All forms',
+  ft_src:'Sources',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  ft_dis:'General information, not legal advice. Ask an attorney about your own situation. Ken is a broker, not a lawyer. C.A.R. forms are copyrighted; this page explains them in our own words and does not reproduce the form.'}
+};
+const PAGE={"vi": {"eyebrow": "Giải nghĩa forms · C.A.R. Form VRA", "title": "Thuê nhà ngắn ngày (VRA): trả bao nhiêu, hủy thì mất gì?", "sub": "VRA là hợp đồng thuê nhà đi nghỉ, ở 30 ngày trở xuống. Tiền giữ chỗ không hoàn, và một ngày trong hợp đồng quyết định anh chị lấy lại được bao nhiêu khi hủy.", "chips": ["<b>Ai ký:</b> người ở + chủ nhà/đại diện", "<b>Khi nào:</b> ở 30 ngày trở xuống", "<b>Số trang:</b> 3", "<b>Bản:</b> rev 1/06"], "f_lead": "Bấm từng đoạn để xem nó nói gì, nghĩa là gì, và ví dụ với 1234 Example Lane.", "mock_name": "Vacation Rental Agreement (VRA)", "mock_meta": ["<b>Người ở:</b> Chị Thu Example", "<b>Căn:</b> 1234 Example Lane, San Jose, CA 95100 · 3 phòng ngủ / 2 tắm", "<b>Ở:</b> 18/12/2026 4 PM → 23/12/2026 11 AM (5 đêm)", "<b>Chủ nhà:</b> Anh Minh & Chị Hạnh Example"], "t_title": "Tính tiền ở và tiền hoàn khi hủy", "t_lead": "Nhập ngày, giá đêm và các phí. Tool ra tổng phải trả, tiền ở lố, hạn trả cọc, và nếu hủy thì lấy lại được bao nhiêu.", "l_arr": "Ngày tới", "l_dep": "Ngày đi", "l_rate": "Giá mỗi đêm", "l_clean": "Phí dọn dẹp", "l_resv": "Tiền giữ chỗ", "l_resv_s": "(không hoàn)", "l_depo": "Tiền cọc", "l_depo_s": "(trả lại sau)", "l_tot": "Thuế lưu trú (TOT)", "l_tot_s": "(% trên rent)", "l_due": "Hạn trả cuối cùng (đoạn 5)", "l_cxl": "Nếu hủy, ngày hủy", "l_cxl_s": "(để trống = không hủy)", "l_totc": "Tính TOT trên cả phí dọn dẹp (tùy thành phố — hỏi lại)", "n_rent": "Rent", "n_clean": "Phí dọn dẹp", "n_tot": "Thuế lưu trú (TOT)", "n_resv": "Tiền giữ chỗ (không hoàn)", "n_depo": "Tiền cọc (trả lại nếu không hư hại)", "n_total": "Tổng phải trả", "n_hold": "Ở lố 1 ngày", "n_hold_s": "1.5 × tiền thuê/ngày", "n_late": "Trả phòng trễ", "n_late_s": "50% mức ở lố", "n_back": "Hạn trả cọc", "n_back_s": "3 tuần sau ngày đi", "s_rent": "{n} đêm × {r}", "s_tot": "{p}% × {b}", "s_tot_unk": "nhập % TOT", "unk": "kiểm lại", "k_total": "Tổng phải trả", "k_refund": "Tiền được hoàn", "k_refund_max": "Lấy lại tối đa (ước tính)", "v_none": "Hủy trước {d} thì lấy lại hết, trừ tiền giữ chỗ {r}. Qua ngày đó thì phải trả tiền thuê.", "v_before": "Hủy trước hạn trả cuối.", "v_before_s": "Hủy {c}, trước {d}: hoàn {b}. Chỉ mất tiền giữ chỗ {r}.", "v_after": "Hủy sau hạn trả cuối.", "v_after_s": "Hủy {c}, sau {d}: anh chị chịu tiền thuê {rent}, mất tiền giữ chỗ {r}, cộng có thể phí hoa hồng và chi phí cho thuê lại. Con số trên là tiền cọc, thường được trả lại nếu chủ nhà không giữ để trừ chi phí. Dọn dẹp, TOT chưa dùng: hỏi chủ nhà.", "v_long": "Quá 30 đêm.", "v_long_s": "{n} đêm. Form VRA chỉ dành cho ở 30 ngày trở xuống. Dùng hợp đồng thuê (RLMM) và hỏi luật sư.", "v_dates": "Kiểm lại ngày tới và ngày đi.", "v_tot_unk": "Thuế TOT: kiểm lại mức của thành phố.", "r_note": "Ước tính theo form VRA. TOT San Jose mặc định 12% (từ 01/10/2026, Measure A; trước đó 10%); thành phố khác có mức khác, sửa ô TOT. Đọc dòng \"Other\" trong bảng đoạn 5.", "res": "{n} đêm ({a} → {d}). Tổng phải trả: {t}. {v}", "res_s": "{n} đêm, tổng {t}", "wrongs": ["<b>\"Hủy sớm là lấy lại hết.\"</b> Không. Tiền giữ chỗ không hoàn. Và hủy sau hạn trả cuối cùng là phải trả tiền thuê.", "<b>\"Thêm vài người bạn ngủ lại một đêm không sao.\"</b> Sai. Ngoài danh sách đoạn 4 là vi phạm, có thể bị đuổi ngay và mất cọc.", "<b>\"Thuê 2 tháng cũng dùng VRA cho gọn.\"</b> Không nên. VRA dành cho ở 30 ngày trở xuống. Ở lâu hơn thì luật người thuê nhà có thể áp dụng."], "opinion": "Theo Ken, ngày quan trọng nhất trong VRA không phải ngày tới mà là hạn trả cuối cùng ở đoạn 5. Ken luôn ghi ngày đó vào lịch của khách, cách 7 ngày trước. Kế hoạch đi chơi thay đổi hoài; tiền thì không quay lại.", "nexts": ["Đọc bảng đoạn 5: ghi hạn trả cuối cùng vào lịch.", "Đếm đúng người lớn và trẻ em ở đoạn 4. Ai đi thêm thì xin sửa bằng giấy.", "Tới nơi: chụp hình, báo hư trong giờ đầu (đoạn 14).", "Muốn ở thêm hay trả phòng trễ: hỏi bằng tin nhắn trước (đoạn 9)."], "mail_subj": "T494 VRA — tiền thuê ngắn ngày", "mail_body": "Chào Ken,\n\nTôi dùng tool T494 (VRA) trên tools.kenlamrealty.com:\n{r}\n\nTên:\nPhone:\n", "sms": "Chào Ken, tôi xem tool T494 thuê ngắn ngày: {r}. Cho tôi hỏi thêm."}, "en": {"eyebrow": "Forms explained · C.A.R. Form VRA", "title": "Vacation rental (VRA): what you pay, and what you lose if you cancel", "sub": "The VRA is a vacation rental agreement for stays of 30 days or less. The reservation fee is not refundable, and one date in the agreement decides how much you get back if you cancel.", "chips": ["<b>Who signs:</b> occupant + owner/representative", "<b>When:</b> stays of 30 days or less", "<b>Pages:</b> 3", "<b>Version:</b> rev 1/06"], "f_lead": "Tap each paragraph to see what it says, what it means, and an example at 1234 Example Lane.", "mock_name": "Vacation Rental Agreement (VRA)", "mock_meta": ["<b>Occupant:</b> Thu Example", "<b>Home:</b> 1234 Example Lane, San Jose, CA 95100 · 3 bed / 2 bath", "<b>Stay:</b> 12/18/2026 4 PM → 12/23/2026 11 AM (5 nights)", "<b>Owner:</b> Minh & Hạnh Example"], "t_title": "Stay cost and cancellation refund", "t_lead": "Enter dates, nightly rate and fees. See the total due, holdover charges, the deposit return date, and what you get back if you cancel.", "l_arr": "Arrival", "l_dep": "Departure", "l_rate": "Nightly rate", "l_clean": "Cleaning fee", "l_resv": "Reservation fee", "l_resv_s": "(nonrefundable)", "l_depo": "Security deposit", "l_depo_s": "(returned later)", "l_tot": "Occupancy tax (TOT)", "l_tot_s": "(% of rent)", "l_due": "Latest payment due date (paragraph 5)", "l_cxl": "If you cancel, cancel date", "l_cxl_s": "(blank = not canceling)", "l_totc": "Apply TOT to the cleaning fee too (depends on the city — confirm)", "n_rent": "Rent", "n_clean": "Cleaning fee", "n_tot": "Occupancy tax (TOT)", "n_resv": "Reservation fee (nonrefundable)", "n_depo": "Security deposit (back if no damage)", "n_total": "Total due", "n_hold": "One holdover day", "n_hold_s": "1.5 × daily rent", "n_late": "Late check-out", "n_late_s": "50% of holdover rate", "n_back": "Deposit due back", "n_back_s": "3 weeks after departure", "s_rent": "{n} nights × {r}", "s_tot": "{p}% × {b}", "s_tot_unk": "enter TOT %", "unk": "to be confirmed", "k_total": "Total due", "k_refund": "Refund", "k_refund_max": "Most you may get back (estimate)", "v_none": "Cancel before {d} and you get everything back except the {r} reservation fee. After that date you owe the rent.", "v_before": "Canceled before the last due date.", "v_before_s": "Canceled {c}, before {d}: refund {b}. You only lose the {r} reservation fee.", "v_after": "Canceled after the last due date.", "v_after_s": "Canceled {c}, after {d}: you owe the {rent} rent, lose the {r} reservation fee, and may owe commission and re-rental costs. The number above is the deposit, which usually comes back unless the owner holds it for those costs. Unused cleaning or TOT: ask the owner.", "v_long": "More than 30 nights.", "v_long_s": "{n} nights. The VRA is only for stays of 30 days or less. Use a lease (RLMM) and ask a lawyer.", "v_dates": "Check the arrival and departure dates.", "v_tot_unk": "TOT: confirm the city rate.", "r_note": "Estimate based on the VRA form. San Jose TOT defaults to 12% (from 10/1/2026, Measure A; 10% before); other cities differ, so edit the TOT box. Read the \"Other\" lines in the paragraph 5 table.", "res": "{n} nights ({a} → {d}). Total due: {t}. {v}", "res_s": "{n} nights, total {t}", "wrongs": ["<b>\"Cancel early and get it all back.\"</b> No. The reservation fee is nonrefundable, and canceling after the last payment date means you owe the rent.", "<b>\"A few friends sleeping over one night is fine.\"</b> No. Anyone not listed in paragraph 4 is a violation; you can be removed at once and lose the deposit.", "<b>\"Use a VRA for a 2-month stay to keep it simple.\"</b> Not a good idea. The VRA is for 30 days or less. Longer stays may bring in tenant law."], "opinion": "Ken's view: the most important date in a VRA is not arrival. It is the last payment due date in paragraph 5. Ken always puts that date in his client's calendar with a 7-day reminder. Trip plans change all the time; the money does not come back.", "nexts": ["Read the paragraph 5 table and put the last due date in your calendar.", "Count adults and children correctly in paragraph 4. Anyone extra needs a written change.", "On arrival: take photos, report problems in the first hour (paragraph 14).", "Want to stay longer or check out late? Ask in writing first (paragraph 9)."], "mail_subj": "T494 VRA — vacation rental cost", "mail_body": "Hi Ken,\n\nI used tool T494 (VRA) on tools.kenlamrealty.com:\n{r}\n\nName:\nPhone:\n", "sms": "Hi Ken, I used the T494 vacation rental tool: {r}. I have a question."}};
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const money=n=>(n<0?'−':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:Math.abs(n%1)>0.004?2:0,maximumFractionDigits:2});
+const money2=n=>(n<0?'−':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const T=k=>{const d=Object.assign({},COMMON[lang],PAGE[lang]);return d[k]!==undefined?d[k]:k};
+const fill=(s,o)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>o[k]!==undefined?o[k]:m);
+let RESULT={text:''};
+function renderParas(){
+  let h='';
+  PARAS.forEach(p=>{
+    if(p.g) { h+='<div class="grp">'+esc(p.g[lang])+'</div>'; return; }
+    h+='<details class="para"><summary><span class="pn">'+esc(typeof p.n==='object'?p.n[lang]:p.n)+'</span><span class="pt">'+esc(p.t[lang])+'</span><span class="pc" aria-hidden="true">+</span>'
+      +(p.v&&p.v[lang]?'<span class="pv">'+esc(p.v[lang])+'</span>':'')+'</summary><div class="pb">'
+      +'<p><b>'+esc(T('says'))+':</b> '+p.s[lang]+'</p>'
+      +'<p><b>'+esc(T('means'))+':</b> '+p.m[lang]+'</p>'
+      +(p.e&&p.e[lang]?'<p class="ex"><b>'+esc(T('ex'))+':</b> '+p.e[lang]+'</p>':'')+'</div></details>';
+  });
+  $('paras').innerHTML=h;
+  $('chips').innerHTML=PAGE[lang].chips.map(c=>'<span class="chip">'+c+'</span>').join('');
+  $('mockMeta').innerHTML=PAGE[lang].mock_meta.map(c=>'<span>'+c+'</span>').join('');
+  $('wrongs').innerHTML=PAGE[lang].wrongs.map(c=>'<li>'+c+'</li>').join('');
+  $('nexts').innerHTML=PAGE[lang].nexts.map(c=>'<li>'+c+'</li>').join('');
+}
+let allOpen=false;
+$('xall').onclick=()=>{allOpen=!allOpen;document.querySelectorAll('details.para').forEach(d=>d.open=allOpen);$('xall').textContent=T(allOpen?'xnone':'xall');};
+function links(){
+  const body=fill(T('mail_body'),{r:RESULT.text});
+  $('emailBtn').href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(T('mail_subj'))+'&body='+encodeURIComponent(body);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(T('sms'),{r:RESULT.short||RESULT.text}));
+}
+
+const pd=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||'');return m?new Date(Date.UTC(+m[1],+m[2]-1,+m[3])):null};
+const fdt=d=>{if(!d)return '—';const dd=String(d.getUTCDate()).padStart(2,'0'),mm=String(d.getUTCMonth()+1).padStart(2,'0');return lang==='vi'?dd+'/'+mm+'/'+d.getUTCFullYear():mm+'/'+dd+'/'+d.getUTCFullYear()};
+if(SJ_TOT_PCT!=null && !$('tot').value) $('tot').value=SJ_TOT_PCT;
+function calc(){
+  const a=pd($('arr').value), d=pd($('dep').value), due=pd($('due').value), cx=pd($('cxl').value);
+  const nights=(a&&d)?Math.max(0,Math.round((d-a)/864e5)):0;
+  const rate=Math.max(0,num('rate')), clean=Math.max(0,num('clean')), resv=Math.max(0,num('resv')), depo=Math.max(0,num('depo'));
+  const totStr=$('tot').value.trim(), totPct=totStr===''?null:Math.max(0,num('tot'));
+  const rent=nights*rate, base=rent+($('totClean').checked?clean:0), tot=totPct==null?0:base*totPct/100;
+  const total=rent+clean+tot+resv+depo;
+  $('oRent').textContent=money2(rent); $('sRent').textContent=fill(T('s_rent'),{n:nights,r:money2(rate)});
+  $('oClean').textContent=money2(clean); $('oTot').textContent=totPct==null?T('unk'):money2(tot);
+  $('sTot').textContent=totPct==null?T('s_tot_unk'):fill(T('s_tot'),{p:totPct,b:money2(base)});
+  $('oResv').textContent=money2(resv); $('oDepo').textContent=money2(depo); $('oTotal').textContent=money2(total);
+  const hold=rate*HOLD_X; $('oHold').textContent=money2(hold); $('oLate').textContent=money2(hold*LATE_CO);
+  $('oBack').textContent=d?fdt(new Date(d.getTime()+DEP_WEEKS*7*864e5)):'—';
+  const v=$('rVerdict'); let txt, back=null;
+  if(cx){
+    if(due && cx<due){ back=total-resv; $('rK').textContent=T('k_refund'); $('rTotal').textContent=money2(back);
+      txt='<b>'+T('v_before')+'</b> '+fill(T('v_before_s'),{c:fdt(cx),d:fdt(due),r:money2(resv),b:money2(back)}); v.className='verdict ok'; }
+    else { back=depo; $('rK').textContent=T('k_refund_max'); $('rTotal').textContent=money2(back);
+      txt='<b>'+T('v_after')+'</b> '+fill(T('v_after_s'),{c:fdt(cx),d:fdt(due),rent:money2(rent),r:money2(resv)}); v.className='verdict bad'; }
+  } else { $('rK').textContent=T('k_total'); $('rTotal').textContent=money2(total);
+    txt=fill(T('v_none'),{d:fdt(due),r:money2(resv)}); v.className='verdict ok'; }
+  if(nights>MAX_NIGHTS){ txt='<b>'+T('v_long')+'</b> '+fill(T('v_long_s'),{n:nights})+' '+txt; v.className='verdict bad'; }
+  if(nights===0){ txt='<b>'+T('v_dates')+'</b>'; v.className='verdict bad'; }
+  if(totPct==null) txt+=' '+T('v_tot_unk');
+  v.innerHTML=txt;
+  RESULT={text:fill(T('res'),{n:nights,a:fdt(a),d:fdt(d),t:money2(total),v:v.textContent}),short:fill(T('res_s'),{n:nights,t:money2(total)})};
+}
+function applyLang(){
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i');const v=T(k);if(typeof v==='string'&&v!==k) el.innerHTML=v;});
+  $('langBtn').textContent=T('lang'); document.documentElement.lang=lang; allOpen=false;
+  renderParas(); calc(); links();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+document.querySelectorAll('.tool input,.tool select').forEach(el=>{el.addEventListener('input',()=>{calc();links();});el.addEventListener('change',()=>{calc();links();});});
+applyLang();
+</script>
+</body>
+</html>
