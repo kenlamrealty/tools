@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Diện tích nhà và lô đất (SFLS) · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+
+
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+@media (max-width:420px){.total .v{font-size:min(58px,13vw)}}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+
+/* ---- T222 thêm ---- */
+.chart{display:grid;gap:12px}
+.chart h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.cb{display:grid;gap:5px;min-width:0}
+.cb .hd{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:14px}
+.cb .hd b{font-weight:500;min-width:0}
+.cb .hd span{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.cb .tr{height:14px;border-radius:999px;background:var(--line);overflow:hidden}
+.cb .tr i{display:block;height:100%;border-radius:999px;background:var(--brass);transition:width .2s}
+.cb.p1 .tr i{background:#CBB7A3}.cb.p3 .tr i{background:var(--ok)}.cb.p4 .tr i{background:#A9B7A0}
+.cb small{font-size:12px;color:var(--muted);line-height:1.4}
+.cb.best .hd span{color:var(--ok)}
+.ctl input[type=number].sm{font-size:20px}
+
+</style>
+<meta name="description" content="Giải nghĩa form C.A.R. SFLS (Revised 12/24): diện tích nhà và lô đất, vì sao MLS, county và appraiser ra số khác nhau. Tool so sqft và $/sqft.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t428/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Diện tích nhà và lô đất (SFLS) · Ken Lam Tools">
+<meta property="og:description" content="Giải nghĩa form C.A.R. SFLS (Revised 12/24): diện tích nhà và lô đất, vì sao MLS, county và appraiser ra số khác nhau. Tool so sqft và $/sqft.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t428/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+html.embed .kl-back{display:none}
+html.embed body{padding-top:8px}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+<style>
+/* ---- Thuế nhà đất group thêm ---- */
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer;line-height:1.45}
+.chk input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;flex:none}
+.chk small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.grp{display:grid;gap:0}
+.grp h3{font-family:var(--display);font-weight:400;font-size:22px;margin:4px 0 6px}
+.seg button{min-width:0}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:12px 4px}
+.pill{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.04em;border-radius:999px;padding:2px 9px;margin-right:6px;vertical-align:1px}
+.pill.y{background:var(--brass-soft);color:var(--warn)}.pill.n{background:var(--brass-soft);color:var(--ok)}
+.ex{font-size:12px;color:var(--muted);margin:0}
+
+/* ---- Giải nghĩa form C.A.R. group ---- */
+section{min-width:0}
+.sec{display:grid;gap:12px;min-width:0}
+.sec>h2,.result h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.code{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0}
+.enname{font-size:14px;color:var(--fg);margin:0;font-weight:500}
+.ver{font-size:13px;color:var(--muted);margin:0}
+.lead{font-size:16px;line-height:1.6;margin:0}
+.paper{background:var(--panel);border:1px solid var(--line);border-radius:6px;box-shadow:0 10px 28px rgba(43,41,37,.08);padding:18px 16px 10px;display:grid;gap:0;min-width:0}
+.paper .ph{display:flex;justify-content:space-between;gap:10px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);flex-wrap:wrap}
+.paper .pt0{font-family:var(--display);font-size:22px;line-height:1.15;text-align:center;margin:10px 0 4px;text-wrap:balance}
+.paper .pl{font-size:13px;color:var(--muted);border-bottom:3px double var(--line);padding:6px 0 10px;margin-bottom:4px;overflow-wrap:anywhere}
+.paper .pl b{color:var(--fg);font-weight:500;font-family:var(--display);font-style:italic;font-size:16px}
+.part{border-bottom:1px dashed var(--line);min-width:0}
+.part:last-child{border-bottom:0}
+.ptog{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-items:start;width:100%;border:0;background:transparent;color:var(--fg);font:inherit;text-align:left;padding:12px 2px;cursor:pointer}
+.ptog:hover .pt{color:var(--brass)}
+.pn{font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--brass);border:1px solid var(--line);border-radius:6px;padding:2px 6px;white-space:nowrap;margin-top:2px}
+.pt{font-size:15px;font-weight:500;line-height:1.35;min-width:0}
+.pv{grid-column:2;font-family:var(--display);font-style:italic;font-size:17px;color:var(--muted);line-height:1.3;overflow-wrap:anywhere}
+.chev{font-size:14px;color:var(--muted);transition:transform .15s;margin-top:2px}
+.ptog[aria-expanded="true"] .chev{transform:rotate(90deg)}
+.ptog[aria-expanded="true"]{background:var(--brass-soft);border-radius:8px}
+.px{display:grid;gap:8px;padding:6px 4px 16px 4px;font-size:14px;line-height:1.55}
+.px[hidden]{display:none}
+.px p{margin:0}
+.px .lb{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:2px}
+.px .care{border-left:3px solid var(--warn);padding:4px 0 4px 10px}
+.px .care .lb{color:var(--warn)}
+.sigs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;padding:14px 0 6px}
+.sigs div{border-top:1px solid var(--fg);padding-top:4px;font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.tools-row{display:flex;gap:14px;flex-wrap:wrap}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tbl th,.tbl td{text-align:left;vertical-align:top;padding:10px;border-bottom:1px solid var(--line);overflow-wrap:anywhere;line-height:1.45}
+.tbl th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--brass-soft)}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td b{font-weight:500}
+.myths{display:grid;gap:10px}
+.big2{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.kv>div{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.kv .k{font-size:12px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.kv .v{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.kv .s{font-size:12px;color:var(--muted)}
+.list{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px;line-height:1.5}
+.tag{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:2px 8px;background:var(--brass-soft);color:var(--warn)}
+.est{font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--warn);text-transform:uppercase}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <p class="code">C.A.R. SFLS · T428</p>
+    <h1 data-i="title"></h1>
+    <p class="enname">Square Footage and Lot Size Advisory and Disclosure</p>
+    <p class="ver" data-i="ver"></p>
+  </header>
+
+  <section class="sec" aria-labelledby="hWhat">
+    <h2 id="hWhat" data-i="h_what"></h2>
+    <p class="lead" data-i="what"></p>
+    <p class="note" data-i="what_ex"></p>
+  </section>
+
+  <section class="sec" aria-labelledby="hVid">
+    <h2 id="hVid" data-i="h_vid"></h2>
+    <video class="kl-vid" src="form-45s.mp4" controls playsinline preload="metadata" style="width:100%;max-width:360px;border-radius:12px" aria-label="Video 45s SFLS"></video>
+  </section>
+
+  <section class="sec" aria-labelledby="hWalk">
+    <h2 id="hWalk" data-i="h_walk"></h2>
+    <p class="ex" data-i="walk_hint"></p>
+    <div class="paper">
+      <div class="ph"><span>C.A.R. Form SFLS</span><span data-i="mock"></span></div>
+      <div class="pt0">Square Footage and Lot Size Advisory and Disclosure</div>
+      <div class="pl" data-i="paper_line"></div>
+      <div class="part"><button class="ptog" type="button" aria-expanded="false" aria-controls="p0x"><span class="pn" data-i="p0_n"></span><span class="pt" data-i="p0_t"></span><span class="chev" aria-hidden="true">›</span><span class="pv" data-i="p0_v"></span></button>
+<div class="px" id="p0x" hidden><p><span class="lb" data-i="l_say"></span><span data-i="p0_say"></span></p><p><span class="lb" data-i="l_ex"></span><span data-i="p0_ex"></span></p><p class="care"><span class="lb" data-i="l_care"></span><span data-i="p0_care"></span></p></div></div><div class="part"><button class="ptog" type="button" aria-expanded="false" aria-controls="p1x"><span class="pn" data-i="p1_n"></span><span class="pt" data-i="p1_t"></span><span class="chev" aria-hidden="true">›</span><span class="pv" data-i="p1_v"></span></button>
+<div class="px" id="p1x" hidden><p><span class="lb" data-i="l_say"></span><span data-i="p1_say"></span></p><p><span class="lb" data-i="l_ex"></span><span data-i="p1_ex"></span></p><p class="care"><span class="lb" data-i="l_care"></span><span data-i="p1_care"></span></p></div></div><div class="part"><button class="ptog" type="button" aria-expanded="false" aria-controls="p2x"><span class="pn" data-i="p2_n"></span><span class="pt" data-i="p2_t"></span><span class="chev" aria-hidden="true">›</span><span class="pv" data-i="p2_v"></span></button>
+<div class="px" id="p2x" hidden><p><span class="lb" data-i="l_say"></span><span data-i="p2_say"></span></p><p><span class="lb" data-i="l_ex"></span><span data-i="p2_ex"></span></p></div></div><div class="part"><button class="ptog" type="button" aria-expanded="false" aria-controls="p3x"><span class="pn" data-i="p3_n"></span><span class="pt" data-i="p3_t"></span><span class="chev" aria-hidden="true">›</span><span class="pv" data-i="p3_v"></span></button>
+<div class="px" id="p3x" hidden><p><span class="lb" data-i="l_say"></span><span data-i="p3_say"></span></p><p><span class="lb" data-i="l_ex"></span><span data-i="p3_ex"></span></p><p class="care"><span class="lb" data-i="l_care"></span><span data-i="p3_care"></span></p></div></div><div class="part"><button class="ptog" type="button" aria-expanded="false" aria-controls="p4x"><span class="pn" data-i="p4_n"></span><span class="pt" data-i="p4_t"></span><span class="chev" aria-hidden="true">›</span><span class="pv" data-i="p4_v"></span></button>
+<div class="px" id="p4x" hidden><p><span class="lb" data-i="l_say"></span><span data-i="p4_say"></span></p><p><span class="lb" data-i="l_ex"></span><span data-i="p4_ex"></span></p><p class="care"><span class="lb" data-i="l_care"></span><span data-i="p4_care"></span></p></div></div><div class="part"><button class="ptog" type="button" aria-expanded="false" aria-controls="p5x"><span class="pn" data-i="p5_n"></span><span class="pt" data-i="p5_t"></span><span class="chev" aria-hidden="true">›</span><span class="pv" data-i="p5_v"></span></button>
+<div class="px" id="p5x" hidden><p><span class="lb" data-i="l_say"></span><span data-i="p5_say"></span></p><p><span class="lb" data-i="l_ex"></span><span data-i="p5_ex"></span></p><p class="care"><span class="lb" data-i="l_care"></span><span data-i="p5_care"></span></p></div></div>
+      <div class="sigs"><div data-i="sig_s"></div><div data-i="sig_b"></div></div>
+    </div>
+    <p class="ex" data-i="rest"></p>
+    <button class="reset" type="button" id="openAll" data-i="open_all"></button>
+  </section>
+
+  <section class="sec" aria-labelledby="hTool">
+    <h2 id="hTool" data-i="h_tool"></h2>
+    <p class="sub" data-i="tool_sub"></p>
+    
+<section class="inputs" aria-label="Inputs">
+  <p class="ex" data-i="ex"></p>
+  <div class="field"><label for="price"><span data-i="l_price"></span></label><div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" min="0" step="10000" value="1350000"></div></div>
+  <div class="row2">
+    <div class="field"><label for="mls"><span data-i="l_mls"></span></label><div class="ctl"><input id="mls" type="number" inputmode="numeric" min="0" step="10" value="1650"><span class="post">sqft</span></div></div>
+    <div class="field"><label for="pr"><span data-i="l_pr"></span></label><div class="ctl"><input id="pr" type="number" inputmode="numeric" min="0" step="10" value="1480"><span class="post">sqft</span></div></div>
+  </div>
+  <div class="row2">
+    <div class="field"><label for="ms"><span data-i="l_ms"></span> <small data-i="l_ms_s"></small></label><div class="ctl"><input id="ms" type="number" inputmode="numeric" min="0" step="10" value="1600"><span class="post">sqft</span></div></div>
+    <div class="field"><label for="up"><span data-i="l_up"></span> <small data-i="l_up_s"></small></label><div class="ctl"><input id="up" type="number" inputmode="numeric" min="0" step="10" value="170"><span class="post">sqft</span></div></div>
+  </div>
+</section>
+<section class="result" aria-live="polite">
+  <div class="total"><div class="k" data-i="bigK"></div><div class="v"><span id="big">0</span> <small>sqft</small></div><div class="ex" id="bigS"></div></div>
+  <div class="status" id="status"></div>
+  <div class="kv">
+    <div><div class="k" data-i="k_mls"></div><div class="v" id="oM"></div></div>
+    <div><div class="k" data-i="k_pr"></div><div class="v" id="oR"></div></div>
+    <div><div class="k" data-i="k_ms"></div><div class="v" id="oS"></div></div>
+  </div>
+  <div class="lines"><div class="line"><span class="n"><b data-i="k_gap"></b> <small class="est" data-i="k_gap_s"></small></span><span class="a" id="oG"></span></div></div>
+  <h2 data-i="h_why" style="font-size:22px"></h2>
+  <ul class="list" id="why"></ul>
+</section>
+  </section>
+
+  <section class="sec" aria-labelledby="hSign">
+    <h2 id="hSign" data-i="h_sign"></h2>
+    <table class="tbl"><colgroup><col style="width:28%"><col style="width:38%"><col style="width:34%"></colgroup>
+      <thead><tr><th data-i="th_who"></th><th data-i="th_when"></th><th data-i="th_dl"></th></tr></thead>
+      <tbody><tr><td><b data-i="s0_a"></b></td><td data-i="s0_b"></td><td data-i="s0_c"></td></tr><tr><td><b data-i="s1_a"></b></td><td data-i="s1_b"></td><td data-i="s1_c"></td></tr><tr><td><b data-i="s2_a"></b></td><td data-i="s2_b"></td><td data-i="s2_c"></td></tr></tbody></table>
+    
+  </section>
+
+  <section class="sec myths" aria-labelledby="hMyth">
+    <h2 id="hMyth" data-i="h_myth"></h2>
+    <p class="myth" data-i="m0"></p><p class="myth" data-i="m1"></p><p class="myth" data-i="m2"></p>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title"></h2>
+    <ol><li data-i="nx0"></li><li data-i="nx1"></li><li data-i="nx2"></li><li data-i="nx3"></li></ol>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email"></button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms"></a>
+    <a class="btn" id="videoBtn" href="form-45s.mp4" target="_blank" rel="noopener" data-i="b_video"></a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title"></h2>
+    <p data-i="f_sub"></p>
+    <div class="field"><label for="fname"><span data-i="f_name"></span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone"></span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send"></button>
+    <div class="ok" id="sent" hidden data-i="f_ok"></div>
+    <div class="copyrow"><span data-i="f_or"></span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy"></button></div>
+  </section>
+
+  <footer>
+    <span class="src"><span data-i="ft_src"></span> (06/11/2026): C.A.R. Form SFLS, Revised 12/24 · C.A.R. Form RPA, Revised 6/26 (đoạn / paras 3L, 3N, 8B(1), 8C) · <a href="https://www.car.org/" target="_blank" rel="noopener">car.org</a></span>
+    <span class="who">Ken Lam Realty · Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd"></span>: 06/11/2026 · <a href="/cong-cu/" data-i="ft_all"></a></span>
+    <span data-i="ft_disc"></span>
+  </footer>
+</div>
+
+<script>
+/* SFLS (T428) — C.A.R. Form SFLS, Revised 12/24. Built 06/11/2026. */
+/* Ngưỡng tham khảo của tool (không có trong form): chênh từ 5% trở lên thì nhắc đo lại.
+   RPA 6/26 mặc định: investigation 17 ngày sau acceptance (3L(3)); seller giao giấy tờ 7 ngày (3N(1)). */
+const K={WARN_PCT:5, MATCH_SQFT:30, INV_DAYS:17};
+const I18N={vi:{"lang": "English", "b_email": "Gửi kết quả qua email", "b_sms": "Hỏi Ken", "b_video": "Xem video 45 giây", "f_name": "Tên", "f_phone": "Phone (không bắt buộc)", "f_send": "Gửi", "f_ok": "Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.", "f_or": "Hoặc text:", "f_copy": "Copy", "f_title": "Gửi kết quả này về email", "f_sub": "Ken nhận được sẽ trả lời và gửi thêm giấy tờ liên quan. Không spam.", "ft_src": "Nguồn", "ft_upd": "Cập nhật", "ft_all": "Tất cả tools", "nx_title": "Bước tiếp theo", "ex": "Số đang hiện là ví dụ với 1234 Example Lane. Sửa lại số của bạn.", "h_what": "Form này là gì", "h_vid": "Video 45 giây", "h_walk": "Đi qua từng phần của form", "h_tool": "Tool: thử với số của bạn", "h_sign": "Ai ký, ký lúc nào, hạn bao lâu", "h_myth": "Nhiều người hiểu sai", "walk_hint": "Bấm vào từng phần trên tờ form giả lập để xem giải thích. Đây là bản vẽ lại để minh họa, không phải form thật.", "open_all": "Mở / đóng hết", "l_say": "Nói gì", "l_ex": "Ví dụ với 1234 Example Lane", "l_care": "Cẩn thận", "mock": "bản minh họa", "th_who": "Ai", "th_when": "Ký lúc nào", "th_dl": "Hạn", "yes": "Có", "no": "Không", "ft_disc": "Trang này chỉ để hiểu form, không thay thế form gốc, không phải tư vấn pháp lý hay thuế. Khi ký thật, đọc bản đầy đủ và hỏi agent hoặc luật sư của bạn.", "sig_s": "Seller ký", "sig_b": "Buyer ký", "doc_title": "Diện tích nhà và lô đất (SFLS) · Ken Lam Tools", "title": "SFLS — Giấy báo về diện tích nhà và lô đất", "ver": "Bản form: C.A.R. Form SFLS, Revised 12/24 · 1 trang", "what": "Seller và buyer cùng ký tờ này khi mua bán nhà. Nó ghi ra mỗi nguồn (county, MLS, seller, appraiser…) nói nhà rộng bao nhiêu sqft, lô đất bao nhiêu. Mục đích: cho buyer biết các con số này có thể sai, và nếu sqft quan trọng thì phải tự đo.", "what_ex": "Giống mua cái tủ trên mạng: trang bán ghi 2 mét, hộp ghi 1m90, đo thật ra 1m95. Không ai nói dối hết, mỗi người đo một kiểu. SFLS bắt mọi người ghi hết các số đó ra giấy.", "paper_line": "Property: <b>1234 Example Lane, San Jose, CA 95100</b>", "rest": "Form SFLS chỉ có 1 trang: 4 đoạn đánh số + phần ký của seller và buyer. Trang này đi qua hết.", "tool_sub": "So các con số sqft của cùng 1 căn nhà. Xem chênh bao nhiêu, $/sqft đổi ra sao, và vì sao số lại khác.", "l_price": "Giá mua", "l_mls": "Sqft trên MLS", "l_pr": "Sqft Public Record (county)", "l_ms": "Sqft appraiser / đo lại", "l_ms_s": "(0 = chưa có)", "l_up": "Phần xây thêm không permit", "l_up_s": "(0 nếu không có)", "bigK": "Chênh lệch lớn nhất giữa các nguồn", "k_mls": "$/sqft theo MLS", "k_pr": "$/sqft theo county", "k_ms": "$/sqft theo đo lại", "k_gap": "Phần chênh, tính theo $/sqft MLS", "k_gap_s": "ƯỚC TÍNH, không phải giá trị thật của phần đó", "st_ok": "<b>Các nguồn gần khớp (chênh {p}%).</b> Vẫn ghi đủ từng số vào đoạn 4 của SFLS.", "st_warn": "<b>Chênh {p}% — đáng kiểm.</b> Nếu sqft ảnh hưởng tới giá anh chị trả, đặt người đo trong thời hạn investigation (RPA mặc định 17 ngày sau acceptance).", "h_why": "Vì sao số lại khác nhau?", "r_up": "Phần chênh giữa MLS và county ({d} sqft) gần bằng phần xây thêm không permit ({u} sqft). County thường không có phần không permit trong hồ sơ.", "r_up2": "Phần không permit: appraiser có thể không tính vào diện tích ở, hoặc tính giá thấp hơn. Lender có thể hỏi thêm.", "r_ms": "Appraiser đo theo chuẩn riêng của họ (thường đo mặt ngoài, không tính garage). Số này khác MLS {d} sqft.", "r_pr": "Public Record lấy từ hồ sơ của county, có khi là số từ lúc xây nhà, chưa cập nhật phần sửa sau.", "r_mls": "Số MLS do bên bán và agent ghi. Agent không đi đo lại (đoạn 3 của SFLS).", "na": "chưa có", "sms": "Chào Ken, tôi xem tool T428 (SFLS): giá {p}, MLS {m} sqft, county {r} sqft, đo lại {s}. Chênh {g}. Cho tôi hỏi thêm.", "subj": "SFLS diện tích nhà — {nm}", "body": "Tên: {nm}\nEmail: {em}\nPhone: {ph}\n\nGiá: {p}\nSqft MLS: {m}\nSqft county: {r}\nSqft đo lại: {s}\nKhông permit: {u}\n\nChênh lớn nhất: {g}\n$/sqft MLS: {a}\n$/sqft county: {b}\nPhần chênh theo $/sqft MLS (ước tính): {v}\n\nChỉ để tham khảo, không phải định giá.\nGửi từ tool T428 tools.kenlamrealty.com", "p0_n": "Đoạn 1", "p0_t": "Nhiều nguồn đo sqft khác nhau", "p0_v": "Không có 1 số “chính thức”", "p0_say": "Mỗi nguồn đo một kiểu nên số hay vênh nhau. Form nói rõ: không có nguồn nào là “chính thức”, cũng không có cách đo chuẩn duy nhất. Buyer đừng dựa vào số quảng cáo; muốn chắc thì thuê người đo trong thời gian investigation. Giá/sqft chỉ là ước tính thô, nên kiểm với chuyên gia như appraiser.", "p0_ex": "MLS ghi 1,650 sqft, giá $1,350,000 → khoảng $818/sqft. Anh Minh & Chị Lan định so với căn gần đó bán $850/sqft. Con số $818 đó chưa ai đo lại.", "p0_care": "Nếu sqft là lý do anh chị trả giá đó, phải đo trong thời hạn investigation. Qua hạn rồi thì khó cancel vì chuyện sqft.", "p1_n": "Đoạn 2", "p1_t": "Lô đất, kích thước, ranh giới", "p1_v": "Hàng rào ≠ ranh đất", "p1_say": "Hàng rào, tường, tường chắn đất, hàng cây chưa chắc nằm đúng ranh đất pháp lý. Nhà kho, deck có thể lấn ra ngoài ranh hoặc sai khoảng lùi (setback). Nếu diện tích lô và ranh giới quan trọng, buyer nên thuê licensed surveyor — form nói đây là người duy nhất xác định chính xác ranh và diện tích lô.", "p1_ex": "Hàng rào sau nhà 1234 Example Lane lệch qua đất hàng xóm khoảng 2 feet. Lô ghi 6,000 sqft nhưng phần trong hàng rào nhìn như lớn hơn.", "p1_care": "Định xây ADU, nới phòng, hay mua vì lô to? Đặt surveyor trước khi gỡ contingency.", "p2_n": "Đoạn 3", "p2_t": "Trách nhiệm của broker", "p2_v": "Agent không đo, không kiểm", "p2_say": "Broker và agent không có chuyên môn đo diện tích. Họ không kiểm và sẽ không kiểm các con số sqft, kích thước phòng, lot size, hay vị trí ranh giới.", "p2_ex": "Ken đưa số MLS 1,650 sqft cho anh Minh, nhưng Ken không đi đo lại. Muốn chắc, anh Minh đặt appraiser hoặc người đo.", "p3_n": "Đoạn 4", "p3_t": "Bảng số đo và nguồn", "p3_v": "County 1,480 · MLS 1,650 · Seller 1,650", "p3_say": "Bảng ghi từng nguồn và con số của nguồn đó: Public Record, MLS, Seller, Appraisal #1 và #2, Condo map/plan, bản vẽ kiến trúc, floor plan, survey, và 2 ô “Other”. Mỗi nguồn có cột sqft nhà và cột lot size. Có chỗ ghi thêm thông tin và ô tick nếu có kèm báo cáo. Form nói số ghi vào có thể chỉ là xấp xỉ.", "p3_ex": "Public Record: 1,480 sqft, lô 6,000 · MLS: 1,650, lô 6,000 · Seller: 1,650 (có phòng sau 170 sqft xây thêm) · Appraisal #1: trống, chưa làm.", "p3_care": "Ô trống không có nghĩa là không có số. Hỏi seller còn giữ appraisal cũ, floor plan, bản vẽ permit không.", "p4_n": "Seller ký", "p4_t": "Phần ký của seller", "p4_v": "Cô Hạnh Trần", "p4_say": "Seller ký là xác nhận 2 điều: (1) seller không biết số đo nào khác ngoài các số đã ghi; (2) đã đọc, hiểu và nhận bản copy.", "p4_ex": "Cô Hạnh có appraisal lúc refinance ghi 1,600 sqft. Phải ghi vào ô Appraisal #1, không được bỏ ra.", "p4_care": "Seller biết số khác mà không ghi thì rủi ro nằm ở seller.", "p5_n": "Buyer ký", "p5_t": "Phần ký của buyer", "p5_v": "Anh Minh & Chị Lan Nguyễn", "p5_say": "Buyer ký xác nhận đã đọc, hiểu và nhận copy. Đoạn chữ in hoa nhắc: nếu không có số, hoặc số đo quan trọng với buyer, buyer được khuyên mạnh là tự kiểm. Không kiểm là làm ngược lời khuyên của broker và agent.", "p5_ex": "Anh Minh & Chị Lan ký SFLS ngày thứ 3 sau acceptance, rồi đặt người đo lại trước ngày thứ 17.", "p5_care": "Đã ký SFLS thì sau này rất khó nói “agent bảo nhà 1,650 sqft”.", "s0_a": "Seller", "s0_b": "Khi giao bộ giấy tờ disclosure cho buyer", "s0_c": "Form SFLS không tự đặt hạn. Theo RPA, seller giao giấy tờ trong 7 ngày sau acceptance (mặc định, RPA đoạn 3N(1) / 14A).", "s1_a": "Buyer", "s1_b": "Khi nhận SFLS", "s1_c": "Kiểm sqft và lô đất trong investigation contingency: 17 ngày sau acceptance (mặc định, RPA đoạn 3L(3) / 8C).", "s2_a": "Agent", "s2_b": "Không ký SFLS", "s2_c": "Form không có chỗ cho agent ký. Agent chỉ đưa form và nhắc buyer đi kiểm.", "m0": "<b>“Appraisal đo ra nhỏ hơn thì cancel theo appraisal contingency.”</b> Sai chỗ. RPA đoạn 8B(1) ghi rõ: cancel vì số đo trong appraisal thuộc investigation contingency, còn appraisal contingency chỉ nói về giá trị. Tôi thấy nhiều người chờ appraisal về ngày 20 mới la. Lúc đó investigation 17 ngày đã qua.", "m1": "<b>“Số của county là số đúng.”</b> Không có số nào “chính thức” — đoạn 1 của SFLS nói thẳng vậy. County nhiều khi còn giữ số từ lúc xây nhà mấy chục năm trước, chưa cộng phòng làm thêm. Số MLS lớn hơn county chưa chắc là MLS sai.", "m2": "<b>“Hàng rào là ranh đất.”</b> Đoạn 2 nói ngược lại. Hàng rào là do người ta dựng, có khi dựng lệch từ 30 năm trước. Ai tính xây ADU hay mở rộng mà không survey là đang đánh cược.", "nx0": "Đọc hợp đồng mua nhà từng bước, xem hạn investigation 17 ngày: <a href=\"/t401/\">T401 — RPA</a>.", "nx1": "Có phòng xây thêm? Hỏi seller về permit: <a href=\"/t287/\">T287</a>.", "nx2": "Appraisal ra thấp thì làm gì: <a href=\"/t11/\">T11</a>.", "nx3": "Các form khác: <a href=\"/t402/\">T402 — thư viện forms</a> · lịch escrow <a href=\"/t60/\">T60</a>."},
+en:{"lang": "Tiếng Việt", "b_email": "Email me the result", "b_sms": "Ask Ken", "b_video": "Watch the 45-sec video", "f_name": "Name", "f_phone": "Phone (optional)", "f_send": "Send", "f_ok": "Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.", "f_or": "Or text:", "f_copy": "Copy", "f_title": "Email this result to yourself", "f_sub": "Ken will reply and send the related papers. No spam.", "ft_src": "Sources", "ft_upd": "Updated", "ft_all": "All tools", "nx_title": "Next steps", "ex": "The numbers shown are an example for 1234 Example Lane. Change them to yours.", "h_what": "What this form is", "h_vid": "45-second video", "h_walk": "Walk through the form, part by part", "h_tool": "Tool: try your own numbers", "h_sign": "Who signs, when, and deadlines", "h_myth": "Common mistakes", "walk_hint": "Tap any part of the mock form to see what it means. This is a redrawn illustration, not the real form.", "open_all": "Open / close all", "l_say": "What it says", "l_ex": "Example: 1234 Example Lane", "l_care": "Watch out", "mock": "illustration", "th_who": "Who", "th_when": "Signs when", "th_dl": "Deadline", "yes": "Yes", "no": "No", "ft_disc": "This page only helps you understand the form. It does not replace the official form and is not legal or tax advice. Before you sign, read the full form and ask your agent or attorney.", "sig_s": "Seller signs", "sig_b": "Buyer signs", "doc_title": "Square Footage and Lot Size (SFLS) · Ken Lam Tools", "title": "SFLS — Square footage and lot size notice", "ver": "Form version: C.A.R. Form SFLS, Revised 12/24 · 1 page", "what": "Seller and buyer both sign this when a home is sold. It lists what each source (county, MLS, seller, appraiser…) says about the home's square footage and the lot size. The point: tell the buyer these numbers may be off, and if square footage matters, measure it yourself.", "what_ex": "Like buying a cabinet online: the website says 2 meters, the box says 1.9, your tape says 1.95. Nobody lied; each measured differently. SFLS makes everyone write those numbers down.", "paper_line": "Property: <b>1234 Example Lane, San Jose, CA 95100</b>", "rest": "SFLS is one page: 4 numbered paragraphs plus seller and buyer signatures. This page covers all of it.", "tool_sub": "Compare the square footage numbers for the same home. See the gap, how $/sqft changes, and why the numbers differ.", "l_price": "Purchase price", "l_mls": "Sqft on MLS", "l_pr": "Sqft in public record (county)", "l_ms": "Sqft by appraiser / re-measure", "l_ms_s": "(0 = none yet)", "l_up": "Unpermitted addition", "l_up_s": "(0 if none)", "bigK": "Largest gap between sources", "k_mls": "$/sqft by MLS", "k_pr": "$/sqft by county", "k_ms": "$/sqft by re-measure", "k_gap": "The gap, at the MLS $/sqft", "k_gap_s": "ESTIMATE, not the real value of that space", "st_ok": "<b>The sources roughly match (gap {p}%).</b> Still list each number in paragraph 4 of the SFLS.", "st_warn": "<b>Gap of {p}% — worth checking.</b> If square footage affects the price you pay, get it measured within your investigation period (RPA default: 17 days after acceptance).", "h_why": "Why do the numbers differ?", "r_up": "The MLS vs county gap ({d} sqft) is close to the unpermitted addition ({u} sqft). County records usually leave unpermitted space out.", "r_up2": "Unpermitted space: an appraiser may leave it out of living area or value it lower. The lender may ask about it.", "r_ms": "Appraisers measure by their own standard (often outside walls, no garage). This number is {d} sqft off the MLS.", "r_pr": "Public record comes from county files, sometimes the number from when the home was built, without later changes.", "r_mls": "The MLS number is entered by the seller side. Agents do not re-measure (SFLS paragraph 3).", "na": "none yet", "sms": "Hi Ken, I used tool T428 (SFLS): price {p}, MLS {m} sqft, county {r} sqft, re-measure {s}. Gap {g}. I have a question.", "subj": "SFLS square footage — {nm}", "body": "Name: {nm}\nEmail: {em}\nPhone: {ph}\n\nPrice: {p}\nSqft MLS: {m}\nSqft county: {r}\nSqft re-measure: {s}\nUnpermitted: {u}\n\nLargest gap: {g}\n$/sqft MLS: {a}\n$/sqft county: {b}\nGap at MLS $/sqft (estimate): {v}\n\nFor reference only, not an appraisal.\nSent from tool T428 tools.kenlamrealty.com", "p0_n": "Para 1", "p0_t": "Different sources measure differently", "p0_v": "No single “official” number", "p0_say": "Each source measures its own way, so numbers often disagree. The form says there is no “official” source and no single standard method. The buyer should not rely on advertised numbers and should hire their own expert during the investigation period. Price per square foot is only a rough estimate; verify it with an expert such as an appraiser.", "p0_ex": "MLS says 1,650 sqft at $1,350,000 → about $818/sqft. Anh Minh & Chị Lan compare it to a nearby sale at $850/sqft. Nobody has re-measured that $818.", "p0_care": "If square footage is why you are paying that price, measure within your investigation period. After it ends, cancelling over square footage gets hard.", "p1_n": "Para 2", "p1_t": "Lot size, dimensions and boundaries", "p1_v": "A fence is not a property line", "p1_say": "Fences, walls, retaining walls and hedges may not match the legal boundary. Sheds or decks may sit outside the lot or inside a setback. If lot size or boundaries matter, the buyer should hire a licensed surveyor, which the form calls the only professional who can determine them accurately.", "p1_ex": "The back fence at 1234 Example Lane runs about 2 feet onto the neighbor's land. The lot is listed at 6,000 sqft, but the fenced area looks bigger.", "p1_care": "Planning an ADU, an addition, or buying for the big lot? Get a survey before removing contingencies.", "p2_n": "Para 3", "p2_t": "Broker obligations", "p2_v": "Agents do not measure or verify", "p2_say": "Brokers and agents are not experts at measuring. They have not verified and will not verify square footage, room sizes, lot size or boundary locations.", "p2_ex": "Ken passes along the MLS number of 1,650 sqft, but Ken does not re-measure. If Anh Minh wants certainty, he hires an appraiser or a measurer.", "p3_n": "Para 4", "p3_t": "Measurements and sources table", "p3_v": "County 1,480 · MLS 1,650 · Seller 1,650", "p3_say": "A table lists each source and its number: Public Record, MLS, Seller, Appraisal #1 and #2, condo map/plan, architectural drawings, floor plan, survey, and two “Other” lines. Each has a square footage column and a lot size column. There is room for extra information and a box to check if a report is attached. The form says these may be approximations only.", "p3_ex": "Public Record: 1,480 sqft, lot 6,000 · MLS: 1,650, lot 6,000 · Seller: 1,650 (includes a 170 sqft back room added later) · Appraisal #1: blank, not done yet.", "p3_care": "A blank line does not mean no number exists. Ask the seller for old appraisals, floor plans or permit drawings.", "p4_n": "Seller", "p4_t": "Seller signature", "p4_v": "Cô Hạnh Trần", "p4_say": "By signing, the seller confirms two things: (1) the seller is not aware of any other measurements; (2) the seller has read, understood and received a copy.", "p4_ex": "Cô Hạnh has a refinance appraisal showing 1,600 sqft. It goes on the Appraisal #1 line; it cannot be left out.", "p4_care": "If the seller knows of another number and leaves it off, the risk is on the seller.", "p5_n": "Buyer", "p5_t": "Buyer signature", "p5_v": "Anh Minh & Chị Lan Nguyễn", "p5_say": "The buyer confirms they have read, understood and received a copy. The capital-letter paragraph warns: if no numbers are given, or the numbers matter to the buyer, the buyer is strongly advised to check them. Not doing so goes against the advice of brokers and agents.", "p5_ex": "Anh Minh & Chị Lan sign the SFLS on day 3 after acceptance, then book a re-measure before day 17.", "p5_care": "Once you sign SFLS, “the agent told me 1,650 sqft” is a hard argument later.", "s0_a": "Seller", "s0_b": "When the disclosure package goes to the buyer", "s0_c": "SFLS sets no deadline itself. Under the RPA, the seller delivers documents within 7 days after acceptance (default, RPA para 3N(1) / 14A).", "s1_a": "Buyer", "s1_b": "When the SFLS is received", "s1_c": "Check square footage and lot within the investigation contingency: 17 days after acceptance (default, RPA para 3L(3) / 8C).", "s2_a": "Agents", "s2_b": "Do not sign SFLS", "s2_c": "The form has no agent signature line. Agents hand it over and remind the buyer to check.", "m0": "<b>“If the appraisal measures smaller, I cancel under the appraisal contingency.”</b> Wrong box. RPA paragraph 8B(1) says cancelling over the appraisal's measurements falls under the investigation contingency; the appraisal contingency is only about value. I see buyers wait for an appraisal on day 20 and then complain. The 17-day investigation period is already gone.", "m1": "<b>“The county number is the right one.”</b> No number is “official” — SFLS paragraph 1 says so. The county often still has the number from when the house was built decades ago, without later rooms. MLS being bigger than county does not mean MLS is wrong.", "m2": "<b>“The fence is the property line.”</b> Paragraph 2 says otherwise. People built that fence, sometimes 30 years ago and off by a few feet. Planning an ADU or an addition without a survey is a gamble.", "nx0": "Read the purchase contract step by step, including the 17-day investigation period: <a href=\"/t401/\">T401 — RPA</a>.", "nx1": "Room added later? Ask the seller about permits: <a href=\"/t287/\">T287</a>.", "nx2": "What to do with a low appraisal: <a href=\"/t11/\">T11</a>.", "nx3": "Other forms: <a href=\"/t402/\">T402 — forms library</a> · escrow calendar <a href=\"/t60/\">T60</a>."}};
+
+function sfls(i){
+  const src=[i.mls,i.pr,i.ms].filter(x=>x>0);
+  const mx=src.length?Math.max(...src):0, mn=src.length?Math.min(...src):0;
+  const gap=mx-mn, pct=mn>0?gap/mn*100:0;
+  const ppsf=x=>x>0?i.price/x:0;
+  return {gap,pct,mls:ppsf(i.mls),pr:ppsf(i.pr),ms:ppsf(i.ms),gapVal:i.mls>0?gap*i.price/i.mls:0,
+    dMP:Math.abs(i.mls-i.pr), dMS:i.ms>0?Math.abs(i.mls-i.ms):0};
+}
+function calc(){
+  const d=I18N[lang], i={price:num('price'),mls:num('mls'),pr:num('pr'),ms:num('ms'),up:num('up')};
+  const r=sfls(i), p=r.pct.toFixed(1);
+  $('big').textContent=nf(r.gap); $('bigS').textContent=r.gap>0?(p+'%'):'';
+  const w=r.pct>=K.WARN_PCT; $('status').className='status '+(w?'warn':'ok'); $('status').innerHTML=T(w?d.st_warn:d.st_ok,{p});
+  const ps=x=>x>0?fmt(x):'—';
+  $('oM').textContent=ps(r.mls); $('oR').textContent=ps(r.pr); $('oS').textContent=i.ms>0?ps(r.ms):d.na;
+  $('oG').textContent=fmt(r.gapVal);
+  const why=[];
+  if(i.up>0 && i.mls>i.pr && Math.abs(r.dMP-i.up)<=K.MATCH_SQFT) why.push(T(d.r_up,{d:nf(r.dMP),u:nf(i.up)}));
+  if(i.up>0) why.push(d.r_up2);
+  if(i.ms>0 && r.dMS>0) why.push(T(d.r_ms,{d:nf(r.dMS)}));
+  why.push(d.r_pr, d.r_mls);
+  $('why').innerHTML=why.map(x=>'<li>'+x+'</li>').join('');
+  last={p:fmt(i.price),m:nf(i.mls),r:nf(i.pr),s:i.ms>0?nf(i.ms):d.na,u:nf(i.up),g:nf(r.gap)+' sqft ('+p+'%)',a:ps(r.mls),b:ps(r.pr),v:fmt(r.gapVal)};
+  setSms();
+}
+
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const fmt2=n=>(n<0?'−':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const nf=n=>Math.round(n).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const T=(s,o)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+let last={};
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  document.querySelectorAll('[data-o]').forEach(el=>{const k=el.getAttribute('data-o'); if(typeof d[k]==='string') el.textContent=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; document.title=d.doc_title; calc();
+}
+/* embed mode (?embed=1): iframe on kenlamrealty.com, height via postMessage klToolsHeight */
+const EMBED=/[?&]embed=1/.test(location.search);
+let klSend=()=>{};
+if(EMBED){ document.documentElement.classList.add('embed'); let lastH=0;
+  klSend=()=>{ const w=document.querySelector('.wrap'); const h=Math.ceil(w.getBoundingClientRect().bottom+window.scrollY+40); if(Math.abs(h-lastH)<4) return; lastH=h; try{ parent.postMessage({klToolsHeight:h},'*'); }catch(e){} };
+  window.addEventListener('resize',()=>klSend());
+  document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('a[href]'); if(!a) return; const h=a.getAttribute('href'); if(h.startsWith('#')||a.target==='_blank') return; if(h.startsWith('/')) a.href='https://tools.kenlamrealty.com'+h; a.target='_top'; },true); }
+document.querySelectorAll('.inputs input,.inputs select').forEach(el=>{el.addEventListener('input',calc); el.addEventListener('change',calc);});
+document.querySelectorAll('.seg').forEach(g=>g.querySelectorAll('button[data-v]').forEach(b=>b.addEventListener('click',()=>{
+  g.querySelectorAll('button[data-v]').forEach(x=>x.setAttribute('aria-pressed',x===b)); calc();})));
+const segV=id=>{const b=document.querySelector('#'+id+' button[aria-pressed="true"]'); return b?b.getAttribute('data-v'):'';};
+document.querySelectorAll('.ptog').forEach(b=>b.addEventListener('click',()=>{
+  const x=$(b.getAttribute('aria-controls')), open=b.getAttribute('aria-expanded')!=='true';
+  b.setAttribute('aria-expanded',open); x.hidden=!open; klSend();}));
+$('openAll').onclick=()=>{const bs=[...document.querySelectorAll('.ptog')], open=bs.some(b=>b.getAttribute('aria-expanded')!=='true');
+  bs.forEach(b=>{b.setAttribute('aria-expanded',open); $(b.getAttribute('aria-controls')).hidden=!open;}); klSend();};
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus(); klSend();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], o=Object.assign({},last,{nm:$('fname').value.trim()||'—',em:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'});
+  /* LEAD → FUB: mailto ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const a=document.createElement('a'); a.href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(T(d.subj,o))+'&body='+encodeURIComponent(T(d.body,o)); a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){} };
+function setSms(){ $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(T(I18N[lang].sms,last)); klSend(); }
+applyLang();
+
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

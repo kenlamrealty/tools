@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Listing seller giữ quyền tự bán (RLASR) · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+@media (max-width:420px){.total .v{font-size:min(58px,13vw)}}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+
+/* ---- T222 thêm ---- */
+.chart{display:grid;gap:12px}
+.chart h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.cb{display:grid;gap:5px;min-width:0}
+.cb .hd{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:14px}
+.cb .hd b{font-weight:500;min-width:0}
+.cb .hd span{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.cb .tr{height:14px;border-radius:999px;background:var(--line);overflow:hidden}
+.cb .tr i{display:block;height:100%;border-radius:999px;background:var(--brass);transition:width .2s}
+.cb.p1 .tr i{background:#CBB7A3}.cb.p3 .tr i{background:var(--ok)}.cb.p4 .tr i{background:#A9B7A0}
+.cb small{font-size:12px;color:var(--muted);line-height:1.4}
+.cb.best .hd span{color:var(--ok)}
+.ctl input[type=number].sm{font-size:20px}
+</style>
+<meta name="description" content="RLASR seller-reserved listing (C.A.R. Form RLASR, Revised 6/26) explained in Vietnamese and English: exact differences from the RLA and a who-pays-commission checker.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t420/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Listing seller giữ quyền tự bán (RLASR) · Ken Lam Tools">
+<meta property="og:description" content="RLASR seller-reserved listing (C.A.R. Form RLASR, Revised 6/26) explained in Vietnamese and English: exact differences from the RLA and a who-pays-commission checker.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t420/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+html.embed .kl-back{display:none}
+html.embed body{padding-top:8px}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+<style>
+/* ---- Thuế nhà đất group thêm ---- */
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer;line-height:1.45}
+.chk input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;flex:none}
+.chk small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.grp{display:grid;gap:0}
+.grp h3{font-family:var(--display);font-weight:400;font-size:22px;margin:4px 0 6px}
+.seg button{min-width:0}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:12px 4px}
+.pill{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.04em;border-radius:999px;padding:2px 9px;margin-right:6px;vertical-align:1px}
+.pill.y{background:var(--brass-soft);color:var(--warn)}.pill.n{background:var(--brass-soft);color:var(--ok)}
+.ex{font-size:12px;color:var(--muted);margin:0}
+</style>
+<style>
+/* ---- Form explainer group (T415–T428) ---- */
+.ver{font-size:13px;color:var(--muted);margin:0}
+.ver b{color:var(--fg);font-weight:500}
+.sec{display:grid;gap:12px;min-width:0}
+.sec h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.sec>p{margin:0;font-size:15px}
+.what{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.what p{margin:0 0 8px;font-size:15px}.what p:last-child{margin:0}
+.eg{font-size:14px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px}
+.vidbox{display:grid;justify-items:center;gap:6px}
+.vidbox small{font-size:12px;color:var(--muted)}
+.paper{background:var(--panel);border:1px solid var(--line);border-radius:6px;box-shadow:0 10px 28px rgba(43,41,37,.07);padding:16px 14px 6px;min-width:0}
+.paper .ph{text-align:center;border-bottom:3px double var(--line);padding-bottom:10px;margin-bottom:4px;display:grid;gap:2px}
+.paper .ph .mock{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--warn)}
+.paper .ph b{font-family:var(--display);font-weight:500;font-size:21px;line-height:1.15}
+.paper .ph span{font-size:12px;color:var(--muted)}
+.paper .ph b span{font-size:inherit;color:inherit}
+.paper .addr{font-size:13px;color:var(--muted);padding:6px 0;border-bottom:1px solid var(--line)}
+.paper .addr b{color:var(--fg);font-weight:500}
+details.part{border-bottom:1px dashed var(--line)}
+details.part:last-of-type{border-bottom:0}
+details.part summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:start;padding:11px 2px}
+details.part summary::-webkit-details-marker{display:none}
+details.part summary:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.pn{font-size:12px;font-weight:600;background:var(--brass-soft);color:var(--warn);border-radius:6px;padding:2px 7px;white-space:nowrap;margin-top:2px}
+.pt{min-width:0}
+.pt b{display:block;font-weight:500;font-size:15px;line-height:1.35}
+.pt i{display:block;font-style:normal;font-size:13px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:2px;margin-top:3px;word-break:break-word}
+.pt .diff{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;color:#FFFDF8;background:var(--warn);border-radius:999px;padding:1px 8px;margin-left:6px;vertical-align:1px}
+.pm{font-size:18px;color:var(--brass);line-height:1;margin-top:2px;transition:transform .15s}
+details.part[open] .pm{transform:rotate(45deg)}
+.pb{display:grid;gap:8px;padding:0 2px 14px;font-size:14px;line-height:1.55}
+.pb div{min-width:0}
+.pb .h{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.pb .ex{background:var(--brass-soft);border-radius:10px;padding:9px 11px;font-size:14px;color:var(--fg)}
+.pb .cw{border-left:3px solid var(--warn);padding-left:10px}
+.rest{font-size:13px;color:var(--muted);margin:0}
+.tool{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 16px;display:grid;gap:14px;min-width:0}
+.tool h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.tool .result{border-color:var(--brass)}
+.sig{display:grid;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel)}
+.sr{display:grid;grid-template-columns:1fr 1.2fr 1.2fr;gap:10px;padding:11px 14px;border-top:1px solid var(--line);font-size:14px;line-height:1.45}
+.sr:first-child{border-top:0}
+.sr.hd{background:var(--brass-soft);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.sr span{min-width:0}
+.sr span:first-child{font-weight:500}
+.sr em{display:none;font-style:normal;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+@media (max-width:520px){.sr{grid-template-columns:1fr;gap:4px}.sr.hd{display:none}.sr em{display:block}}
+.myths{display:grid;gap:10px}
+.cmp{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.cmp th,.cmp td{border-top:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top;word-break:break-word}
+.cmp th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.cmp td:first-child{font-weight:500;width:22%}
+.verd{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.vc{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:4px;min-width:0}
+.vc .k{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.vc .v{font-family:var(--display);font-size:34px;line-height:1.05}
+.vc .v.yes{color:var(--warn)}.vc .v.no{color:var(--ok)}.vc .v.may{color:var(--brass)}
+.vc p{margin:0;font-size:13px;color:var(--muted);line-height:1.45}
+.vc .amt{font-size:15px;font-weight:500;color:var(--fg);font-variant-numeric:tabular-nums}
+@media (max-width:420px){.verd{grid-template-columns:1fr}}
+.todo{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px}
+.todo li b{font-weight:500}
+.meter{height:12px;border-radius:999px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--ok);border-radius:999px;transition:width .2s}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools · T420</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title">RLASR — Listing mà seller giữ quyền tự bán</h1>
+    <p class="sub">Residential Listing Agreement — Seller Reserved (C.A.R. Form RLASR)</p>
+    <p class="ver"><span data-i="ver_l">Bản form:</span> <b>C.A.R. Form RLASR, Revised 6/26</b></p>
+  </header>
+
+  <section class="sec what" aria-labelledby="hWhat">
+    <h2 id="hWhat" data-i="h_what">Form này là gì</h2>
+    <p data-i="what1">RLASR là hợp đồng listing gần giống hệt RLA, nhưng <b>seller giữ lại quyền tự bán</b>: nếu chính seller tìm được người mua, không qua agent nào, thì không phải trả hoa hồng cho broker. Dùng khi seller đã có vài người quen có thể mua, nhưng vẫn muốn agent rao bán ra ngoài.</p>
+    <p class="eg" data-i="what_eg">Giống giao xe cho tiệm bán ký gửi, nhưng ghi rõ: "Nếu em tôi mua thì tôi khỏi trả phần tiệm."</p>
+  </section>
+
+  <section class="sec vidbox" aria-labelledby="hVid">
+    <h2 id="hVid" data-i="h_vid" style="justify-self:start">Video 45 giây</h2>
+    <video src="form-45s.mp4" controls playsinline preload="metadata" style="width:100%;max-width:360px;border-radius:12px"></video>
+    <small data-i="vid_s">Video ngắn, có chữ, không cần bật tiếng.</small>
+  </section>
+
+  <section class="sec" aria-labelledby="hSheet">
+    <h2 id="hSheet" data-i="h_sheet">Đi qua từng phần của form</h2>
+    <p class="ex" data-i="sheet_hint">Bấm vào từng phần để xem giải thích. Số trong ô vàng là số đoạn trên form.</p>
+    <div class="paper">
+      <div class="ph"><span class="mock" data-i="mock">Minh họa — không phải form thật</span><b>RLASR · <span data-i="paper_t">Listing seller giữ quyền</span></b><span>C.A.R. Form RLASR · Revised 6/26</span></div>
+      <div class="addr"><span data-i="addr_l">Nhà ví dụ:</span> <b>1234 Example Lane, San Jose, CA 95100</b> · <span data-i="addr_who">Seller: Cô Hạnh Trần · Broker: BRG Realty Corp</span></div>
+      <details class="part" id="part1"><summary><span class="pn">1</span><span class="pt"><b data-i="p1_t">Seller Reserved Listing Agreement<span class="diff">KHÁC RLA</span></b><i data-i="p1_f">Tên đoạn đổi, nhưng vẫn là quyền độc quyền</i></span><span class="pm" aria-hidden="true">+</span></summary>
+<div class="pb"><div><span class="h" data-i="say">Nói gì</span><span data-i="p1_s">Tên đoạn 1 đổi từ "Exclusive Right to Sell" thành "Seller Reserved Listing Agreement". Phần còn lại giống RLA: seller vẫn giao cho broker quyền độc quyền, không rút ngang được, để bán trong thời gian listing. Nghĩa là: không broker nào khác được listing; chỉ riêng seller giữ quyền tự bán.</span></div><div class="ex"><span class="h" data-i="exh">Ví dụ với 1234 Example Lane</span><span data-i="p1_e">Seller: Cô Hạnh Trần · Broker: BRG Realty Corp · 1234 Example Lane, San Jose, CA 95100 · APN 000-00-000.</span></div><div class="cw"><span class="h" data-i="care">Cẩn thận</span><span data-i="p1_w">Không phải "open listing". Cô Hạnh không được ký thêm listing với công ty khác.</span></div></div></details><details class="part" id="part2"><summary><span class="pn">2A(1) · 4G</span><span class="pt"><b data-i="p2_t">Thời gian listing</b><i data-i="p2_f">Giống RLA, tối đa 24 tháng</i></span><span class="pm" aria-hidden="true">+</span></summary>
+<div class="pb"><div><span class="h" data-i="say">Nói gì</span><span data-i="p2_s">Giống hệt RLA: ngày bắt đầu, hết hạn lúc 11:59 PM, nhà 1–4 căn không do công ty đứng tên tối đa 24 tháng.</span></div><div class="ex"><span class="h" data-i="exh">Ví dụ với 1234 Example Lane</span><span data-i="p2_e">11/10/2026 → 11:59 PM ngày 05/09/2027.</span></div></div></details><details class="part" id="part3"><summary><span class="pn">2C(1) · 4B</span><span class="pt"><b data-i="p3_t">Hoa hồng broker bên bán</b><i data-i="p3_f">Giống RLA</i></span><span class="pm" aria-hidden="true">+</span></summary>
+<div class="pb"><div><span class="h" data-i="say">Nói gì</span><span data-i="p3_s">Giống RLA: chỉ tiền cho broker bên bán, %, số cố định hay bảng riêng, thương lượng được. Bảng ở đoạn 2 trình bày lại thứ tự ô nhưng nội dung không đổi.</span></div><div class="ex"><span class="h" data-i="exh">Ví dụ với 1234 Example Lane</span><span data-i="p3_e">2.5% × $1,350,000 = $33,750 — nếu phải trả.</span></div></div></details><details class="part" id="part4"><summary><span class="pn">4D(1)</span><span class="pt"><b data-i="p4_t">Khi nào broker có hoa hồng<span class="diff">KHÁC RLA</span></b><i data-i="p4_f">Buyer do người khác tìm, KHÔNG tính seller</i></span><span class="pm" aria-hidden="true">+</span></summary>
+<div class="pb"><div><span class="h" data-i="say">Nói gì</span><span data-i="p4_s">RLA ghi: broker, broker khác, <b>seller</b>, hay bất kỳ ai tìm ra buyer thì broker có hoa hồng. RLASR đổi thành: broker, broker hay agent khác, hay bất kỳ ai <b>ngoài seller</b>. Buyer do seller tự tìm thì không nằm trong đoạn này.</span></div><div class="ex"><span class="h" data-i="exh">Ví dụ với 1234 Example Lane</span><span data-i="p4_e">Agent công ty khác dẫn buyer tới, offer $1,340,000: trả $33,500. Người bạn của cô Hạnh tự hỏi mua: không tính theo 4D(1).</span></div><div class="cw"><span class="h" data-i="care">Cẩn thận</span><span data-i="p4_w">Buyer mà broker đã dẫn xem hay đã nhận offer thì khó gọi là "seller tự tìm".</span></div></div></details><details class="part" id="part5"><summary><span class="pn">4E(1)</span><span class="pt"><b data-i="p5_t">Quyền giữ lại của seller (Seller Reserve)<span class="diff">KHÁC RLA</span></b><i data-i="p5_f">Đoạn mới: seller bán thẳng, không trả broker</i></span><span class="pm" aria-hidden="true">+</span></summary>
+<div class="pb"><div><span class="h" data-i="say">Nói gì</span><span data-i="p5_s">Đoạn hoàn toàn mới, không có trong RLA. Seller giữ quyền bán thẳng cho người mua mà không phải trả hoa hồng cho broker, <b>trừ khi</b> đoạn 2 hay một văn bản khác ghi khác. Khi seller dùng quyền này, broker không bắt buộc đại diện seller trong giao dịch đó. Các mục sau được đánh số lại: thành 4E(2) buyer bể hợp đồng, 4E(3) lệnh cho escrow.</span></div><div class="ex"><span class="h" data-i="exh">Ví dụ với 1234 Example Lane</span><span data-i="p5_e">Hàng xóm cũ, chưa từng qua Ken, mua $1,300,000. Cô Hạnh không trả $32,500. Nhưng cô tự lo hợp đồng, hoặc thuê luật sư.</span></div><div class="cw"><span class="h" data-i="care">Cẩn thận</span><span data-i="p5_w">Form không có ô riêng để ghi tên người seller giữ lại. Muốn chắc, ghi tên họ trong 2K (Additional Terms).</span></div></div></details><details class="part" id="part6"><summary><span class="pn">2C(3) · 4D(2)</span><span class="pt"><b data-i="p6_t">Continuation</b><i data-i="p6_f">Giống RLA: buyer broker đã dẫn xem + NPB</i></span><span class="pm" aria-hidden="true">+</span></summary>
+<div class="pb"><div><span class="h" data-i="say">Nói gì</span><span data-i="p6_s">Giống RLA: sau khi hết hạn, trong số ngày ghi ở 2C(3), bán cho người mà broker (hay broker khác) đã dẫn vào xem, hoặc đã gửi offer có chữ ký, thì vẫn trả hoa hồng — nếu broker đã đưa danh sách tên (NPB) trước khi hết hạn.</span></div><div class="ex"><span class="h" data-i="exh">Ví dụ với 1234 Example Lane</span><span data-i="p6_e">Ken dẫn "Anh Minh & Chị Lan Nguyễn" xem tháng 3, có tên trong NPB. Tháng 6 họ mua thẳng với cô Hạnh: vẫn trả.</span></div></div></details><details class="part" id="part7"><summary><span class="pn">4D(3)</span><span class="pt"><b data-i="p7_t">Seller tự phá listing</b><i data-i="p7_f">Chữ giữ nguyên như RLA</i></span><span class="pm" aria-hidden="true">+</span></summary>
+<div class="pb"><div><span class="h" data-i="say">Nói gì</span><span data-i="p7_s">Đoạn này không đổi: trong thời gian listing, không có broker đồng ý bằng giấy mà seller rút nhà, sang tên, cho thuê, hay làm nhà không bán được, thì hoa hồng phát sinh. Form không nói rõ đoạn này với đoạn 4E(1) ăn khớp ra sao khi seller tự bán.</span></div><div class="ex"><span class="h" data-i="exh">Ví dụ với 1234 Example Lane</span><span data-i="p7_e">Cô Hạnh bán thẳng cho hàng xóm (4E(1)) — được. Cô rút nhà để cho thuê 1 năm — 4D(3) vẫn có thể áp dụng.</span></div><div class="cw"><span class="h" data-i="care">Cẩn thận</span><span data-i="p7_w">Trước khi bán thẳng, báo broker bằng giấy để tránh cãi nhau theo 4D(3).</span></div></div></details><details class="part" id="part8"><summary><span class="pn">2C(4) · 4F</span><span class="pt"><b data-i="p8_t">Nợ broker cũ</b><i data-i="p8_f">Giống RLA</i></span><span class="pm" aria-hidden="true">+</span></summary>
+<div class="pb"><div><span class="h" data-i="say">Nói gì</span><span data-i="p8_s">Giống RLA: ghi listing cũ và người mua còn thuộc broker cũ. Bán cho họ trong lúc còn nợ broker cũ thì broker này không có hoa hồng, không bắt buộc đại diện.</span></div><div class="ex"><span class="h" data-i="exh">Ví dụ với 1234 Example Lane</span><span data-i="p8_e">Một người mua còn trong continuation của listing cũ: ghi ở 2C(4).</span></div></div></details><details class="part" id="part9"><summary><span class="pn">7A</span><span class="pt"><b data-i="p9_t">Broker được rao ở đâu<span class="diff">KHÁC RLA</span></b><i data-i="p9_f">Bỏ chữ "social media" khỏi danh sách</i></span><span class="pm" aria-hidden="true">+</span></summary>
+<div class="pb"><div><span class="h" data-i="say">Nói gì</span><span data-i="p9_s">RLA: broker được rao bằng mọi cách, "kể cả MLS, internet và social media". RLASR: "kể cả MLS và internet" — chữ social media không còn trong câu này. Đoạn 12 về hình ảnh vẫn nhắc tới social media.</span></div><div class="ex"><span class="h" data-i="exh">Ví dụ với 1234 Example Lane</span><span data-i="p9_e">Cô Hạnh muốn Ken đăng nhà lên Facebook, Instagram, YouTube. Ghi rõ trong 2K cho chắc.</span></div></div></details><details class="part" id="part10"><summary><span class="pn">7D</span><span class="pt"><b data-i="p10_t">Seller thiện chí</b><i data-i="p10_f">Vẫn ghi: chuyển mọi người hỏi mua cho broker</i></span><span class="pm" aria-hidden="true">+</span></summary>
+<div class="pb"><div><span class="h" data-i="say">Nói gì</span><span data-i="p10_s">Không đổi so với RLA: seller đồng ý xem xét offer broker trình, cho xem nhà giờ hợp lý, và chuyển cho broker mọi người hỏi mua (trừ người ở 2C(4)). Câu này đứng cạnh quyền tự bán ở 4E(1), nên seller nên thống nhất với broker trước ai là "người của seller".</span></div><div class="ex"><span class="h" data-i="exh">Ví dụ với 1234 Example Lane</span><span data-i="p10_e">Có người gõ cửa hỏi mua. Cô Hạnh báo Ken, nhưng ghi chú đây là người cô tự quen, theo 4E(1).</span></div></div></details><details class="part" id="part11"><summary><span class="pn">2F(3) · 7E</span><span class="pt"><b data-i="p11_t">Báo cáo seller trả<span class="diff">KHÁC RLA</span></b><i data-i="p11_f">Bỏ tham chiếu 7A; vẫn 5 ngày</i></span><span class="pm" aria-hidden="true">+</span></summary>
+<div class="pb"><div><span class="h" data-i="say">Nói gì</span><span data-i="p11_s">Bảng 2F(3) của RLA tham chiếu "7A, 7E"; RLASR chỉ còn "7E". Hạn vẫn vậy: seller trả các báo cáo đã tick trong 5 ngày (hoặc số khác) từ ngày bắt đầu.</span></div><div class="ex"><span class="h" data-i="exh">Ví dụ với 1234 Example Lane</span><span data-i="p11_e">Bắt đầu 11/10/2026 → trả NHD, termite trước 11/15/2026.</span></div></div></details><details class="part" id="part12"><summary><span class="pn">9 · 17 · 19</span><span class="pt"><b data-i="p12_t">Đại diện, broker duyệt, tranh chấp</b><i data-i="p12_f">Giống RLA</i></span><span class="pm" aria-hidden="true">+</span></summary>
+<div class="pb"><div><span class="h" data-i="say">Nói gì</span><span data-i="p12_s">Giống RLA: dual agency được đồng ý trước, broker/manager được hủy trong 5 ngày sau khi ký, tranh chấp hòa giải trước. Riêng khi seller tự bán theo 4E(1) thì broker không bắt buộc đại diện.</span></div><div class="ex"><span class="h" data-i="exh">Ví dụ với 1234 Example Lane</span><span data-i="p12_e">Cô Hạnh ký 11/10/2026; broker BRG có tới 11/15/2026 để hủy nếu không duyệt.</span></div></div></details>
+    </div>
+    <p class="rest" data-i="rest">Các đoạn còn lại giống RLA về nội dung (xem T419): 2B, 2D, 2E, 2F(1)(2), 2G–2K, 3, 5, 6, 7B, 7C, 7F, 8, 10–16, 18, 20–22. Có sửa chữ nhỏ (dấu phẩy, "establishes/established", thêm chữ "and" ở 9D, đổi thứ tự advisory ở 3A) — xem bảng bên dưới.</p>
+  </section>
+
+  <section class="sec" aria-labelledby="hCmp">
+    <h2 id="hCmp" data-i="h_cmp">RLA và RLASR khác nhau đúng chỗ nào</h2>
+    <p class="ex" data-i="cmp_sub">So từng chữ hai bản Revised 6/26. Dòng nền vàng là chỗ đổi nghĩa; dòng trắng chỉ là sửa chữ hoặc đánh số.</p>
+    <div class="what" style="padding:6px 12px"><table class="cmp"><thead><tr><th data-i="th_p">Đoạn</th><th>RLA</th><th>RLASR</th></tr></thead><tbody><tr style="background:var(--brass-soft)"><td data-i="c1a">Tên form · Title</td><td data-i="c1b">Exclusive Authorization and Right to Sell</td><td data-i="c1c">Seller Reserved · Authorization and Right to Sell</td></tr><tr style="background:var(--brass-soft)"><td data-i="c2a">1</td><td data-i="c2b">"Exclusive Right to Sell"</td><td data-i="c2c">"Seller Reserved Listing Agreement" (vẫn ghi quyền độc quyền / still exclusive)</td></tr><tr style="background:var(--brass-soft)"><td data-i="c3a">4D(1)</td><td data-i="c3b">Broker, broker khác, <b>Seller</b>, hay bất kỳ ai</td><td data-i="c3c">Broker, broker/agent khác, bất kỳ ai <b>ngoài Seller</b></td></tr><tr style="background:var(--brass-soft)"><td data-i="c4a">4E(1)</td><td data-i="c4b">—</td><td data-i="c4c"><b>Seller Reserve</b>: bán thẳng, không hoa hồng, trừ khi đoạn 2 / văn bản khác ghi khác; broker không bắt buộc đại diện</td></tr><tr><td data-i="c5a">4E</td><td data-i="c5b">(1) buyer bể, (2) escrow</td><td data-i="c5c">(2) buyer bể, (3) escrow — đánh số lại</td></tr><tr style="background:var(--brass-soft)"><td data-i="c6a">7A</td><td data-i="c6b">MLS, internet, <b>social media</b></td><td data-i="c6c">MLS và internet</td></tr><tr><td data-i="c7a">2F(3)</td><td data-i="c7b">Tham chiếu 7A, 7E</td><td data-i="c7c">Tham chiếu 7E</td></tr><tr><td data-i="c8a">3A</td><td data-i="c8b">BCA · REOL · TA</td><td data-i="c8c">BCA · TA · REOL (đổi thứ tự)</td></tr><tr><td data-i="c9a">9D, 10, 12, ký</td><td data-i="c9b">Chữ, dấu phẩy</td><td data-i="c9c">Sửa chữ nhỏ, không đổi nghĩa; câu xác nhận ký ghi "Seller Reserve"</td></tr></tbody></table></div>
+  </section>
+
+  <section class="tool" aria-labelledby="hTool">
+    <h2 id="hTool" data-i="h_tool">Tình huống này có phải trả hoa hồng không?</h2>
+    <p class="ex" data-i="tool_sub">Chọn ai tìm ra người mua và lúc nào. Tool so kết quả theo RLA và RLASR, kèm số đoạn.</p>
+    <section class="inputs" aria-label="Inputs">
+      <p class="ex" data-i="ex">Số đang hiện là ví dụ. Sửa lại số của bạn.</p>
+      <div class="row2">
+        <div class="field"><label for="price"><span data-i="l_price">Giá bán</span></label><div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" min="0" step="10000" value="1350000"></div></div>
+        <div class="field"><label for="pct"><span data-i="l_pct">Hoa hồng broker bên bán</span> <small>2C(1)</small></label><div class="ctl"><input id="pct" type="number" inputmode="decimal" min="0" max="10" step="0.1" value="2.5"><span class="post">%</span></div></div>
+      </div>
+      <div class="field"><label for="who"><span data-i="l_who">Ai tìm ra người mua?</span></label><div class="ctl"><select id="who">
+        <option value="seller" data-o="w_seller">Seller tự tìm, người mua chưa từng qua agent nào</option>
+        <option value="shown" data-o="w_shown">Seller quen, nhưng Ken đã dẫn họ xem / đã nhận offer của họ</option>
+        <option value="ken" data-o="w_ken">Ken (broker listing) tìm</option>
+        <option value="other" data-o="w_other">Agent công ty khác dẫn tới</option>
+        <option value="prior" data-o="w_prior">Người trong danh sách broker cũ ở 2C(4)</option></select></div></div>
+      <div class="field"><label for="when"><span data-i="l_when">Ký hợp đồng bán lúc nào?</span></label><div class="ctl"><select id="when">
+        <option value="during" data-o="t_during">Trong thời gian listing</option>
+        <option value="cont" data-o="t_cont">Sau khi hết hạn, còn trong continuation</option>
+        <option value="after" data-o="t_after">Sau cả continuation</option></select></div></div>
+      <label class="chk" id="npbW"><input type="checkbox" id="npb" checked><span><span data-i="l_npb">Broker đã đưa tên người này trong NPB trước khi hết hạn</span><small>4D(2)</small></span></label>
+      <label class="chk"><input type="checkbox" id="xw"><span><span data-i="l_xw">RLASR có ghi thêm (đoạn 2 hay văn bản riêng) bắt trả cả khi seller tự bán</span><small>4E(1) "unless otherwise specified"</small></span></label>
+    </section>
+    <section class="result" aria-live="polite">
+      <div class="total"><div class="k" data-i="bigK">Phải trả hoa hồng không?</div></div>
+      <div class="verd">
+        <div class="vc"><span class="k">RLA (T419)</span><span class="v" id="vA">—</span><span class="amt" id="aA"></span><p id="rA"></p></div>
+        <div class="vc"><span class="k">RLASR (T420)</span><span class="v" id="vB">—</span><span class="amt" id="aB"></span><p id="rB"></p></div>
+      </div>
+      <div class="status" id="status"></div>
+      <div class="note" data-i="est_note"></div>
+    </section>
+  </section>
+
+  <section class="sec" aria-labelledby="hSig">
+    <h2 id="hSig" data-i="h_sig">Ai ký, ký lúc nào, hạn bao lâu</h2>
+    <div class="sig"><div class="sr hd"><span data-i="sg_who">Ai</span><span data-i="sg_when">Lúc nào</span><span data-i="sg_dl">Hạn</span></div><div class="sr"><span data-i="s1a">Seller (mọi người đứng tên)</span><span><em data-i="sg_when">Lúc nào</em><span data-i="s1b">Lúc ký listing</span></span><span><em data-i="sg_dl">Hạn</em><span data-i="s1c">Tối đa 24 tháng (nhà 1–4 căn, không phải công ty) — 4G</span></span></div><div class="sr"><span data-i="s2a">Broker / agent</span><span><em data-i="sg_when">Lúc nào</em><span data-i="s2b">Ký phần broker; broker/manager duyệt</span></span><span><em data-i="sg_dl">Hạn</em><span data-i="s2c">Broker/manager được hủy trong 5 ngày sau khi ký — đoạn 17</span></span></div><div class="sr"><span data-i="s3a">Người ký thay (trust, LLC, POA)</span><span><em data-i="sg_when">Lúc nào</em><span data-i="s3b">Cùng lúc</span></span><span><em data-i="sg_dl">Hạn</em><span data-i="s3c">Giao giấy chứng minh quyền ký trong 3 ngày — đoạn 22</span></span></div><div class="sr"><span data-i="s4a">Seller + broker (người seller giữ lại)</span><span><em data-i="sg_when">Lúc nào</em><span data-i="s4b">Nên ghi ngay lúc ký, ở 2K</span></span><span><em data-i="sg_dl">Hạn</em><span data-i="s4c">Form không có ô riêng; không ghi thì dễ cãi ai là người "seller tự tìm"</span></span></div><div class="sr"><span data-i="s5a">Broker (danh sách NPB)</span><span><em data-i="sg_when">Lúc nào</em><span data-i="s5b">Trước khi listing hết hạn</span></span><span><em data-i="sg_dl">Hạn</em><span data-i="s5c">Để đòi hoa hồng trong continuation — 4D(2)</span></span></div></div>
+  </section>
+
+  <section class="sec myths" aria-labelledby="hMyth">
+    <h2 id="hMyth" data-i="h_myth">Nhiều người hiểu sai</h2>
+    <p class="myth" data-i="m1"><b>"Ký RLASR là tôi được bán cho ai cũng khỏi trả."</b> Không. Chỉ người <b>seller tự tìm</b>. Ai do agent nào dẫn tới thì vẫn trả (4D(1)). Ai Ken đã dẫn xem rồi seller "bán thẳng" thì đó không phải người seller tự tìm — chỗ này hay sinh kiện tụng nhất.</p><p class="myth" data-i="m2"><b>"RLASR là open listing, tôi ký thêm vài công ty nữa."</b> Sai. Đoạn 1 vẫn giao quyền độc quyền cho một broker. Seller chỉ giữ lại quyền của riêng mình, không phải quyền cho broker khác.</p><p class="myth" data-i="m3"><b>"Tự bán thì broker vẫn lo giấy tờ cho tôi."</b> Không chắc. Đoạn 4E(1) nói khi seller dùng quyền tự bán, broker không bắt buộc đại diện. Không trả hoa hồng thì phải tự lo hợp đồng, disclosure, escrow — hoặc thuê luật sư. Ý kiến riêng của tôi: nhiều seller tiết kiệm 2.5% rồi mất nhiều hơn vì một tờ disclosure làm sai.</p>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Bước tiếp theo</h2>
+    <ol><li data-i="nx1">Bản listing độc quyền thường (RLA), có tính hoa hồng: <a href="/t419/">T419</a>.</li><li data-i="nx2">Lưu ý cho người bán (SA), checklist trước khi list: <a href="/t424/">T424</a>.</li><li data-i="nx3">Disclosure của seller gồm những gì (tự bán cũng phải làm): <a href="/t28/">T28</a>.</li><li data-i="nx4">Thư viện form: <a href="/t402/">T402</a>.</li></ol>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Gửi kết quả qua email</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Hỏi Ken</a>
+    <a class="btn" id="videoBtn" href="form-45s.mp4" target="_blank" rel="noopener" data-i="b_video">Xem video 45 giây</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title"></h2>
+    <p data-i="f_sub"></p>
+    <div class="field"><label for="fname"><span data-i="f_name">Tên</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (không bắt buộc)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Đã mở email.</div>
+    <div class="copyrow"><span data-i="f_or">Hoặc text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span class="src"><span data-i="ft_src">Nguồn</span>: C.A.R. Form RLASR (Revised 6/26)</span>
+    <span data-i="disc">Trang này chỉ để hiểu form, không thay form gốc, không phải tư vấn pháp lý hay thuế. Khi ký thật, đọc bản đầy đủ và hỏi agent hoặc luật sư của bạn.</span>
+    <span class="who">Ken Lam Realty · Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/cong-cu/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== RLASR T420 — decision rules from C.A.R. Forms RLA & RLASR Revised 6/26 (word-diffed 06/11/2026) =====
+   4D(1): RLA counts any procurer incl. Seller; RLASR excludes Seller. 4E(1) RLASR only: Seller Reserve.
+   4D(2) continuation (both): buyer shown / offer submitted via a broker + NPB names before expiry.
+   4F(3) (both): sale to a 2C(4) person while owed to a prior broker → no fee here.
+   'may' = form language leaves room for dispute — KEN DUYỆT. Not legal advice. */
+const R={YES:'yes',NO:'no',MAY:'may'};
+const I18N={"vi": {"lang": "English", "b_email": "Gửi kết quả qua email", "b_sms": "Hỏi Ken", "b_video": "Xem video 45 giây", "f_name": "Tên", "f_phone": "Phone (không bắt buộc)", "f_send": "Gửi", "f_title": "Gửi kết quả này về email", "f_sub": "Ken nhận được sẽ trả lời riêng cho trường hợp của bạn. Không spam.", "f_ok": "Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.", "f_or": "Hoặc text:", "f_copy": "Copy", "h_what": "Form này là gì", "h_vid": "Video 45 giây", "h_sheet": "Đi qua từng phần của form", "sheet_hint": "Bấm vào từng phần để xem giải thích. Số trong ô vàng là số đoạn trên form.", "mock": "Minh họa — không phải form thật", "addr_l": "Nhà ví dụ:", "say": "Nói gì", "exh": "Ví dụ với 1234 Example Lane", "care": "Cẩn thận", "h_sig": "Ai ký, ký lúc nào, hạn bao lâu", "sg_who": "Ai", "sg_when": "Lúc nào", "sg_dl": "Hạn", "h_myth": "Nhiều người hiểu sai", "nx_title": "Bước tiếp theo", "ex": "Số đang hiện là ví dụ. Sửa lại số của bạn.", "ft_src": "Nguồn", "ft_upd": "Updated", "ft_all": "All tools", "yes": "Có", "no": "Không", "vid_s": "Video ngắn, có chữ, không cần bật tiếng.", "disc": "Trang này chỉ để hiểu form, không thay form gốc, không phải tư vấn pháp lý hay thuế. Khi ký thật, đọc bản đầy đủ và hỏi agent hoặc luật sư của bạn.", "doc_title": "Listing seller giữ quyền tự bán (RLASR) · Ken Lam Tools", "title": "RLASR — Listing mà seller giữ quyền tự bán", "ver_l": "Bản form:", "what1": "RLASR là hợp đồng listing gần giống hệt RLA, nhưng <b>seller giữ lại quyền tự bán</b>: nếu chính seller tìm được người mua, không qua agent nào, thì không phải trả hoa hồng cho broker. Dùng khi seller đã có vài người quen có thể mua, nhưng vẫn muốn agent rao bán ra ngoài.", "what_eg": "Giống giao xe cho tiệm bán ký gửi, nhưng ghi rõ: \"Nếu em tôi mua thì tôi khỏi trả phần tiệm.\"", "paper_t": "Listing seller giữ quyền", "addr_who": "Seller: Cô Hạnh Trần · Broker: BRG Realty Corp", "rest": "Các đoạn còn lại giống RLA về nội dung (xem T419): 2B, 2D, 2E, 2F(1)(2), 2G–2K, 3, 5, 6, 7B, 7C, 7F, 8, 10–16, 18, 20–22. Có sửa chữ nhỏ (dấu phẩy, \"establishes/established\", thêm chữ \"and\" ở 9D, đổi thứ tự advisory ở 3A) — xem bảng bên dưới.", "h_cmp": "RLA và RLASR khác nhau đúng chỗ nào", "cmp_sub": "So từng chữ hai bản Revised 6/26. Dòng nền vàng là chỗ đổi nghĩa; dòng trắng chỉ là sửa chữ hoặc đánh số.", "th_p": "Đoạn", "h_tool": "Tình huống này có phải trả hoa hồng không?", "tool_sub": "Chọn ai tìm ra người mua và lúc nào. Tool so kết quả theo RLA và RLASR, kèm số đoạn.", "l_price": "Giá bán", "l_pct": "Hoa hồng broker bên bán", "l_who": "Ai tìm ra người mua?", "w_seller": "Seller tự tìm, người mua chưa từng qua agent nào", "w_shown": "Seller quen, nhưng Ken đã dẫn họ xem / đã nhận offer của họ", "w_ken": "Ken (broker listing) tìm", "w_other": "Agent công ty khác dẫn tới", "w_prior": "Người trong danh sách broker cũ ở 2C(4)", "l_when": "Ký hợp đồng bán lúc nào?", "t_during": "Trong thời gian listing", "t_cont": "Sau khi hết hạn, còn trong continuation", "t_after": "Sau cả continuation", "l_npb": "Broker đã đưa tên người này trong NPB trước khi hết hạn", "l_xw": "RLASR có ghi thêm (đoạn 2 hay văn bản riêng) bắt trả cả khi seller tự bán", "bigK": "Phải trả hoa hồng không?", "v_yes": "Có", "v_no": "Không", "v_may": "Có thể", "upto": "tới", "r_prior": "4F(3): bán cho người ở 2C(4) lúc còn nợ broker cũ → broker này không có hoa hồng (trả broker cũ theo hợp đồng cũ).", "r_after": "Hết cả listing và continuation → form không còn bắt trả.", "r_cont_seller": "4D(2) chỉ tính người broker đã dẫn xem hay đã gửi offer. Người seller tự tìm thì không.", "r_cont_yes": "4D(2): người này đã qua broker và có tên trong NPB → vẫn trả.", "r_cont_nonpb": "4D(2): không có tên trong NPB trước khi hết hạn → không đòi được.", "r_rla_seller": "4D(1) của RLA tính cả khi chính seller tìm ra buyer.", "r_d1": "4D(1): buyer do broker / agent tìm trong thời gian listing → trả.", "r_reserve": "4E(1) Seller Reserve: seller tự bán thẳng → không trả. Broker cũng không bắt buộc đại diện.", "r_xw_yes": "4E(1) \"trừ khi ghi khác\": có văn bản bắt trả → trả theo văn bản đó.", "r_xw": "Có văn bản riêng → tùy văn bản đó ghi gì. Đọc lại.", "r_shown": "4D(1) RLASR chỉ loại trừ seller. Nhưng buyer đã được broker dẫn xem / gửi offer thì broker có thể bị coi là người tìm ra buyer. Dễ tranh chấp.", "st_diff": "<b>Đây là chỗ hai form khác nhau:</b> cùng tình huống, RLA bắt trả {f}, RLASR thì không (hoặc chưa chắc).", "st_same": "<b>Hai form cho cùng kết quả</b> trong tình huống này.", "st_may": "Kết quả \"Có thể\" nghĩa là chữ trong form không trả lời dứt khoát. Nói chuyện với broker trước khi ký bán, và ghi bằng giấy.", "st_selfrep": "Tự bán thì seller vẫn phải làm đủ disclosure (TDS, NHD…) và tự lo hợp đồng, escrow.", "est_note": "Chỉ để hiểu form, không phải tư vấn pháp lý. Tình huống thật còn tùy giấy tờ đã ký, NPB, email qua lại. Có tranh chấp, hỏi luật sư.", "sms": "Chào Ken, tôi xem tool T420 (RLASR): {who}, {when}. RLA: {a}. RLASR: {b}. Cho tôi hỏi thêm.", "subj": "RLA hay RLASR: có phải trả hoa hồng? — {nm}", "body": "Tên: {nm}\nEmail: {em}\nPhone: {ph}\n\nGiá: {p}\nHoa hồng: {pct}% = {fee}\nAi tìm buyer: {who}\nLúc nào: {when}\n\nTheo RLA: {a}\nTheo RLASR: {b}\n\nKhông phải tư vấn pháp lý.\nGửi từ tool T420 tools.kenlamrealty.com", "c1a": "Tên form · Title", "c1b": "Exclusive Authorization and Right to Sell", "c1c": "Seller Reserved · Authorization and Right to Sell", "c2a": "1", "c2b": "\"Exclusive Right to Sell\"", "c2c": "\"Seller Reserved Listing Agreement\" (vẫn ghi quyền độc quyền / still exclusive)", "c3a": "4D(1)", "c3b": "Broker, broker khác, <b>Seller</b>, hay bất kỳ ai", "c3c": "Broker, broker/agent khác, bất kỳ ai <b>ngoài Seller</b>", "c4a": "4E(1)", "c4b": "—", "c4c": "<b>Seller Reserve</b>: bán thẳng, không hoa hồng, trừ khi đoạn 2 / văn bản khác ghi khác; broker không bắt buộc đại diện", "c5a": "4E", "c5b": "(1) buyer bể, (2) escrow", "c5c": "(2) buyer bể, (3) escrow — đánh số lại", "c6a": "7A", "c6b": "MLS, internet, <b>social media</b>", "c6c": "MLS và internet", "c7a": "2F(3)", "c7b": "Tham chiếu 7A, 7E", "c7c": "Tham chiếu 7E", "c8a": "3A", "c8b": "BCA · REOL · TA", "c8c": "BCA · TA · REOL (đổi thứ tự)", "c9a": "9D, 10, 12, ký", "c9b": "Chữ, dấu phẩy", "c9c": "Sửa chữ nhỏ, không đổi nghĩa; câu xác nhận ký ghi \"Seller Reserve\"", "p1_t": "Seller Reserved Listing Agreement<span class=\"diff\">KHÁC RLA</span>", "p1_f": "Tên đoạn đổi, nhưng vẫn là quyền độc quyền", "p1_s": "Tên đoạn 1 đổi từ \"Exclusive Right to Sell\" thành \"Seller Reserved Listing Agreement\". Phần còn lại giống RLA: seller vẫn giao cho broker quyền độc quyền, không rút ngang được, để bán trong thời gian listing. Nghĩa là: không broker nào khác được listing; chỉ riêng seller giữ quyền tự bán.", "p1_e": "Seller: Cô Hạnh Trần · Broker: BRG Realty Corp · 1234 Example Lane, San Jose, CA 95100 · APN 000-00-000.", "p1_w": "Không phải \"open listing\". Cô Hạnh không được ký thêm listing với công ty khác.", "p2_t": "Thời gian listing", "p2_f": "Giống RLA, tối đa 24 tháng", "p2_s": "Giống hệt RLA: ngày bắt đầu, hết hạn lúc 11:59 PM, nhà 1–4 căn không do công ty đứng tên tối đa 24 tháng.", "p2_e": "11/10/2026 → 11:59 PM ngày 05/09/2027.", "p3_t": "Hoa hồng broker bên bán", "p3_f": "Giống RLA", "p3_s": "Giống RLA: chỉ tiền cho broker bên bán, %, số cố định hay bảng riêng, thương lượng được. Bảng ở đoạn 2 trình bày lại thứ tự ô nhưng nội dung không đổi.", "p3_e": "2.5% × $1,350,000 = $33,750 — nếu phải trả.", "p4_t": "Khi nào broker có hoa hồng<span class=\"diff\">KHÁC RLA</span>", "p4_f": "Buyer do người khác tìm, KHÔNG tính seller", "p4_s": "RLA ghi: broker, broker khác, <b>seller</b>, hay bất kỳ ai tìm ra buyer thì broker có hoa hồng. RLASR đổi thành: broker, broker hay agent khác, hay bất kỳ ai <b>ngoài seller</b>. Buyer do seller tự tìm thì không nằm trong đoạn này.", "p4_e": "Agent công ty khác dẫn buyer tới, offer $1,340,000: trả $33,500. Người bạn của cô Hạnh tự hỏi mua: không tính theo 4D(1).", "p4_w": "Buyer mà broker đã dẫn xem hay đã nhận offer thì khó gọi là \"seller tự tìm\".", "p5_t": "Quyền giữ lại của seller (Seller Reserve)<span class=\"diff\">KHÁC RLA</span>", "p5_f": "Đoạn mới: seller bán thẳng, không trả broker", "p5_s": "Đoạn hoàn toàn mới, không có trong RLA. Seller giữ quyền bán thẳng cho người mua mà không phải trả hoa hồng cho broker, <b>trừ khi</b> đoạn 2 hay một văn bản khác ghi khác. Khi seller dùng quyền này, broker không bắt buộc đại diện seller trong giao dịch đó. Các mục sau được đánh số lại: thành 4E(2) buyer bể hợp đồng, 4E(3) lệnh cho escrow.", "p5_e": "Hàng xóm cũ, chưa từng qua Ken, mua $1,300,000. Cô Hạnh không trả $32,500. Nhưng cô tự lo hợp đồng, hoặc thuê luật sư.", "p5_w": "Form không có ô riêng để ghi tên người seller giữ lại. Muốn chắc, ghi tên họ trong 2K (Additional Terms).", "p6_t": "Continuation", "p6_f": "Giống RLA: buyer broker đã dẫn xem + NPB", "p6_s": "Giống RLA: sau khi hết hạn, trong số ngày ghi ở 2C(3), bán cho người mà broker (hay broker khác) đã dẫn vào xem, hoặc đã gửi offer có chữ ký, thì vẫn trả hoa hồng — nếu broker đã đưa danh sách tên (NPB) trước khi hết hạn.", "p6_e": "Ken dẫn \"Anh Minh & Chị Lan Nguyễn\" xem tháng 3, có tên trong NPB. Tháng 6 họ mua thẳng với cô Hạnh: vẫn trả.", "p7_t": "Seller tự phá listing", "p7_f": "Chữ giữ nguyên như RLA", "p7_s": "Đoạn này không đổi: trong thời gian listing, không có broker đồng ý bằng giấy mà seller rút nhà, sang tên, cho thuê, hay làm nhà không bán được, thì hoa hồng phát sinh. Form không nói rõ đoạn này với đoạn 4E(1) ăn khớp ra sao khi seller tự bán.", "p7_e": "Cô Hạnh bán thẳng cho hàng xóm (4E(1)) — được. Cô rút nhà để cho thuê 1 năm — 4D(3) vẫn có thể áp dụng.", "p7_w": "Trước khi bán thẳng, báo broker bằng giấy để tránh cãi nhau theo 4D(3).", "p8_t": "Nợ broker cũ", "p8_f": "Giống RLA", "p8_s": "Giống RLA: ghi listing cũ và người mua còn thuộc broker cũ. Bán cho họ trong lúc còn nợ broker cũ thì broker này không có hoa hồng, không bắt buộc đại diện.", "p8_e": "Một người mua còn trong continuation của listing cũ: ghi ở 2C(4).", "p9_t": "Broker được rao ở đâu<span class=\"diff\">KHÁC RLA</span>", "p9_f": "Bỏ chữ \"social media\" khỏi danh sách", "p9_s": "RLA: broker được rao bằng mọi cách, \"kể cả MLS, internet và social media\". RLASR: \"kể cả MLS và internet\" — chữ social media không còn trong câu này. Đoạn 12 về hình ảnh vẫn nhắc tới social media.", "p9_e": "Cô Hạnh muốn Ken đăng nhà lên Facebook, Instagram, YouTube. Ghi rõ trong 2K cho chắc.", "p10_t": "Seller thiện chí", "p10_f": "Vẫn ghi: chuyển mọi người hỏi mua cho broker", "p10_s": "Không đổi so với RLA: seller đồng ý xem xét offer broker trình, cho xem nhà giờ hợp lý, và chuyển cho broker mọi người hỏi mua (trừ người ở 2C(4)). Câu này đứng cạnh quyền tự bán ở 4E(1), nên seller nên thống nhất với broker trước ai là \"người của seller\".", "p10_e": "Có người gõ cửa hỏi mua. Cô Hạnh báo Ken, nhưng ghi chú đây là người cô tự quen, theo 4E(1).", "p11_t": "Báo cáo seller trả<span class=\"diff\">KHÁC RLA</span>", "p11_f": "Bỏ tham chiếu 7A; vẫn 5 ngày", "p11_s": "Bảng 2F(3) của RLA tham chiếu \"7A, 7E\"; RLASR chỉ còn \"7E\". Hạn vẫn vậy: seller trả các báo cáo đã tick trong 5 ngày (hoặc số khác) từ ngày bắt đầu.", "p11_e": "Bắt đầu 11/10/2026 → trả NHD, termite trước 11/15/2026.", "p12_t": "Đại diện, broker duyệt, tranh chấp", "p12_f": "Giống RLA", "p12_s": "Giống RLA: dual agency được đồng ý trước, broker/manager được hủy trong 5 ngày sau khi ký, tranh chấp hòa giải trước. Riêng khi seller tự bán theo 4E(1) thì broker không bắt buộc đại diện.", "p12_e": "Cô Hạnh ký 11/10/2026; broker BRG có tới 11/15/2026 để hủy nếu không duyệt.", "s1a": "Seller (mọi người đứng tên)", "s1b": "Lúc ký listing", "s1c": "Tối đa 24 tháng (nhà 1–4 căn, không phải công ty) — 4G", "s2a": "Broker / agent", "s2b": "Ký phần broker; broker/manager duyệt", "s2c": "Broker/manager được hủy trong 5 ngày sau khi ký — đoạn 17", "s3a": "Người ký thay (trust, LLC, POA)", "s3b": "Cùng lúc", "s3c": "Giao giấy chứng minh quyền ký trong 3 ngày — đoạn 22", "s4a": "Seller + broker (người seller giữ lại)", "s4b": "Nên ghi ngay lúc ký, ở 2K", "s4c": "Form không có ô riêng; không ghi thì dễ cãi ai là người \"seller tự tìm\"", "s5a": "Broker (danh sách NPB)", "s5b": "Trước khi listing hết hạn", "s5c": "Để đòi hoa hồng trong continuation — 4D(2)", "m1": "<b>\"Ký RLASR là tôi được bán cho ai cũng khỏi trả.\"</b> Không. Chỉ người <b>seller tự tìm</b>. Ai do agent nào dẫn tới thì vẫn trả (4D(1)). Ai Ken đã dẫn xem rồi seller \"bán thẳng\" thì đó không phải người seller tự tìm — chỗ này hay sinh kiện tụng nhất.", "m2": "<b>\"RLASR là open listing, tôi ký thêm vài công ty nữa.\"</b> Sai. Đoạn 1 vẫn giao quyền độc quyền cho một broker. Seller chỉ giữ lại quyền của riêng mình, không phải quyền cho broker khác.", "m3": "<b>\"Tự bán thì broker vẫn lo giấy tờ cho tôi.\"</b> Không chắc. Đoạn 4E(1) nói khi seller dùng quyền tự bán, broker không bắt buộc đại diện. Không trả hoa hồng thì phải tự lo hợp đồng, disclosure, escrow — hoặc thuê luật sư. Ý kiến riêng của tôi: nhiều seller tiết kiệm 2.5% rồi mất nhiều hơn vì một tờ disclosure làm sai.", "nx1": "Bản listing độc quyền thường (RLA), có tính hoa hồng: <a href=\"/t419/\">T419</a>.", "nx2": "Lưu ý cho người bán (SA), checklist trước khi list: <a href=\"/t424/\">T424</a>.", "nx3": "Disclosure của seller gồm những gì (tự bán cũng phải làm): <a href=\"/t28/\">T28</a>.", "nx4": "Thư viện form: <a href=\"/t402/\">T402</a>."}, "en": {"lang": "Tiếng Việt", "b_email": "Email me the result", "b_sms": "Ask Ken", "b_video": "Watch the 45-sec video", "f_name": "Name", "f_phone": "Phone (optional)", "f_send": "Send", "f_title": "Email this result to yourself", "f_sub": "Ken will reply about your own situation. No spam.", "f_ok": "Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.", "f_or": "Or text:", "f_copy": "Copy", "h_what": "What this form is", "h_vid": "45-second video", "h_sheet": "Walk through the form, part by part", "sheet_hint": "Tap any part to open the explanation. The gold tag is the paragraph number on the form.", "mock": "Illustration — not the real form", "addr_l": "Example home:", "say": "What it says", "exh": "Example: 1234 Example Lane", "care": "Watch out", "h_sig": "Who signs, when, and deadlines", "sg_who": "Who", "sg_when": "When", "sg_dl": "Deadline", "h_myth": "What people get wrong", "nx_title": "Next steps", "ex": "The numbers shown are an example. Change them to yours.", "ft_src": "Sources", "ft_upd": "Updated", "ft_all": "All tools", "yes": "Yes", "no": "No", "vid_s": "Short captioned video, no sound needed.", "disc": "This page only helps you understand the form. It does not replace the form and is not legal or tax advice. Before you sign, read the full form and ask your agent or attorney.", "doc_title": "Seller-reserved listing (RLASR) · Ken Lam Tools", "title": "RLASR — The listing where the seller keeps the right to sell", "ver_l": "Form version:", "what1": "The RLASR is a listing agreement almost identical to the RLA, except that <b>the seller reserves the right to sell on their own</b>: if the seller alone finds the buyer, with no agent involved, no fee is owed to the broker. It fits sellers who already know a few possible buyers but still want an agent marketing the home.", "what_eg": "Like consigning your car to a dealer but writing in: \"If my brother buys it, I don't owe you.\"", "paper_t": "Seller-reserved listing", "addr_who": "Seller: Cô Hạnh Trần · Broker: BRG Realty Corp", "rest": "Other paragraphs match the RLA in substance (see T419): 2B, 2D, 2E, 2F(1)(2), 2G–2K, 3, 5, 6, 7B, 7C, 7F, 8, 10–16, 18, 20–22. There are small wording edits (commas, \"establishes/established\", an added \"and\" in 9D, advisory order in 3A) — see the table below.", "h_cmp": "Exactly where the RLA and RLASR differ", "cmp_sub": "A word-by-word comparison of both Revised 6/26 forms. Shaded rows change meaning; white rows are wording or numbering only.", "th_p": "Para", "h_tool": "Is a fee owed in this situation?", "tool_sub": "Pick who found the buyer and when. The tool compares the result under the RLA and the RLASR, with paragraph numbers.", "l_price": "Sale price", "l_pct": "Seller's broker fee", "l_who": "Who found the buyer?", "w_seller": "The seller, and the buyer never dealt with any agent", "w_shown": "The seller's contact, but Ken already showed them / got their offer", "w_ken": "Ken (the listing broker)", "w_other": "Another firm's agent", "w_prior": "Someone on the prior-broker list in 2C(4)", "l_when": "When is the sale contract signed?", "t_during": "During the listing period", "t_cont": "After expiry, within the continuation", "t_after": "After the continuation too", "l_npb": "The broker named this buyer on an NPB before expiry", "l_xw": "The RLASR adds terms (paragraph 2 or another writing) requiring a fee even on a direct sale", "bigK": "Is a fee owed?", "v_yes": "Yes", "v_no": "No", "v_may": "Maybe", "upto": "up to", "r_prior": "4F(3): a sale to a 2C(4) person while owed to the prior broker → no fee to this broker (the prior contract governs).", "r_after": "Past both the listing and the continuation → the form no longer requires a fee.", "r_cont_seller": "4D(2) covers only buyers a broker showed or who submitted an offer. Not the seller's own buyer.", "r_cont_yes": "4D(2): this buyer came through a broker and is named on the NPB → fee owed.", "r_cont_nonpb": "4D(2): not named on an NPB before expiry → no claim.", "r_rla_seller": "The RLA's 4D(1) counts a buyer the seller finds.", "r_d1": "4D(1): a buyer found by a broker/agent during the listing → fee owed.", "r_reserve": "4E(1) Seller Reserve: direct sale by the seller → no fee. The broker need not represent the seller.", "r_xw_yes": "4E(1) \"unless otherwise specified\": a writing requires the fee → owed per that writing.", "r_xw": "A separate writing exists → depends on what it says. Read it.", "r_shown": "The RLASR's 4D(1) only excludes the seller. A buyer the broker showed or got an offer from may count as found by the broker. Dispute-prone.", "st_diff": "<b>This is where the forms differ:</b> same facts, the RLA requires {f}, the RLASR does not (or not clearly).", "st_same": "<b>Both forms give the same result</b> here.", "st_may": "\"Maybe\" means the form's wording does not settle it. Talk with the broker before signing a sale and put it in writing.", "st_selfrep": "Selling on your own, you still owe full disclosures (TDS, NHD…) and handle the contract and escrow.", "est_note": "For understanding the form only, not legal advice. Real outcomes depend on what was signed, the NPB and written communications. In a dispute, see an attorney.", "sms": "Hi Ken, I used tool T420 (RLASR): {who}, {when}. RLA: {a}. RLASR: {b}. I have a question.", "subj": "RLA vs RLASR: is a fee owed? — {nm}", "body": "Name: {nm}\nEmail: {em}\nPhone: {ph}\n\nPrice: {p}\nFee: {pct}% = {fee}\nWho found the buyer: {who}\nWhen: {when}\n\nUnder the RLA: {a}\nUnder the RLASR: {b}\n\nNot legal advice.\nSent from tool T420 tools.kenlamrealty.com", "c1a": "Form title", "c1b": "Exclusive Authorization and Right to Sell", "c1c": "Seller Reserved · Authorization and Right to Sell", "c2a": "1", "c2b": "\"Exclusive Right to Sell\"", "c2c": "\"Seller Reserved Listing Agreement\" (still grants an exclusive right)", "c3a": "4D(1)", "c3b": "Broker, another broker, <b>Seller</b>, or anyone", "c3c": "Broker, another broker/agent, or anyone <b>other than the Seller</b>", "c4a": "4E(1)", "c4b": "—", "c4c": "<b>Seller Reserve</b>: direct sale, no fee, unless paragraph 2 / another writing says otherwise; broker need not represent", "c5a": "4E", "c5b": "(1) buyer breach, (2) escrow", "c5c": "(2) buyer breach, (3) escrow — renumbered", "c6a": "7A", "c6b": "MLS, internet, <b>social media</b>", "c6c": "MLS and the internet", "c7a": "2F(3)", "c7b": "References 7A, 7E", "c7c": "References 7E", "c8a": "3A", "c8b": "BCA · REOL · TA", "c8c": "BCA · TA · REOL (reordered)", "c9a": "9D, 10, 12, signature", "c9b": "Wording, commas", "c9c": "Minor wording, no change in meaning; signature line says \"Seller Reserve\"", "p1_t": "Seller Reserved Listing Agreement<span class=\"diff\">DIFFERS</span>", "p1_f": "New paragraph name, still exclusive", "p1_s": "Paragraph 1 is renamed from \"Exclusive Right to Sell\" to \"Seller Reserved Listing Agreement\". The rest matches the RLA: the seller still gives the broker the exclusive, irrevocable right to sell during the listing. No other broker may list it; only the seller keeps a right to sell on their own.", "p1_e": "Seller: Cô Hạnh Trần · Broker: BRG Realty Corp · 1234 Example Lane, San Jose, CA 95100 · APN 000-00-000.", "p1_w": "This is not an open listing. Cô Hạnh cannot sign a second listing with another firm.", "p2_t": "Listing period", "p2_f": "Same as RLA, 24 months max", "p2_s": "Identical to the RLA: start date, ends at 11:59 PM, 24 months max for 1–4 units not owned by an entity.", "p2_e": "11/10/2026 → 11:59 PM on 05/09/2027.", "p3_t": "Seller's broker compensation", "p3_f": "Same as RLA", "p3_s": "Same as the RLA: seller's-side only, a %, flat fee or schedule, negotiable. The table in paragraph 2 is rearranged but the content is unchanged.", "p3_e": "2.5% × $1,350,000 = $33,750 — when it is owed.", "p4_t": "When the broker earns the fee<span class=\"diff\">DIFFERS</span>", "p4_f": "Buyer found by anyone EXCEPT the seller", "p4_s": "The RLA says the fee is earned if the broker, another broker, <b>the seller</b> or anyone else finds the buyer. The RLASR changes it to the broker, another broker or agent, or anyone <b>other than the seller</b>. A buyer the seller finds alone is outside this paragraph.", "p4_e": "Another firm's agent brings a $1,340,000 offer: $33,500 is owed. Cô Hạnh's own friend asks to buy: not covered by 4D(1).", "p4_w": "A buyer the broker already showed or received an offer from is hard to call \"found by the seller\".", "p5_t": "Seller Reserve<span class=\"diff\">DIFFERS</span>", "p5_f": "New: seller sells directly, no fee", "p5_s": "An entirely new paragraph not in the RLA. The seller reserves the right to sell directly to a purchaser with no fee to the broker, <b>unless</b> paragraph 2 or another writing says otherwise. If the seller does this, the broker need not represent the seller in that deal. The following items are renumbered: 4E(2) buyer breach, 4E(3) escrow instructions.", "p5_e": "A former neighbor who never dealt with Ken buys for $1,300,000. Cô Hạnh owes no $32,500, but she handles the contract herself or with an attorney.", "p5_w": "The form has no box to name reserved buyers. To be safe, name them in 2K (Additional Terms).", "p6_t": "Continuation period", "p6_f": "Same as RLA: buyers the broker showed + NPB", "p6_s": "Same as the RLA: after expiry, for the days in 2C(3), selling to someone a broker physically showed the home to, or who submitted a signed offer, still triggers the fee — if the broker delivered the names (NPB) before expiry.", "p6_e": "Ken shows \"Anh Minh & Chị Lan Nguyễn\" in March and names them on the NPB. In June they buy directly from Cô Hạnh: the fee is owed.", "p7_t": "Seller interference", "p7_f": "Wording unchanged from RLA", "p7_s": "Unchanged: during the listing, withdrawing, transferring, leasing or making the home unmarketable without the broker's written consent earns the fee. The form does not spell out how this fits with 4E(1) when the seller sells directly.", "p7_e": "Selling directly to the neighbor (4E(1)): allowed. Pulling the home to rent it for a year: 4D(3) may still apply.", "p7_w": "Before a direct sale, notify the broker in writing to avoid a 4D(3) dispute.", "p8_t": "Previous brokers", "p8_f": "Same as RLA", "p8_s": "Same as the RLA: list a prior listing and buyers still owed to that broker. Selling to them then means no fee here and no duty to represent.", "p8_e": "One buyer still in a prior listing's continuation goes in 2C(4).", "p9_t": "Where the broker may advertise<span class=\"diff\">DIFFERS</span>", "p9_f": "\"Social media\" dropped from the list", "p9_s": "RLA: the broker may market by any method \"including MLS, the internet, and social media\". RLASR: \"including MLS and the internet\" — social media is no longer named in that sentence. Paragraph 12 on images still mentions social media.", "p9_e": "Cô Hạnh wants Ken to post on Facebook, Instagram and YouTube. Put it in 2K to be clear.", "p10_t": "Seller good faith", "p10_f": "Still: refer all inquiries to the broker", "p10_s": "Unchanged from the RLA: the seller considers offers, allows showings at reasonable times and refers all inquiries to the broker (except 2C(4) people). This sits next to the 4E(1) reserve, so agree up front on who counts as the seller's own buyer.", "p10_e": "Someone knocks and asks to buy. Cô Hạnh tells Ken but notes it is her own contact under 4E(1).", "p11_t": "Reports the seller pays for<span class=\"diff\">DIFFERS</span>", "p11_f": "Reference to 7A dropped; still 5 days", "p11_s": "The RLA's 2F(3) row references \"7A, 7E\"; the RLASR only \"7E\". The deadline is the same: pay checked reports within 5 days (or other) of the start date.", "p11_e": "Start 11/10/2026 → NHD and pest paid by 11/15/2026.", "p12_t": "Agency, broker approval, disputes", "p12_f": "Same as RLA", "p12_s": "Same as the RLA: advance consent to dual agency, broker/manager may cancel within 5 days after signing, mediation first. When the seller sells under 4E(1), the broker need not represent them.", "p12_e": "Cô Hạnh signs 11/10/2026; BRG's broker has until 11/15/2026 to cancel if not approved.", "s1a": "Seller (everyone on title)", "s1b": "At listing", "s1c": "24 months max (1–4 units, non-entity) — 4G", "s2a": "Broker / agent", "s2b": "Signs the broker block; broker/manager reviews", "s2c": "Broker/manager may cancel within 5 days — para 17", "s3a": "Authorized signer (trust, LLC, POA)", "s3b": "Same time", "s3c": "Proof of authority within 3 days — para 22", "s4a": "Seller + broker (reserved buyers)", "s4b": "Best named at signing, in 2K", "s4c": "No dedicated box; unnamed buyers invite disputes", "s5a": "Broker (NPB list)", "s5b": "Before the listing expires", "s5c": "Needed to claim the fee in the continuation — 4D(2)", "m1": "<b>\"With an RLASR I can sell to anyone and skip the fee.\"</b> No. Only buyers <b>the seller finds alone</b>. Any buyer an agent brings is still covered (4D(1)), and a buyer the broker already showed is not \"the seller's own\".", "m2": "<b>\"RLASR is an open listing, I can sign with other firms too.\"</b> Wrong. Paragraph 1 still gives one broker the exclusive right. The seller only keeps their own right to sell.", "m3": "<b>\"If I sell on my own, the broker still handles the paperwork.\"</b> Not necessarily. Under 4E(1) the broker has no duty to represent you in that sale. No fee means you handle the contract, disclosures and escrow yourself, or hire an attorney.", "nx1": "The standard exclusive listing (RLA), with a commission calculator: <a href=\"/t419/\">T419</a>.", "nx2": "Seller's Advisory (SA), pre-listing checklist: <a href=\"/t424/\">T424</a>.", "nx3": "What seller disclosures include (required even in a direct sale): <a href=\"/t28/\">T28</a>.", "nx4": "Forms library: <a href=\"/t402/\">T402</a>."}};
+
+function owe(form,who,when,npb,xw){ /* pure → [verdict, reasonKey] */
+  if(who==='prior') return [R.NO,'r_prior'];
+  if(when==='after') return [R.NO,'r_after'];
+  if(when==='cont'){
+    if(who==='seller') return form==='rlasr'&&xw?[R.MAY,'r_xw']:[R.NO,'r_cont_seller'];
+    return npb?[R.YES,'r_cont_yes']:[R.NO,'r_cont_nonpb'];
+  }
+  if(form==='rla') return [R.YES, who==='seller'||who==='shown'?'r_rla_seller':'r_d1'];
+  if(who==='ken'||who==='other') return [R.YES,'r_d1'];
+  if(who==='seller') return xw?[R.YES,'r_xw_yes']:[R.NO,'r_reserve'];
+  return [R.MAY,'r_shown'];
+}
+function calc(){
+  const d=I18N[lang], who=$('who').value, when=$('when').value, npb=$('npb').checked, xw=$('xw').checked;
+  const fee=Math.max(0,num('price'))*num('pct')/100;
+  $('npbW').style.display=when==='cont'&&who!=='seller'&&who!=='prior'?'':'none';
+  const out={};
+  [['rla','A'],['rlasr','B']].forEach(([f,k])=>{
+    const [v,why]=owe(f,who,when,npb,xw);
+    $('v'+k).textContent=d['v_'+v]; $('v'+k).className='v '+v;
+    $('a'+k).textContent=v===R.NO?'$0':(v===R.MAY?d.upto+' ':'')+fmt(fee);
+    $('r'+k).innerHTML=d[why]; out[f]=d['v_'+v]+(v===R.NO?'':' '+fmt(fee));
+  });
+  const [va]=owe('rla',who,when,npb,xw), [vb]=owe('rlasr',who,when,npb,xw);
+  let s,c='ok';
+  if(va!==vb){s=T(d.st_diff,{f:fmt(fee)}); c='ok';}
+  else s=d.st_same;
+  if(vb===R.MAY){s+=' '+d.st_may; c='warn';}
+  if(who==='seller'&&when==='during'&&!xw) s+=' '+d.st_selfrep;
+  $('status').className='status '+c; $('status').innerHTML=s;
+  last={p:fmt(num('price')),pct:num('pct'),fee:fmt(fee),who:$('who').options[$('who').selectedIndex].textContent,when:$('when').options[$('when').selectedIndex].textContent,a:out.rla,b:out.rlasr};
+  updSms();
+}
+
+
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const T=(s,o)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+const segV=id=>{const b=document.querySelector('#'+id+' button[aria-pressed="true"]'); return b?b.getAttribute('data-v'):'';};
+let last={};
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  document.querySelectorAll('[data-o]').forEach(el=>{const k=el.getAttribute('data-o'); if(typeof d[k]==='string') el.textContent=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; document.title=d.doc_title; calc();
+}
+const EMBED=/[?&]embed=1/.test(location.search);
+let klSend=()=>{};
+if(EMBED){ document.documentElement.classList.add('embed'); let lastH=0;
+  klSend=()=>{ const w=document.querySelector('.wrap'); const h=Math.ceil(w.getBoundingClientRect().bottom+window.scrollY+40); if(Math.abs(h-lastH)<4) return; lastH=h; try{ parent.postMessage({klToolsHeight:h},'*'); }catch(e){} };
+  window.addEventListener('resize',()=>klSend());
+  document.querySelectorAll('details').forEach(x=>x.addEventListener('toggle',()=>klSend()));
+  document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('a[href]'); if(!a) return; const h=a.getAttribute('href'); if(h.startsWith('#')||a.target==='_blank') return; if(h.startsWith('/')) a.href='https://tools.kenlamrealty.com'+h; a.target='_top'; },true); }
+document.querySelectorAll('.inputs input,.inputs select').forEach(el=>{el.addEventListener('input',calc); el.addEventListener('change',calc);});
+document.querySelectorAll('.seg').forEach(g=>g.querySelectorAll('button[data-v]').forEach(b=>b.addEventListener('click',()=>{
+  g.querySelectorAll('button[data-v]').forEach(x=>x.setAttribute('aria-pressed',x===b)); calc();})));
+function updSms(){ const d=I18N[lang]; $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(T(d.sms,last)); klSend(); }
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus(); klSend();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], o=Object.assign({},last,{nm:$('fname').value.trim()||'—',em:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'});
+  /* LEAD → FUB: mailto ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const a=document.createElement('a'); a.href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(T(d.subj,o))+'&body='+encodeURIComponent(T(d.body,o)); a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){} };
+applyLang();
+
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
