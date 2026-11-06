@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>New Home in an HOA: The NCEI · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T145 additions */
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.cmp div{border:1px solid var(--line);border-radius:10px;padding:12px}
+.cmp .k{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.cmp .v{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums;margin-top:2px}
+.cmp p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.cards{display:grid;gap:10px}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
+.card b{font-weight:500;font-size:15px}
+.card span{font-size:14px;color:var(--muted)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a,.card a,.cmp a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+/* Forms group additions (T469/T470/T472) */
+.hide{display:none!important}
+.secs{display:grid;gap:8px}
+.secs details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0 14px;scroll-margin-top:12px}
+.secs details[open]{border-color:var(--brass)}
+.secs summary{list-style:none;cursor:pointer;display:flex;gap:10px;align-items:baseline;padding:12px 0;font-weight:500;font-size:15px}
+.secs summary::-webkit-details-marker{display:none}
+.secs summary .no{flex:none;min-width:38px;font-family:var(--display);font-size:20px;line-height:1;color:var(--brass)}
+.secs summary .tt{min-width:0;overflow-wrap:anywhere}
+.secs .sb{padding:0 0 14px;display:grid;gap:8px;font-size:15px}
+.secs .sb p{margin:0}
+.secs .ex{background:var(--brass-soft);border-radius:8px;padding:8px 10px;font-size:14px}
+.secs .ex b{font-weight:500}
+.chiprow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;cursor:pointer;text-decoration:none}
+.chip:hover{border-color:var(--brass);color:var(--fg)}
+.paper{background:#FFFEFA;color:#2B2925;border:1px solid #D9D1BF;border-radius:6px;padding:18px 14px;box-shadow:0 1px 0 #E6E0D3,0 8px 24px rgba(0,0,0,.07);display:grid;gap:6px;font-size:13px}
+.paper .ph{text-align:center;display:grid;gap:2px;border-bottom:1px solid #D9D1BF;padding-bottom:10px;margin-bottom:4px}
+.paper .ph b{font-size:14px;letter-spacing:.04em;font-weight:600}
+.paper .ph small{color:#7A7468;font-size:11px}
+.paper .pr{display:grid;grid-template-columns:28px minmax(0,1fr);gap:2px 8px;text-align:left;background:transparent;border:0;border-left:2px solid transparent;padding:6px 8px;font:inherit;color:inherit;cursor:pointer;border-radius:4px;width:100%}
+.paper .pr:hover,.paper .pr:focus-visible{background:#F3EBDC;border-left-color:#B8955A}
+.paper .pn{grid-row:span 2;font-weight:600;color:#9A7A45;font-size:12px;padding-top:1px}
+.paper .pk{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#7A7468}
+.paper .pv{font-size:14px;border-bottom:1px dotted #B8955A;padding-bottom:2px;overflow-wrap:anywhere}
+.paper .pv i{font-style:normal;color:#9A5B2E}
+.paper .pgrp{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#9A7A45;margin-top:8px;border-top:1px dashed #D9D1BF;padding-top:8px}
+.paper .psig{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:8px}
+.paper .psig span{border-top:1px solid #2B2925;padding-top:3px;font-size:11px;color:#7A7468}
+.paper .pnote{font-size:12px;color:#7A7468;font-style:italic;text-align:center;margin-top:6px}
+.vid{width:100%;border-radius:12px;background:#000;aspect-ratio:9/16;max-height:72vh;display:block}
+.cmpt{display:grid;gap:0;border-top:1px solid var(--line);font-size:14px}
+.cmpt .r{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1fr) minmax(0,1fr);gap:8px;padding:9px 0;border-bottom:1px solid var(--line)}
+.cmpt .r.h{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.cmpt .r b{font-weight:500}
+.cmpt .r span{overflow-wrap:anywhere}
+.line .a.warn{color:var(--warn)}
+.line .a.ok{color:var(--ok)}
+.chk{display:grid;gap:8px}
+.chk div{display:flex;gap:10px;align-items:flex-start;font-size:15px}
+.chk i{flex:none;font-style:normal;width:22px;text-align:center;font-weight:600}
+.chk .y i{color:var(--ok)} .chk .n i{color:var(--warn)}
+input[type=date]{font-size:17px!important;min-height:46px}
+.cmp div div{border:0;padding:0;border-radius:0}
+
+</style>
+<meta name="description" content="C.A.R. Form NCEI (Common Interest Subdivision Supplemental Escrow Instructions) explained line by line, with a sample and a checker: what must be finished and recorded before escrow on a new condo or PUD can close.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t469/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:title" content="Escrow nhà mới trong HOA: form NCEI · Ken Lam Tools">
+<meta property="og:description" content="Chọn loại dự án, coi đã đủ điều kiện close chưa: Notice of Completion, RE 621, thời hạn mechanics' lien.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t469/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools · T469</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title">Escrow nhà mới trong HOA: form NCEI</h1>
+    <p class="sub" data-i="sub">NCEI là tờ dặn thêm cho escrow khi bạn mua nhà mới trong condo hay khu PUD có HOA: chưa đủ điều kiện thì escrow không được close, không được nhả tiền.</p>
+  </header>
+
+  <section class="panel">
+    <h2 data-i="x_t">Giải thích từng phần</h2>
+    <p class="hint" data-i="x_s">Form 1 trang: phần mở đầu, đoạn 1 (chọn 1 trong 4 loại dự án) và đoạn 2 (mechanics' lien). Bấm để đọc.</p>
+    <div class="chiprow"><button class="chip" type="button" id="allBtn" data-i="x_all">Mở hết / đóng hết</button></div>
+    <div class="secs" id="secList"></div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="p_t">Phiếu minh họa (đã điền sẵn)</h2>
+    <p class="hint" data-i="p_s">Bấm vào từng dòng để nhảy tới phần giải thích.</p>
+    <div class="paper" aria-label="Sample">
+      <div class="ph"><b data-i="pp_h">DẶN THÊM ESCROW: DỰ ÁN CÓ HOA</b><small data-i="pp_hs">Minh họa theo bố cục NCEI · phụ lục của NCPA</small></div>
+      <button class="pr" type="button" data-go="head"><span class="pn">—</span><span class="pk" data-i="pp_k0">Hợp đồng NCPA ngày · căn nhà</span><span class="pv">02/03/2026 · 1234 Example Lane, San Jose, CA 95100</span></button>
+      <button class="pr" type="button" data-go="head"><span class="pn">—</span><span class="pk" data-i="pp_k1">Người mua / Người bán</span><span class="pv" data-i="pp_v1">Người mua B / Người bán A (builder)</span></button>
+      <button class="pr" type="button" data-go="head"><span class="pn">—</span><span class="pk" data-i="pp_k2">Luật chung</span><span class="pv" data-i="pp_v2">Chưa đủ điều kiện: không close, không nhả tiền, không sang tên</span></button>
+      <div class="pgrp" data-i="pp_g1">1 · Loại dự án (chỉ tick 1 ô)</div>
+      <button class="pr" type="button" data-go="1A"><span class="pn">1A</span><span class="pk" data-i="pp_k3">☑ Condominium</span><span class="pv" data-i="pp_v3">Common Area Lot A, Tract 10001 · 3 tòa, 48 căn · đã record Notice of Completion</span></button>
+      <button class="pr" type="button" data-go="1B"><span class="pn">1B</span><span class="pk" data-i="pp_k4">☐ PUD kiểu cluster</span><span class="pv" data-i="pp_v4">(bỏ trống)</span></button>
+      <button class="pr" type="button" data-go="1C"><span class="pn">1C</span><span class="pk" data-i="pp_k5">☐ PUD nhà riêng từng căn</span><span class="pv" data-i="pp_v4b">(bỏ trống)</span></button>
+      <button class="pr" type="button" data-go="1D"><span class="pn">1D</span><span class="pk" data-i="pp_k6">☐ Condo 1 lô, chia phase</span><span class="pv" data-i="pp_v4c">(bỏ trống)</span></button>
+      <div class="pgrp" data-i="pp_g2">2 · Mechanics' lien</div>
+      <button class="pr" type="button" data-go="2"><span class="pn">2</span><span class="pk" data-i="pp_k7">Hết hạn record lien, hoặc có bảo hiểm title chống lien</span><span class="pv" data-i="pp_v7">Notice of Completion record 15/05/2026 → hạn lien hết sau 14/07/2026</span></button>
+      <button class="pr" type="button" data-go="sig"><span class="pn">✎</span><span class="pk" data-i="pp_k8">Chữ ký</span><span class="pv" data-i="pp_v8">2 Buyer + 2 Seller, có ngày</span></button>
+      <div class="psig"><span data-i="pp_s1">Buyer · ngày</span><span data-i="pp_s2">Seller · ngày</span></div>
+      <p class="pnote" data-i="p_note">Minh họa đơn giản, không phải form thật. Form thật do C.A.R. phát hành, agent của bạn có.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="t_t">Tool: escrow close được chưa?</h2>
+    <div class="inputs">
+      <div class="field">
+        <span class="fl" data-i="l_type">Loại dự án (đoạn 1)</span>
+        <div class="seg wrap3" role="group" id="typeSeg" style="flex-wrap:wrap">
+          <button type="button" data-v="A" aria-pressed="true" data-i="ty_A" style="flex:1 1 45%">A · Condo</button>
+          <button type="button" data-v="B" aria-pressed="false" data-i="ty_B" style="flex:1 1 45%">B · PUD cluster</button>
+          <button type="button" data-v="C" aria-pressed="false" data-i="ty_C" style="flex:1 1 45%">C · PUD nhà riêng</button>
+          <button type="button" data-v="D" aria-pressed="false" data-i="ty_D" style="flex:1 1 45%">D · Condo chia phase</button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="fl" data-i="l_cf">Khu chung (common facilities) đã xong chưa?</span>
+        <div class="seg" role="group" id="cfSeg">
+          <button type="button" data-v="noc" aria-pressed="true" data-i="cf_noc">Có NOC record</button>
+          <button type="button" data-v="re621" aria-pressed="false" data-i="cf_621">Theo RE 621</button>
+          <button type="button" data-v="no" aria-pressed="false" data-i="cf_no">Chưa</button>
+        </div>
+      </div>
+      <div class="field hide" id="fB">
+        <span class="fl" data-i="l_cl">Tòa cluster chứa căn của bạn đã có NOC record?</span>
+        <div class="seg" role="group" id="clSeg">
+          <button type="button" data-v="1" aria-pressed="true" data-i="yes">Có</button>
+          <button type="button" data-v="0" aria-pressed="false" data-i="no">Chưa</button>
+        </div>
+      </div>
+      <div class="field hide" id="fD">
+        <span class="fl" data-i="l_ins">Người mua và HOA có bảo hiểm title với endorsement chống lien (1D(ii))?</span>
+        <div class="seg" role="group" id="insSeg">
+          <button type="button" data-v="1" aria-pressed="false" data-i="yes2">Có</button>
+          <button type="button" data-v="0" aria-pressed="true" data-i="no2">Chưa</button>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="noc"><span data-i="l_noc">Ngày record Notice of Completion</span> <small data-i="l_noc_s">(bản cuối)</small></label>
+          <div class="ctl"><input id="noc" type="date" value="2026-05-15"></div>
+        </div>
+        <div class="field">
+          <span class="fl" data-i="l_end">Có title policy chống mechanics' lien (đoạn 2)?</span>
+          <div class="seg" role="group" id="endSeg">
+            <button type="button" data-v="1" aria-pressed="false" data-i="yes3">Có</button>
+            <button type="button" data-v="0" aria-pressed="true" data-i="no3">Không</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_k">Theo NCEI, escrow</div>
+      <div class="v path"><span id="total">—</span></div>
+    </div>
+    <p id="why" style="margin:0;font-size:15px"></p>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_ok">Điều kiện đã đủ</b></span><span class="a" id="oCnt">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_sub">Hạn lien thợ phụ, nhà cung cấp</b><small data-i="n_sub_s">30 ngày sau NOC (Civil Code §8414)</small></span><span class="a" id="oSub">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_dir">Hạn lien nhà thầu chính</b><small data-i="n_dir_s">60 ngày sau NOC (Civil Code §8412)</small></span><span class="a" id="oDir">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_left">Còn bao lâu tới hết hạn lien</b></span><span class="a" id="oLeft">—</span></div>
+    </div>
+    <div class="chk" id="chk"></div>
+    <div class="note" id="note"></div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="v_t">Video 45 giây</h2>
+    <video id="vid" class="vid" src="explain.mp4" controls playsinline preload="metadata" poster="poster.jpg"></video>
+    <div class="chiprow"><button class="chip" type="button" id="playBtn" data-i="v_btn">▶ Xem video 45 giây</button></div>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Bước tiếp theo</h2>
+    <ol>
+      <li data-i="ns1">Hỏi builder: dự án thuộc loại nào trong 4 ô, khu chung đã có Notice of Completion chưa, hay đang đi theo RE 621.</li>
+      <li data-i="ns2">Hỏi escrow và title: ngày record Notice of Completion, và có cấp được endorsement chống mechanics' lien không.</li>
+      <li data-i="ns3">Đọc hợp đồng chính ở <a href="/t472/">T472 (NCPA)</a>, đếm ngày close ở <a href="/t470/">T470 (NCNC)</a>.</li>
+      <li data-i="ns4">Mua condo thì hỏi HOA đủ câu ở <a href="/t144/">T144</a>. Tra form khác ở <a href="/t402/">T402 Thư viện forms</a>.</li>
+    </ol>
+  </section>
+  <section class="panel">
+    <h2 data-i="m_t">Nhiều người hiểu sai</h2>
+    <p class="myth" data-i="m1"><b>"Căn của tôi xong rồi thì close được."</b> Chưa chắc. Với condo, NCEI đòi cả khu chung (common facilities) phải xong và có giấy record. Căn đẹp mà hồ bơi, nhà sinh hoạt chưa xong thì escrow vẫn đứng.</p>
+    <p class="myth" data-i="m2"><b>"Builder chậm là tại escrow."</b> Escrow chỉ làm theo lệnh. Tờ này cấm escrow nhả tiền khi chưa đủ điều kiện. Nó bảo vệ bạn. Đừng ép escrow làm khác.</p>
+    <p class="myth" data-i="m3"><b>"Nhà mới thì không có chuyện lien."</b> Ngược lại. Nhà mới là chỗ dễ có lien nhất: thầu phụ chưa được trả tiền có quyền record lien lên dự án. Vì vậy đoạn 2 mới bắt chờ hết hạn, hoặc mua bảo hiểm title chống lien. Theo tôi, đây là đoạn đáng hỏi nhất trong cả bộ hồ sơ nhà mới.</p>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Gửi kết quả qua email</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Nhắn Ken</a>
+    <a class="btn" id="videoBtn" href="/t469/explain.mp4" target="_blank" rel="noopener" data-i="b_video">Xem video 45 giây</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Gửi checklist này về email</h2>
+    <p data-i="f_sub">Điều kiện đã đủ, còn thiếu gì, và ngày hết hạn lien trong 1 email. Không spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Tên</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (không bắt buộc)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Hoặc text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_src">Nguồn:</span> C.A.R. Form NCEI (Reviewed 6/25) · C.A.R. Form NCPA (Revised 6/26) ¶22B ·
+      <a href="https://california.public.law/codes/ca_bus_and_prof_code_section_11018.5" target="_blank" rel="noopener">B&amp;P Code §11018.5</a> ·
+      <a href="https://www.dre.ca.gov/forms/Subdivisions.html" target="_blank" rel="noopener">DRE RE 621</a> ·
+      <a href="https://california.public.law/codes/ca_civ_code_section_8182" target="_blank" rel="noopener">Civil Code §8182</a> ·
+      <a href="https://california.public.law/codes/ca_civ_code_section_8412" target="_blank" rel="noopener">§8412</a> ·
+      <a href="https://california.public.law/codes/ca_civ_code_section_8414" target="_blank" rel="noopener">§8414</a>
+      <span data-i="ft_chk">(tra ngày 06/11/2026)</span></span>
+    <span data-i="ft_est">Thông tin giáo dục, không phải tư vấn luật hay thuế. Thời hạn lien trong tool là quy tắc chung khi Notice of Completion được record hợp lệ; trường hợp riêng (record trễ, ngưng thi công, không có NOC: 90 ngày sau khi xong) sẽ khác. Title company và luật sư mới là người xác nhận.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 06/11/2026 · <a href="/cong-cu/" data-i="ft_all">Tất cả tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Shared helpers (T469 / T470 / T472) ===== */
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+const strip=s=>String(s).replace(/<[^>]+>/g,'').replace(/&amp;/g,'&');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?Math.max(0,v):0};
+
+/* Dates: all math in UTC so daylight saving never shifts a day. */
+const D0=s=>{ if(!s) return null; const p=String(s).split('-').map(Number); if(p.length!==3||!p[0]||!p[1]||!p[2]) return null; return new Date(Date.UTC(p[0],p[1]-1,p[2])); };
+const addD=(d,n)=>new Date(d.getTime()+n*864e5);
+const ymd=d=>d.toISOString().slice(0,10);
+const diffD=(a,b)=>Math.round((b.getTime()-a.getTime())/864e5);
+function nthDow(y,m,dow,n){ /* m 0-11, dow 0=Sun, n>=1 nth, n=-1 last */
+  if(n>0){ const f=new Date(Date.UTC(y,m,1)); const off=(dow-f.getUTCDay()+7)%7; return new Date(Date.UTC(y,m,1+off+(n-1)*7)); }
+  const l=new Date(Date.UTC(y,m+1,0)); const off=(l.getUTCDay()-dow+7)%7; return new Date(Date.UTC(y,m+1,-off));
+}
+/* California legal holidays — Gov. Code §6700 (via Civil Code §7 and NCPA ¶29I(4)).
+   Lunar New Year & Diwali follow lunar calendars: dates below are a table, KEN DUYỆT.
+   Fixed-date holiday on a Sunday → the Monday after is also treated as a holiday (KEN DUYỆT, Gov. Code §6701). */
+const LUNAR={2025:'2025-01-29',2026:'2026-02-17',2027:'2027-02-06',2028:'2028-01-26',2029:'2029-02-13'};
+const DIWALI={2025:'2025-10-20',2026:'2026-11-08',2027:'2027-10-29',2028:'2028-10-17'};
+const _hc={};
+function holidays(y){
+  if(_hc[y]) return _hc[y];
+  const s=new Set(), U=(m,d)=>new Date(Date.UTC(y,m,d));
+  const fixed=[U(0,1),U(1,12),U(2,31),U(3,24),U(5,19),U(6,4),U(8,9),U(10,11),U(11,25)];
+  fixed.forEach(d=>{ s.add(ymd(d)); if(d.getUTCDay()===0) s.add(ymd(addD(d,1))); });
+  [nthDow(y,0,1,3),nthDow(y,1,1,3),nthDow(y,4,1,-1),nthDow(y,8,1,1),nthDow(y,8,5,4),nthDow(y,9,1,2),nthDow(y,10,4,4)].forEach(d=>s.add(ymd(d)));
+  if(LUNAR[y]) s.add(LUNAR[y]); if(DIWALI[y]) s.add(DIWALI[y]);
+  return (_hc[y]=s);
+}
+const isHol=d=>holidays(d.getUTCFullYear()).has(ymd(d));
+const isOff=d=>{const w=d.getUTCDay(); return w===0||w===6||isHol(d);};
+function roll(d){ let x=d; while(isOff(x)) x=addD(x,1); return x; }          /* ¶29I(4): next day not Sat/Sun/holiday */
+function addBiz(d,n){ let x=d,k=0; while(k<n){ x=addD(x,1); if(!isOff(x)) k++; } return x; } /* ¶29J: deposit counts business days */
+const WD={vi:['CN','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'],en:['Sun','Mon','Tue','Wed','Thu','Fri','Sat']};
+const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fd(d,lang){ if(!d) return '—'; const p=n=>String(n).padStart(2,'0');
+  return lang==='vi' ? WD.vi[d.getUTCDay()]+', '+p(d.getUTCDate())+'/'+p(d.getUTCMonth()+1)+'/'+d.getUTCFullYear()
+                     : WD.en[d.getUTCDay()]+', '+MO[d.getUTCMonth()]+' '+d.getUTCDate()+', '+d.getUTCFullYear(); }
+function todayUTC(){ const t=new Date(); return new Date(Date.UTC(t.getFullYear(),t.getMonth(),t.getDate())); }
+
+/* Paragraph-by-paragraph explainer: SECS=[{id,n,t:{vi,en},b:{vi,en},x:{vi,en}}] */
+function renderSecs(list,lang,exLabel){
+  const open=new Set([...document.querySelectorAll('#secList details[open]')].map(e=>e.id));
+  $('secList').innerHTML=list.map(s=>'<details id="s-'+s.id+'"'+(open.has('s-'+s.id)?' open':'')+'><summary><span class="no">'+s.n+'</span><span class="tt">'+s.t[lang]+'</span></summary><div class="sb"><p>'+s.b[lang]+'</p>'+(s.x?'<p class="ex"><b>'+exLabel+'</b> '+s.x[lang]+'</p>':'')+'</div></details>').join('');
+}
+function goSec(id){ const el=$('s-'+id); if(!el) return; el.open=true; el.scrollIntoView({behavior:'smooth',block:'start'}); }
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-go]'); if(b){ e.preventDefault(); goSec(b.dataset.go); } });
+function toggleAll(){ const ds=[...document.querySelectorAll('#secList details')]; const anyClosed=ds.some(d=>!d.open); ds.forEach(d=>d.open=anyClosed); return anyClosed; }
+function seg(id,cb){ $(id).addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return;
+  $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); cb(b.dataset.v); calc();}); }
+
+/* ===== Rules — edit here (checked 06/11/2026) =====
+   NCEI ¶1: check ONE type (A condo, B cluster PUD, C non-cluster PUD, D phased single-lot condo).
+        Common facilities complete = recorded Notice of Completion (Civ. §8182) OR per attached DRE RE 621 ("Escrow Instructions [§11018.5(a)]").
+        B adds (i): the cluster building with this unit has a recorded NOC. D adds (ii): buyer + HOA title insurance with statutory-lien endorsement.
+   NCEI ¶2: statutory period to record mechanics' liens has expired, OR buyer and HOA get title policies with mechanics'-lien endorsements.
+   Lien periods (KEN DUYỆT — FACTS.md marks UNVERIFIED): after a valid recorded NOC, claimants other than the direct contractor 30 days (Civ. §8414),
+        direct contractor 60 days (Civ. §8412). No NOC: 90 days after completion. */
+const RULES={ LIEN_SUB:30, LIEN_DIRECT:60, LIEN_NO_NOC:90 };
+
+const SECS=[
+ {id:'head',n:'—',
+  t:{vi:'Mở đầu: phụ lục của NCPA, sửa đoạn 22',en:'Opening: an NCPA addendum that amends paragraph 22'},
+  b:{vi:'NCEI là phụ lục gắn vào hợp đồng mua nhà mới (NCPA). Các định nghĩa trong NCPA dùng luôn cho tờ này. Nó nói căn nhà nằm trong một "common interest subdivision", tức dự án có khu chung và HOA, và thêm lệnh vào đoạn 22 (lệnh escrow). Luật chính: khi chưa đủ mọi điều kiện ở dưới thì escrow không được close, không được nhả tiền, và title không được sang cho người mua.',
+     en:'NCEI is an addendum to the new-home contract (NCPA). The NCPA definitions apply. It says the home is in a "common interest subdivision" (shared areas and an HOA) and adds instructions to paragraph 22 (escrow instructions). The core rule: until every condition below is met, escrow may not close, funds may not be released, and title may not pass to the buyer.'},
+  x:{vi:'NCPA ký 02/03/2026 cho 1234 Example Lane, San Jose, CA 95100. Người mua B ký NCEI cùng lúc vì dự án có HOA.',en:'NCPA dated 03/02/2026 for 1234 Example Lane, San Jose, CA 95100. Buyer B signs the NCEI with it because the project has an HOA.'}},
+ {id:'1',n:'1',
+  t:{vi:'Loại dự án: chỉ tick đúng 1 ô',en:'Type of project: check only one box'},
+  b:{vi:'Đoạn 1 có 4 ô (A, B, C, D) cho 4 kiểu dự án. Chỉ tick một ô đúng với dự án của bạn. Ô nào cũng đòi khu chung phải xong theo B&amp;P Code §11018.5(a)(2)(B), có bằng chứng là Notice of Completion đã record (định nghĩa ở Civil Code §8182), hoặc thay vào đó là đi theo form RE 621 của DRE đính kèm. RE 621 là mẫu "Escrow Instructions" của DRE theo §11018.5(a).',
+     en:'Paragraph 1 has four boxes (A, B, C, D) for four kinds of projects. Check only the one that fits. Each box requires the common facilities to be finished under B&amp;P Code §11018.5(a)(2)(B), shown by a recorded Notice of Completion (defined in Civil Code §8182), or instead handled under the attached DRE form RE 621. RE 621 is DRE\'s "Escrow Instructions" form under §11018.5(a).'},
+  x:{vi:'Dự án ở 1234 Example Lane là condo 3 tòa, nên chỉ tick ô A.',en:'The project at 1234 Example Lane is a three-building condo, so only box A is checked.'}},
+ {id:'1A',n:'1A',
+  t:{vi:'Condominium',en:'Condominium'},
+  b:{vi:'Ghi số lô khu chung (Common Area Lot), số Tract, số tòa nhà và tổng số căn. Điều kiện: tất cả khu chung trên các lô đó đã xong, có Notice of Completion record phủ hết các căn, lô và công trình kể trên. Hoặc tick ô thay thế: theo RE 621 đính kèm.',
+     en:'Fill in the Common Area Lot number(s), the Tract number, the number of buildings and total units. Condition: all common facilities on those lots are finished, shown by a recorded Notice of Completion covering all those units, lots and improvements. Or check the alternative box: per the attached RE 621.'},
+  x:{vi:'Common Area Lot A, Tract 10001, 3 tòa, 48 căn. Notice of Completion record ngày 15/05/2026.',en:'Common Area Lot A, Tract 10001, 3 buildings, 48 units. Notice of Completion recorded 05/15/2026.'}},
+ {id:'1B',n:'1B',
+  t:{vi:'PUD kiểu "cluster"',en:'"Cluster" planned development'},
+  b:{vi:'Cluster là vài căn dính nhau trong một khối nhà. Có 2 điều kiện. (i) Khối nhà chứa căn của bạn phải xong, có Notice of Completion record phủ hết các lô trong khối đó; form còn liệt kê các nhóm lô của từng khối trong dự án. (ii) Khu chung trên lô chung cũng phải xong, có Notice of Completion record, hoặc theo RE 621.',
+     en:'A cluster is a group of attached homes in one structure. Two conditions. (i) The cluster structure that holds your unit is finished, with a recorded Notice of Completion covering every lot in that cluster; the form also lists each cluster\'s lot group. (ii) The common facilities on the common lot are finished with a recorded Notice of Completion, or per RE 621.'},
+  x:{vi:'Căn Lot 12 nằm trong khối Lots 9–12. Khối này có NOC, và hồ bơi chung trên Lot A cũng có NOC: đủ cả (i) và (ii).',en:'Lot 12 sits in the cluster of Lots 9–12. That cluster has an NOC, and the shared pool on Lot A has one too: both (i) and (ii) are met.'}},
+ {id:'1C',n:'1C',
+  t:{vi:'PUD toàn nhà riêng (non-cluster)',en:'"Non-cluster" planned development'},
+  b:{vi:'Dự án toàn nhà riêng, không dính nhau, nhưng vẫn có HOA và khu chung. Điều kiện chỉ nói về khu chung: các công trình trên lô chung phải xong, có Notice of Completion record, hoặc theo RE 621. Căn nhà riêng của bạn thì đã có đoạn 1D của NCPA lo (giấy cho ở, NCNC).',
+     en:'All detached houses, but with an HOA and shared areas. The condition covers only the common facilities: improvements on the common lot are finished with a recorded Notice of Completion, or per RE 621. Your own house is handled by NCPA paragraph 1D (occupancy, the NCNC notice).'},
+  x:{vi:'Khu nhà riêng có công viên và đường nội bộ trên Common Area Lot B. Công viên chưa xong thì escrow căn 1234 Example Lane chưa close được, trừ khi đi theo RE 621.',en:'A detached-home tract with a park and private streets on Common Area Lot B. Until the park is finished, escrow on 1234 Example Lane can\'t close, unless RE 621 is used.'}},
+ {id:'1D',n:'1D',
+  t:{vi:'Condo 1 lô, chia phase, có bond bảo đảm xây xong',en:'Phased single-lot condo, completion bonded'},
+  b:{vi:'Dự án condo trên 1 lô, xây theo từng phase, và mọi căn sẽ xây xong hoặc có bond (tiền bảo đảm) để xây xong. Có 2 điều kiện. (i) Khu chung bên ngoài các tòa, cùng khu chung và các căn trong những tòa được ghi tên (Building 1, 2…), đã xong và có Notice of Completion record, hoặc theo RE 621. (ii) Mỗi người mua và HOA có bảo hiểm title kèm một endorsement bảo vệ khỏi lien của thợ và vật liệu, kể cả lien từ việc xây tiếp các phase sau theo Condominium Plan.',
+     en:'A condo on a single lot, built in phases, where all units will be finished or bonded for completion. Two conditions. (i) Common facilities outside the buildings, plus the common facilities and units in the named buildings (Building 1, 2…), are finished with a recorded Notice of Completion, or per RE 621. (ii) Each buyer and the HOA get title insurance with an endorsement covering statutory liens for labor and materials, including liens from future construction to finish the Condominium Plan.'},
+  x:{vi:'Phase 1 gồm Building 1 và 2 đã có NOC. Building 3 xây sau. Người mua B và HOA đều có policy với endorsement đó: đủ (i) và (ii).',en:'Phase 1 (Buildings 1 and 2) has an NOC. Building 3 comes later. Buyer B and the HOA both have policies with that endorsement: (i) and (ii) are met.'}},
+ {id:'2',n:'2',
+  t:{vi:'Mechanics\' lien: chờ hết hạn, hoặc có bảo hiểm',en:'Mechanics\' liens: wait it out, or insure'},
+  b:{vi:'Thợ và nhà cung cấp vật liệu chưa được trả tiền có thể record mechanics\' lien lên công trình trong một thời hạn luật định. Đoạn 2 bắt một trong hai: thời hạn record lien đã hết hẳn, hoặc người mua và HOA được cấp bảo hiểm title có endorsement chống mechanics\' lien. Form không ghi số ngày. Theo Civil Code, khi Notice of Completion record hợp lệ: thầu phụ và nhà cung cấp có 30 ngày, nhà thầu chính có 60 ngày.',
+     en:'Unpaid workers and suppliers can record a mechanics\' lien on the project within a period set by law. Paragraph 2 requires one of two things: that period has fully run, or the buyer and the HOA get title policies with endorsements insuring against mechanics\' liens. The form prints no day count. Under the Civil Code, after a valid recorded Notice of Completion: subcontractors and suppliers have 30 days, the direct contractor 60 days.'},
+  x:{vi:'NOC record 15/05/2026. Hạn 30 ngày hết 14/06, hạn 60 ngày hết 14/07/2026. Muốn close sớm hơn thì title phải cấp endorsement chống lien cho cả Người mua B và HOA.',en:'NOC recorded 05/15/2026. The 30-day window ends 06/14, the 60-day window ends 07/14/2026. To close earlier, title must issue lien endorsements to both Buyer B and the HOA.'}},
+ {id:'sig',n:'✎',
+  t:{vi:'Chữ ký: cả hai bên',en:'Signatures: both sides'},
+  b:{vi:'Có 2 dòng cho Buyer và 2 dòng cho Seller, mỗi dòng có ngày. Khi ký, hai bên xác nhận đã nhận bản sao, đã đọc, hiểu và đồng ý. NCPA đoạn 22B(2) nói: nếu người bán khai căn nhà thuộc common interest subdivision thì NCEI là một phần của hợp đồng; với dự án có public report, builder phải dùng bản NCEI đi kèm NCPA hoặc mẫu đã được DRE chấp nhận.',
+     en:'Two lines for Buyer and two for Seller, each with a date. By signing, both confirm they received a copy, read it, understand it and agree. NCPA paragraph 22B(2) says that if the seller discloses the home is in a common interest subdivision, the NCEI is part of the contract; for a project under a public report, the builder must use the NCEI provided with the NCPA or a version DRE has accepted.'},
+  x:{vi:'Người mua B và Người bán A ký NCEI cùng ngày ký NCPA, 02/03/2026.',en:'Buyer B and Seller A sign the NCEI on the NCPA date, 03/02/2026.'}}
+];
+
+const I18N={
+ vi:{title:'Escrow nhà mới trong HOA: form NCEI',sub:'NCEI là tờ dặn thêm cho escrow khi bạn mua nhà mới trong condo hay khu PUD có HOA: chưa đủ điều kiện thì escrow không được close, không được nhả tiền.',
+  x_t:'Giải thích từng phần',x_s:'Form 1 trang: phần mở đầu, đoạn 1 (chọn 1 trong 4 loại dự án) và đoạn 2 (mechanics\' lien). Bấm để đọc.',x_all:'Mở hết / đóng hết',ex:'Ví dụ:',
+  p_t:'Phiếu minh họa (đã điền sẵn)',p_s:'Bấm vào từng dòng để nhảy tới phần giải thích.',pp_h:'DẶN THÊM ESCROW: DỰ ÁN CÓ HOA',pp_hs:'Minh họa theo bố cục NCEI · phụ lục của NCPA',
+  pp_k0:'Hợp đồng NCPA ngày · căn nhà',pp_k1:'Người mua / Người bán',pp_v1:'Người mua B / Người bán A (builder)',pp_k2:'Luật chung',pp_v2:'Chưa đủ điều kiện: không close, không nhả tiền, không sang tên',
+  pp_g1:'1 · Loại dự án (chỉ tick 1 ô)',pp_k3:'☑ Condominium',pp_v3:'Common Area Lot A, Tract 10001 · 3 tòa, 48 căn · đã record Notice of Completion',pp_k4:'☐ PUD kiểu cluster',pp_v4:'(bỏ trống)',pp_k5:'☐ PUD nhà riêng từng căn',pp_v4b:'(bỏ trống)',pp_k6:'☐ Condo 1 lô, chia phase',pp_v4c:'(bỏ trống)',
+  pp_g2:'2 · Mechanics\' lien',pp_k7:'Hết hạn record lien, hoặc có bảo hiểm title chống lien',pp_v7:'Notice of Completion record 15/05/2026 → hạn lien hết sau 14/07/2026',pp_k8:'Chữ ký',pp_v8:'2 Buyer + 2 Seller, có ngày',pp_s1:'Buyer · ngày',pp_s2:'Seller · ngày',
+  p_note:'Minh họa đơn giản, không phải form thật. Form thật do C.A.R. phát hành, agent của bạn có.',
+  t_t:'Tool: escrow close được chưa?',l_type:'Loại dự án (đoạn 1)',ty_A:'A · Condo',ty_B:'B · PUD cluster',ty_C:'C · PUD nhà riêng',ty_D:'D · Condo chia phase',
+  l_cf:'Khu chung (common facilities) đã xong chưa?',cf_noc:'Có NOC record',cf_621:'Theo RE 621',cf_no:'Chưa',l_cl:'Tòa cluster chứa căn của bạn đã có NOC record?',
+  l_ins:'Người mua và HOA có bảo hiểm title với endorsement chống lien (1D(ii))?',yes:'Có',no:'Chưa',yes2:'Có',no2:'Chưa',yes3:'Có',no3:'Không',
+  l_noc:'Ngày record Notice of Completion',l_noc_s:'(bản cuối)',l_end:'Có title policy chống mechanics\' lien (đoạn 2)?',
+  r_k:'Theo NCEI, escrow',n_ok:'Điều kiện đã đủ',n_sub:'Hạn lien thợ phụ, nhà cung cấp',n_sub_s:'30 ngày sau NOC (Civil Code §8414)',n_dir:'Hạn lien nhà thầu chính',n_dir_s:'60 ngày sau NOC (Civil Code §8412)',n_left:'Còn bao lâu tới hết hạn lien',
+  R_ok:'Close được',R_wait:'Chờ tới {d}',R_no:'Chưa close được',
+  W_ok:'Đủ hết điều kiện của NCEI. Escrow vẫn còn các điều kiện khác của NCPA (loan, giấy cho ở, tiền).',W_wait:'Đoạn 1 đã đủ. Đoạn 2 còn chờ hết hạn lien (sau {d}), trừ khi title cấp endorsement chống lien.',W_no:'Còn thiếu điều kiện ở dưới. Escrow không được close hay nhả tiền.',
+  c_cf:'Khu chung đã xong (NOC record) hoặc theo RE 621',c_cl:'Khối cluster của căn này có NOC record (1B(i))',c_ins:'Người mua + HOA có title endorsement chống lien (1D(ii))',c_lien:'Đoạn 2: hết hạn lien hoặc có title policy chống lien',
+  left:'{n} ngày',done:'Đã hết hạn',none:'Nhập ngày NOC',
+  nt:'Không có Notice of Completion thì hạn lien thường là 90 ngày sau khi công trình xong. Ngày trong tool chỉ để ước tính; title company mới xác nhận.',
+  v_t:'Video 45 giây',v_btn:'▶ Xem video 45 giây',
+  ns_t:'Bước tiếp theo',ns1:'Hỏi builder: dự án thuộc loại nào trong 4 ô, khu chung đã có Notice of Completion chưa, hay đang đi theo RE 621.',
+  ns2:'Hỏi escrow và title: ngày record Notice of Completion, và có cấp được endorsement chống mechanics\' lien không.',
+  ns3:'Đọc hợp đồng chính ở <a href="/t472/">T472 (NCPA)</a>, đếm ngày close ở <a href="/t470/">T470 (NCNC)</a>.',
+  ns4:'Mua condo thì hỏi HOA đủ câu ở <a href="/t144/">T144</a>. Tra form khác ở <a href="/t402/">T402 Thư viện forms</a>.',
+  m_t:'Nhiều người hiểu sai',
+  m1:'<b>"Căn của tôi xong rồi thì close được."</b> Chưa chắc. Với condo, NCEI đòi cả khu chung (common facilities) phải xong và có giấy record. Căn đẹp mà hồ bơi, nhà sinh hoạt chưa xong thì escrow vẫn đứng.',
+  m2:'<b>"Builder chậm là tại escrow."</b> Escrow chỉ làm theo lệnh. Tờ này cấm escrow nhả tiền khi chưa đủ điều kiện. Nó bảo vệ bạn. Đừng ép escrow làm khác.',
+  m3:'<b>"Nhà mới thì không có chuyện lien."</b> Ngược lại. Nhà mới là chỗ dễ có lien nhất: thầu phụ chưa được trả tiền có quyền record lien lên dự án. Vì vậy đoạn 2 mới bắt chờ hết hạn, hoặc mua bảo hiểm title chống lien. Theo tôi, đây là đoạn đáng hỏi nhất trong cả bộ hồ sơ nhà mới.',
+  b_email:'Gửi kết quả qua email',b_sms:'Nhắn Ken',b_video:'Xem video 45 giây',
+  f_title:'Gửi checklist này về email',f_sub:'Điều kiện đã đủ, còn thiếu gì, và ngày hết hạn lien trong 1 email. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_src:'Nguồn:',ft_chk:'(tra ngày 06/11/2026)',ft_est:'Thông tin giáo dục, không phải tư vấn luật hay thuế. Thời hạn lien trong tool là quy tắc chung khi Notice of Completion được record hợp lệ; trường hợp riêng (record trễ, ngưng thi công, không có NOC: 90 ngày sau khi xong) sẽ khác. Title company và luật sư mới là người xác nhận.',
+  ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa dùng tool NCEI (T469): dự án loại {t}, kết quả "{r}". Cho tôi hỏi thêm.',
+  subj:'NCEI — {r} — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nLoại dự án: {t}\nNgày NOC: {noc}\n\nKẾT QUẢ: {r}\n{why}\n\n{list}\n\nHạn lien thợ phụ: {sub}\nHạn lien thầu chính: {dir}\n\nGửi từ tool T469 tools.kenlamrealty.com'},
+ en:{title:'New home in an HOA: escrow form NCEI',sub:'NCEI adds escrow instructions when you buy a new home in a condo or planned development with an HOA: until the conditions are met, escrow can\'t close or release money.',
+  x_t:'Section by section',x_s:'One page: the opening, paragraph 1 (pick one of four project types) and paragraph 2 (mechanics\' liens). Tap to read.',x_all:'Open all / close all',ex:'Example:',
+  p_t:'Sample form (filled in)',p_s:'Tap any line to jump to its explanation.',pp_h:'SUPPLEMENTAL ESCROW INSTRUCTIONS: HOA PROJECT',pp_hs:'Sample in the NCEI layout · an NCPA addendum',
+  pp_k0:'NCPA dated · property',pp_k1:'Buyer / Seller',pp_v1:'Buyer B / Seller A (builder)',pp_k2:'Core rule',pp_v2:'Until conditions are met: no closing, no release of funds, no transfer of title',
+  pp_g1:'1 · Project type (check one)',pp_k3:'☑ Condominium',pp_v3:'Common Area Lot A, Tract 10001 · 3 buildings, 48 units · Notice of Completion recorded',pp_k4:'☐ Cluster PUD',pp_v4:'(blank)',pp_k5:'☐ Non-cluster PUD',pp_v4b:'(blank)',pp_k6:'☐ Phased single-lot condo',pp_v4c:'(blank)',
+  pp_g2:'2 · Mechanics\' liens',pp_k7:'Lien period expired, or title policies insure against liens',pp_v7:'Notice of Completion recorded 05/15/2026 → lien period ends after 07/14/2026',pp_k8:'Signatures',pp_v8:'2 Buyer + 2 Seller, dated',pp_s1:'Buyer · date',pp_s2:'Seller · date',
+  p_note:'Simple illustration, not the real form. The real form is published by C.A.R.; your agent has it.',
+  t_t:'Tool: can escrow close yet?',l_type:'Project type (paragraph 1)',ty_A:'A · Condo',ty_B:'B · Cluster PUD',ty_C:'C · Detached PUD',ty_D:'D · Phased condo',
+  l_cf:'Are the common facilities finished?',cf_noc:'NOC recorded',cf_621:'Per RE 621',cf_no:'Not yet',l_cl:'Does your cluster building have a recorded NOC?',
+  l_ins:'Do the buyer and HOA have title policies with the lien endorsement (1D(ii))?',yes:'Yes',no:'Not yet',yes2:'Yes',no2:'Not yet',yes3:'Yes',no3:'No',
+  l_noc:'Notice of Completion recording date',l_noc_s:'(the last one)',l_end:'Title policies insuring against mechanics\' liens (¶2)?',
+  r_k:'Under the NCEI, escrow',n_ok:'Conditions met',n_sub:'Lien window: subs and suppliers',n_sub_s:'30 days after NOC (Civil Code §8414)',n_dir:'Lien window: direct contractor',n_dir_s:'60 days after NOC (Civil Code §8412)',n_left:'Time until the lien window closes',
+  R_ok:'Can close',R_wait:'Wait until {d}',R_no:'Can\'t close yet',
+  W_ok:'Every NCEI condition is met. Escrow still needs the other NCPA conditions (loan, occupancy, funds).',W_wait:'Paragraph 1 is met. Paragraph 2 waits for the lien window to close (after {d}), unless title issues lien endorsements.',W_no:'Conditions below are missing. Escrow may not close or release funds.',
+  c_cf:'Common facilities finished (NOC recorded) or per RE 621',c_cl:'This unit\'s cluster building has a recorded NOC (1B(i))',c_ins:'Buyer + HOA title lien endorsement (1D(ii))',c_lien:'Paragraph 2: lien period over, or lien title coverage',
+  left:'{n} days',done:'Expired',none:'Enter the NOC date',
+  nt:'With no Notice of Completion, the lien window is usually 90 days after the work is completed. Dates here are estimates; the title company confirms.',
+  v_t:'45-second video',v_btn:'▶ Watch 45-sec video',
+  ns_t:'Next steps',ns1:'Ask the builder which of the four boxes fits, and whether the common facilities have a recorded Notice of Completion or are going through RE 621.',
+  ns2:'Ask escrow and title for the NOC recording date and whether they can issue mechanics\'-lien endorsements.',
+  ns3:'Read the main contract in <a href="/t472/">T472 (NCPA)</a>, count the closing date in <a href="/t470/">T470 (NCNC)</a>.',
+  ns4:'Buying a condo? Ask the HOA the questions in <a href="/t144/">T144</a>. Other forms: <a href="/t402/">T402 Forms library</a>.',
+  m_t:'What people get wrong',
+  m1:'<b>"My unit is done, so we can close."</b> Not always. For a condo, the NCEI also needs the common facilities finished and recorded. A beautiful unit with an unfinished pool or clubhouse still sits in escrow.',
+  m2:'<b>"The delay is escrow\'s fault."</b> Escrow follows instructions. This form forbids releasing money before the conditions are met. It protects you. Don\'t push escrow to bend it.',
+  m3:'<b>"New homes don\'t have lien problems."</b> The opposite. New construction is where liens happen most: an unpaid subcontractor can record a lien on the project. That is why paragraph 2 makes you wait it out or insure it. In my view it is the most important question in a new-home file.',
+  b_email:'Email me the result',b_sms:'Text Ken',b_video:'Watch 45-sec video',
+  f_title:'Email this checklist to yourself',f_sub:'Conditions met, what\'s missing and the lien dates in one email. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_src:'Sources:',ft_chk:'(checked 11/06/2026)',ft_est:'Educational information, not legal or tax advice. Lien periods here are the general rule after a validly recorded Notice of Completion; special cases (late recording, cessation, no NOC: 90 days after completion) differ. The title company and a lawyer confirm.',
+  ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I used the NCEI tool (T469): project type {t}, result "{r}". I have a question.',
+  subj:'NCEI — {r} — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nProject type: {t}\nNOC date: {noc}\n\nRESULT: {r}\n{why}\n\n{list}\n\nSub/supplier lien window: {sub}\nDirect contractor lien window: {dir}\n\nSent from tool T469 tools.kenlamrealty.com'}
+};
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+let type='A', cf='noc', cl=true, ins=false, endo=false, last={};
+
+function model(i,today){
+  const noc=D0(i.noc);
+  const sub=noc?addD(noc,RULES.LIEN_SUB):null, dir=noc?addD(noc,RULES.LIEN_DIRECT):null;
+  const lienOver=!!(dir&&today&&today>dir);
+  const conds=[['c_cf',i.cf!=='no']];
+  if(i.type==='B') conds.push(['c_cl',i.cl]);
+  if(i.type==='D') conds.push(['c_ins',i.ins]);
+  conds.push(['c_lien',i.endo||lienOver]);
+  const p1=conds.slice(0,-1).every(c=>c[1]);
+  const res=conds.every(c=>c[1])?'ok':(p1&&dir&&!i.endo?'wait':'no');
+  return {conds,res,sub,dir,left:dir&&today?diffD(today,dir):null};
+}
+function calc(){
+  const d=I18N[lang];
+  $('fB').classList.toggle('hide',type!=='B'); $('fD').classList.toggle('hide',type!=='D');
+  const m=model({type,cf,cl,ins,endo,noc:$('noc').value},todayUTC());
+  const r=m.res==='wait'?fill(d.R_wait,{d:fd(addD(m.dir,1),lang)}):d['R_'+m.res];
+  $('total').textContent=r;
+  const why=m.res==='wait'?fill(d.W_wait,{d:fd(m.dir,lang)}):d['W_'+m.res]; $('why').textContent=why;
+  $('oCnt').textContent=m.conds.filter(c=>c[1]).length+' / '+m.conds.length;
+  $('oCnt').className='a '+(m.res==='ok'?'ok':'warn');
+  $('oSub').textContent=m.sub?fd(m.sub,lang):d.none; $('oDir').textContent=m.dir?fd(m.dir,lang):d.none;
+  $('oLeft').textContent=m.left==null?'—':(m.left>=0?fill(d.left,{n:m.left}):d.done);
+  $('chk').innerHTML=m.conds.map(c=>'<div class="'+(c[1]?'y':'n')+'"><i>'+(c[1]?'✓':'✗')+'</i><span>'+d[c[0]]+'</span></div>').join('');
+  $('note').textContent=d.nt;
+  last={t:d['ty_'+type],r,why,noc:$('noc').value?fd(D0($('noc').value),lang):'—',sub:m.sub?fd(m.sub,lang):'—',dir:m.dir?fd(m.dir,lang):'—',
+    list:m.conds.map(c=>(c[1]?'[x] ':'[ ] ')+d[c[0]]).join('\n')};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+}
+seg('typeSeg',v=>type=v); seg('cfSeg',v=>cf=v); seg('clSeg',v=>cl=v==='1'); seg('insSeg',v=>ins=v==='1'); seg('endSeg',v=>endo=v==='1');
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  renderSecs(SECS,lang,d.ex);
+  $('langBtn').textContent=d.lang; try{const h=document.querySelector('h1'); if(h) document.title=h.textContent.trim()+' · Ken Lam Tools';}catch(e){} document.documentElement.lang=lang; calc();
+}
+$('noc').addEventListener('input',calc);
+$('allBtn').onclick=toggleAll;
+$('playBtn').onclick=()=>{const v=$('vid'); v.scrollIntoView({behavior:'smooth',block:'center'}); try{v.play().catch(()=>{});}catch(e){}};
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const v=Object.assign({},last,{n,e,ph});
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,v))+'&body='+encodeURIComponent(fill(d.body,v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+window.__model=model;
+applyLang();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

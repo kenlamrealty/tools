@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hủy listing: form COL · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="C.A.R. Cancellation of Listing (COL 6/23) explained in Vietnamese and English, with a calculator: after cancelling, is a commission still owed (protection period)?">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t464/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:title" content="Hủy listing: form COL · Ken Lam Tools">
+<meta property="og:description" content="C.A.R. Cancellation of Listing (COL 6/23) explained in Vietnamese and English, with a calculator: after cancelling, is a commission still owed (protection period)?">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t464/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T145 additions */
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.cmp div{border:1px solid var(--line);border-radius:10px;padding:12px}
+.cmp .k{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.cmp .v{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums;margin-top:2px}
+.cmp p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.cards{display:grid;gap:10px}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
+.card b{font-weight:500;font-size:15px}
+.card span{font-size:14px;color:var(--muted)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a,.card a,.cmp a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+/* T172 additions */
+.seg.wrap3{flex-wrap:wrap}
+.seg.wrap3 button{flex:1 1 45%;border-bottom:1px solid var(--line)}
+.total .v.path{font-size:38px;line-height:1.1}
+.docs{display:grid;gap:8px}
+.docs label{display:flex;gap:10px;align-items:flex-start;font-size:15px}
+.docs input{width:18px;height:18px;margin-top:3px;accent-color:var(--brass);flex:none}
+.docs label.done span{color:var(--muted);text-decoration:line-through}
+.gcal{color:var(--brass);text-decoration:none;font-size:14px}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+<style>
+/* Forms group additions (T460–T474) */
+.jump{display:flex;flex-wrap:wrap;gap:8px}
+.jump a{font-size:13px;color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;background:var(--panel)}
+.jump a:hover{border-color:var(--brass);color:var(--fg)}
+.phead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.linkbtn{border:0;background:transparent;color:var(--brass);font:inherit;font-size:13px;cursor:pointer;padding:0}
+.secs{display:grid;border-top:1px solid var(--line)}
+details.sec{border-bottom:1px solid var(--line)}
+details.sec>summary{list-style:none;cursor:pointer;display:flex;gap:12px;align-items:baseline;padding:12px 0;font-size:16px;font-weight:500}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary::after{content:'+';margin-left:auto;color:var(--brass);font-weight:400;font-size:20px;line-height:1}
+details.sec[open]>summary::after{content:'–'}
+details.sec .no{flex:none;min-width:44px;font-size:12px;font-weight:500;color:var(--brass);letter-spacing:.04em;font-variant-numeric:tabular-nums}
+details.sec .sb{padding:0 0 14px 56px;display:grid;gap:8px;font-size:15px}
+details.sec .sb p{margin:0}
+details.sec .ex{background:var(--brass-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+details.sec .ex b{font-weight:500}
+details.sec.flash{animation:fl 1.4s ease-out}
+@keyframes fl{0%{background:var(--brass-soft)}100%{background:transparent}}
+@media (max-width:420px){details.sec .sb{padding-left:0}}
+.paper{background:#FFFEFB;color:#2B2925;border:1px solid #D9D1C0;border-radius:6px;box-shadow:0 1px 0 #E6E0D3,0 8px 24px rgba(60,50,30,.08);padding:20px 18px;display:grid;gap:4px;font-size:14px}
+:root[data-theme="dark"] .paper{background:#F4EFE5}
+.paper .ptop{text-align:center;display:grid;gap:2px;border-bottom:2px solid #2B2925;padding-bottom:10px;margin-bottom:6px}
+.paper .ptop .org{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#7A7468}
+.paper .ptop .pt{font-family:var(--display);font-size:22px;font-weight:500;line-height:1.15}
+.paper .ptop .ps{font-size:11px;color:#7A7468}
+.pf{display:grid;grid-template-columns:minmax(0,40%) minmax(0,1fr);gap:10px;align-items:baseline;text-align:left;border:0;border-bottom:1px dotted #B8AE9A;background:transparent;color:#2B2925;font:inherit;font-size:14px;padding:8px 2px;cursor:pointer;width:100%}
+.pf:hover,.pf:focus-visible{background:#F3EBDC}
+.pf .pl{font-size:12px;color:#7A7468;font-weight:500}
+.pf .pl i{font-style:normal;color:#B8955A;margin-right:4px}
+.pf .pv{font-family:'Courier New',ui-monospace,monospace;font-size:14px;color:#1F3A68;overflow-wrap:anywhere}
+.paper .psig{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;margin-top:10px}
+.paper .psig div{border-top:1px solid #2B2925;padding-top:4px;font-size:11px;color:#7A7468}
+.paper .psig b{display:block;font-family:'Brush Script MT','Segoe Script',cursive;font-size:20px;font-weight:400;color:#1F3A68}
+.pnote{font-size:12px;color:var(--muted);margin:0}
+.vid{width:100%;border-radius:12px;background:#000;aspect-ratio:9/16;max-height:620px;object-fit:contain}
+.tag{display:inline-block;font-size:12px;border-radius:999px;padding:2px 9px;background:var(--brass-soft);color:var(--fg)}
+.tag.bad{background:#F4E1D3;color:#7A3E18}
+.tag.good{background:#DDEBDF;color:#2E5A3A}
+:root[data-theme="dark"] .tag.bad{background:#4A2E1C;color:#F1C9A8}
+:root[data-theme="dark"] .tag.good{background:#203A28;color:#BFE3C8}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .tag.bad{background:#4A2E1C;color:#F1C9A8}:root:not([data-theme="light"]) .tag.good{background:#203A28;color:#BFE3C8}}
+.verdict{font-family:var(--display);font-size:34px;line-height:1.1}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:12px 4px}
+.ctl input[type=date]{font-size:17px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · T464 · COL</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title">Hủy listing: form COL</h1>
+    <p class="sub" data-i="sub">Form COL là giấy chủ nhà và broker ký để chấm dứt listing trước hạn, và ghi rõ sau khi hủy còn nợ commission trong trường hợp nào.</p>
+  </header>
+  <nav class="jump" aria-label="On this page">
+    <a href="#exp" data-i="nav_exp">Giải thích</a><a href="#paper" data-i="nav_paper">Phiếu minh họa</a><a href="#tool" data-i="nav_tool">Tool tính</a><a href="#video" data-i="nav_vid">Video</a>
+  </nav>
+
+  <section class="panel" id="exp">
+    <div class="phead"><h2 data-i="h_exp">Giải thích từng phần</h2><button type="button" class="linkbtn" id="allBtn">Mở hết</button></div>
+    <p class="hint" data-i="exp_hint">Đi đúng thứ tự các đoạn trong form. Bấm vào từng đoạn để mở.</p>
+    <div class="secs">
+<details class="sec" id="p-0"><summary><span class="no">Đầu</span><span data-i="s_0_t">Hủy listing nào, giữa ai</span></summary><div class="sb"><p data-i="s_0_b">Ghi tên Broker, loại listing (mặc định là Residential Listing Agreement; đánh dấu nếu là Lease Listing hay loại khác), ngày ký listing, tên Principal (người bán hay chủ nhà) và căn nhà hoặc manufactured home. Hai bên đồng ý hủy listing và chấm dứt quan hệ đại diện, mọi bổn phận với nhau, nhưng theo các điều kiện được đánh dấu ở dưới. Ô nào không đánh dấu thì không áp dụng.</p><p class="ex"><b data-i="ex_lbl">Ví dụ:</b> <span data-i="s_0_x">Brokerage Y và Người bán A hủy listing ký ngày 01/09/2026 của căn 1234 Example Lane, San Jose, CA 95100. Listing gốc hết hạn 31/03/2027.</span></p></div></details>
+<details class="sec" id="p-1a"><summary><span class="no">1A</span><span data-i="s_1a_t">Vẫn trả nếu bán trước ngày hết hạn cũ</span></summary><div class="sb"><p data-i="s_1a_b">Nếu đánh dấu: trước ngày hết hạn của listing gốc (hoặc ngày đã gia hạn), chủ nhà ký hợp đồng bán, chuyển nhượng, cho thuê căn nhà với bất kỳ ai, thì vẫn trả commission như listing ghi. Nói cách khác, hủy rồi nhưng chưa "tự do" cho tới ngày hết hạn cũ. Có thể đánh dấu A, B, hoặc cả hai.</p><p class="ex"><b data-i="ex_lbl">Ví dụ:</b> <span data-i="s_1a_x">Hủy 06/11/2026. Ngày 28/11/2026 Người bán A ký bán cho một người lạ, trước 31/03/2027: vẫn trả Brokerage Y commission 2.5%.</span></p></div></details>
+<details class="sec" id="p-1b"><summary><span class="no">1B</span><span data-i="s_1b_t">Danh sách người đã coi nhà, và số ngày bảo vệ</span></summary><div class="sb"><p data-i="s_1b_b">Nếu đánh dấu: trong số ngày lịch ghi trên form, tính từ (i) ngày hủy hoặc (ii) ngày hết hạn của listing gốc (đánh dấu cái nào), chủ nhà ký bán, cho thuê hay chuyển nhượng cho người có tên trong danh sách (hay công ty liên quan người đó) thì vẫn trả. Người có tên là người, sau khi listing bắt đầu và trước khi hủy, đã được agent (hay agent hợp tác) dẫn vào coi nhà, hoặc đã nộp offer có chữ ký. Tên phải ghi ngay trên form.</p><p class="ex"><b data-i="ex_lbl">Ví dụ:</b> <span data-i="s_1b_x">30 ngày từ ngày hủy → tới 06/12/2026. Người mua B có tên trong danh sách. Ký với B ngày 28/11/2026: trả. Ký với B ngày 15/01/2027: không trả theo 1B (nhưng nếu ô 1A cũng đánh dấu thì vẫn trả, vì trước 31/03/2027).</span></p></div></details>
+<details class="sec" id="p-1c"><summary><span class="no">1C–1D</span><span data-i="s_1c_t">Broker không phải đại diện; trả lúc nào</span></summary><div class="sb"><p data-i="s_1c_b">Nếu bán theo 1A hoặc 1B, broker cũ không có bổn phận đại diện chủ nhà trong giao dịch đó. Commission trả lúc close escrow. Nếu giao dịch không xong vì lỗi người bán, thì trả lúc người bán vi phạm.</p><p class="ex"><b data-i="ex_lbl">Ví dụ:</b> <span data-i="s_1c_x">Bán cho người mua B close escrow 05/01/2027: escrow trả Brokerage Y ngày đó.</span></p></div></details>
+<details class="sec" id="p-2"><summary><span class="no">2</span><span data-i="s_2_t">Đổi sang broker khác trước hạn</span></summary><div class="sb"><p data-i="s_2_b">Nếu đánh dấu: chủ nhà trả % ghi trên form, tính trên giá listing hoặc giá bán, lấy số lớn hơn, khi có đủ hai điều: (i) trước ngày hết hạn listing gốc, chủ nhà ký listing với broker khác, và (ii) ký hợp đồng bán, cho thuê, chuyển nhượng trong thời gian listing gốc. Chủ nhà phải báo cho broker mới biết khoản này, và trả lúc close escrow (hoặc khi người bán vi phạm).</p><p class="ex"><b data-i="ex_lbl">Ví dụ:</b> <span data-i="s_2_x">Ghi 1%. Người bán A ký với Brokerage Z ngày 15/11/2026, ký bán $1,380,000 ngày 20/02/2027 (trước 31/03/2027). Giá bán lớn hơn giá listing: trả Brokerage Y 1% × $1,380,000 = $13,800.</span></p></div></details>
+<details class="sec" id="p-3"><summary><span class="no">3</span><span data-i="s_3_t">Trả lại chi phí tiếp thị</span></summary><div class="sb"><p data-i="s_3_b">Nếu đánh dấu: chủ nhà trả broker một số tiền cố định cho chi phí tự bỏ ra, chi phí phát sinh và công tiếp thị căn nhà trước khi hủy, như chụp hình, video, staging, in tờ rơi, quảng cáo.</p><p class="ex"><b data-i="ex_lbl">Ví dụ:</b> <span data-i="s_3_x">$1,200: chụp hình, quay video và in tờ rơi cho 1234 Example Lane.</span></p></div></details>
+<details class="sec" id="p-4"><summary><span class="no">4–5</span><span data-i="s_4_t">Không nợ gì, hoặc điều kiện khác</span></summary><div class="sb"><p data-i="s_4_b">Ô 4 đánh dấu: chủ nhà không nợ broker đồng nào. Ô 5: chỗ ghi điều kiện riêng mà hai bên thỏa thuận.</p><p class="ex"><b data-i="ex_lbl">Ví dụ:</b> <span data-i="s_4_x">Nhà chưa lên MLS, chưa ai coi: Brokerage Y đồng ý đánh dấu ô 4.</span></p></div></details>
+<details class="sec" id="p-6"><summary><span class="no">Giải trừ</span><span data-i="s_6_t">Hai bên giải trừ cho nhau</span></summary><div class="sb"><p data-i="s_6_b">Ngoài những gì form ghi, broker và chủ nhà giải trừ cho nhau mọi nghĩa vụ trong listing, và mọi khiếu nại, đòi hỏi có từ listing. Nhưng nếu cãi nhau về chuyện hủy này, vẫn đi theo đoạn giải quyết tranh chấp và tiền luật sư của listing gốc.</p></div></details>
+<details class="sec" id="p-7"><summary><span class="no">Ký</span><span data-i="s_7_t">Chữ ký</span></summary><div class="sb"><p data-i="s_7_b">Principal ký, ghi ngày, xác nhận đã đọc, hiểu và nhận bản sao. Bên broker ghi tên brokerage và số DRE; dòng ký ghi "Broker/Office Manager", tức người có thẩm quyền ở văn phòng ký, kèm số DRE và ngày.</p><p class="ex"><b data-i="ex_lbl">Ví dụ:</b> <span data-i="s_7_x">Người bán A ký; Office Manager của Brokerage Y ký bên broker.</span></p></div></details>
+    </div>
+  </section>
+
+  <section class="panel" id="paper">
+    <h2 data-i="h_paper">Phiếu minh họa</h2>
+    <p class="hint" data-i="paper_hint">Bấm vào mục nào thì nhảy tới phần giải thích của mục đó.</p>
+    <div class="paper" role="group" aria-label="Sample form">
+      <div class="ptop"><span class="org">Minh họa · Illustration</span><span class="pt" data-i="paper_t">Hủy listing</span><span class="ps" data-i="paper_s">Theo bố cục form COL (6/23) · 1 trang</span></div>
+<button type="button" class="pf" data-go="p-0"><span class="pl"><i></i><span data-i="pr0_l">Broker</span></span><span class="pv" data-i="pr0_v">Brokerage Y</span></button>
+<button type="button" class="pf" data-go="p-0"><span class="pl"><i></i><span data-i="pr1_l">Loại listing · ngày</span></span><span class="pv" data-i="pr1_v">☑ Residential Listing Agreement · 01/09/2026</span></button>
+<button type="button" class="pf" data-go="p-0"><span class="pl"><i></i><span data-i="pr2_l">Principal</span></span><span class="pv" data-i="pr2_v">Người bán A</span></button>
+<button type="button" class="pf" data-go="p-0"><span class="pl"><i></i><span data-i="pr3_l">Căn nhà</span></span><span class="pv" data-i="pr3_v">1234 Example Lane, San Jose, CA 95100</span></button>
+<button type="button" class="pf" data-go="p-1a"><span class="pl"><i>1A</i><span data-i="pr4_l">Bán trước hạn cũ</span></span><span class="pv" data-i="pr4_v">☑ đánh dấu</span></button>
+<button type="button" class="pf" data-go="p-1b"><span class="pl"><i>1B</i><span data-i="pr5_l">Ngày bảo vệ</span></span><span class="pv" data-i="pr5_v">☑ 30 ngày, từ (i) ngày hủy</span></button>
+<button type="button" class="pf" data-go="p-1b"><span class="pl"><i>1B</i><span data-i="pr6_l">Danh sách tên</span></span><span class="pv" data-i="pr6_v">Người mua B; Người mua C</span></button>
+<button type="button" class="pf" data-go="p-1c"><span class="pl"><i>1D</i><span data-i="pr7_l">Trả lúc</span></span><span class="pv" data-i="pr7_v">Close escrow / người bán vi phạm</span></button>
+<button type="button" class="pf" data-go="p-2"><span class="pl"><i>2</i><span data-i="pr8_l">Đổi broker trước hạn</span></span><span class="pv" data-i="pr8_v">☐ ___%</span></button>
+<button type="button" class="pf" data-go="p-3"><span class="pl"><i>3</i><span data-i="pr9_l">Chi phí tiếp thị</span></span><span class="pv" data-i="pr9_v">☑ $1,200</span></button>
+<button type="button" class="pf" data-go="p-4"><span class="pl"><i>4</i><span data-i="pr10_l">Không nợ gì</span></span><span class="pv" data-i="pr10_v">☐</span></button>
+      <div class="psig"><div><b data-i="signame">Seller A</b><span data-i="sig0">Principal · 06/11/2026</span></div><div><b>Office Mgr.</b><span data-i="sig1">Brokerage Y · Broker/Office Manager</span></div></div>
+    </div>
+    <p class="pnote" data-i="paper_note">Minh họa đơn giản, không phải form thật. Form thật do C.A.R. phát hành, agent của bạn có.</p>
+  </section>
+
+  <h2 id="tool" data-i="h_tool" style="font-family:var(--display);font-weight:400;font-size:28px;margin:0">Tool: hủy rồi còn nợ commission không</h2>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <span class="fl" data-i="l_box">Ô nào được đánh dấu ở đoạn 1?</span>
+      <div class="seg wrap3" role="group" id="boxSeg">
+        <button type="button" data-v="ab" aria-pressed="true" data-i="b_ab">1A + 1B</button>
+        <button type="button" data-v="b" aria-pressed="false" data-i="b_b">Chỉ 1B</button>
+        <button type="button" data-v="a" aria-pressed="false" data-i="b_a">Chỉ 1A</button>
+        <button type="button" data-v="none" aria-pressed="false" data-i="b_none4">Ô 4: không nợ</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="price"><span data-i="l_price">Giá (listing hoặc bán)</span></label>
+        <div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" min="0" step="1000" value="1350000"></div>
+      </div>
+      <div class="field">
+        <label for="pct"><span data-i="l_pct">Commission trong listing</span></label>
+        <div class="ctl"><input id="pct" type="number" inputmode="decimal" min="0" max="20" step="0.25" value="2.5"><span class="post">%</span></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="cancel"><span data-i="l_cancel">Ngày hủy</span></label>
+        <div class="ctl"><input id="cancel" type="date" value="2026-11-06"></div>
+      </div>
+      <div class="field">
+        <label for="lend"><span data-i="l_lend">Ngày hết hạn listing gốc</span></label>
+        <div class="ctl"><input id="lend" type="date" value="2027-03-31"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="days"><span data-i="l_days">Số ngày bảo vệ (1B)</span></label>
+        <div class="ctl"><input id="days" type="number" inputmode="numeric" min="0" max="365" step="1" value="30"><span class="post" data-i="u_d">ngày</span></div>
+      </div>
+      <div class="field">
+        <span class="fl" data-i="l_from">Tính từ</span>
+        <div class="seg" role="group" id="fromSeg">
+          <button type="button" data-v="cancel" aria-pressed="true" data-i="f_cancel">(i) Ngày hủy</button>
+          <button type="button" data-v="end" aria-pressed="false" data-i="f_end">(ii) Hết hạn</button>
+        </div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="deal"><span data-i="l_deal">Ngày ký bán/cho thuê</span> <small data-i="l_deal_s">(nếu có)</small></label>
+        <div class="ctl"><input id="deal" type="date" value="2026-11-28"></div>
+      </div>
+      <div class="field">
+        <span class="fl" data-i="l_who">Người mua/thuê đó</span>
+        <div class="seg" role="group" id="whoSeg">
+          <button type="button" data-v="named" aria-pressed="false" data-i="w_named">Có tên ở 1B</button>
+          <button type="button" data-v="other" aria-pressed="true" data-i="w_other">Người khác</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_v">Còn nợ commission không?</div>
+      <div class="verdict" id="oVerdict">—</div>
+      <p class="hint" id="oWhy" style="margin-top:6px"></p>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_amt">Commission nếu còn nợ</b><small id="oAmtSub"></small></span><span class="a" id="oAmt">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_a">1A ràng buộc tới</b><small data-i="n_a_s">Bán cho bất kỳ ai trước ngày này</small></span><span class="a" id="oA">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_b">1B bảo vệ tới</b><small data-i="n_b_s">Chỉ người có tên trong danh sách</small></span><span class="a" id="oB">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_left">Từ ngày hủy tới mốc cuối</b></span><span class="a" id="oLeft">—</span></div>
+    </div>
+    <div class="note" id="oNote"></div>
+  </section>
+
+
+  <section class="panel" id="video">
+    <h2 data-i="h_vid">Video 45 giây</h2>
+    <video id="vid" class="vid" src="explain.mp4" controls playsinline preload="metadata" poster="poster.jpg"></video>
+    <button class="btn" type="button" id="vidBtn" data-i="b_vid">Xem video 45 giây</button>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Bước tiếp theo</h2>
+    <ol>
+<li data-i="ns0">Đọc lại listing gốc: ngày hết hạn, số ngày bảo vệ, commission. Ba con số đó quyết định COL.</li>
+<li data-i="ns1">Xin agent danh sách người đã coi nhà và đã nộp offer, để biết ai sẽ nằm ở 1B.</li>
+<li data-i="ns2">Chỉ muốn đổi giá hay ngày, không hủy? Dùng form MT ở <a href="/t467/">T467</a>.</li>
+<li data-i="ns3">Tính tiền cầm về nếu bán lại ở <a href="/t21/">T21</a>; tra form khác ở <a href="/t402/">T402 Thư viện forms</a>.</li>
+    </ol>
+  </section>
+  <section class="panel">
+    <h2 data-i="my_t">Nhiều người hiểu sai</h2>
+<p class="myth" data-i="my0"><b>"Hủy listing xong bán cho ai cũng được, khỏi trả commission."</b> Nếu ô 1A đánh dấu, tới ngày hết hạn listing gốc bạn vẫn nợ, bán cho ai cũng vậy.</p>
+<p class="myth" data-i="my1"><b>"Ai từng coi nhà thì không bao giờ bán cho họ được."</b> Chỉ người có tên trong danh sách 1B, và chỉ trong số ngày ghi trên form.</p>
+<p class="myth" data-i="my2"><b>"Giận agent thì hủy cho rồi."</b> 23 năm, đó là quyết định đắt nhất tôi thấy chủ nhà làm. Hủy giữa chừng thường làm nhà mang tiếng "có vấn đề" trên MLS. Nói thẳng với broker trước; nhiều khi đổi agent trong cùng văn phòng là xong.</p>
+  </section>
+
+  <section class="actions">
+    <a class="btn primary" id="emailBtn" href="mailto:ken@kenlamrealty.com" data-i="b_email">Gửi kết quả qua email</a>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Nhắn Ken</a>
+    <button class="btn" type="button" id="vidBtn2" data-i="b_vid">Xem video 45 giây</button>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_src">Nguồn:</span> <span data-i="ft_sources">C.A.R. Form COL (Revised 6/23) (tra ngày 06/11/2026)</span></span>
+    <span data-i="ft_est">Thông tin giáo dục, không phải tư vấn luật hay thuế. Form thật và luật có thể đổi; số trong tool là ước tính. Chuyện pháp lý, hỏi luật sư.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 06/11/2026 · <a href="/cong-cu/" data-i="ft_all">Tất cả tools</a> · <a href="/t402/">T402</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Rules — edit here ===== */
+/* COL (6/23) ¶1A: contract before end of Listing Period (or extension) with ANYONE → listing compensation owed.
+   ¶1B: within N calendar days after (i) cancellation or (ii) Listing Period end, contract with a NAMED person
+        (shown the property, or submitted a signed written offer, after listing start and before cancellation) → owed.
+   ¶1D: payable on close of escrow, or on seller's default. ¶2/¶3/¶5 are separate boxes — not in this calculator.
+   Commission amount = price × % "specified in the Listing" (estimate). */
+const RULES={ DEF_DAYS:30 };
+const I18N={
+"vi": {
+"nav_exp": "Giải thích",
+"nav_paper": "Phiếu minh họa",
+"nav_tool": "Tool tính",
+"nav_vid": "Video",
+"h_exp": "Giải thích từng phần",
+"exp_hint": "Đi đúng thứ tự các đoạn trong form. Bấm vào từng đoạn để mở.",
+"b_all": "Mở hết",
+"b_none": "Thu gọn",
+"ex_lbl": "Ví dụ:",
+"h_paper": "Phiếu minh họa",
+"paper_hint": "Bấm vào mục nào thì nhảy tới phần giải thích của mục đó.",
+"paper_note": "Minh họa đơn giản, không phải form thật. Form thật do C.A.R. phát hành, agent của bạn có.",
+"h_vid": "Video 45 giây",
+"b_vid": "Xem video 45 giây",
+"ns_t": "Bước tiếp theo",
+"my_t": "Nhiều người hiểu sai",
+"b_email": "Gửi kết quả qua email",
+"b_sms": "Nhắn Ken",
+"ft_src": "Nguồn:",
+"ft_upd": "Cập nhật",
+"ft_all": "Tất cả tools",
+"lang": "English",
+"ft_est": "Thông tin giáo dục, không phải tư vấn luật hay thuế. Form thật và luật có thể đổi; số trong tool là ước tính. Chuyện pháp lý, hỏi luật sư.",
+"title": "Hủy listing: form COL",
+"sub": "Form COL là giấy chủ nhà và broker ký để chấm dứt listing trước hạn, và ghi rõ sau khi hủy còn nợ commission trong trường hợp nào.",
+"h_tool": "Tool: hủy rồi còn nợ commission không",
+"s_0_t": "Hủy listing nào, giữa ai",
+"s_0_b": "Ghi tên Broker, loại listing (mặc định là Residential Listing Agreement; đánh dấu nếu là Lease Listing hay loại khác), ngày ký listing, tên Principal (người bán hay chủ nhà) và căn nhà hoặc manufactured home. Hai bên đồng ý hủy listing và chấm dứt quan hệ đại diện, mọi bổn phận với nhau, nhưng theo các điều kiện được đánh dấu ở dưới. Ô nào không đánh dấu thì không áp dụng.",
+"s_0_x": "Brokerage Y và Người bán A hủy listing ký ngày 01/09/2026 của căn 1234 Example Lane, San Jose, CA 95100. Listing gốc hết hạn 31/03/2027.",
+"s_1a_t": "Vẫn trả nếu bán trước ngày hết hạn cũ",
+"s_1a_b": "Nếu đánh dấu: trước ngày hết hạn của listing gốc (hoặc ngày đã gia hạn), chủ nhà ký hợp đồng bán, chuyển nhượng, cho thuê căn nhà với bất kỳ ai, thì vẫn trả commission như listing ghi. Nói cách khác, hủy rồi nhưng chưa \"tự do\" cho tới ngày hết hạn cũ. Có thể đánh dấu A, B, hoặc cả hai.",
+"s_1a_x": "Hủy 06/11/2026. Ngày 28/11/2026 Người bán A ký bán cho một người lạ, trước 31/03/2027: vẫn trả Brokerage Y commission 2.5%.",
+"s_1b_t": "Danh sách người đã coi nhà, và số ngày bảo vệ",
+"s_1b_b": "Nếu đánh dấu: trong số ngày lịch ghi trên form, tính từ (i) ngày hủy hoặc (ii) ngày hết hạn của listing gốc (đánh dấu cái nào), chủ nhà ký bán, cho thuê hay chuyển nhượng cho người có tên trong danh sách (hay công ty liên quan người đó) thì vẫn trả. Người có tên là người, sau khi listing bắt đầu và trước khi hủy, đã được agent (hay agent hợp tác) dẫn vào coi nhà, hoặc đã nộp offer có chữ ký. Tên phải ghi ngay trên form.",
+"s_1b_x": "30 ngày từ ngày hủy → tới 06/12/2026. Người mua B có tên trong danh sách. Ký với B ngày 28/11/2026: trả. Ký với B ngày 15/01/2027: không trả theo 1B (nhưng nếu ô 1A cũng đánh dấu thì vẫn trả, vì trước 31/03/2027).",
+"s_1c_t": "Broker không phải đại diện; trả lúc nào",
+"s_1c_b": "Nếu bán theo 1A hoặc 1B, broker cũ không có bổn phận đại diện chủ nhà trong giao dịch đó. Commission trả lúc close escrow. Nếu giao dịch không xong vì lỗi người bán, thì trả lúc người bán vi phạm.",
+"s_1c_x": "Bán cho người mua B close escrow 05/01/2027: escrow trả Brokerage Y ngày đó.",
+"s_2_t": "Đổi sang broker khác trước hạn",
+"s_2_b": "Nếu đánh dấu: chủ nhà trả % ghi trên form, tính trên giá listing hoặc giá bán, lấy số lớn hơn, khi có đủ hai điều: (i) trước ngày hết hạn listing gốc, chủ nhà ký listing với broker khác, và (ii) ký hợp đồng bán, cho thuê, chuyển nhượng trong thời gian listing gốc. Chủ nhà phải báo cho broker mới biết khoản này, và trả lúc close escrow (hoặc khi người bán vi phạm).",
+"s_2_x": "Ghi 1%. Người bán A ký với Brokerage Z ngày 15/11/2026, ký bán $1,380,000 ngày 20/02/2027 (trước 31/03/2027). Giá bán lớn hơn giá listing: trả Brokerage Y 1% × $1,380,000 = $13,800.",
+"s_3_t": "Trả lại chi phí tiếp thị",
+"s_3_b": "Nếu đánh dấu: chủ nhà trả broker một số tiền cố định cho chi phí tự bỏ ra, chi phí phát sinh và công tiếp thị căn nhà trước khi hủy, như chụp hình, video, staging, in tờ rơi, quảng cáo.",
+"s_3_x": "$1,200: chụp hình, quay video và in tờ rơi cho 1234 Example Lane.",
+"s_4_t": "Không nợ gì, hoặc điều kiện khác",
+"s_4_b": "Ô 4 đánh dấu: chủ nhà không nợ broker đồng nào. Ô 5: chỗ ghi điều kiện riêng mà hai bên thỏa thuận.",
+"s_4_x": "Nhà chưa lên MLS, chưa ai coi: Brokerage Y đồng ý đánh dấu ô 4.",
+"s_6_t": "Hai bên giải trừ cho nhau",
+"s_6_b": "Ngoài những gì form ghi, broker và chủ nhà giải trừ cho nhau mọi nghĩa vụ trong listing, và mọi khiếu nại, đòi hỏi có từ listing. Nhưng nếu cãi nhau về chuyện hủy này, vẫn đi theo đoạn giải quyết tranh chấp và tiền luật sư của listing gốc.",
+"s_7_t": "Chữ ký",
+"s_7_b": "Principal ký, ghi ngày, xác nhận đã đọc, hiểu và nhận bản sao. Bên broker ghi tên brokerage và số DRE; dòng ký ghi \"Broker/Office Manager\", tức người có thẩm quyền ở văn phòng ký, kèm số DRE và ngày.",
+"s_7_x": "Người bán A ký; Office Manager của Brokerage Y ký bên broker.",
+"pr0_l": "Broker",
+"pr0_v": "Brokerage Y",
+"pr1_l": "Loại listing · ngày",
+"pr1_v": "☑ Residential Listing Agreement · 01/09/2026",
+"pr2_l": "Principal",
+"pr2_v": "Người bán A",
+"pr3_l": "Căn nhà",
+"pr3_v": "1234 Example Lane, San Jose, CA 95100",
+"pr4_l": "Bán trước hạn cũ",
+"pr4_v": "☑ đánh dấu",
+"pr5_l": "Ngày bảo vệ",
+"pr5_v": "☑ 30 ngày, từ (i) ngày hủy",
+"pr6_l": "Danh sách tên",
+"pr6_v": "Người mua B; Người mua C",
+"pr7_l": "Trả lúc",
+"pr7_v": "Close escrow / người bán vi phạm",
+"pr8_l": "Đổi broker trước hạn",
+"pr8_v": "☐ ___%",
+"pr9_l": "Chi phí tiếp thị",
+"pr9_v": "☑ $1,200",
+"pr10_l": "Không nợ gì",
+"pr10_v": "☐",
+"paper_t": "Hủy listing",
+"paper_s": "Theo bố cục form COL (6/23) · 1 trang",
+"sig0": "Principal · 06/11/2026",
+"signame": "Người bán A",
+"sig1": "Brokerage Y · Broker/Office Manager",
+"ns0": "Đọc lại listing gốc: ngày hết hạn, số ngày bảo vệ, commission. Ba con số đó quyết định COL.",
+"ns1": "Xin agent danh sách người đã coi nhà và đã nộp offer, để biết ai sẽ nằm ở 1B.",
+"ns2": "Chỉ muốn đổi giá hay ngày, không hủy? Dùng form MT ở <a href=\"/t467/\">T467</a>.",
+"ns3": "Tính tiền cầm về nếu bán lại ở <a href=\"/t21/\">T21</a>; tra form khác ở <a href=\"/t402/\">T402 Thư viện forms</a>.",
+"my0": "<b>\"Hủy listing xong bán cho ai cũng được, khỏi trả commission.\"</b> Nếu ô 1A đánh dấu, tới ngày hết hạn listing gốc bạn vẫn nợ, bán cho ai cũng vậy.",
+"my1": "<b>\"Ai từng coi nhà thì không bao giờ bán cho họ được.\"</b> Chỉ người có tên trong danh sách 1B, và chỉ trong số ngày ghi trên form.",
+"my2": "<b>\"Giận agent thì hủy cho rồi.\"</b> 23 năm, đó là quyết định đắt nhất tôi thấy chủ nhà làm. Hủy giữa chừng thường làm nhà mang tiếng \"có vấn đề\" trên MLS. Nói thẳng với broker trước; nhiều khi đổi agent trong cùng văn phòng là xong.",
+"l_box": "Ô nào được đánh dấu ở đoạn 1?",
+"b_ab": "1A + 1B",
+"b_b": "Chỉ 1B",
+"b_a": "Chỉ 1A",
+"b_none4": "Ô 4: không nợ",
+"l_price": "Giá (listing hoặc bán)",
+"l_pct": "Commission trong listing",
+"l_cancel": "Ngày hủy",
+"l_lend": "Ngày hết hạn listing gốc",
+"l_days": "Số ngày bảo vệ (1B)",
+"u_d": "ngày",
+"l_from": "Tính từ",
+"f_cancel": "(i) Ngày hủy",
+"f_end": "(ii) Hết hạn",
+"l_deal": "Ngày ký bán/cho thuê",
+"l_deal_s": "(nếu có)",
+"l_who": "Người mua/thuê đó",
+"w_named": "Có tên ở 1B",
+"w_other": "Người khác",
+"r_v": "Còn nợ commission không?",
+"v_yes": "Có thể còn nợ",
+"v_no": "Không nợ",
+"v_no1": "Không nợ theo đoạn 1",
+"v_dep": "Tùy ngày ký",
+"w_a": "Ô 1A: ký hợp đồng trước ngày hết hạn listing gốc ({d}), với bất kỳ ai.",
+"w_b": "Ô 1B: người có tên trong danh sách, ký trong thời gian bảo vệ (tới {d}).",
+"w_none": "Ô 4 đánh dấu: chủ nhà không nợ broker đồng nào (trừ khi ô 3 hay 5 có ghi khoản khác).",
+"w_nodeal": "Chưa có ngày ký. Coi các mốc dưới đây: ký trước các ngày đó (đúng người) là còn nợ.",
+"w_notnamed": "Người này không có tên trong danh sách 1B, và (nếu có 1A) ký sau ngày hết hạn listing gốc.",
+"w_after": "Ngày ký nằm sau mọi mốc bảo vệ đã đánh dấu.",
+"amt_s": "{p}% × {x}, trả lúc close escrow (1D)",
+"amt_none": "Ô 4",
+"n_amt": "Commission nếu còn nợ",
+"n_a": "1A ràng buộc tới",
+"n_a_s": "Bán cho bất kỳ ai trước ngày này",
+"n_b": "1B bảo vệ tới",
+"n_b_s": "Chỉ người có tên trong danh sách",
+"n_left": "Từ ngày hủy tới mốc cuối",
+"left_v": "{n} ngày",
+"na": "Không đánh dấu",
+"note": "Ô 2 (đổi broker trước hạn) và ô 3 (chi phí tiếp thị) là khoản riêng, tool không tính. Số commission là ước tính theo % bạn nhập; số thật theo listing gốc.",
+"subj": "Form COL — {v} — hủy {cancel}",
+"body": "Ô đánh dấu: {box}\nNgày hủy: {cancel}\nListing gốc hết hạn: {lend}\nBảo vệ 1B: {days} ngày, {from}\nNgày ký bán/cho thuê: {deal} ({who})\n\nKẾT QUẢ: {v}\n{why}\nCommission nếu còn nợ: {amt}\n1A tới: {a} · 1B tới: {b}\n\nTên:\nPhone:\nĐịa chỉ căn nhà:\n\nGửi từ tool T464 https://tools.kenlamrealty.com/t464/",
+"sms": "Chào Ken, tôi dùng tool hủy listing (COL): hủy {cancel}, kết quả \"{v}\". Cho tôi hỏi thêm.",
+"ft_sources": "C.A.R. Form COL (Revised 6/23) (tra ngày 06/11/2026)"
+},
+"en": {
+"nav_exp": "Explained",
+"nav_paper": "Sample form",
+"nav_tool": "Calculator",
+"nav_vid": "Video",
+"h_exp": "Section by section",
+"exp_hint": "In the same order as the form. Tap a section to open it.",
+"b_all": "Open all",
+"b_none": "Close all",
+"ex_lbl": "Example:",
+"h_paper": "Sample form",
+"paper_hint": "Tap any line to jump to its explanation.",
+"paper_note": "A simple illustration, not the real form. The real form is published by C.A.R.; your agent has it.",
+"h_vid": "45-second video",
+"b_vid": "Watch the 45-sec video",
+"ns_t": "Next steps",
+"my_t": "What people get wrong",
+"b_email": "Email me the result",
+"b_sms": "Text Ken",
+"ft_src": "Sources:",
+"ft_upd": "Updated",
+"ft_all": "All tools",
+"lang": "Tiếng Việt",
+"ft_est": "Educational information, not legal or tax advice. Forms and laws change; the numbers here are estimates. For legal questions, ask a lawyer.",
+"title": "Cancelling a listing: form COL",
+"sub": "Form COL is what the owner and broker sign to end a listing early, spelling out when a commission is still owed afterward.",
+"h_tool": "Calculator: do I still owe a commission?",
+"s_0_t": "Which listing, between whom",
+"s_0_b": "Fill in the Broker, the listing type (Residential Listing Agreement by default; check Lease Listing or Other if so), the listing date, the Principal (seller or owner) and the property or manufactured home. Both agree to cancel the listing and end the agency relationship and duties, subject to the boxes checked below. An unchecked box doesn't apply.",
+"s_0_x": "Brokerage Y and Seller A cancel the Sep 1, 2026 listing for 1234 Example Lane, San Jose, CA 95100. The original listing ran to Mar 31, 2027.",
+"s_1a_t": "Still owed if sold before the old end date",
+"s_1a_b": "If checked: if, before the original listing period (or any extension) ends, the owner signs a contract to sell, transfer or lease the property to anyone, the commission in the listing is still owed. In other words, cancelled but not \"free\" until the old end date. A, B or both can be checked.",
+"s_1a_x": "Cancelled Nov 6, 2026. On Nov 28, 2026 Seller A signs a sale with a stranger, before Mar 31, 2027: Brokerage Y's 2.5% is still owed.",
+"s_1b_t": "Named buyers and protection days",
+"s_1b_b": "If checked: within the number of calendar days written in, counted from (i) the cancellation or (ii) the original listing end (whichever is checked), if the owner sells, leases or transfers to someone named on the list (or their related entity), the commission is owed. Those named are people who, after the listing started and before cancellation, were shown the home by the agent (or a cooperating agent), or who sent a signed written offer. The names go right on the form.",
+"s_1b_x": "30 days from cancellation → through Dec 6, 2026. Buyer B is on the list. Sign with B on Nov 28, 2026: owed. Sign with B on Jan 15, 2027: not owed under 1B (but owed if 1A is also checked, since it's before Mar 31, 2027).",
+"s_1c_t": "No duty to represent; when it's paid",
+"s_1c_b": "In a deal under 1A or 1B, the old broker has no duty to represent the owner. The commission is paid at close of escrow, or, if the seller's default stops the deal, upon that default.",
+"s_1c_x": "Sale to Buyer B closes Jan 5, 2027: escrow pays Brokerage Y that day.",
+"s_2_t": "Relisting with another broker early",
+"s_2_b": "If checked: the owner pays the percent written in, of the listing price or sale price, whichever is greater, when both happen: (i) before the original listing ends, the owner lists with another broker, and (ii) signs a contract to sell, lease or transfer during the original listing period. The owner must tell the new broker about this and pay at close of escrow (or on seller default).",
+"s_2_x": "1% written in. Seller A lists with Brokerage Z on Nov 15, 2026 and signs a $1,380,000 sale on Feb 20, 2027 (before Mar 31, 2027). Sale price beats list price: Brokerage Y gets 1% × $1,380,000 = $13,800.",
+"s_3_t": "Reimburse marketing costs",
+"s_3_b": "If checked: the owner pays the broker a set dollar amount for out-of-pocket costs, expenses and marketing services before cancellation, like photos, video, staging, flyers and ads.",
+"s_3_x": "$1,200: photos, video and flyers for 1234 Example Lane.",
+"s_4_t": "Nothing owed, or other terms",
+"s_4_b": "Box 4 checked: the owner owes the broker nothing. Box 5: room for any other agreed terms.",
+"s_4_x": "Never hit the MLS, no showings: Brokerage Y agrees to check box 4.",
+"s_6_t": "Mutual release",
+"s_6_b": "Except as stated on the form, broker and owner release each other from all listing obligations and all claims arising from it. But a dispute over this cancellation still follows the original listing's dispute resolution and attorney fee terms.",
+"s_7_t": "Signatures",
+"s_7_b": "The Principal signs and dates, confirming they read, understood and got a copy. The broker side lists the firm and DRE number; the signature line reads \"Broker/Office Manager\", so someone with authority at the office signs, with DRE number and date.",
+"s_7_x": "Seller A signs; Brokerage Y's office manager signs for the broker.",
+"pr0_l": "Broker",
+"pr0_v": "Brokerage Y",
+"pr1_l": "Listing type · date",
+"pr1_v": "☑ Residential Listing Agreement · Sep 1, 2026",
+"pr2_l": "Principal",
+"pr2_v": "Seller A",
+"pr3_l": "Property",
+"pr3_v": "1234 Example Lane, San Jose, CA 95100",
+"pr4_l": "Sold before old end",
+"pr4_v": "☑ checked",
+"pr5_l": "Protection days",
+"pr5_v": "☑ 30 days, from (i) cancellation",
+"pr6_l": "Named people",
+"pr6_v": "Buyer B; Buyer C",
+"pr7_l": "Payable",
+"pr7_v": "Close of escrow / seller default",
+"pr8_l": "Relist early",
+"pr8_v": "☐ ___%",
+"pr9_l": "Marketing costs",
+"pr9_v": "☑ $1,200",
+"pr10_l": "Nothing owed",
+"pr10_v": "☐",
+"paper_t": "Cancellation of listing",
+"paper_s": "Laid out like form COL (6/23) · one page",
+"sig0": "Principal · Nov 6, 2026",
+"signame": "Seller A",
+"sig1": "Brokerage Y · Broker/Office Manager",
+"ns0": "Reread the original listing: end date, protection days, commission. Those three drive the COL.",
+"ns1": "Ask the agent for the list of people who toured or made offers, so you know who goes in 1B.",
+"ns2": "Only want to change price or dates? Use form MT at <a href=\"/t467/\">T467</a>.",
+"ns3": "See your net if you relist at <a href=\"/t21/\">T21</a>; look up other forms in <a href=\"/t402/\">T402 Forms library</a>.",
+"my0": "<b>\"Once cancelled, I can sell to anyone commission-free.\"</b> If 1A is checked, you owe it until the original end date, no matter who buys.",
+"my1": "<b>\"I can never sell to anyone who toured.\"</b> Only people named in 1B, and only for the days written in.",
+"my2": "<b>\"Mad at the agent? Just cancel.\"</b> In 23 years that's the most expensive move I see owners make. A mid-stream cancel often makes the home look \"troubled\" on MLS. Talk to the broker first; often switching agents in the same office fixes it.",
+"l_box": "Which boxes are checked in paragraph 1?",
+"b_ab": "1A + 1B",
+"b_b": "1B only",
+"b_a": "1A only",
+"b_none4": "Box 4: nothing owed",
+"l_price": "Price (list or sale)",
+"l_pct": "Listing commission",
+"l_cancel": "Cancellation date",
+"l_lend": "Original listing end",
+"l_days": "Protection days (1B)",
+"u_d": "days",
+"l_from": "Counted from",
+"f_cancel": "(i) Cancellation",
+"f_end": "(ii) Listing end",
+"l_deal": "Contract date",
+"l_deal_s": "(if any)",
+"l_who": "That buyer/tenant is",
+"w_named": "Named in 1B",
+"w_other": "Someone else",
+"r_v": "Is a commission still owed?",
+"v_yes": "Likely owed",
+"v_no": "Nothing owed",
+"v_no1": "Not owed under ¶1",
+"v_dep": "Depends on the date",
+"w_a": "Box 1A: contract signed before the original listing end ({d}), with anyone.",
+"w_b": "Box 1B: a named person, signed within the protection period (through {d}).",
+"w_none": "Box 4 checked: nothing owed (unless box 3 or 5 adds something).",
+"w_nodeal": "No contract date yet. Check the dates below: signing before them (with the right person) means it's owed.",
+"w_notnamed": "This person isn't named in 1B, and (if 1A applies) signed after the original listing end.",
+"w_after": "The contract date is after every checked protection date.",
+"amt_s": "{p}% × {x}, paid at close of escrow (1D)",
+"amt_none": "Box 4",
+"n_amt": "Commission if owed",
+"n_a": "1A runs through",
+"n_a_s": "A deal with anyone before this date",
+"n_b": "1B protects through",
+"n_b_s": "Named people only",
+"n_left": "Cancellation to last date",
+"left_v": "{n} days",
+"na": "Not checked",
+"note": "Box 2 (relisting early) and box 3 (marketing costs) are separate and not calculated here. The commission is an estimate from your %; the real figure is in the original listing.",
+"subj": "Form COL — {v} — cancelled {cancel}",
+"body": "Boxes: {box}\nCancelled: {cancel}\nOriginal listing end: {lend}\n1B protection: {days} days, {from}\nContract date: {deal} ({who})\n\nRESULT: {v}\n{why}\nCommission if owed: {amt}\n1A through: {a} · 1B through: {b}\n\nName:\nPhone:\nProperty address:\n\nSent from tool T464 https://tools.kenlamrealty.com/t464/",
+"sms": "Hi Ken, I used the COL cancellation tool: cancelled {cancel}, result \"{v}\". I have a question.",
+"ft_sources": "C.A.R. Form COL (Revised 6/23) (checked 11/06/2026)"
+}
+};
+
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'-':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?Math.max(0,v):0};
+const fill=(s,v)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+const strip=s=>String(s).replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ');
+const pd=s=>{ if(!s) return null; const d=new Date(s+'T12:00:00'); return isNaN(d)?null:d; };
+const addDays=(d,n)=>{const x=new Date(d); x.setDate(x.getDate()+n); return x;};
+const addMonths=(d,n)=>{const x=new Date(d); const day=x.getDate(); x.setDate(1); x.setMonth(x.getMonth()+n); const last=new Date(x.getFullYear(),x.getMonth()+1,0).getDate(); x.setDate(Math.min(day,last)); return x;};
+const dayDiff=(a,b)=>Math.round((b-a)/86400000);
+const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const fd=d=>!d?'—':(lang==='vi'?String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear():d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}));
+function seg(id,cb){ $(id).addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return;
+  $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); cb(b.dataset.v); calc();}); }
+function setSeg(id,v){ $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.v===v?'true':'false')); }
+let R={};
+function links(){
+  const d=I18N[lang];
+  $('emailBtn').href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,R))+'&body='+encodeURIComponent(fill(d.body,R));
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,R));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  $('allBtn').textContent=allOpen?d.b_none:d.b_all;
+  calc();
+}
+let allOpen=false;
+$('allBtn').onclick=()=>{allOpen=!allOpen; document.querySelectorAll('details.sec').forEach(x=>x.open=allOpen); $('allBtn').textContent=I18N[lang][allOpen?'b_none':'b_all'];};
+document.querySelectorAll('.pf').forEach(b=>b.addEventListener('click',()=>{
+  const t=$(b.dataset.go); if(!t) return; t.open=true; t.classList.remove('flash'); void t.offsetWidth; t.classList.add('flash');
+  t.scrollIntoView({behavior:'smooth',block:'start'});
+}));
+$('vidBtn').onclick=()=>{const v=$('vid'); v.scrollIntoView({behavior:'smooth',block:'center'}); try{const p=v.play(); if(p&&p.catch)p.catch(()=>{});}catch(e){}};
+$('vidBtn2').onclick=$('vidBtn').onclick;
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+
+
+let box='ab', from='cancel', who='other';
+function model(i){
+  const hasA=i.box==='ab'||i.box==='a', hasB=i.box==='ab'||i.box==='b', none=i.box==='none';
+  const start = i.from==='cancel'?i.cancel:i.lend;
+  const bEnd = (hasB&&start)? addDays(start,i.days) : null;
+  const aEnd = (hasA&&i.lend)? i.lend : null;
+  let owedA=false, owedB=false;
+  if(i.deal && !none){
+    if(hasA && aEnd && i.deal<=aEnd) owedA=true;
+    if(hasB && bEnd && i.who==='named' && i.deal<=bEnd) owedB=true;
+  }
+  const amt=i.price*i.pct/100;
+  let last=null; [aEnd,bEnd].forEach(x=>{ if(x&&(!last||x>last)) last=x; });
+  return {hasA,hasB,none,aEnd,bEnd,owedA,owedB,owed:owedA||owedB,amt,last,left:(last&&i.cancel)?dayDiff(i.cancel,last):null};
+}
+function calc(){
+  const d=I18N[lang];
+  const i={box,from,who,price:num('price'),pct:num('pct'),cancel:pd($('cancel').value),lend:pd($('lend').value),
+           days:Math.round(num('days')),deal:pd($('deal').value)};
+  const m=model(i);
+  let v, why;
+  if(m.none){ v='<span class="tag good">'+d.v_no+'</span>'; why=d.w_none; }
+  else if(!i.deal){ v='<span class="tag">'+d.v_dep+'</span>'; why=d.w_nodeal; }
+  else if(m.owed){ v='<span class="tag bad">'+d.v_yes+'</span>'; why=m.owedA?fill(d.w_a,{d:fd(m.aEnd)}):fill(d.w_b,{d:fd(m.bEnd)}); }
+  else { v='<span class="tag good">'+d.v_no1+'</span>'; why=(m.hasB&&who!=='named')?d.w_notnamed:d.w_after; }
+  $('oVerdict').innerHTML=v; $('oWhy').textContent=why;
+  $('oAmt').textContent=m.none?'$0':fmt(m.amt); $('oAmtSub').textContent=m.none?d.amt_none:fill(d.amt_s,{p:i.pct,x:fmt(i.price)});
+  $('oA').textContent=m.hasA?fd(m.aEnd):d.na; $('oB').textContent=m.hasB?fd(m.bEnd):d.na;
+  $('oLeft').textContent=m.left===null?'—':fill(d.left_v,{n:m.left});
+  $('oNote').innerHTML=d.note;
+  R={box:{ab:'1A + 1B',b:d.b_b,a:d.b_a,none:d.b_none4}[box],cancel:fd(i.cancel),lend:fd(i.lend),days:i.days,
+     from:from==='cancel'?d.f_cancel:d.f_end,deal:i.deal?fd(i.deal):'—',who:who==='named'?d.w_named:d.w_other,
+     v:strip(v),why,amt:m.none?'$0':fmt(m.amt),a:m.hasA?fd(m.aEnd):d.na,b:m.hasB?fd(m.bEnd):d.na};
+  window.__res=Object.assign({},m,{i});
+  links();
+}
+seg('boxSeg',v=>box=v); seg('fromSeg',v=>from=v); seg('whoSeg',v=>who=v);
+['price','pct','cancel','lend','days','deal'].forEach(id=>$(id).addEventListener('input',calc));
+window.__model=model;
+
+applyLang();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

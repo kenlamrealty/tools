@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Builder Says It's Done: The NCNC Notice · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T145 additions */
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.cmp div{border:1px solid var(--line);border-radius:10px;padding:12px}
+.cmp .k{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.cmp .v{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums;margin-top:2px}
+.cmp p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.cards{display:grid;gap:10px}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
+.card b{font-weight:500;font-size:15px}
+.card span{font-size:14px;color:var(--muted)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a,.card a,.cmp a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+/* Forms group additions (T469/T470/T472) */
+.hide{display:none!important}
+.secs{display:grid;gap:8px}
+.secs details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0 14px;scroll-margin-top:12px}
+.secs details[open]{border-color:var(--brass)}
+.secs summary{list-style:none;cursor:pointer;display:flex;gap:10px;align-items:baseline;padding:12px 0;font-weight:500;font-size:15px}
+.secs summary::-webkit-details-marker{display:none}
+.secs summary .no{flex:none;min-width:38px;font-family:var(--display);font-size:20px;line-height:1;color:var(--brass)}
+.secs summary .tt{min-width:0;overflow-wrap:anywhere}
+.secs .sb{padding:0 0 14px;display:grid;gap:8px;font-size:15px}
+.secs .sb p{margin:0}
+.secs .ex{background:var(--brass-soft);border-radius:8px;padding:8px 10px;font-size:14px}
+.secs .ex b{font-weight:500}
+.chiprow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;cursor:pointer;text-decoration:none}
+.chip:hover{border-color:var(--brass);color:var(--fg)}
+.paper{background:#FFFEFA;color:#2B2925;border:1px solid #D9D1BF;border-radius:6px;padding:18px 14px;box-shadow:0 1px 0 #E6E0D3,0 8px 24px rgba(0,0,0,.07);display:grid;gap:6px;font-size:13px}
+.paper .ph{text-align:center;display:grid;gap:2px;border-bottom:1px solid #D9D1BF;padding-bottom:10px;margin-bottom:4px}
+.paper .ph b{font-size:14px;letter-spacing:.04em;font-weight:600}
+.paper .ph small{color:#7A7468;font-size:11px}
+.paper .pr{display:grid;grid-template-columns:28px minmax(0,1fr);gap:2px 8px;text-align:left;background:transparent;border:0;border-left:2px solid transparent;padding:6px 8px;font:inherit;color:inherit;cursor:pointer;border-radius:4px;width:100%}
+.paper .pr:hover,.paper .pr:focus-visible{background:#F3EBDC;border-left-color:#B8955A}
+.paper .pn{grid-row:span 2;font-weight:600;color:#9A7A45;font-size:12px;padding-top:1px}
+.paper .pk{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#7A7468}
+.paper .pv{font-size:14px;border-bottom:1px dotted #B8955A;padding-bottom:2px;overflow-wrap:anywhere}
+.paper .pv i{font-style:normal;color:#9A5B2E}
+.paper .pgrp{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#9A7A45;margin-top:8px;border-top:1px dashed #D9D1BF;padding-top:8px}
+.paper .psig{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:8px}
+.paper .psig span{border-top:1px solid #2B2925;padding-top:3px;font-size:11px;color:#7A7468}
+.paper .pnote{font-size:12px;color:#7A7468;font-style:italic;text-align:center;margin-top:6px}
+.vid{width:100%;border-radius:12px;background:#000;aspect-ratio:9/16;max-height:72vh;display:block}
+.cmpt{display:grid;gap:0;border-top:1px solid var(--line);font-size:14px}
+.cmpt .r{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1fr) minmax(0,1fr);gap:8px;padding:9px 0;border-bottom:1px solid var(--line)}
+.cmpt .r.h{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.cmpt .r b{font-weight:500}
+.cmpt .r span{overflow-wrap:anywhere}
+.line .a.warn{color:var(--warn)}
+.line .a.ok{color:var(--ok)}
+.chk{display:grid;gap:8px}
+.chk div{display:flex;gap:10px;align-items:flex-start;font-size:15px}
+.chk i{flex:none;font-style:normal;width:22px;text-align:center;font-weight:600}
+.chk .y i{color:var(--ok)} .chk .n i{color:var(--warn)}
+input[type=date]{font-size:17px!important;min-height:46px}
+.cmp div div{border:0;padding:0;border-radius:0}
+
+</style>
+<meta name="description" content="C.A.R. Form NCNC (New Construction Notice of Completion and Notice to Close Escrow) explained line by line, with a sample and a calculator: the date you received the notice → your latest closing date, walk-through and DCE dates.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t470/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:title" content="Builder báo xong nhà, đòi close: form NCNC · Ken Lam Tools">
+<meta property="og:description" content="Nhập ngày nhận thông báo, ra ngày close chậm nhất theo hợp đồng NCPA, ngày walk-through và ngày gửi DCE.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t470/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools · T470</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title">Builder báo xong nhà, đòi close: form NCNC</h1>
+    <p class="sub" data-i="sub">Tờ NCNC là thông báo của builder: city đã cấp giấy cho ở, giờ phải close escrow. Từ lúc bạn nhận tờ này, đồng hồ 10 ngày bắt đầu chạy.</p>
+  </header>
+
+  <section class="panel">
+    <h2 data-i="x_t">Giải thích từng phần</h2>
+    <p class="hint" data-i="x_s">Form chỉ có 1 trang, 3 đoạn. Bấm vào từng đoạn để đọc.</p>
+    <div class="chiprow"><button class="chip" type="button" id="allBtn" data-i="x_all">Mở hết / đóng hết</button></div>
+    <div class="secs" id="secList"></div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="p_t">Phiếu minh họa (đã điền sẵn)</h2>
+    <p class="hint" data-i="p_s">Bấm vào từng dòng để nhảy tới phần giải thích. Ngày tự đổi theo tool ở dưới.</p>
+    <div class="paper" aria-label="Sample">
+      <div class="ph"><b data-i="pp_h">THÔNG BÁO NHÀ XÂY XONG &amp; ĐÒI CLOSE ESCROW</b><small data-i="pp_hs">Minh họa theo bố cục NCNC · 1 trang</small></div>
+      <button class="pr" type="button" data-go="head"><span class="pn">—</span><span class="pk" data-i="pp_k0">Hợp đồng NCPA ký ngày</span><span class="pv">02/03/2026</span></button>
+      <button class="pr" type="button" data-go="head"><span class="pn">—</span><span class="pk" data-i="pp_k1">Căn nhà</span><span class="pv">1234 Example Lane, San Jose, CA 95100</span></button>
+      <button class="pr" type="button" data-go="head"><span class="pn">—</span><span class="pk" data-i="pp_k2">Người mua / Người bán</span><span class="pv" data-i="pp_v2">Người mua B / Người bán A (builder)</span></button>
+      <button class="pr" type="button" data-go="1"><span class="pn">1</span><span class="pk" data-i="pp_k3">Luật trong đoạn 1D</span><span class="pv" data-i="pp_v3">Close chậm nhất 10 ngày sau khi người mua nhận thông báo có Certificate of Occupancy</span></button>
+      <button class="pr" type="button" data-go="2"><span class="pn">2</span><span class="pk" data-i="pp_k4">Giấy cho ở do ai cấp</span><span class="pv" data-i="pp_v4">City of San Jose · bản sao kèm theo</span></button>
+      <button class="pr" type="button" data-go="3"><span class="pn">3</span><span class="pk" data-i="pp_k5">Close escrow chậm nhất ngày</span><span class="pv"><i id="ppCoe">—</i></span></button>
+      <button class="pr" type="button" data-go="sig"><span class="pn">✎</span><span class="pk" data-i="pp_k6">Chữ ký</span><span class="pv" data-i="pp_v6">Chỉ người bán ký, kèm ngày</span></button>
+      <div class="psig"><span data-i="pp_s1">Seller · ngày</span><span data-i="pp_s2">Seller · ngày</span></div>
+      <p class="pnote" data-i="p_note">Minh họa đơn giản, không phải form thật. Form thật do C.A.R. phát hành, agent của bạn có.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="t_t">Tool: còn mấy ngày tới close?</h2>
+    <div class="inputs">
+      <div class="field">
+        <label for="rcv"><span data-i="l_rcv">Ngày bạn nhận thông báo NCNC</span> <small data-i="l_rcv_s">(ngày email vào hộp thư, hoặc ngày cầm giấy)</small></label>
+        <div class="ctl"><input id="rcv" type="date" value="2026-06-11"></div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="d4b"><span data-i="l_4b">Ngày close ghi ở 4B</span> <small data-i="l_opt">(nếu có)</small></label>
+          <div class="ctl"><input id="d4b" type="date"></div>
+        </div>
+        <div class="field">
+          <label for="onform"><span data-i="l_on">Ngày builder ghi ở đoạn 3</span> <small data-i="l_opt2">(nếu có)</small></label>
+          <div class="ctl"><input id="onform" type="date"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="walk"><span data-i="l_walk">Walk-through mấy ngày trước close</span> <small data-i="l_walk_s">(4K, mặc định 5)</small></label>
+        <div class="ctl"><input id="walk" type="number" inputmode="numeric" min="0" max="30" step="1" value="5"><span class="post" data-i="u_days">ngày</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_k">Close escrow chậm nhất</div>
+      <div class="v path"><span id="total">—</span></div>
+    </div>
+    <p id="why" style="margin:0;font-size:15px"></p>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_day10">Ngày thứ 10 (đếm lịch)</b><small data-i="n_day10_s">Ngày nhận là Day 0 (29I)</small></span><span class="a" id="oDay10">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_left">Còn lại từ hôm nay</b></span><span class="a" id="oLeft">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_walk">Walk-through (final verification)</b><small data-i="n_walk_s">Không phải contingency (đoạn 19 NCPA)</small></span><span class="a" id="oWalk">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_wn">Builder phải báo ngày walk-through trước</b><small data-i="n_wn_s">Ít nhất 3 ngày trước buổi kiểm (đoạn 19)</small></span><span class="a" id="oWn">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_dce">Sớm nhất được gửi DCE</b><small data-i="n_dce_s">Demand to Close Escrow, cho ít nhất 3 ngày (18G)</small></span><span class="a" id="oDce">—</span></div>
+    </div>
+    <div class="note" id="note"></div>
+    <a class="gcal hide" id="gcal" href="#" target="_blank" rel="noopener" style="color:var(--brass);text-decoration:none;font-size:14px"></a>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="v_t">Video 45 giây</h2>
+    <video id="vid" class="vid" src="explain.mp4" controls playsinline preload="metadata" poster="poster.jpg"></video>
+    <div class="chiprow"><button class="chip" type="button" id="playBtn" data-i="v_btn">▶ Xem video 45 giây</button></div>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Bước tiếp theo</h2>
+    <ol>
+      <li data-i="ns1">Xin bản sao Certificate of Occupancy và giữ email có giờ nhận. Ngày nhận là gốc để đếm.</li>
+      <li data-i="ns2">Gọi lender ngay hôm nhận: lãi lock còn tới ngày nào, giấy tờ nào còn thiếu. Xem toàn bộ hợp đồng ở <a href="/t472/">T472 (NCPA)</a>.</li>
+      <li data-i="ns3">Hẹn walk-through, ghi hết lỗi ra giấy. Lỗi nhỏ đi theo bảo hành, không hoãn close được.</li>
+      <li data-i="ns4">Trước khi wire tiền, gọi escrow bằng số có sẵn để xác nhận (<a href="/t63/">T63</a>). Tra các form khác ở <a href="/t402/">T402 Thư viện forms</a>.</li>
+    </ol>
+  </section>
+  <section class="panel">
+    <h2 data-i="m_t">Nhiều người hiểu sai</h2>
+    <p class="myth" data-i="m1"><b>"Builder ghi ngày nào thì close ngày đó."</b> Không hẳn. Hợp đồng đếm 10 ngày từ lúc bạn nhận thông báo. Ngày trên tờ là builder tự đếm. Đếm lại. Tôi gặp ngày ghi sai nhiều hơn người ta tưởng.</p>
+    <p class="myth" data-i="m2"><b>"10 ngày là 10 ngày làm việc."</b> Không. NCPA đếm ngày lịch, tính cả Thứ 7, Chủ nhật. Chỉ khi ngày cuối rơi vào Thứ 7, Chủ nhật hay ngày lễ thì mới được dời sang ngày làm việc kế.</p>
+    <p class="myth" data-i="m3"><b>"Walk-through thấy lỗi là hoãn close được."</b> Với nhà mới theo NCPA thì không. Lỗi nhỏ, việc sửa đã thống nhất, hay bạn không tới kiểm đúng hẹn đều không làm trễ close và không cho giữ lại tiền. Lỗi đi vào danh sách sửa và bảo hành. Ai hứa với bạn ngược lại thì bắt họ ghi ra giấy.</p>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Gửi kết quả qua email</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Nhắn Ken</a>
+    <a class="btn" id="videoBtn" href="/t470/explain.mp4" target="_blank" rel="noopener" data-i="b_video">Xem video 45 giây</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Gửi các mốc ngày về email</h2>
+    <p data-i="f_sub">Ngày close, walk-through và DCE trong 1 email. Ken coi lại giúp nếu cần. Không spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Tên</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (không bắt buộc)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Hoặc text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_src">Nguồn:</span> C.A.R. Form NCNC (Reviewed 6/25) · C.A.R. Form NCPA (Revised 6/26), ¶1D, ¶18G, ¶19, ¶29I–J ·
+      <a href="https://california.public.law/codes/government_code_section_6700" target="_blank" rel="noopener">Gov. Code §6700 (ngày lễ / legal holidays)</a> ·
+      <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=7" target="_blank" rel="noopener">Civil Code §7</a>
+      <span data-i="ft_chk">(tra ngày 06/11/2026)</span></span>
+    <span data-i="ft_est">Thông tin giáo dục, không phải tư vấn luật hay thuế. Ngày tool đếm theo cách đếm của NCPA; hợp đồng của bạn có thể đã sửa bằng counter offer hay addendum. Hỏi luật sư cho chuyện pháp lý, và xác nhận ngày với escrow.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 06/11/2026 · <a href="/cong-cu/" data-i="ft_all">Tất cả tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Shared helpers (T469 / T470 / T472) ===== */
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+const strip=s=>String(s).replace(/<[^>]+>/g,'').replace(/&amp;/g,'&');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?Math.max(0,v):0};
+
+/* Dates: all math in UTC so daylight saving never shifts a day. */
+const D0=s=>{ if(!s) return null; const p=String(s).split('-').map(Number); if(p.length!==3||!p[0]||!p[1]||!p[2]) return null; return new Date(Date.UTC(p[0],p[1]-1,p[2])); };
+const addD=(d,n)=>new Date(d.getTime()+n*864e5);
+const ymd=d=>d.toISOString().slice(0,10);
+const diffD=(a,b)=>Math.round((b.getTime()-a.getTime())/864e5);
+function nthDow(y,m,dow,n){ /* m 0-11, dow 0=Sun, n>=1 nth, n=-1 last */
+  if(n>0){ const f=new Date(Date.UTC(y,m,1)); const off=(dow-f.getUTCDay()+7)%7; return new Date(Date.UTC(y,m,1+off+(n-1)*7)); }
+  const l=new Date(Date.UTC(y,m+1,0)); const off=(l.getUTCDay()-dow+7)%7; return new Date(Date.UTC(y,m+1,-off));
+}
+/* California legal holidays — Gov. Code §6700 (via Civil Code §7 and NCPA ¶29I(4)).
+   Lunar New Year & Diwali follow lunar calendars: dates below are a table, KEN DUYỆT.
+   Fixed-date holiday on a Sunday → the Monday after is also treated as a holiday (KEN DUYỆT, Gov. Code §6701). */
+const LUNAR={2025:'2025-01-29',2026:'2026-02-17',2027:'2027-02-06',2028:'2028-01-26',2029:'2029-02-13'};
+const DIWALI={2025:'2025-10-20',2026:'2026-11-08',2027:'2027-10-29',2028:'2028-10-17'};
+const _hc={};
+function holidays(y){
+  if(_hc[y]) return _hc[y];
+  const s=new Set(), U=(m,d)=>new Date(Date.UTC(y,m,d));
+  const fixed=[U(0,1),U(1,12),U(2,31),U(3,24),U(5,19),U(6,4),U(8,9),U(10,11),U(11,25)];
+  fixed.forEach(d=>{ s.add(ymd(d)); if(d.getUTCDay()===0) s.add(ymd(addD(d,1))); });
+  [nthDow(y,0,1,3),nthDow(y,1,1,3),nthDow(y,4,1,-1),nthDow(y,8,1,1),nthDow(y,8,5,4),nthDow(y,9,1,2),nthDow(y,10,4,4)].forEach(d=>s.add(ymd(d)));
+  if(LUNAR[y]) s.add(LUNAR[y]); if(DIWALI[y]) s.add(DIWALI[y]);
+  return (_hc[y]=s);
+}
+const isHol=d=>holidays(d.getUTCFullYear()).has(ymd(d));
+const isOff=d=>{const w=d.getUTCDay(); return w===0||w===6||isHol(d);};
+function roll(d){ let x=d; while(isOff(x)) x=addD(x,1); return x; }          /* ¶29I(4): next day not Sat/Sun/holiday */
+function addBiz(d,n){ let x=d,k=0; while(k<n){ x=addD(x,1); if(!isOff(x)) k++; } return x; } /* ¶29J: deposit counts business days */
+const WD={vi:['CN','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'],en:['Sun','Mon','Tue','Wed','Thu','Fri','Sat']};
+const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fd(d,lang){ if(!d) return '—'; const p=n=>String(n).padStart(2,'0');
+  return lang==='vi' ? WD.vi[d.getUTCDay()]+', '+p(d.getUTCDate())+'/'+p(d.getUTCMonth()+1)+'/'+d.getUTCFullYear()
+                     : WD.en[d.getUTCDay()]+', '+MO[d.getUTCMonth()]+' '+d.getUTCDate()+', '+d.getUTCFullYear(); }
+function todayUTC(){ const t=new Date(); return new Date(Date.UTC(t.getFullYear(),t.getMonth(),t.getDate())); }
+
+/* Paragraph-by-paragraph explainer: SECS=[{id,n,t:{vi,en},b:{vi,en},x:{vi,en}}] */
+function renderSecs(list,lang,exLabel){
+  const open=new Set([...document.querySelectorAll('#secList details[open]')].map(e=>e.id));
+  $('secList').innerHTML=list.map(s=>'<details id="s-'+s.id+'"'+(open.has('s-'+s.id)?' open':'')+'><summary><span class="no">'+s.n+'</span><span class="tt">'+s.t[lang]+'</span></summary><div class="sb"><p>'+s.b[lang]+'</p>'+(s.x?'<p class="ex"><b>'+exLabel+'</b> '+s.x[lang]+'</p>':'')+'</div></details>').join('');
+}
+function goSec(id){ const el=$('s-'+id); if(!el) return; el.open=true; el.scrollIntoView({behavior:'smooth',block:'start'}); }
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-go]'); if(b){ e.preventDefault(); goSec(b.dataset.go); } });
+function toggleAll(){ const ds=[...document.querySelectorAll('#secList details')]; const anyClosed=ds.some(d=>!d.open); ds.forEach(d=>d.open=anyClosed); return anyClosed; }
+function seg(id,cb){ $(id).addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return;
+  $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); cb(b.dataset.v); calc();}); }
+
+/* ===== Rules — edit here (checked 06/11/2026) =====
+   NCNC ¶1 + NCPA ¶1D(1): Close Of Escrow no later than 10 Days after Buyer RECEIVES Seller's notice of the Certificate of Occupancy
+        (or the 4B time, whichever is earlier).
+   NCPA ¶29I: day of the event = Day 0; calendar days; ends 11:59 pm; Sat/Sun/Legal Holiday → next day that is not (¶29I(4)).
+   NCPA ¶29J: Days = calendar days (only the deposit uses business days).
+   NCPA ¶4K: final verification 5 (or __) Days prior to COE. ¶19: Seller gives notice at least 3 Days before the inspection date.
+   NCPA ¶18G: DCE gives at least 3 Days after Delivery; may not be Delivered earlier than 3 Days before the Scheduled Performance Day for COE. */
+const RULES={ COE_DAYS:10, WALK_DEFAULT:5, WALK_NOTICE:3, DCE_DAYS:3 };
+
+const SECS=[
+ {id:'head',n:'—',
+  t:{vi:'Đầu form: hợp đồng nào, căn nào, ai với ai',en:'Top: which contract, which home, who'},
+  b:{vi:'Phần đầu ghi ngày ký hợp đồng mua nhà mới (NCPA), địa chỉ căn nhà, tên người mua và người bán. Người bán ở đây thường là builder. NCNC không phải hợp đồng mới. Nó chỉ là tờ thông báo, dựa trên đoạn 1D của hợp đồng NCPA hai bên đã ký.',
+     en:'The top lists the date of the new-home contract (NCPA), the address, the buyer and the seller. The seller is usually the builder. NCNC is not a new contract. It is just a notice, based on paragraph 1D of the NCPA both sides already signed.'},
+  x:{vi:'NCPA ký 02/03/2026 cho căn 1234 Example Lane, San Jose, CA 95100, giữa Người mua B và Người bán A (builder).',
+     en:'NCPA dated 03/02/2026 for 1234 Example Lane, San Jose, CA 95100, between Buyer B and Seller A (the builder).'}},
+ {id:'1',n:'1',
+  t:{vi:'Nhắc lại luật trong đoạn 1D',en:'The rule from paragraph 1D'},
+  b:{vi:'Đoạn 1 nhắc lại điều đã đồng ý: escrow phải close chậm nhất 10 ngày sau khi người mua nhận được thông báo của người bán rằng chính quyền địa phương đã cấp Certificate of Occupancy (giấy cho phép dọn vào ở). Mốc tính là lúc người mua nhận thông báo. Không phải ngày city ký giấy, cũng không phải ngày builder ký tờ này. Trong NCPA, đoạn 1D còn nói close xảy ra vào ngày sớm hơn giữa ngày ở mục 4B và hạn 10 ngày này.',
+     en:'Paragraph 1 repeats what was agreed: escrow must close no later than 10 Days after the buyer receives the seller\'s notice that the local government issued a Certificate of Occupancy (permission to live in the home). The clock starts when the buyer receives the notice. Not the day the city signed, not the day the builder signed this page. In the NCPA, paragraph 1D also says closing happens at the earlier of the 4B date and this 10-day limit.'},
+  x:{vi:'Người mua B nhận email lúc 3 giờ chiều Thứ 5, 11/06/2026. Ngày 11 là Day 0, ngày 12 là Day 1. Day 10 rơi vào Chủ nhật 21/06/2026.',
+     en:'Buyer B gets the email at 3 pm on Thursday, 06/11/2026. The 11th is Day 0, the 12th is Day 1. Day 10 lands on Sunday, 06/21/2026.'}},
+ {id:'2',n:'2',
+  t:{vi:'Builder đã có Certificate of Occupancy',en:'Seller has the Certificate of Occupancy'},
+  b:{vi:'Đoạn 2 ghi cơ quan nào cấp giấy (city hay county) và nói có bản sao giấy kèm theo thông báo. Đây là bằng chứng chính quyền đã cho phép ở. Nhận thông báo mà không thấy bản sao thì hỏi lại ngay, đừng tự đoán.',
+     en:'Paragraph 2 names who issued it (city or county) and says a copy is attached to the notice. That copy is your proof the home may be occupied. If the copy is missing, ask right away. Don\'t guess.'},
+  x:{vi:'Ô ghi: City of San Jose. Kèm 1 trang bản sao Certificate of Occupancy.',en:'Filled in: City of San Jose. One-page copy of the Certificate of Occupancy attached.'}},
+ {id:'3',n:'3',
+  t:{vi:'Ngày close chậm nhất mới',en:'The new latest closing date'},
+  b:{vi:'Đoạn 3 là chỗ người bán điền ngày close escrow chậm nhất theo đoạn 1D. Ngày này do builder tự đếm. Bạn và agent nên đếm lại theo cách đếm ngày của NCPA (đoạn 29I): ngày nhận là Day 0, đếm ngày lịch, hết hạn lúc 11:59 tối. Nếu ngày cuối rơi vào Thứ 7, Chủ nhật hay ngày lễ thì được làm vào ngày kế tiếp không phải ngày nghỉ. Ngày Recorder, lender hay escrow đóng cửa cũng dời close sang ngày họ mở lại.',
+     en:'Paragraph 3 is where the seller writes the latest closing date under 1D. The builder does this math. You and your agent should recount using the NCPA counting rules (paragraph 29I): the day you receive it is Day 0, count calendar days, the deadline ends at 11:59 pm. If the last day is a Saturday, Sunday or legal holiday, it moves to the next day that isn\'t. A day the County Recorder, lender or escrow is closed also pushes closing to the next day they are all open.'},
+  x:{vi:'Day 10 là Chủ nhật 21/06/2026, nên close được dời sang Thứ 2, 22/06/2026. Nếu builder ghi 19/06 thì ngày đó sớm hơn hợp đồng cho phép, hỏi lại.',
+     en:'Day 10 is Sunday, 06/21/2026, so closing moves to Monday, 06/22/2026. If the builder wrote 06/19, that is earlier than the contract allows. Ask.'}},
+ {id:'sig',n:'✎',
+  t:{vi:'Chữ ký: chỉ người bán ký',en:'Signatures: seller only'},
+  b:{vi:'Form chỉ có hai dòng ký cho Seller, kèm ngày. Không có dòng cho người mua ký. Đây là thông báo một chiều. Vì ngày bạn nhận mới là ngày bắt đầu đếm, hãy giữ email hoặc tờ giấy có ghi rõ giờ nhận.',
+     en:'There are only two signature lines, both for the Seller, with dates. There is no line for the buyer. It is a one-way notice. Since the day you receive it starts the count, keep the email or paper that shows when you got it.'},
+  x:{vi:'Người bán A ký ngày 11/06/2026 và gửi email cho agent của Người mua B cùng ngày.',en:'Seller A signs on 06/11/2026 and emails it to Buyer B\'s agent the same day.'}}
+];
+
+const I18N={
+ vi:{title:'Builder báo xong nhà, đòi close: form NCNC',sub:'Tờ NCNC là thông báo của builder: city đã cấp giấy cho ở, giờ phải close escrow. Từ lúc bạn nhận tờ này, đồng hồ 10 ngày bắt đầu chạy.',
+  x_t:'Giải thích từng phần',x_s:'Form chỉ có 1 trang, 3 đoạn. Bấm vào từng đoạn để đọc.',x_all:'Mở hết / đóng hết',ex:'Ví dụ:',
+  p_t:'Phiếu minh họa (đã điền sẵn)',p_s:'Bấm vào từng dòng để nhảy tới phần giải thích. Ngày tự đổi theo tool ở dưới.',
+  pp_h:'THÔNG BÁO NHÀ XÂY XONG &amp; ĐÒI CLOSE ESCROW',pp_hs:'Minh họa theo bố cục NCNC · 1 trang',pp_k0:'Hợp đồng NCPA ký ngày',pp_k1:'Căn nhà',pp_k2:'Người mua / Người bán',pp_v2:'Người mua B / Người bán A (builder)',
+  pp_k3:'Luật trong đoạn 1D',pp_v3:'Close chậm nhất 10 ngày sau khi người mua nhận thông báo có Certificate of Occupancy',pp_k4:'Giấy cho ở do ai cấp',pp_v4:'City of San Jose · bản sao kèm theo',
+  pp_k5:'Close escrow chậm nhất ngày',pp_k6:'Chữ ký',pp_v6:'Chỉ người bán ký, kèm ngày',pp_s1:'Seller · ngày',pp_s2:'Seller · ngày',
+  p_note:'Minh họa đơn giản, không phải form thật. Form thật do C.A.R. phát hành, agent của bạn có.',
+  t_t:'Tool: còn mấy ngày tới close?',l_rcv:'Ngày bạn nhận thông báo NCNC',l_rcv_s:'(ngày email vào hộp thư, hoặc ngày cầm giấy)',l_4b:'Ngày close ghi ở 4B',l_opt:'(nếu có)',l_on:'Ngày builder ghi ở đoạn 3',l_opt2:'(nếu có)',
+  l_walk:'Walk-through mấy ngày trước close',l_walk_s:'(4K, mặc định 5)',u_days:'ngày',
+  r_k:'Close escrow chậm nhất',n_day10:'Ngày thứ 10 (đếm lịch)',n_day10_s:'Ngày nhận là Day 0 (29I)',n_left:'Còn lại từ hôm nay',n_walk:'Walk-through (final verification)',n_walk_s:'Không phải contingency (đoạn 19 NCPA)',
+  n_wn:'Builder phải báo ngày walk-through trước',n_wn_s:'Ít nhất 3 ngày trước buổi kiểm (đoạn 19)',n_dce:'Sớm nhất được gửi DCE',n_dce_s:'Demand to Close Escrow, cho ít nhất 3 ngày (18G)',
+  w_ok:'Ngày thứ 10 là ngày làm việc, nên đó là hạn chót.',w_roll:'Ngày thứ 10 rơi vào {r}, nên được dời sang ngày làm việc kế tiếp (29I(4)).',w_sat:'Thứ 7',w_sun:'Chủ nhật',w_hol:'ngày lễ California',
+  w_4b:'Ngày ở 4B ({d}) sớm hơn. Theo 1D(1), close là ngày sớm hơn, nên coi lại với agent ngay.',
+  w_none:'Nhập ngày nhận thông báo để thấy ngày close.',
+  left:'{n} ngày',left0:'Hôm nay',past:'Đã qua {n} ngày',
+  nt_match:'Ngày builder ghi khớp với ngày tool đếm.',nt_early:'Ngày builder ghi ({d}) sớm hơn hạn hợp đồng {n} ngày. Hỏi agent và escrow trước khi chạy theo.',nt_late:'Ngày builder ghi ({d}) trễ hơn ngày tool đếm {n} ngày. Có thể builder cho thêm thời gian, hoặc có thỏa thuận khác. Xin xác nhận bằng giấy.',
+  nt_def:'Lender thường cần vài ngày để ra giấy tờ loan. Gọi lender ngay hôm nhận thông báo, đừng chờ tới sát hạn.',
+  gcal:'+ Google Calendar: ngày close chậm nhất',gcal_t:'Close escrow chậm nhất (NCNC)',
+  v_t:'Video 45 giây',v_btn:'▶ Xem video 45 giây',
+  ns_t:'Bước tiếp theo',ns1:'Xin bản sao Certificate of Occupancy và giữ email có giờ nhận. Ngày nhận là gốc để đếm.',
+  ns2:'Gọi lender ngay hôm nhận: lãi lock còn tới ngày nào, giấy tờ nào còn thiếu. Xem toàn bộ hợp đồng ở <a href="/t472/">T472 (NCPA)</a>.',
+  ns3:'Hẹn walk-through, ghi hết lỗi ra giấy. Lỗi nhỏ đi theo bảo hành, không hoãn close được.',
+  ns4:'Trước khi wire tiền, gọi escrow bằng số có sẵn để xác nhận (<a href="/t63/">T63</a>). Tra các form khác ở <a href="/t402/">T402 Thư viện forms</a>.',
+  m_t:'Nhiều người hiểu sai',
+  m1:'<b>"Builder ghi ngày nào thì close ngày đó."</b> Không hẳn. Hợp đồng đếm 10 ngày từ lúc bạn nhận thông báo. Ngày trên tờ là builder tự đếm. Đếm lại. Tôi gặp ngày ghi sai nhiều hơn người ta tưởng.',
+  m2:'<b>"10 ngày là 10 ngày làm việc."</b> Không. NCPA đếm ngày lịch, tính cả Thứ 7, Chủ nhật. Chỉ khi ngày cuối rơi vào Thứ 7, Chủ nhật hay ngày lễ thì mới được dời sang ngày làm việc kế.',
+  m3:'<b>"Walk-through thấy lỗi là hoãn close được."</b> Với nhà mới theo NCPA thì không. Lỗi nhỏ, việc sửa đã thống nhất, hay bạn không tới kiểm đúng hẹn đều không làm trễ close và không cho giữ lại tiền. Lỗi đi vào danh sách sửa và bảo hành. Ai hứa với bạn ngược lại thì bắt họ ghi ra giấy.',
+  b_email:'Gửi kết quả qua email',b_sms:'Nhắn Ken',b_video:'Xem video 45 giây',
+  f_title:'Gửi các mốc ngày về email',f_sub:'Ngày close, walk-through và DCE trong 1 email. Ken coi lại giúp nếu cần. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Nếu không mở được, copy số ở dưới nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_src:'Nguồn:',ft_chk:'(tra ngày 06/11/2026)',ft_est:'Thông tin giáo dục, không phải tư vấn luật hay thuế. Ngày tool đếm theo cách đếm của NCPA; hợp đồng của bạn có thể đã sửa bằng counter offer hay addendum. Hỏi luật sư cho chuyện pháp lý, và xác nhận ngày với escrow.',
+  ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa dùng tool NCNC (T470): nhận thông báo ngày {r}, close chậm nhất {c}. Cho tôi hỏi thêm.',
+  subj:'NCNC — close chậm nhất {c} — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nNhận thông báo NCNC: {r}\nNgày 4B: {b4}\nNgày builder ghi: {of}\n\nCLOSE ESCROW CHẬM NHẤT: {c}\n{why}\nDay 10: {d10}\nWalk-through: {w}\nBuilder báo walk-through trước: {wn}\nSớm nhất gửi DCE: {dce}\n{nt}\n\nGửi từ tool T470 tools.kenlamrealty.com'},
+ en:{title:'Builder says it\'s done and wants to close: form NCNC',sub:'NCNC is the builder\'s notice: the city issued the occupancy certificate, now escrow must close. The 10-day clock starts when you receive it.',
+  x_t:'Section by section',x_s:'One page, three paragraphs. Tap any one to read it.',x_all:'Open all / close all',ex:'Example:',
+  p_t:'Sample form (filled in)',p_s:'Tap any line to jump to its explanation. Dates follow the tool below.',
+  pp_h:'NOTICE OF COMPLETION &amp; NOTICE TO CLOSE ESCROW',pp_hs:'Sample in the NCNC layout · 1 page',pp_k0:'NCPA contract dated',pp_k1:'Property',pp_k2:'Buyer / Seller',pp_v2:'Buyer B / Seller A (builder)',
+  pp_k3:'Rule in paragraph 1D',pp_v3:'Close no later than 10 Days after buyer receives notice of the Certificate of Occupancy',pp_k4:'Occupancy issued by',pp_v4:'City of San Jose · copy attached',
+  pp_k5:'Close escrow no later than',pp_k6:'Signatures',pp_v6:'Seller only, with date',pp_s1:'Seller · date',pp_s2:'Seller · date',
+  p_note:'Simple illustration, not the real form. The real form is published by C.A.R.; your agent has it.',
+  t_t:'Tool: how many days until closing?',l_rcv:'Date you received the NCNC notice',l_rcv_s:'(day the email hit your inbox, or you got the paper)',l_4b:'Closing date in 4B',l_opt:'(if any)',l_on:'Date the builder wrote in ¶3',l_opt2:'(if any)',
+  l_walk:'Walk-through days before closing',l_walk_s:'(4K, default 5)',u_days:'days',
+  r_k:'Latest closing date',n_day10:'Day 10 (calendar count)',n_day10_s:'Day you receive it = Day 0 (29I)',n_left:'Days left from today',n_walk:'Walk-through (final verification)',n_walk_s:'Not a contingency (NCPA ¶19)',
+  n_wn:'Builder must give walk-through notice by',n_wn_s:'At least 3 Days before the inspection (¶19)',n_dce:'Earliest day to deliver a DCE',n_dce_s:'Demand to Close Escrow, gives at least 3 Days (18G)',
+  w_ok:'Day 10 is a business day, so that is the deadline.',w_roll:'Day 10 is a {r}, so it moves to the next business day (29I(4)).',w_sat:'Saturday',w_sun:'Sunday',w_hol:'California legal holiday',
+  w_4b:'The 4B date ({d}) is earlier. Under 1D(1) closing is the earlier date, so check with your agent now.',
+  w_none:'Enter the date you received the notice.',
+  left:'{n} days',left0:'Today',past:'{n} days ago',
+  nt_match:'The builder\'s date matches the tool\'s count.',nt_early:'The builder wrote {d}, {n} days earlier than the contract allows. Ask your agent and escrow before you rush.',nt_late:'The builder wrote {d}, {n} days later than the tool\'s count. Maybe extra time, maybe another agreement. Get it in writing.',
+  nt_def:'Lenders often need several days to draw loan documents. Call your lender the day the notice arrives, not on day 7.',
+  gcal:'+ Google Calendar: latest closing date',gcal_t:'Latest close of escrow (NCNC)',
+  v_t:'45-second video',v_btn:'▶ Watch 45-sec video',
+  ns_t:'Next steps',ns1:'Get the copy of the Certificate of Occupancy and keep the email that shows when you received it. That day starts the count.',
+  ns2:'Call your lender the same day: when does your rate lock end, what papers are missing? Read the whole contract in <a href="/t472/">T472 (NCPA)</a>.',
+  ns3:'Book the walk-through and write down every defect. Small defects go to the warranty list; they can\'t delay closing.',
+  ns4:'Before you wire money, call escrow at a number you already have (<a href="/t63/">T63</a>). Look up other forms in <a href="/t402/">T402 Forms library</a>.',
+  m_t:'What people get wrong',
+  m1:'<b>"Whatever date the builder writes is the closing date."</b> Not quite. The contract counts 10 Days from when you receive the notice. The date on the page is the builder\'s own math. Recount. I see wrong dates more often than you would think.',
+  m2:'<b>"10 days means 10 business days."</b> No. The NCPA counts calendar days, weekends included. Only when the last day lands on a Saturday, Sunday or holiday does it move to the next business day.',
+  m3:'<b>"If the walk-through finds problems, I can delay closing."</b> Not under the NCPA. Minor defects, agreed fixes, or missing the inspection date don\'t delay closing and don\'t let you hold back money. Defects go on the repair list and the warranty. If anyone promises otherwise, get it in writing.',
+  b_email:'Email me the result',b_sms:'Text Ken',b_video:'Watch 45-sec video',
+  f_title:'Email these dates to yourself',f_sub:'Closing, walk-through and DCE dates in one email. Ken can double-check them. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
+  ft_src:'Sources:',ft_chk:'(checked 11/06/2026)',ft_est:'Educational information, not legal or tax advice. The tool counts days the NCPA way; your contract may have been changed by a counter offer or addendum. Ask a lawyer about legal questions and confirm dates with escrow.',
+  ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I used the NCNC tool (T470): got the notice {r}, latest closing {c}. I have a question.',
+  subj:'NCNC — latest closing {c} — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nNCNC received: {r}\n4B date: {b4}\nBuilder\'s date: {of}\n\nLATEST CLOSE OF ESCROW: {c}\n{why}\nDay 10: {d10}\nWalk-through: {w}\nBuilder walk-through notice by: {wn}\nEarliest DCE: {dce}\n{nt}\n\nSent from tool T470 tools.kenlamrealty.com'}
+};
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+let last={};
+
+function model(rcvS,b4S,ofS,walk,today){
+  const r=D0(rcvS); if(!r) return null;
+  const d10=addD(r,RULES.COE_DAYS);
+  const coe10=roll(d10);
+  const b4=D0(b4S), of=D0(ofS);
+  const coe=(b4&&b4<coe10)?roll(b4):coe10;
+  const walkD=addD(coe,-walk);
+  return {r,d10,coe10,coe,b4early:!!(b4&&b4<coe10),b4,of,
+    rolled:ymd(d10)!==ymd(coe10), why:d10.getUTCDay()===6?'sat':(d10.getUTCDay()===0?'sun':(isHol(d10)?'hol':'')),
+    walkD, walkNotice:addD(walkD,-RULES.WALK_NOTICE), dce:addD((b4&&b4<coe10)?b4:d10,-RULES.DCE_DAYS),
+    left:today?diffD(today,coe):null, ofDiff:of?diffD(coe10,of):null};
+}
+function calc(){
+  const d=I18N[lang];
+  const m=model($('rcv').value,$('d4b').value,$('onform').value,Math.min(30,Math.round(num('walk'))),todayUTC());
+  if(!m){ $('total').textContent='—'; $('why').textContent=d.w_none; ['oDay10','oLeft','oWalk','oWn','oDce'].forEach(k=>$(k).textContent='—'); $('ppCoe').textContent='—'; $('note').textContent=d.nt_def; $('gcal').classList.add('hide'); last={}; return; }
+  $('total').textContent=fd(m.coe,lang);
+  let why=m.rolled?fill(d.w_roll,{r:d['w_'+m.why]}):d.w_ok;
+  if(m.b4early) why+=' '+fill(d.w_4b,{d:fd(m.b4,lang)});
+  $('why').textContent=why;
+  $('oDay10').textContent=fd(m.d10,lang);
+  $('oLeft').textContent=m.left>0?fill(d.left,{n:m.left}):(m.left===0?d.left0:fill(d.past,{n:-m.left}));
+  $('oWalk').textContent=fd(m.walkD,lang); $('oWn').textContent=fd(m.walkNotice,lang); $('oDce').textContent=fd(m.dce,lang);
+  $('ppCoe').textContent=fd(m.coe,lang);
+  let nt=d.nt_def;
+  if(m.of){ nt=m.ofDiff===0?d.nt_match:(m.ofDiff<0?fill(d.nt_early,{d:fd(m.of,lang),n:-m.ofDiff}):fill(d.nt_late,{d:fd(m.of,lang),n:m.ofDiff})); }
+  $('note').textContent=nt;
+  const y=x=>ymd(x).replace(/-/g,''), e=addD(m.coe,1);
+  $('gcal').href='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(d.gcal_t)+'&dates='+y(m.coe)+'/'+y(e)+'&details='+encodeURIComponent('NCPA ¶1D · https://tools.kenlamrealty.com/t470/');
+  $('gcal').textContent=d.gcal; $('gcal').classList.remove('hide');
+  last={r:fd(m.r,lang),c:fd(m.coe,lang),why,d10:fd(m.d10,lang),w:fd(m.walkD,lang),wn:fd(m.walkNotice,lang),dce:fd(m.dce,lang),b4:m.b4?fd(m.b4,lang):'—',of:m.of?fd(m.of,lang):'—',nt};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  renderSecs(SECS,lang,d.ex);
+  $('langBtn').textContent=d.lang; try{const h=document.querySelector('h1'); if(h) document.title=h.textContent.trim()+' · Ken Lam Tools';}catch(e){} document.documentElement.lang=lang; calc();
+}
+['rcv','d4b','onform','walk'].forEach(id=>$(id).addEventListener('input',calc));
+$('allBtn').onclick=toggleAll;
+$('playBtn').onclick=()=>{const v=$('vid'); v.scrollIntoView({behavior:'smooth',block:'center'}); try{v.play().catch(()=>{});}catch(e){}};
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const v=Object.assign({c:'—',r:'—',why:'',d10:'—',w:'—',wn:'—',dce:'—',b4:'—',of:'—',nt:''},last,{n,e,ph});
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,v))+'&body='+encodeURIComponent(fill(d.body,v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+window.__model=model;
+$('rcv').value=ymd(todayUTC());
+applyLang();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

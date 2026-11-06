@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Who owns the listing photos: the PIA form · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="C.A.R. Form PIA Property Images Agreement (Revised 6/25) explained part by part: assignment vs exclusive license of copyright, photographer portfolio rights, drone rules (14 CFR Parts 89 and 107), MLS reuse rules, plus a who-can-use-the-photos tool.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t473/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Who owns the listing photos: the PIA form · Ken Lam Tools">
+<meta property="og:description" content="C.A.R. Form PIA Property Images Agreement (Revised 6/25) explained part by part: assignment vs exclusive license of copyright, photographer portfolio rights, drone rules (14 CFR Parts 89 and 107), MLS reuse rules, plus a who-can-use-the-photos tool.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t473/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T145 additions */
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.cmp div{border:1px solid var(--line);border-radius:10px;padding:12px}
+.cmp .k{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.cmp .v{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums;margin-top:2px}
+.cmp p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.cards{display:grid;gap:10px}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
+.card b{font-weight:500;font-size:15px}
+.card span{font-size:14px;color:var(--muted)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a,.card a,.cmp a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+/* T172 additions */
+.seg.wrap3{flex-wrap:wrap}
+.seg.wrap3 button{flex:1 1 45%;border-bottom:1px solid var(--line)}
+.total .v.path{font-size:38px;line-height:1.1}
+.docs{display:grid;gap:8px}
+.docs label{display:flex;gap:10px;align-items:flex-start;font-size:15px}
+.docs input{width:18px;height:18px;margin-top:3px;accent-color:var(--brass);flex:none}
+.docs label.done span{color:var(--muted);text-decoration:line-through}
+.gcal{color:var(--brass);text-decoration:none;font-size:14px}
+</style>
+<style>
+/* forms group additions (T460–T474) */
+.para{border:1px solid var(--line);border-radius:10px;background:var(--panel);scroll-margin-top:12px}
+.para summary{cursor:pointer;list-style:none;display:flex;gap:10px;align-items:baseline;padding:12px 14px;font-weight:500;font-size:15px}
+.para summary::-webkit-details-marker{display:none}
+.para summary::after{content:'+';margin-left:auto;color:var(--brass);flex:none}
+.para[open] summary::after{content:'–'}
+.para.flash{border-color:var(--brass);box-shadow:0 0 0 2px var(--brass-soft)}
+.pn{flex:none;min-width:34px;font-family:var(--display);font-size:20px;line-height:1;color:var(--brass)}
+.para .pb{padding:0 14px 14px;display:grid;gap:8px;font-size:15px}
+.para .pb p{margin:0}
+.para .ex{background:var(--brass-soft);border-radius:8px;padding:8px 10px;font-size:14px}
+.grp{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:10px 0 0}
+.plist{display:grid;gap:8px}
+.tbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.tbar button{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.paper{background:#FFFEFA;color:#2B2925;border:1px solid #D9D2C3;border-radius:6px;box-shadow:0 1px 0 #E6E0D3,0 10px 26px rgba(0,0,0,.07);padding:18px 14px;display:grid;font-size:14px}
+.paper .ph{text-align:center;border-bottom:2px solid #2B2925;padding-bottom:8px;margin-bottom:4px}
+.paper .ph b{display:block;font-family:var(--display);font-weight:500;font-size:21px;letter-spacing:.03em;line-height:1.15}
+.paper .ph small{font-size:11px;color:#7A7468;letter-spacing:.08em;text-transform:uppercase}
+.paper .psec{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#7A7468;padding:10px 2px 2px}
+.pr{display:grid;grid-template-columns:minmax(0,38%) minmax(0,1fr);gap:10px;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px dashed #D9D2C3;padding:8px 4px;font:inherit;font-size:13px;color:#2B2925;cursor:pointer;border-radius:0}
+.pr:hover,.pr:focus-visible{background:#F6F0E4}
+.pr .pk{color:#7A7468;overflow-wrap:anywhere}
+.pr .pv{color:#1F3A5F;font-weight:500;overflow-wrap:anywhere}
+.paper .stamp{font-size:12px;color:#9A5B2E;text-align:center;margin-top:10px;line-height:1.4}
+.total .v.word{font-size:40px;line-height:1.1}
+.total .v.ok{color:var(--ok)} .total .v.bad{color:var(--warn)}
+.vbox video{width:100%;border-radius:12px;background:#000;display:block}
+.lines .line .a{text-align:right;white-space:normal}
+.chk{display:grid;gap:6px;margin:0;padding-left:20px;font-size:15px}
+.fld-date .ctl input{font-size:17px}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools · T473</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title"></h1>
+    <p class="sub" data-i="sub"></p>
+  </header>
+
+  <section class="panel" aria-labelledby="hExplain">
+    <div class="tbar"><h2 id="hExplain" data-i="sec_explain"></h2><button type="button" id="toggleAll" data-i="open_all"></button></div>
+    <p class="hint" data-i="explain_hint"></p>
+    <div class="plist">
+<details class="para" id="p0"><summary><span class="pn">—</span><span data-i="p0_n"></span></summary><div class="pb"><p data-i="p0_s"></p><p class="ex"><b data-i="ex_l"></b> <span data-i="p0_e"></span></p></div></details>
+<details class="para" id="p1a"><summary><span class="pn">1A</span><span data-i="p1a_n"></span></summary><div class="pb"><p data-i="p1a_s"></p><p class="ex"><b data-i="ex_l"></b> <span data-i="p1a_e"></span></p></div></details>
+<details class="para" id="p1b"><summary><span class="pn">1B</span><span data-i="p1b_n"></span></summary><div class="pb"><p data-i="p1b_s"></p><p class="ex"><b data-i="ex_l"></b> <span data-i="p1b_e"></span></p></div></details>
+<details class="para" id="p2"><summary><span class="pn">2</span><span data-i="p2_n"></span></summary><div class="pb"><p data-i="p2_s"></p><p class="ex"><b data-i="ex_l"></b> <span data-i="p2_e"></span></p></div></details>
+<details class="para" id="p3"><summary><span class="pn">3</span><span data-i="p3_n"></span></summary><div class="pb"><p data-i="p3_s"></p><p class="ex"><b data-i="ex_l"></b> <span data-i="p3_e"></span></p></div></details>
+<p class="grp" data-i="g4_g"></p>
+<details class="para" id="p4a"><summary><span class="pn">4A</span><span data-i="p4a_n"></span></summary><div class="pb"><p data-i="p4a_s"></p><p class="ex"><b data-i="ex_l"></b> <span data-i="p4a_e"></span></p></div></details>
+<details class="para" id="p4b"><summary><span class="pn">4B</span><span data-i="p4b_n"></span></summary><div class="pb"><p data-i="p4b_s"></p><p class="ex"><b data-i="ex_l"></b> <span data-i="p4b_e"></span></p></div></details>
+<details class="para" id="p4c"><summary><span class="pn">4C</span><span data-i="p4c_n"></span></summary><div class="pb"><p data-i="p4c_s"></p><p class="ex"><b data-i="ex_l"></b> <span data-i="p4c_e"></span></p></div></details>
+<p class="grp" data-i="g5_g"></p>
+<details class="para" id="p5"><summary><span class="pn">5</span><span data-i="p5_n"></span></summary><div class="pb"><p data-i="p5_s"></p><p class="ex"><b data-i="ex_l"></b> <span data-i="p5_e"></span></p></div></details>
+<details class="para" id="p6"><summary><span class="pn">6</span><span data-i="p6_n"></span></summary><div class="pb"><p data-i="p6_s"></p><p class="ex"><b data-i="ex_l"></b> <span data-i="p6_e"></span></p></div></details>
+<details class="para" id="p7"><summary><span class="pn">7</span><span data-i="p7_n"></span></summary><div class="pb"><p data-i="p7_s"></p><p class="ex"><b data-i="ex_l"></b> <span data-i="p7_e"></span></p></div></details>
+<details class="para" id="p8"><summary><span class="pn">8</span><span data-i="p8_n"></span></summary><div class="pb"><p data-i="p8_s"></p><p class="ex"><b data-i="ex_l"></b> <span data-i="p8_e"></span></p></div></details>
+<details class="para" id="p9"><summary><span class="pn">9</span><span data-i="p9_n"></span></summary><div class="pb"><p data-i="p9_s"></p><p class="ex"><b data-i="ex_l"></b> <span data-i="p9_e"></span></p></div></details>
+<details class="para" id="p10"><summary><span class="pn">10</span><span data-i="p10_n"></span></summary><div class="pb"><p data-i="p10_s"></p><p class="ex"><b data-i="ex_l"></b> <span data-i="p10_e"></span></p></div></details>
+<details class="para" id="p11"><summary><span class="pn">11</span><span data-i="p11_n"></span></summary><div class="pb"><p data-i="p11_s"></p><p class="ex"><b data-i="ex_l"></b> <span data-i="p11_e"></span></p></div></details>
+<p class="grp" data-i="gN_g"></p>
+<details class="para" id="pN"><summary><span class="pn">2026</span><span data-i="pN_n"></span></summary><div class="pb"><p data-i="pN_s"></p><p class="ex"><b data-i="ex_l"></b> <span data-i="pN_e"></span></p></div></details>
+<details class="para" id="pS"><summary><span class="pn">✎</span><span data-i="pS_n"></span></summary><div class="pb"><p data-i="pS_s"></p><p class="ex"><b data-i="ex_l"></b> <span data-i="pS_e"></span></p></div></details>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="hPaper">
+    <h2 id="hPaper" data-i="sec_paper"></h2>
+    <div class="paper" role="group">
+      <div class="ph"><small data-i="pp_sub"></small><b data-i="pp_h"></b></div>
+<button type="button" class="pr" data-go="p0"><span class="pk" data-i="ppk0"></span><span class="pv" data-i="ppv0"></span></button>
+<button type="button" class="pr" data-go="p0"><span class="pk" data-i="ppk1"></span><span class="pv" data-i="ppv1"></span></button>
+<button type="button" class="pr" data-go="p0"><span class="pk" data-i="ppk2"></span><span class="pv" data-i="ppv2"></span></button>
+<div class="psec" data-i="pps3"></div>
+<button type="button" class="pr" data-go="p1a"><span class="pk" data-i="ppk4"></span><span class="pv" data-i="ppv4"></span></button>
+<button type="button" class="pr" data-go="p1b"><span class="pk" data-i="ppk5"></span><span class="pv" data-i="ppv5"></span></button>
+<button type="button" class="pr" data-go="p2"><span class="pk" data-i="ppk6"></span><span class="pv" data-i="ppv6"></span></button>
+<button type="button" class="pr" data-go="p3"><span class="pk" data-i="ppk7"></span><span class="pv" data-i="ppv7"></span></button>
+<div class="psec" data-i="pps8"></div>
+<button type="button" class="pr" data-go="p4a"><span class="pk" data-i="ppk9"></span><span class="pv" data-i="ppv9"></span></button>
+<button type="button" class="pr" data-go="p4c"><span class="pk" data-i="ppk10"></span><span class="pv" data-i="ppv10"></span></button>
+<div class="psec" data-i="pps11"></div>
+<button type="button" class="pr" data-go="p6"><span class="pk" data-i="ppk12"></span><span class="pv" data-i="ppv12"></span></button>
+<button type="button" class="pr" data-go="p7"><span class="pk" data-i="ppk13"></span><span class="pv" data-i="ppv13"></span></button>
+<button type="button" class="pr" data-go="p10"><span class="pk" data-i="ppk14"></span><span class="pv" data-i="ppv14"></span></button>
+<button type="button" class="pr" data-go="pS"><span class="pk" data-i="ppk15"></span><span class="pv" data-i="ppv15"></span></button>
+      <div class="stamp" data-i="paper_note"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="tool" aria-labelledby="hTool">
+    <h2 id="hTool" data-i="t_h"></h2>
+    <p class="hint" data-i="t_hint"></p>
+    <section class="inputs" aria-label="Inputs">
+      <div class="field">
+        <span class="fl" data-i="l_pia"></span>
+        <div class="seg wrap3" role="group" id="piaSeg">
+          <button type="button" data-v="a" aria-pressed="true" data-i="o_a"></button>
+          <button type="button" data-v="b" aria-pressed="false" data-i="o_b"></button>
+          <button type="button" data-v="none" aria-pressed="false" data-i="o_none"></button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="fl" data-i="l_who"></span>
+        <div class="seg wrap3" role="group" id="whoSeg">
+          <button type="button" data-v="rel" aria-pressed="true" data-i="w_rel"></button>
+          <button type="button" data-v="later" aria-pressed="false" data-i="w_later"></button>
+          <button type="button" data-v="photog" aria-pressed="false" data-i="w_photog"></button>
+          <button type="button" data-v="seller" aria-pressed="false" data-i="w_seller"></button>
+          <button type="button" data-v="broker" aria-pressed="false" data-i="w_broker"></button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="fl" data-i="l_use"></span>
+        <div class="seg wrap3" role="group" id="useSeg">
+          <button type="button" data-v="re" aria-pressed="true" data-i="u_re"></button>
+          <button type="button" data-v="other" aria-pressed="false" data-i="u_other"></button>
+        </div>
+      </div>
+      <div class="field" id="portWrap">
+        <span class="fl" data-i="l_port"></span>
+        <div class="seg" role="group" id="portSeg">
+          <button type="button" data-v="1" aria-pressed="true" data-i="p_yes"></button>
+          <button type="button" data-v="0" aria-pressed="false" data-i="p_no"></button>
+        </div>
+      </div>
+    </section>
+    <section class="result" aria-live="polite">
+      <div class="total">
+        <div class="k" data-i="r_k"></div>
+        <div class="v word" id="oVerdictBox"><span id="oVerdict">—</span></div>
+      </div>
+      <p id="oWhy" style="margin:0;font-size:15px"></p>
+      <div class="lines">
+        <div class="line"><span class="n"><b data-i="n_own"></b></span><span class="a" id="oOwn">—</span></div>
+        <div class="line"><span class="n"><b data-i="n_ask"></b></span><span class="a" id="oAsk">—</span></div>
+        <div class="line"><span class="n"><b data-i="n_par"></b></span><span class="a" id="oPar">—</span></div>
+      </div>
+      <div class="note" data-i="t_note"></div>
+    </section>
+  </section>
+
+  <section class="panel vbox" id="videoSec" aria-labelledby="hVideo">
+    <h2 id="hVideo" data-i="sec_video"></h2>
+    <video id="vid" src="explain.mp4" controls playsinline preload="metadata" poster="poster.jpg"></video>
+    <button class="btn" type="button" id="vidBtn" data-i="b_video"></button>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t"></h2>
+    <ol><li data-i="ns0"></li><li data-i="ns1"></li><li data-i="ns2"></li><li data-i="ns3"></li></ol>
+  </section>
+  <section class="panel">
+    <h2 data-i="my_t"></h2>
+    <p class="myth" data-i="my0"></p><p class="myth" data-i="my1"></p><p class="myth" data-i="my2"></p>
+  </section>
+
+  <section class="actions">
+    <a class="btn primary" id="emailBtn" href="mailto:ken@kenlamrealty.com" data-i="b_email"></a>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms"></a>
+    <button class="btn" type="button" id="videoBtn" data-i="b_video"></button>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_src"></span> <a href="https://www.car.org/" target="_blank" rel="noopener">C.A.R. Form PIA (Revised 6/25)</a> ·
+      <a href="https://www.law.cornell.edu/uscode/text/17/204" target="_blank" rel="noopener">17 U.S.C. §204</a> ·
+      <a href="https://california.public.law/codes/business_and_professions_code_section_10140.8" target="_blank" rel="noopener">B&amp;P §10140.8 (AB 723)</a> ·
+      <a href="https://www.ecfr.gov/current/title-14/chapter-I/subchapter-F/part-89" target="_blank" rel="noopener">14 CFR Part 89</a> ·
+      <a href="https://www.ecfr.gov/current/title-14/chapter-I/subchapter-F/part-107" target="_blank" rel="noopener">14 CFR Part 107</a> <span data-i="ft_chk"></span></span>
+    <span data-i="ft_dis"></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd"></span>: 06/11/2026 · <a href="/cong-cu/" data-i="ft_all"></a> · <a href="/t402/">T402</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Rules — edit here (checked 06/11/2026) =====
+   PIA (6/25) ¶4A assignment is the default (4B is the checkbox alternative); ¶4C portfolio license default "agree" unless checked;
+   ¶10 agent vs broker rights by separate written agreement; ¶11 MLS reuse needs prior written authorization of originating REL or rightful party.
+   17 U.S.C. §204(a): transfer of copyright ownership requires a signed writing. https://www.law.cornell.edu/uscode/text/17/204
+   B&P §10140.8 (AB 723, eff. 1/1/2026): altered listing images need conspicuous notice + link/URL/QR to original; PIA 6/25 silent (FACTS.md S7).
+   14 CFR Part 89 (Remote ID), Part 107 (small UAS, operations over people). https://www.ecfr.gov/current/title-14/chapter-I/subchapter-F/part-107
+*/
+const RULES={ DEFAULT_RIGHTS:"4A", PORTFOLIO_DEFAULT:true };
+
+const I18N={
+"vi": {
+"back": "← Tất cả tools",
+"sec_explain": "Giải thích từng phần",
+"explain_hint": "Theo đúng thứ tự trong form. Bấm vào từng đoạn để mở.",
+"open_all": "Mở hết",
+"close_all": "Đóng hết",
+"ex_l": "Ví dụ:",
+"sec_paper": "Phiếu minh họa",
+"paper_note": "Minh họa đơn giản, không phải form thật. Form thật do C.A.R. phát hành, agent của bạn có. Bấm vào một dòng để coi giải thích.",
+"sec_video": "Video 45 giây",
+"b_video": "Xem video 45 giây",
+"ns_t": "Bước tiếp theo",
+"my_t": "Nhiều người hiểu sai",
+"b_email": "Gửi kết quả qua email",
+"b_sms": "Nhắn Ken",
+"ft_src": "Nguồn:",
+"ft_chk": "(tra ngày 06/11/2026)",
+"ft_upd": "Cập nhật",
+"ft_all": "Tất cả tools",
+"ft_dis": "Thông tin giáo dục, không phải tư vấn luật hay thuế. Chuyện pháp lý, hỏi luật sư. Form C.A.R. có bản quyền; trang này chỉ tóm tắt bằng lời mình.",
+"lang": "English",
+"sign": "Ký tên",
+"title": "Hình nhà thuộc về ai: form PIA",
+"sub": "PIA là hợp đồng giữa agent và thợ chụp hình: chụp gì, trả bao nhiêu, và sau đó ai được dùng hình, video, drone. Dưới có tool: ai muốn dùng hình thì được không, phải xin ai.",
+"doc_title": "Hình nhà thuộc về ai: form PIA",
+"p0_n": "Phần đầu: ai ký với ai",
+"p0_s": "Hai bên: Real Estate Licensee, gọi tắt REL (agent có license), và Photographer (thợ chụp). Chủ nhà không phải là một bên của form này.",
+"p0_e": "Ngày 10/02/2027, Agent X (REL) ký với Thợ chụp Z để chụp 1234 Example Lane, San Jose, CA 95100.",
+"p1a_n": "Chụp gì, cho căn nào",
+"p1a_s": "Agent thuê thợ tạo hình: chụp, quay video, bay drone, hay công nghệ khác, gọi chung là \"Images\". Hình dùng theo cách chủ nhà cho phép, trong ngành địa ốc. Ghi rõ căn nào; để trống thì là những căn agent chỉ định theo từng lúc.",
+"p1a_e": "Ghi: 1234 Example Lane. Gồm 30 hình, 1 video, 5 hình drone.",
+"p1b_n": "Hợp đồng chạy tới khi nào",
+"p1b_s": "Chạy tới khi: (i) một bên báo chấm dứt bằng giấy, hoặc (ii) nếu tick, khi giao hình xong cho agent, hoặc (iii) nếu tick, tới một ngày ghi sẵn.",
+"p1b_e": "Tick (ii): Thợ chụp Z giao hình ngày 12/02/2027 là xong. Quyền dùng hình vẫn còn (coi đoạn 9).",
+"p2_n": "Trả tiền",
+"p2_s": "Agent trả thợ theo một trong ba: (i) như ghi trong hợp đồng, (ii) nếu tick, theo bảng giá trên hóa đơn của thợ, (iii) nếu tick, một số tiền tổng.",
+"p2_e": "Tick (iii): tổng $450 cho hình, video và drone.",
+"p3_n": "Quy cách hình",
+"p3_s": "Hình phải có định dạng và chất lượng hợp lý để đăng Internet và in. Muốn bao nhiêu hình, loại gì, giao cách nào thì ghi thêm vào dòng trống.",
+"p3_e": "Ghi: 30 hình JPG ngang, 1 video 60 giây dọc 9:16, kèm bản gốc chưa chỉnh, giao link tải trong 48 giờ.",
+"g4_g": "4 · Quyền với hình (chọn 4A hoặc 4B)",
+"p4a_n": "Chuyển hết bản quyền cho agent (mặc định)",
+"p4a_s": "Không tick 4B thì đi theo 4A. Thợ chuyển hẳn, không rút lại được, mọi quyền với hình cho agent, kể cả bản quyền, trên toàn thế giới. Thợ phải hợp tác: ký giấy, đưa thông tin, giúp nộp đơn đăng ký bản quyền nếu agent nhờ.",
+"p4a_e": "Không tick 4B. Agent X thành chủ bản quyền 30 tấm hình 1234 Example Lane.",
+"p4b_n": "Hoặc: thợ giữ hình, agent có license độc quyền",
+"p4b_s": "Nếu tick 4B: thợ vẫn là chủ hình. Agent được license độc quyền, toàn thế giới, không trả thêm tiền bản quyền, mãi mãi, để in, phát, đăng, chỉnh sửa, trình chiếu hình trong ngành địa ốc, như quảng cáo nhà và dịch vụ địa ốc. Agent được cho người khác dùng lại (sublicense) và được kiện người xài lén, kể cả vụ trước đó.",
+"p4b_e": "Thợ chụp Z muốn giữ bản quyền. Tick 4B. Agent X vẫn đăng MLS, Facebook, in flyer, và cho Brokerage Y dùng.",
+"p4c_n": "Thợ được để hình trong portfolio",
+"p4c_s": "Áp dụng cho cả 4A và 4B. Mặc định hai bên đồng ý cho thợ một license nhỏ: để hình trong portfolio, chỉ trên site hay trang của thợ, để quảng cáo dịch vụ chụp hình. Tick ô thì không đồng ý. Ngoài tiền ở đoạn 2, thợ không được thêm tiền bản quyền nào.",
+"p4c_e": "Không tick: Thợ chụp Z được đăng 5 tấm 1234 Example Lane lên website của Z. Không được bán hình cho agent khác.",
+"g5_g": "5–11 · Cam đoan và điều khoản chung",
+"p5_n": "Thợ cam đoan hình là của mình",
+"p5_s": "Thợ cam đoan: có đủ quyền với hình, kể cả bản quyền; không ai khác có quyền gì trong hình; và có quyền ký hợp đồng này. Agent không bắt buộc ghi tên thợ dưới hình.",
+"p5_e": "Thợ chụp Z không được lấy hình drone của người khác bỏ vào bộ hình 1234 Example Lane.",
+"p6_n": "Bồi thường (indemnity)",
+"p6_s": "Mặc định thợ phải bồi thường, đứng ra bảo vệ và chịu thay cho agent nếu có khiếu nại, đòi tiền, phí luật sư, do thợ vi phạm điều quan trọng hoặc bị bên thứ ba kiện là vi phạm. Tick \"shall not\" thì thợ không chịu.",
+"p6_e": "Một thợ khác kiện Agent X vì một tấm trong bộ hình là của họ. Không tick \"shall not\" thì Thợ chụp Z lo chi phí đó.",
+"p7_n": "Drone",
+"p7_s": "Thợ cam đoan biết và làm đúng luật drone, gồm Remote ID (14 CFR Part 89) và luật bay drone trên đầu người (14 CFR Part 107). Drone gây hư hại người hay tài sản thì thợ bồi thường cho agent và Broker.",
+"p7_e": "Drone rơi trúng xe hàng xóm của 1234 Example Lane. Thợ chụp Z chịu, không phải Agent X hay Brokerage Y.",
+"p8_n": "Thợ là người làm độc lập",
+"p8_s": "Thợ là independent contractor (nhà thầu độc lập) của agent. Không phải nhân viên, không phải hùn hạp hay liên doanh.",
+"p8_e": "Agent X không đóng bảo hiểm lao động hay giữ thuế lương cho Thợ chụp Z.",
+"p9_n": "Điều khoản chung",
+"p9_s": "Theo luật California. Đây là toàn bộ thỏa thuận, thay mọi thỏa thuận cũ. Sửa phải bằng giấy hai bên ký. Có lúc không đòi quyền không có nghĩa là bỏ quyền. Đoạn 4 tới 9 vẫn còn hiệu lực sau khi hợp đồng hết.",
+"p9_e": "Hợp đồng xong ngày giao hình, nhưng 5 năm sau quyền dùng hình ở đoạn 4 vẫn còn.",
+"p10_n": "Brokerage của agent",
+"p10_s": "Nếu agent là salesperson hay broker associate làm dưới license của broker khác, ghi tên và số DRE của broker đó. Giữa agent và brokerage, quyền với hình do một thỏa thuận giấy riêng quyết định.",
+"p10_e": "Agent X làm dưới Brokerage Y. X đổi văn phòng thì hình 1234 Example Lane thuộc ai: coi giấy riêng giữa X và Y.",
+"p11_n": "Luật MLS về dùng lại hình",
+"p11_s": "MLS thường cấm, và có quyền phạt (citation), khi agent sau dùng lại hình mà không có phép bằng giấy trước của agent gốc hoặc người có quyền hợp pháp với hình.",
+"p11_e": "Ba năm sau, chủ mới bán lại 1234 Example Lane với Agent W. W không được lấy hình cũ trên MLS đăng lại, trừ khi có giấy phép.",
+"gN_g": "Luật mới, ngoài form",
+"pN_n": "Hình chỉnh sửa phải ghi rõ (AB 723)",
+"pN_s": "Từ 01/01/2026, luật California (B&P Code §10140.8) bắt: hình quảng cáo nhà đã chỉnh bằng kỹ thuật số, như virtual staging, AI thêm hay xóa đồ, phải có ghi chú \"đã chỉnh sửa\" rõ ràng ngay trên hoặc cạnh hình, kèm link, URL hay mã QR tới hình gốc. Chỉnh sáng, cắt khung, màu bình thường thì không tính. Form PIA bản 6/25 chưa nói chuyện này, nên agent nên ghi thêm ở đoạn 3: thợ giao luôn hình gốc chưa chỉnh.",
+"pN_e": "Phòng khách 1234 Example Lane trống, thợ dựng sofa ảo. Hình đăng phải ghi \"Hình đã chỉnh sửa\" và có link tới tấm gốc phòng trống.",
+"pS_n": "Ký tên",
+"pS_s": "Thợ ký, ghi địa chỉ, phone, email. Agent ký, ghi số DRE, địa chỉ, phone, email. Ký là xác nhận đã nhận bản copy, đã đọc, hiểu và đồng ý.",
+"pS_e": "Thợ chụp Z và Agent X ký cùng ngày 10/02/2027.",
+"pp_h": "Hợp đồng hình ảnh căn nhà",
+"pp_sub": "Minh họa · PIA",
+"ppk0": "Ngày",
+"ppv0": "10/02/2027",
+"ppk1": "Agent (REL)",
+"ppv1": "Agent X",
+"ppk2": "Thợ chụp",
+"ppv2": "Thợ chụp Z",
+"pps3": "1–3 · Công việc",
+"ppk4": "1A · Căn nhà",
+"ppv4": "1234 Example Lane, San Jose, CA 95100",
+"ppk5": "1B · Hết khi",
+"ppv5": "☐ báo bằng giấy  ☑ giao hình xong  ☐ ngày …",
+"ppk6": "2 · Tiền",
+"ppv6": "☑ Tổng $450",
+"ppk7": "3 · Quy cách",
+"ppv7": "30 JPG · 1 video 9:16 · 5 drone · kèm hình gốc chưa chỉnh",
+"pps8": "4 · Quyền",
+"ppk9": "4A / 4B",
+"ppv9": "☑ 4A chuyển bản quyền  ☐ 4B license",
+"ppk10": "4C · Portfolio",
+"ppv10": "Đồng ý (ô \"không đồng ý\" để trống)",
+"pps11": "5–11",
+"ppk12": "6 · Bồi thường",
+"ppv12": "Thợ chịu (\"shall not\" để trống)",
+"ppk13": "7 · Drone",
+"ppv13": "Part 89 + Part 107",
+"ppk14": "10 · Broker",
+"ppv14": "Brokerage Y · DRE #00000000",
+"ppk15": "Ký",
+"ppv15": "Thợ chụp Z · Agent X",
+"t_h": "Tool: ai được dùng hình?",
+"t_hint": "Chọn có PIA kiểu nào, ai muốn dùng, dùng làm gì. Thấy ngay được hay không, và phải xin ai.",
+"l_pia": "Agent và thợ đã ký gì?",
+"o_a": "PIA 4A (chuyển bản quyền)",
+"o_b": "PIA 4B (license độc quyền)",
+"o_none": "Không có PIA",
+"l_who": "Ai muốn dùng hình?",
+"w_rel": "Agent đã thuê thợ",
+"w_later": "Agent sau (bán lại)",
+"w_photog": "Thợ chụp",
+"w_seller": "Chủ nhà",
+"w_broker": "Brokerage của agent",
+"l_use": "Dùng làm gì?",
+"u_re": "Việc địa ốc (bán, quảng cáo)",
+"u_other": "Ngoài địa ốc",
+"l_port": "Đoạn 4C: cho thợ để hình trong portfolio?",
+"p_yes": "Đồng ý (mặc định)",
+"p_no": "Không đồng ý (đã tick)",
+"r_k": "Câu trả lời",
+"n_own": "Ai giữ bản quyền",
+"n_ask": "Xin phép ai",
+"n_par": "Đoạn liên quan",
+"V": {
+"yes": "Được",
+"lim": "Được, có giới hạn",
+"ask": "Xin phép bằng giấy trước",
+"no": "Không",
+"sep": "Coi giấy riêng"
+},
+"O": {
+"rel": "Agent đã thuê thợ",
+"photog": "Thợ chụp"
+},
+"A": {
+"none": "Không cần xin",
+"rel": "Agent gốc (REL)",
+"photog": "Thợ chụp",
+"relp": "Agent gốc, và thợ nếu không có giấy",
+"brk": "Agent và brokerage (giấy riêng)",
+"lawyer": "Thợ chụp, hỏi luật sư cho chắc"
+},
+"W": {
+"rel_a": "Agent là chủ bản quyền theo 4A, dùng được.",
+"rel_b": "4B cho agent license độc quyền, mãi mãi, trong ngành địa ốc: quảng cáo nhà và dịch vụ địa ốc.",
+"rel_b_o": "License 4B chỉ dùng trong ngành địa ốc. Ngoài địa ốc thì thợ vẫn là chủ, phải xin thợ.",
+"rel_n": "Không có giấy chuyển bản quyền, mặc định thợ giữ bản quyền. Coi hóa đơn hay điều khoản của thợ cho phép gì.",
+"later_ab": "Luật MLS: agent sau phải có phép bằng giấy trước của agent gốc hoặc người có quyền hợp pháp. Lấy hình cũ trên MLS đăng lại là có thể bị phạt.",
+"later_n": "Không có PIA thì thợ thường là chủ bản quyền. Xin thợ, và vẫn phải theo luật MLS về dùng lại hình.",
+"ph_a_y": "Đã chuyển bản quyền cho agent. Chỉ được để trong portfolio trên site hay trang của mình, để quảng cáo dịch vụ chụp hình (4C).",
+"ph_a_n": "Đã chuyển hết bản quyền, và 4C bị từ chối. Thợ không còn quyền dùng.",
+"ph_b_y": "Thợ vẫn là chủ, nhưng agent có license độc quyền trong địa ốc, nên thợ không được cho agent khác dùng. Portfolio trên site của mình thì được (4C).",
+"ph_b_n": "Agent có license độc quyền trong địa ốc, và 4C bị từ chối: không đăng portfolio, không cho agent khác dùng.",
+"ph_b_o": "Thợ vẫn là chủ hình. License độc quyền của agent chỉ trong địa ốc, nhưng 4C giới hạn việc thợ dùng hình. Chuyện dùng ngoài địa ốc form không nói rõ: hỏi luật sư.",
+"ph_n": "Không có PIA thì thợ là chủ bản quyền, trừ khi có giấy khác chuyển quyền.",
+"sel_ab": "Chủ nhà không phải một bên của PIA. Muốn dùng hình (cho thuê, đăng lại…), xin agent gốc; theo 4A agent là chủ, theo 4B agent được sublicense trong địa ốc.",
+"sel_b_o": "Ngoài địa ốc, license 4B của agent không phủ tới. Thợ là chủ: xin thợ.",
+"sel_n": "Không có PIA thì thợ thường là chủ bản quyền. Xin thợ bằng giấy.",
+"brk": "Đoạn 10: quyền với hình giữa agent và brokerage do một thỏa thuận giấy riêng quyết định. Coi giấy đó.",
+"brk_n": "Không có PIA thì thợ thường là chủ. Brokerage cần phép của thợ, và coi thỏa thuận với agent."
+},
+"t_note": "Luật mặc định của Mỹ: thợ chụp làm độc lập giữ bản quyền, muốn chuyển phải có giấy ký (17 U.S.C. §204). Đây là thông tin chung, không phải tư vấn luật.",
+"ns0": "Agent: ký PIA trước buổi chụp, và ghi ở đoạn 3 là thợ giao luôn hình gốc (để làm đúng AB 723 nếu có virtual staging). Cần tìm thợ có bảo hiểm và chứng chỉ drone FAA? Coi <a href=\"/t111/\">T111</a>.",
+"ns1": "Chủ nhà sắp bán: dọn nhà theo <a href=\"/t110/\">T110</a> trước ngày chụp, và hỏi agent bộ hình sẽ thuộc ai sau khi bán.",
+"ns2": "Muốn dùng lại hình cũ của căn mình? Xin giấy phép của agent gốc hoặc thợ trước khi đăng.",
+"ns3": "Tra các form listing khác trong <a href=\"/t402/\">T402 Thư viện forms</a>.",
+"my0": "<b>\"Nhà của tôi thì hình là của tôi.\"</b> Không. Theo PIA, hình thuộc agent (4A) hoặc thợ (4B). Chủ nhà không phải một bên trong form này. Muốn dùng, phải xin.",
+"my1": "<b>\"Hình đã lên MLS thì ai lấy cũng được.\"</b> Sai. Agent sau dùng lại hình mà không có giấy phép có thể bị MLS phạt. Tiết kiệm vài trăm tiền thợ không đáng một cái citation.",
+"my2": "<b>\"Trả tiền thợ rồi là có bản quyền.\"</b> Chưa. Muốn có bản quyền phải có giấy ký chuyển. Không có PIA hay giấy tương tự, thợ vẫn giữ bản quyền dù bạn đã trả đủ.",
+"subj": "Hình nhà thuộc ai (PIA) — kết quả tool T473",
+"body": "Chào Ken,\n\nTôi vừa dùng tool T473 (form PIA, hình nhà):\n\n{r}\n\nCho tôi hỏi thêm.\n\nGửi từ https://tools.kenlamrealty.com/t473/",
+"sms": "Chào Ken, tôi dùng tool T473 hình nhà: {r}. Cho tôi hỏi thêm."
+},
+"en": {
+"back": "← All tools",
+"sec_explain": "Part by part",
+"explain_hint": "In the same order as the form. Tap a part to open it.",
+"open_all": "Open all",
+"close_all": "Close all",
+"ex_l": "Example:",
+"sec_paper": "Sample sheet",
+"paper_note": "A simple illustration, not the real form. The real form is published by C.A.R.; your agent has it. Tap a line to see its explanation.",
+"sec_video": "45-second video",
+"b_video": "Watch 45-sec video",
+"ns_t": "Next steps",
+"my_t": "What people get wrong",
+"b_email": "Email me the result",
+"b_sms": "Text Ken",
+"ft_src": "Sources:",
+"ft_chk": "(checked 06/11/2026)",
+"ft_upd": "Updated",
+"ft_all": "All tools",
+"ft_dis": "Educational information, not legal or tax advice. For legal questions, ask a lawyer. C.A.R. forms are copyrighted; this page only summarizes them in our own words.",
+"lang": "Tiếng Việt",
+"sign": "Signatures",
+"title": "Who owns the listing photos: the PIA form",
+"sub": "The PIA is a contract between an agent and a photographer: what gets shot, what it costs, and who may use the photos, video and drone shots afterward. Below, a tool answers who may use them and whom to ask.",
+"doc_title": "Who owns the listing photos: the PIA form",
+"p0_n": "Opening lines: who signs",
+"p0_s": "Two parties: the Real Estate Licensee (REL, the licensed agent) and the Photographer. The homeowner is not a party to this form.",
+"p0_e": "On 02/10/2027 Agent X (REL) signs with Photographer Z to shoot 1234 Example Lane, San Jose, CA 95100.",
+"p1a_n": "What work, for which property",
+"p1a_s": "The agent hires the photographer to create photos, video, drone shots or other images (\"Images\"), to be used as home sellers permit, in the real estate industry. List the property; if none is listed, it covers properties the agent names from time to time.",
+"p1a_e": "Listed: 1234 Example Lane. 30 photos, 1 video, 5 drone shots.",
+"p1b_n": "How long it lasts",
+"p1b_s": "It lasts until (i) either side ends it in writing, or (ii) if checked, the Images are delivered, or (iii) if checked, a set date.",
+"p1b_e": "Box (ii): it ends when Photographer Z delivers on 02/12/2027. The image rights live on (see paragraph 9).",
+"p2_n": "Payment",
+"p2_s": "The agent pays (i) as stated in the agreement, or (ii) if checked, per the photographer's invoice schedule, or (iii) if checked, a total amount.",
+"p2_e": "Box (iii): $450 total for photos, video and drone.",
+"p3_n": "Specifications",
+"p3_s": "Images must be in a reasonable format and quality for Internet and print. Number, type and delivery details go on the blank lines.",
+"p3_e": "Written in: 30 landscape JPGs, one 60-second vertical 9:16 video, unedited originals too, download link within 48 hours.",
+"g4_g": "4 · Rights to the images (4A or 4B)",
+"p4a_n": "Full assignment to the agent (default)",
+"p4a_s": "Unless 4B is checked, 4A applies. The photographer irrevocably assigns all worldwide rights in the Images, including copyright, to the agent, and must cooperate: sign documents, give information, help file copyright applications if asked.",
+"p4a_e": "4B not checked. Agent X owns the copyright in the 30 photos of 1234 Example Lane.",
+"p4b_n": "Or: photographer keeps ownership, agent gets an exclusive license",
+"p4b_s": "If 4B is checked, the photographer keeps title. The agent gets an exclusive, worldwide, royalty-free, perpetual license to reproduce, distribute, display, adapt and publicly perform the Images in the real estate industry, such as advertising property and real estate services, may sublicense to others, and may sue for infringement, including past infringement.",
+"p4b_e": "Photographer Z wants to keep the copyright. Box 4B. Agent X still uses the photos on the MLS, Facebook and flyers, and lets Brokerage Y use them.",
+"p4c_n": "Photographer's portfolio license",
+"p4c_s": "Applies to 4A and 4B. By default the parties agree to give the photographer a limited license for a portfolio, only on the photographer's own site or platform to promote photo services. Check the box to refuse. No royalty beyond paragraph 2.",
+"p4c_e": "Not checked: Photographer Z may post 5 shots of 1234 Example Lane on Z's own website, but may not sell them to another agent.",
+"g5_g": "5–11 · Promises and general terms",
+"p5_n": "Photographer's warranty",
+"p5_s": "The photographer warrants owning all rights including copyright, that no third party has rights in the Images, and full power to sign. The agent need not credit the photographer.",
+"p5_e": "Photographer Z may not slip someone else's drone shot into the 1234 Example Lane set.",
+"p6_n": "Indemnity",
+"p6_s": "By default the photographer indemnifies, defends and holds the agent harmless from claims, costs and attorney fees from the photographer's material breach or a third-party claim of one. Check \"shall not\" to remove it.",
+"p6_e": "Another photographer sues Agent X over a shot in the set. With \"shall not\" unchecked, Photographer Z covers it.",
+"p7_n": "Drones",
+"p7_s": "The photographer warrants knowing and following drone rules, including Remote ID (14 CFR Part 89) and operations over people (14 CFR Part 107), and indemnifies the agent and Broker for drone damage to people or property.",
+"p7_e": "The drone lands on a neighbor's car at 1234 Example Lane. Photographer Z is responsible, not Agent X or Brokerage Y.",
+"p8_n": "Independent contractor",
+"p8_s": "The photographer is an independent contractor, not an employee, partner or joint venturer.",
+"p8_e": "Agent X does not run payroll or withhold wages for Photographer Z.",
+"p9_n": "Additional terms",
+"p9_s": "California law governs. It is the entire agreement and replaces earlier ones. Changes must be in a signed writing. Not enforcing a right is not a waiver. Paragraphs 4 to 9 survive the end of the agreement.",
+"p9_e": "The job ends on delivery, but five years later the paragraph 4 rights still stand.",
+"p10_n": "Broker identity and rights",
+"p10_s": "If the agent works under another broker's license, name that broker and DRE number. Rights to the Images as between agent and broker are set in a separate written agreement.",
+"p10_e": "Agent X works under Brokerage Y. If X changes offices, who keeps the 1234 Example Lane photos depends on their separate agreement.",
+"p11_n": "MLS rules on reuse",
+"p11_s": "MLS rules generally restrict, and may cite, later agents who reuse Images without prior written authorization from the original agent or another party with the legal right.",
+"p11_e": "Three years later a new owner relists 1234 Example Lane with Agent W. W may not reuse the old MLS photos without written permission.",
+"gN_g": "New law, outside the form",
+"pN_n": "Altered photos must be labeled (AB 723)",
+"pN_s": "Since 01/01/2026, California law (B&P Code §10140.8) requires digitally altered listing images, such as virtual staging or AI-added or removed items, to carry a conspicuous \"altered\" notice on or next to the image, plus a link, URL or QR code to the original. Normal lighting, cropping and color fixes are exempt. The 6/25 PIA does not address this, so agents should add to paragraph 3: the photographer also delivers unedited originals.",
+"pN_e": "The empty living room at 1234 Example Lane gets a virtual sofa. The posted image must say it was altered and link to the empty-room original.",
+"pS_n": "Signatures",
+"pS_s": "Photographer signs with address, phone and email; agent signs with DRE number and contact details, confirming each has read, understood and received a copy.",
+"pS_e": "Photographer Z and Agent X sign on 02/10/2027.",
+"pp_h": "Property images agreement",
+"pp_sub": "Illustration · PIA",
+"ppk0": "Date",
+"ppv0": "02/10/2027",
+"ppk1": "Agent (REL)",
+"ppv1": "Agent X",
+"ppk2": "Photographer",
+"ppv2": "Photographer Z",
+"pps3": "1–3 · Work",
+"ppk4": "1A · Property",
+"ppv4": "1234 Example Lane, San Jose, CA 95100",
+"ppk5": "1B · Ends",
+"ppv5": "☐ written notice  ☑ on delivery  ☐ date …",
+"ppk6": "2 · Pay",
+"ppv6": "☑ Total $450",
+"ppk7": "3 · Specs",
+"ppv7": "30 JPG · 1 video 9:16 · 5 drone · plus unedited originals",
+"pps8": "4 · Rights",
+"ppk9": "4A / 4B",
+"ppv9": "☑ 4A assignment  ☐ 4B license",
+"ppk10": "4C · Portfolio",
+"ppv10": "Agreed (\"do not agree\" left blank)",
+"pps11": "5–11",
+"ppk12": "6 · Indemnity",
+"ppv12": "Photographer does (\"shall not\" blank)",
+"ppk13": "7 · Drone",
+"ppv13": "Part 89 + Part 107",
+"ppk14": "10 · Broker",
+"ppv14": "Brokerage Y · DRE #00000000",
+"ppk15": "Signed",
+"ppv15": "Photographer Z · Agent X",
+"t_h": "Tool: who may use the photos?",
+"t_hint": "Pick which PIA option was signed, who wants the photos and for what. See the answer and whom to ask.",
+"l_pia": "What did agent and photographer sign?",
+"o_a": "PIA 4A (assignment)",
+"o_b": "PIA 4B (exclusive license)",
+"o_none": "No PIA",
+"l_who": "Who wants to use them?",
+"w_rel": "The agent who hired",
+"w_later": "A later agent (relisting)",
+"w_photog": "The photographer",
+"w_seller": "The homeowner",
+"w_broker": "The agent's brokerage",
+"l_use": "For what?",
+"u_re": "Real estate (selling, ads)",
+"u_other": "Outside real estate",
+"l_port": "Paragraph 4C: portfolio license for the photographer?",
+"p_yes": "Agreed (default)",
+"p_no": "Refused (box checked)",
+"r_k": "Answer",
+"n_own": "Who owns the copyright",
+"n_ask": "Whom to ask",
+"n_par": "Paragraphs",
+"V": {
+"yes": "Yes",
+"lim": "Yes, limited",
+"ask": "Get written permission first",
+"no": "No",
+"sep": "Check the separate agreement"
+},
+"O": {
+"rel": "The hiring agent",
+"photog": "The photographer"
+},
+"A": {
+"none": "No one",
+"rel": "The original agent (REL)",
+"photog": "The photographer",
+"relp": "Original agent, and the photographer if nothing is in writing",
+"brk": "Agent and brokerage (separate agreement)",
+"lawyer": "The photographer; check with a lawyer"
+},
+"W": {
+"rel_a": "Under 4A the agent owns the copyright and may use them.",
+"rel_b": "4B gives the agent an exclusive perpetual license in the real estate industry: property and services advertising.",
+"rel_b_o": "The 4B license covers real estate uses only. Outside that, the photographer owns them; ask the photographer.",
+"rel_n": "With no written transfer, the photographer keeps the copyright by default. Check what the invoice or terms allow.",
+"later_ab": "MLS rules: a later agent needs prior written authorization from the original agent or another rightful party. Reusing old MLS photos can draw a citation.",
+"later_n": "Without a PIA the photographer usually owns them. Ask the photographer, and MLS reuse rules still apply.",
+"ph_a_y": "The copyright went to the agent. Only a portfolio on the photographer's own site to promote photo services (4C).",
+"ph_a_n": "All rights were assigned and 4C was refused. No use for the photographer.",
+"ph_b_y": "The photographer owns them, but the agent holds the exclusive real estate license, so no licensing to other agents. A portfolio on the photographer's own site is fine (4C).",
+"ph_b_n": "The agent holds the exclusive real estate license and 4C was refused: no portfolio, no other agents.",
+"ph_b_o": "The photographer keeps title. The agent's exclusive license is real-estate-only, yet 4C limits the photographer's own use. The form is not clear on non-real-estate use: ask a lawyer.",
+"ph_n": "Without a PIA the photographer owns the copyright unless another writing transferred it.",
+"sel_ab": "The homeowner is not a PIA party. To use the photos (rental ad, reposting), ask the original agent: owner under 4A, may sublicense real estate use under 4B.",
+"sel_b_o": "Outside real estate the agent's 4B license does not reach. The photographer owns them: ask the photographer.",
+"sel_n": "Without a PIA the photographer usually owns them. Ask in writing.",
+"brk": "Paragraph 10: rights between agent and brokerage are set in a separate written agreement. Check it.",
+"brk_n": "Without a PIA the photographer usually owns them. The brokerage needs the photographer's permission and its agreement with the agent."
+},
+"t_note": "US default: an independent photographer keeps copyright, and a transfer must be in a signed writing (17 U.S.C. §204). General information, not legal advice.",
+"ns0": "Agents: sign the PIA before the shoot, not after delivery. Need a photographer with insurance and an FAA drone certificate? See <a href=\"/t111/\">T111</a>.",
+"ns1": "Sellers: prep with <a href=\"/t110/\">T110</a> before photo day, and ask your agent who will own the photos after the sale.",
+"ns2": "Want to reuse old photos of your home? Get written permission from the original agent or photographer before posting.",
+"ns3": "Look up the other listing forms in the <a href=\"/t402/\">T402 Forms Library</a>.",
+"my0": "<b>\"My house, my photos.\"</b> No. Under the PIA the photos belong to the agent (4A) or the photographer (4B). The homeowner is not a party. To use them, ask.",
+"my1": "<b>\"Once on the MLS, anyone can use them.\"</b> Wrong. A later agent reusing photos without written permission can be cited by the MLS. Saving a few hundred on a shoot is not worth a citation.",
+"my2": "<b>\"I paid, so I own the copyright.\"</b> Not yet. Copyright moves only with a signed writing. Without a PIA or similar, the photographer keeps it even though you paid in full.",
+"subj": "Who owns the photos (PIA) — T473 tool result",
+"body": "Hi Ken,\n\nI used the T473 tool (PIA form, listing photos):\n\n{r}\n\nI have a question.\n\nSent from https://tools.kenlamrealty.com/t473/",
+"sms": "Hi Ken, I used the T473 photo tool: {r}. I have a question."
+}
+};
+let lang='en';
+lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?Math.max(0,v):0};
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+const strip=s=>String(s).replace(/<[^>]+>/g,'').replace(/&amp;/g,'&');
+let SUMMARY='';
+function seg(id,cb){ $(id).addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return;
+  $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); cb(b.dataset.v); calc();}); }
+function links(){
+  const d=I18N[lang];
+  $('emailBtn').href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(d.subj)+'&body='+encodeURIComponent(fill(d.body,{r:SUMMARY}));
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,{r:SUMMARY.split('\n')[0]}));
+}
+let pia='a', who='rel', use='re', port=true;
+function model(i){
+  const own=i.pia==='a'?'rel':'photog'; let v,w,ask,par;
+  if(i.who==='rel'){
+    if(i.pia==='a'){v='yes';w='rel_a';ask='none';par='4A, 9';}
+    else if(i.pia==='b'){ if(i.use==='re'){v='yes';w='rel_b';ask='none';par='4B, 9';} else {v='ask';w='rel_b_o';ask='photog';par='1A, 4B';} }
+    else {v='ask';w='rel_n';ask='photog';par='—';}
+  } else if(i.who==='later'){
+    if(i.pia==='none'){v='ask';w='later_n';ask='photog';par='11';} else {v='ask';w='later_ab';ask='rel';par='11, 4B';}
+  } else if(i.who==='photog'){
+    if(i.pia==='a'){ if(i.port){v='lim';w='ph_a_y';ask='none';par='4A, 4C';} else {v='no';w='ph_a_n';ask='rel';par='4A, 4C';} }
+    else if(i.pia==='b'){ if(i.use==='other'){v='ask';w='ph_b_o';ask='lawyer';par='4B, 4C';} else if(i.port){v='lim';w='ph_b_y';ask='none';par='4B, 4C';} else {v='no';w='ph_b_n';ask='rel';par='4B, 4C';} }
+    else {v='yes';w='ph_n';ask='none';par='—';}
+  } else if(i.who==='seller'){
+    if(i.pia==='none'){v='ask';w='sel_n';ask='photog';par='—';}
+    else if(i.pia==='b'&&i.use==='other'){v='ask';w='sel_b_o';ask='photog';par='4B';}
+    else {v='ask';w='sel_ab';ask='rel';par=i.pia==='a'?'4A':'4B';}
+  } else {
+    if(i.pia==='none'){v='ask';w='brk_n';ask='photog';par='—';} else {v='sep';w='brk';ask='brk';par='10';}
+  }
+  return {own,v,w,ask,par};
+}
+function calc(){
+  const d=I18N[lang], m=model({pia,who,use,port});
+  $('portWrap').classList.toggle('hide',who!=='photog'||pia==='none');
+  $('oVerdict').textContent=d.V[m.v];
+  $('oVerdictBox').className='v word '+(m.v==='yes'||m.v==='lim'?'ok':(m.v==='no'?'bad':''));
+  $('oWhy').textContent=d.W[m.w]; $('oOwn').textContent=d.O[m.own]; $('oAsk').textContent=d.A[m.ask]; $('oPar').textContent=m.par;
+  const lbl=(g,v)=>{const b=document.querySelector('#'+g+' button[data-v="'+v+'"]');return b?b.textContent:v};
+  SUMMARY=lbl('whoSeg',who)+' · '+lbl('piaSeg',pia)+' · '+lbl('useSeg',use)+' → '+d.V[m.v]+'\n'+d.W[m.w]+'\n'+d.n_own+': '+d.O[m.own]+'\n'+d.n_ask+': '+d.A[m.ask]+'\n'+d.n_par+': '+m.par;
+  links();
+}
+seg('piaSeg',v=>pia=v); seg('whoSeg',v=>who=v); seg('useSeg',v=>use=v); seg('portSeg',v=>port=v==='1');
+window.__model=model;
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; document.title=strip(d.doc_title)+' · Ken Lam Tools';
+  syncToggle(); calc();
+}
+/* explanations: open all / close all; paper rows jump to the paragraph */
+const paras=()=>[...document.querySelectorAll('details.para')];
+function syncToggle(){ const allOpen=paras().every(p=>p.open); $('toggleAll').textContent=I18N[lang][allOpen?'close_all':'open_all']; }
+$('toggleAll').onclick=()=>{ const allOpen=paras().every(p=>p.open); paras().forEach(p=>p.open=!allOpen); syncToggle(); };
+paras().forEach(p=>p.addEventListener('toggle',syncToggle));
+document.querySelectorAll('.pr').forEach(b=>b.addEventListener('click',()=>{
+  const t=$(b.dataset.go); if(!t) return; t.open=true; t.classList.add('flash'); setTimeout(()=>t.classList.remove('flash'),1600);
+  t.scrollIntoView({behavior:'smooth',block:'start'});
+}));
+function playVid(){ $('videoSec').scrollIntoView({behavior:'smooth',block:'start'}); const v=$('vid'); try{ const p=v.play(); if(p&&p.catch) p.catch(()=>{}); }catch(e){} }
+$('vidBtn').onclick=playVid; $('videoBtn').onclick=playVid;
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+applyLang();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
