@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Notice of Entry (NOE) · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="California Notice of Entry explained: 24 hours if delivered, 6 days if mailed, business hours, valid reasons. Enter your times and see the earliest legal entry.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t565/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Notice of Entry (NOE) · Ken Lam Tools">
+<meta property="og:description" content="California Notice of Entry explained: 24 hours if delivered, 6 days if mailed, business hours, valid reasons. Enter your times and see the earliest legal entry.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t565/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* Forms-explained additions */
+[hidden]{display:none!important}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl select:focus-visible{outline:none}
+.ctl .chev{color:var(--muted);font-size:13px;pointer-events:none}
+.ctl input[type=date],.ctl input[type=time]{font-size:17px;min-height:48px}
+.field[hidden]{display:none}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.card h2,.steps h2,h2.sec{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+h2.sec{margin-top:6px}
+.card p{margin:0;font-size:15px}
+.card ul,.card ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.muted{color:var(--muted);font-size:13px!important}
+details{border-top:1px solid var(--line);padding:10px 0}
+details:last-of-type{border-bottom:1px solid var(--line)}
+summary{cursor:pointer;font-weight:500;font-size:15px;list-style:none;display:flex;gap:8px;align-items:baseline}
+summary::-webkit-details-marker{display:none}
+summary::before{content:'+';color:var(--brass);font-weight:600;width:12px;flex:none}
+details[open] summary::before{content:'–'}
+details p{margin:8px 0 0 20px!important;color:var(--fg);font-size:15px}
+.filled{border:1px dashed var(--brass);border-radius:10px;padding:6px 14px;background:var(--bg)}
+.frow{display:grid;grid-template-columns:minmax(0,38%) minmax(0,1fr);gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.frow:last-child{border-bottom:0}
+.frow .fk{color:var(--muted)}
+.frow .fv{font-weight:500;overflow-wrap:anywhere}
+.card h3{font-size:14px;font-weight:600;margin:4px 0 0;letter-spacing:.02em}
+.law{display:grid;gap:4px}
+.law .tag{justify-self:start;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:4px 11px;background:var(--brass-soft);color:var(--fg);font-weight:500}
+.law .tag.bad{background:transparent;border:1px solid var(--warn);color:var(--warn)}
+.law .tag.ok{background:transparent;border:1px solid var(--ok);color:var(--ok)}
+.law .why{font-size:14px;color:var(--muted);margin:0}
+.total .v.word{font-size:40px}
+.total .v.mid{font-size:44px}
+.steps{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.steps ol,.steps ul{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.card a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.legal{font-size:12px;color:var(--muted);line-height:1.5}
+footer .src a{overflow-wrap:anywhere}
+.line .a.w{white-space:normal;text-align:right;min-width:0;max-width:58%}
+.line .n{flex:1 1 auto}
+.vid{display:grid;justify-items:center;gap:8px}
+.vid video{width:100%;max-width:360px;aspect-ratio:9/16;border-radius:14px;background:#000;border:1px solid var(--line)}
+.vid p{margin:0;font-size:13px;color:var(--muted)}
+.sched{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.sched li{border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;background:var(--bg)}
+.sched li b{font-weight:500}
+.sched li span{display:block;color:var(--muted);font-size:13px}
+.chk{display:grid;gap:6px;margin:0;padding:0;list-style:none;font-size:14px}
+.chk li::before{content:'✓ ';color:var(--ok)}
+.chk li.x::before{content:'✕ ';color:var(--warn)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Notice of Entry (NOE)</h1>
+    <p class="sub" data-i="sub">The written heads-up a landlord gives before entering a rented home. See the earliest legal entry time and whether your reason counts.</p>
+  </header>
+
+  <section class="card">
+    <h2 data-i="h_what">What does this form say?</h2>
+    <p data-i="what">A rented home is the tenant’s home, even though the owner holds the title. It’s like lending your bike to a friend: you can’t just take it for a ride whenever you feel like it. You ask first. The NOE is that “asking first,” in writing. It tells the tenant the date, the rough time and the reason the owner is coming in. Hand it over (or leave it at the door) at least 24 hours ahead, or mail it at least 6 days ahead. Then come during normal business hours.</p>
+  </section>
+
+  <section class="card">
+    <h2 data-i="h_who">Who uses it, and when</h2>
+    <ul><li data-i="who1">Who gives it: the housing provider (owner), or the owner’s agent or manager.</li><li data-i="who2">Who gets it: the tenant and anyone else living in the unit.</li><li data-i="who3">When: before repairs, services, showings to buyers, lenders or new tenants, and smoke alarm, carbon monoxide or water-heater strap checks.</li><li data-i="who4">Deadline: 24 hours before entry if handed over or left at the door; 6 days before if mailed. A real emergency needs no notice.</li></ul>
+  </section>
+
+  <section class="card">
+    <h2 data-i="h_parts">Read the form, part by part</h2>
+    <p class="muted" data-i="h_parts_s">Tap a part to open it. These are our words, not the form’s.</p>
+    <div>
+<details><summary data-i="phdrs">To: tenant, premises, other notice address</summary><p data-i="phdr">Tenant names plus “any other occupants,” the full address and unit number. There’s a line for a different notice address if the lease lists one.</p></details>
+<details><summary data-i="p1s">¶1 Date and time of entry</summary><p data-i="p1">1A says the entry follows Civil Code §1954: at least 24 hours after personal delivery, or at least 6 days after mailing, and during normal business hours. 1B has room for two date-and-time choices — handy if the first slot doesn’t work for the tenant. Write a time window like 10 AM–12 PM, not “sometime this week.”</p></details>
+<details><summary data-i="p2s">¶2 Purpose of entry</summary><p data-i="p2">Check the real reason. A: necessary or agreed repairs (say what). B: necessary or agreed services. C: showing the home to buyers, lenders, new tenants, workers or contractors. D: smoke detectors, water-heater bracing, or carbon monoxide devices — each backed by its own Health & Safety Code section. E: another lawful reason you write in. “Just checking on things” is not on this list.</p></details>
+<details><summary data-i="psigs">Signatures</summary><p data-i="psig">The owner or agent signs and dates. There are two lines in case there are two owners.</p></details>
+<details><summary data-i="p3s">¶3 Delivery / proof of service</summary><p data-i="p3">Who delivered it and when. A, personal delivery: (1) handed to the tenant; (2) left with a responsible adult at the unit; or (3) left on, near or under the usual entry door where a reasonable person would find it. B, mail: then the entry date must be at least 6 days after mailing. The person who served it signs and prints a name. Keep a copy.</p></details>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 data-i="h_ex">Filled-in example</h2>
+    <p class="muted" data-i="ex_note">A sample, not a copy of the form. Names and address are made up.</p>
+    <div class="filled"><div class="frow"><span class="fk" data-i="e1k">To</span><span class="fv" data-i="e1v">Tenant B (người thuê B) and all other occupants</span></div><div class="frow"><span class="fk" data-i="e2k">Premises</span><span class="fv" data-i="e2v">1234 Example Lane, San Jose, CA 95100</span></div><div class="frow"><span class="fk" data-i="e3k">¶1B (i)</span><span class="fv" data-i="e3v">Thu 11/12/2026, 10:00 AM–12:00 PM</span></div><div class="frow"><span class="fk" data-i="e4k">¶1B (ii)</span><span class="fv" data-i="e4v">Fri 11/13/2026, 10:00 AM–12:00 PM</span></div><div class="frow"><span class="fk" data-i="e5k">¶2A Repairs</span><span class="fv" data-i="e5v">Plumber to fix leaking kitchen faucet</span></div><div class="frow"><span class="fk" data-i="e6k">¶3A(1) Served</span><span class="fv" data-i="e6v">Handed to Tenant B by Agent C, Mon 11/09/2026, 3:00 PM</span></div></div>
+    <h3 data-i="ex_why">Why it’s filled this way</h3>
+    <ol><li data-i="w1">Handed over Monday at 3 PM, so the earliest legal entry is Tuesday at 3 PM. Thursday morning gives a cushion and sits inside business hours.</li><li data-i="w2">Two time slots let Tenant B pick one without a new notice.</li><li data-i="w3">The repair is spelled out. A vague “inspection” is how fights start.</li></ol>
+  </section>
+
+  <h2 class="sec" data-i="h_tool">Try it with your dates</h2>
+  <section class="inputs" aria-label="Inputs">
+    <div class="field"><label for="meth"><span data-i="l_meth">How the notice is delivered</span></label><div class="ctl"><select id="meth"><option value="personal" selected data-i="o_personal">Handed to tenant</option><option value="sub" data-i="o_sub">Left with an adult at the unit</option><option value="door" data-i="o_door">Left at / under the door</option><option value="mail" data-i="o_mail">Mailed</option><option value="email" data-i="o_email">Email or text only</option></select><span class="chev">▾</span></div></div>
+    <div class="field"><label for="purp"><span data-i="l_purp">Reason for entry</span></label><div class="ctl"><select id="purp"><option value="repair" selected data-i="o_repair">Repairs (necessary or agreed)</option><option value="service" data-i="o_service">Services (necessary or agreed)</option><option value="show" data-i="o_show">Show to buyers, lenders, tenants, contractors</option><option value="safety" data-i="o_safety">Smoke alarm, CO device, water-heater strap</option><option value="inspect" data-i="o_inspect">Pre-move-out inspection the tenant asked for</option><option value="emerg" data-i="o_emerg">Emergency (fire, flood, gas leak)</option><option value="aband" data-i="o_aband">Tenant abandoned or surrendered the unit</option><option value="check" data-i="o_check">Just check how the place looks</option></select><span class="chev">▾</span></div></div>
+    <div class="row2"><div class="field"><label for="dd"><span data-i="l_dd">Date delivered (or mailed)</span></label><div class="ctl"><input id="dd" type="date" value="2026-11-09"></div></div><div class="field"><label for="dt"><span data-i="l_dt">Time delivered</span></label><div class="ctl"><input id="dt" type="time" value="15:00"></div></div></div>
+    <div class="row2"><div class="field"><label for="pd"><span data-i="l_pd">Planned entry date</span></label><div class="ctl"><input id="pd" type="date" value="2026-11-12"></div></div><div class="field"><label for="pt"><span data-i="l_pt">Planned entry time</span></label><div class="ctl"><input id="pt" type="time" value="10:00"></div></div></div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="law"><span class="tag" id="tag"></span><p class="why" id="why"></p></div>
+    <div class="total"><div class="k" id="bigK"></div><div class="v mid" id="bigV"><span id="big"></span></div></div>
+    <div class="lines">
+      <div class="line" id="lRule"><span class="n"><b data-i="n_rule">Notice rule</b></span><span class="a w" id="oRule"></span></div>
+      <div class="line" id="lBiz"><span class="n"><b data-i="n_biz">Business hours used</b></span><span class="a w" id="oBiz"></span></div>
+      <div class="line" id="lPlan"><span class="n"><b data-i="n_plan">Your planned entry</b></span><span class="a w" id="oPlan"></span></div>
+      <div class="line" id="lBox"><span class="n"><b data-i="n_box">Box to check on the form</b></span><span class="a w" id="oBox"></span></div>
+      <div class="line" id="lSay"><span class="n"><b data-i="n_say">Notice must say</b></span><span class="a w" id="oSay"></span></div>
+    </div>
+    <div class="note" id="xNote"></div>
+  </section>
+
+
+  <section class="steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol><li data-i="ns1">Selling the home and need many showings? Use the <a href="/t566/">Notice of Sale and Entry (NSE)</a>: one written notice, then oral notice for each showing.</li><li data-i="ns2">Tenant moving out? Offer the <a href="/t568/">pre-move-out inspection (NRI)</a>, then give an NOE for that visit.</li><li data-i="ns3">Read the basics in the <a href="/t53/">tenant law overview</a>, or see <a href="/t560/">all forms explained</a>.</li></ol>
+  </section>
+  <section class="steps">
+    <h2 data-i="myth_t">Many people get this wrong</h2>
+    <p class="myth" data-i="m1"><b>“24 hours passed, so I can walk in anytime.”</b> No. 24 hours is the floor, not a key. You still need a date, a time window, a real reason, and business hours. I’ve watched owners lose good tenants over a 7 PM “quick look.”</p><p class="myth" data-i="m2"><b>“I texted them. That’s notice.”</b> A text with no date or time isn’t an NOE. Email or text only counts if the lease allows electronic notice — and even then, keep the paper version handy.</p><p class="myth" data-i="m3"><b>“It’s my house.”</b> It’s their home while the lease runs. Entering again and again to pressure a tenant is harassment under §1954(c). Courts don’t care who owns the deed.</p>
+  </section>
+
+  <div class="vid">
+    <video src="video.mp4" controls playsinline preload="metadata" poster="poster.jpg" aria-label="45-second video"></video>
+    <p data-i="vid_s">Vertical video, 45 seconds.</p>
+  </div>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t565/video.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 45-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this result to yourself</h2>
+    <p data-i="f_sub">Ken will reply and help you check your exact situation. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, text Ken the number below.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span class="legal" data-i="legal">Not legal advice. One wrong word in an eviction notice can lose the case in court — ask an attorney before you serve it.</span>
+    <span class="legal" data-i="ft_form">C.A.R. form NOE, Revised 6/23 — the form is copyrighted by C.A.R.; this page only explains it.</span>
+    <span class="src"><span data-i="ft_src">Sources:</span> <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=1954" target="_blank" rel="noopener">Civil Code §1954</a> · <a href="https://law.justia.com/codes/california/code-civ/division-3/part-4/title-5/chapter-2/section-1954" target="_blank" rel="noopener">§1954 (Justia, 2025)</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=HSC&amp;sectionNum=13113.7" target="_blank" rel="noopener">H&amp;S §13113.7</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=HSC&amp;sectionNum=17926.1" target="_blank" rel="noopener">H&amp;S §17926.1</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=HSC&amp;sectionNum=19211" target="_blank" rel="noopener">H&amp;S §19211</a> · <a href="https://www.sanjoseca.gov/your-government/departments-offices/housing/rental-rights/eviction-process" target="_blank" rel="noopener">San Jose TPO</a></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== LAW — every legal number for this tool lives here. Looked up 06/11/2026 (FACTS.md, NOE section). =====
+   Civil Code §1954 (VERIFIED, law.justia.com 2025 Code; official: leginfo CIV 1954; last amended SB 721, 2018):
+     purposes: emergency; necessary or agreed repairs/services; show to purchasers, mortgagees, tenants, workers, contractors;
+     abandonment/surrender; court order; certain inspections (e.g. 1950.5(f) pre-move-out).
+     Written notice: date, approximate time, purpose. 24 hours presumed reasonable for delivered notice; mailed notice at least 6 days before entry.
+     Normal business hours unless tenant consents at the time. No notice: emergency, tenant present and consents, after abandonment/surrender.
+     Agreed repairs: oral agreement OK if entry within 1 week. No abuse/harassment (1954(c)).
+   H&S 13113.7 (smoke), 17926.1 (CO), 19211 (water heater) — rights of entry listed on the form.
+   "Normal business hours" is not defined in the statute → Mon–Fri 8:00–17:00 is an ESTIMATE used only for this calculator.
+   Posting at the door is the form's method; §1954 lists none (ESTIMATE). Email/text does not start the clock unless the lease allows electronic notice (ESTIMATE).
+*/
+const LAW={noticeHours:24, mailDays:6, agreedRepairOralDays:7,
+  bizStartHour:8, bizEndHour:17, bizDays:[1,2,3,4,5] /* ESTIMATE */};
+
+const I18N={
+"en": {
+"h_what": "What does this form say?",
+"h_who": "Who uses it, and when",
+"h_parts": "Read the form, part by part",
+"h_parts_s": "Tap a part to open it. These are our words, not the form’s.",
+"h_ex": "Filled-in example",
+"ex_note": "A sample, not a copy of the form. Names and address are made up.",
+"ex_why": "Why it’s filled this way",
+"h_tool": "Try it with your dates",
+"ns_t": "Next steps",
+"myth_t": "Many people get this wrong",
+"vid_s": "Vertical video, 45 seconds.",
+"b_email": "Email me the result",
+"b_sms": "Ask Ken",
+"b_video": "Watch 45-sec video",
+"f_title": "Email this result to yourself",
+"f_sub": "Ken will reply and help you check your exact situation. No spam.",
+"f_name": "Name",
+"f_phone": "Phone (optional)",
+"f_send": "Send",
+"f_ok": "Email opened. Hit Send and you're done. If it didn't open, text Ken the number below.",
+"f_or": "Or text:",
+"f_copy": "Copy",
+"legal": "Not legal advice. One wrong word in an eviction notice can lose the case in court — ask an attorney before you serve it.",
+"ft_src": "Sources:",
+"ft_upd": "Updated",
+"ft_all": "All tools",
+"est": "estimate",
+"yes": "Yes",
+"no": "No",
+"days": "days",
+"lang": "Tiếng Việt",
+"wd": [
+"Sun",
+"Mon",
+"Tue",
+"Wed",
+"Thu",
+"Fri",
+"Sat"
+],
+"title": "Notice of Entry (NOE)",
+"sub": "The written heads-up a landlord gives before entering a rented home. See the earliest legal entry time and whether your reason counts.",
+"what": "A rented home is the tenant’s home, even though the owner holds the title. It’s like lending your bike to a friend: you can’t just take it for a ride whenever you feel like it. You ask first. The NOE is that “asking first,” in writing. It tells the tenant the date, the rough time and the reason the owner is coming in. Hand it over (or leave it at the door) at least 24 hours ahead, or mail it at least 6 days ahead. Then come during normal business hours.",
+"who1": "Who gives it: the housing provider (owner), or the owner’s agent or manager.",
+"who2": "Who gets it: the tenant and anyone else living in the unit.",
+"who3": "When: before repairs, services, showings to buyers, lenders or new tenants, and smoke alarm, carbon monoxide or water-heater strap checks.",
+"who4": "Deadline: 24 hours before entry if handed over or left at the door; 6 days before if mailed. A real emergency needs no notice.",
+"phdrs": "To: tenant, premises, other notice address",
+"phdr": "Tenant names plus “any other occupants,” the full address and unit number. There’s a line for a different notice address if the lease lists one.",
+"p1s": "¶1 Date and time of entry",
+"p1": "1A says the entry follows Civil Code §1954: at least 24 hours after personal delivery, or at least 6 days after mailing, and during normal business hours. 1B has room for two date-and-time choices — handy if the first slot doesn’t work for the tenant. Write a time window like 10 AM–12 PM, not “sometime this week.”",
+"p2s": "¶2 Purpose of entry",
+"p2": "Check the real reason. A: necessary or agreed repairs (say what). B: necessary or agreed services. C: showing the home to buyers, lenders, new tenants, workers or contractors. D: smoke detectors, water-heater bracing, or carbon monoxide devices — each backed by its own Health & Safety Code section. E: another lawful reason you write in. “Just checking on things” is not on this list.",
+"psigs": "Signatures",
+"psig": "The owner or agent signs and dates. There are two lines in case there are two owners.",
+"p3s": "¶3 Delivery / proof of service",
+"p3": "Who delivered it and when. A, personal delivery: (1) handed to the tenant; (2) left with a responsible adult at the unit; or (3) left on, near or under the usual entry door where a reasonable person would find it. B, mail: then the entry date must be at least 6 days after mailing. The person who served it signs and prints a name. Keep a copy.",
+"e1k": "To",
+"e1v": "Tenant B (người thuê B) and all other occupants",
+"e2k": "Premises",
+"e2v": "1234 Example Lane, San Jose, CA 95100",
+"e3k": "¶1B (i)",
+"e3v": "Thu 11/12/2026, 10:00 AM–12:00 PM",
+"e4k": "¶1B (ii)",
+"e4v": "Fri 11/13/2026, 10:00 AM–12:00 PM",
+"e5k": "¶2A Repairs",
+"e5v": "Plumber to fix leaking kitchen faucet",
+"e6k": "¶3A(1) Served",
+"e6v": "Handed to Tenant B by Agent C, Mon 11/09/2026, 3:00 PM",
+"w1": "Handed over Monday at 3 PM, so the earliest legal entry is Tuesday at 3 PM. Thursday morning gives a cushion and sits inside business hours.",
+"w2": "Two time slots let Tenant B pick one without a new notice.",
+"w3": "The repair is spelled out. A vague “inspection” is how fights start.",
+"l_meth": "How the notice is delivered",
+"o_personal": "Handed to tenant",
+"o_sub": "Left with an adult at the unit",
+"o_door": "Left at / under the door",
+"o_mail": "Mailed",
+"o_email": "Email or text only",
+"l_purp": "Reason for entry",
+"o_repair": "Repairs (necessary or agreed)",
+"o_service": "Services (necessary or agreed)",
+"o_show": "Show to buyers, lenders, tenants, contractors",
+"o_safety": "Smoke alarm, CO device, water-heater strap",
+"o_inspect": "Pre-move-out inspection the tenant asked for",
+"o_emerg": "Emergency (fire, flood, gas leak)",
+"o_aband": "Tenant abandoned or surrendered the unit",
+"o_check": "Just check how the place looks",
+"l_dd": "Date delivered (or mailed)",
+"l_dt": "Time delivered",
+"l_pd": "Planned entry date",
+"l_pt": "Planned entry time",
+"k_earl": "Earliest legal entry",
+"k_bad": "Result",
+"w_any": "No notice needed",
+"w_bad": "Not a valid notice",
+"w_badp": "Reason doesn’t qualify",
+"n_rule": "Notice rule",
+"n_biz": "Business hours used",
+"n_plan": "Your planned entry",
+"n_box": "Box to check on the form",
+"n_say": "Notice must say",
+"rule_24": "24 hours after delivery",
+"rule_6": "6 days after mailing",
+"rule_none": "None",
+"biz": "Mon–Fri, 8 AM–5 PM ({est})",
+"say": "Date, approximate time window, purpose",
+"pl_ok": "OK",
+"pl_early": "Too early",
+"pl_hours": "Outside business hours ({est})",
+"pl_na": "—",
+"t_ok": "Valid reason",
+"t_none": "No notice needed",
+"t_bad": "Not allowed",
+"r_repair": "Repairs are on the §1954 list. Describe the repair on the form (¶2A).",
+"r_service": "Necessary or agreed services are on the §1954 list (¶2B).",
+"r_show": "Showing to buyers, lenders, new tenants, workers or contractors is on the list (¶2C). Selling for months? An NSE is easier.",
+"r_safety": "Smoke alarms, CO devices and water-heater straps each have their own Health & Safety Code right of entry (¶2D).",
+"r_inspect": "An inspection the law allows, such as the pre-move-out inspection (Civ. §1950.5(f)). Write it in at ¶2E.",
+"r_emerg": "In a real emergency the owner may enter without notice. Leave a note afterward and keep proof of the emergency ({est}).",
+"r_aband": "After the tenant abandons or surrenders the unit, no notice is needed. Be sure it’s really abandoned — guessing wrong is a lockout ({est}).",
+"r_check": "“Just checking” is not a reason §1954 allows. Pick a real purpose — repairs, a safety check — or don’t go in. Repeated visits to pressure a tenant count as harassment.",
+"r_email": "Email or text does not start the 24-hour or 6-day clock unless the lease allows electronic notice ({est}). Hand it over, leave it at the door, or mail it.",
+"x_24": "24 hours is the minimum the law presumes reasonable — not a pass to walk in at any hour after it.",
+"x_mail": "Mailed: the entry date must be at least 6 days after the mailing date. Write the mailing date in ¶3.",
+"x_oral": "Agreed repairs: if the tenant agrees out loud, entry within 1 week of that agreement works without a written NOE.",
+"x_wknd": "The law says “normal business hours” but doesn’t define them. Weekends and evenings: get the tenant’s OK at the time ({est}).",
+"x_sj": "San Jose: refusing lawful entry can be a just cause under the TPO — but only after proper notice like this one.",
+"ns1": "Selling the home and need many showings? Use the <a href=\"/t566/\">Notice of Sale and Entry (NSE)</a>: one written notice, then oral notice for each showing.",
+"ns2": "Tenant moving out? Offer the <a href=\"/t568/\">pre-move-out inspection (NRI)</a>, then give an NOE for that visit.",
+"ns3": "Read the basics in the <a href=\"/t53/\">tenant law overview</a>, or see <a href=\"/t560/\">all forms explained</a>.",
+"m1": "<b>“24 hours passed, so I can walk in anytime.”</b> No. 24 hours is the floor, not a key. You still need a date, a time window, a real reason, and business hours. I’ve watched owners lose good tenants over a 7 PM “quick look.”",
+"m2": "<b>“I texted them. That’s notice.”</b> A text with no date or time isn’t an NOE. Email or text only counts if the lease allows electronic notice — and even then, keep the paper version handy.",
+"m3": "<b>“It’s my house.”</b> It’s their home while the lease runs. Entering again and again to pressure a tenant is harassment under §1954(c). Courts don’t care who owns the deed.",
+"ft_form": "C.A.R. form NOE, Revised 6/23 — the form is copyrighted by C.A.R.; this page only explains it.",
+"sms": "Hi Ken, I used the Notice of Entry tool: delivered {del} ({meth}), reason: {purp}. Earliest entry: {earl}. Planned: {plan} → {chk}. Can you check?",
+"subj": "Notice of Entry check — {n}",
+"body": "Name: {n}\nEmail: {e}\nPhone: {ph}\n\nDelivered: {del} ({meth})\nReason: {purp}\n\nResult: {tag}\nEarliest legal entry: {earl}\nPlanned entry: {plan} → {chk}\n\nSent from tool T565 tools.kenlamrealty.com"
+},
+"vi": {
+"h_what": "Form này nói gì?",
+"h_who": "Ai dùng, khi nào",
+"h_parts": "Đọc từng phần của form",
+"h_parts_s": "Bấm từng phần để mở. Đây là lời giải thích, không phải chữ trong form.",
+"h_ex": "Ví dụ điền mẫu",
+"ex_note": "Chỉ là ví dụ, không phải bản sao form. Tên và địa chỉ là giả.",
+"ex_why": "Vì sao điền như vậy",
+"h_tool": "Thử với ngày của mình",
+"ns_t": "Bước tiếp theo",
+"myth_t": "Nhiều người hiểu sai",
+"vid_s": "Video dọc, 45 giây.",
+"b_email": "Gửi kết quả qua email",
+"b_sms": "Hỏi Ken",
+"b_video": "Xem video 45 giây",
+"f_title": "Gửi kết quả này về email",
+"f_sub": "Ken nhận được sẽ trả lời và giúp kiểm đúng trường hợp của mình. Không spam.",
+"f_name": "Tên",
+"f_phone": "Số điện thoại (không bắt buộc)",
+"f_send": "Gửi",
+"f_ok": "Đã mở email. Bấm Gửi là xong. Không mở được thì nhắn Ken số dưới đây.",
+"f_or": "Hoặc nhắn tin:",
+"f_copy": "Chép",
+"legal": "Không phải tư vấn pháp lý. Notice đuổi nhà sai một chữ là ra tòa thua — hỏi luật sư trước khi giao.",
+"ft_src": "Nguồn:",
+"ft_upd": "Cập nhật",
+"ft_all": "Tất cả công cụ",
+"est": "ước tính",
+"yes": "Có",
+"no": "Không",
+"days": "ngày",
+"lang": "English",
+"wd": [
+"Chủ Nhật",
+"Thứ Hai",
+"Thứ Ba",
+"Thứ Tư",
+"Thứ Năm",
+"Thứ Sáu",
+"Thứ Bảy"
+],
+"title": "Giấy báo chủ nhà vào nhà (NOE)",
+"sub": "Giấy chủ nhà đưa trước khi vào căn đang cho thuê. Biết liền giờ sớm nhất được vào và lý do có hợp lệ không.",
+"what": "Căn nhà cho thuê là nhà của người thuê, dù giấy chủ quyền đứng tên chủ. Giống cho bạn mượn xe đạp: mình không thể tự lấy lại chạy lúc nào cũng được. Phải hỏi trước. NOE là cái “hỏi trước” đó, bằng giấy. Giấy ghi ngày, giờ khoảng chừng và lý do chủ sẽ vào. Đưa tận tay (hoặc để ở cửa) ít nhất 24 giờ trước, hoặc gửi thư ít nhất 6 ngày trước. Rồi vào trong giờ làm việc bình thường.",
+"who1": "Ai đưa: chủ nhà (Housing Provider), hoặc agent hay người quản lý của chủ.",
+"who2": "Ai nhận: người thuê và mọi người khác đang ở trong căn.",
+"who3": "Khi nào: trước khi vào sửa chữa, làm dịch vụ, dẫn người mua, ngân hàng hay người thuê mới đi coi, và kiểm báo khói, máy báo khí CO, dây giằng bình nước nóng.",
+"who4": "Hạn: 24 giờ trước khi vào nếu đưa tay hoặc để ở cửa; 6 ngày trước nếu gửi thư. Khẩn cấp thật sự thì không cần báo.",
+"phdrs": "Gửi ai, căn nào, địa chỉ nhận khác",
+"phdr": "Tên người thuê cộng “mọi người khác đang ở”, địa chỉ đầy đủ và số căn. Có dòng ghi địa chỉ nhận giấy khác nếu lease có ghi.",
+"p1s": "¶1 Ngày giờ vào nhà",
+"p1": "1A nói việc vào nhà theo Civil Code §1954: ít nhất 24 giờ sau khi giao tay, hoặc ít nhất 6 ngày sau khi gửi thư, và trong giờ làm việc bình thường. 1B có chỗ ghi 2 lựa chọn ngày giờ — tiện khi giờ đầu người thuê không được. Ghi khoảng giờ rõ ràng như 10 giờ–12 giờ trưa, đừng ghi “trong tuần này”.",
+"p2s": "¶2 Lý do vào nhà",
+"p2": "Đánh đúng lý do thật. A: sửa chữa cần thiết hoặc đã thỏa thuận (ghi rõ sửa gì). B: dịch vụ cần thiết hoặc đã thỏa thuận. C: dẫn người mua, ngân hàng cho vay, người thuê mới, thợ hoặc nhà thầu đi coi. D: báo khói, dây giằng bình nước nóng, máy báo khí CO — mỗi cái có điều luật Health & Safety Code riêng. E: lý do hợp pháp khác tự ghi. “Ghé coi chơi” không có trong danh sách.",
+"psigs": "Chữ ký",
+"psig": "Chủ hoặc agent ký và ghi ngày. Có 2 dòng nếu nhà có 2 chủ.",
+"p3s": "¶3 Cách giao / chứng nhận đã giao",
+"p3": "Ai giao và ngày nào. A, giao tay: (1) đưa tận tay người thuê; (2) đưa cho người lớn đủ hiểu biết ở căn đó; hoặc (3) để trên, cạnh, hay nhét dưới cửa ra vào chính, chỗ người bình thường sẽ thấy. B, gửi thư: ngày vào nhà phải cách ngày gửi ít nhất 6 ngày. Người giao ký và ghi tên. Giữ 1 bản.",
+"e1k": "Gửi",
+"e1v": "Tenant B (người thuê B) và mọi người khác đang ở",
+"e2k": "Căn nhà",
+"e2v": "1234 Example Lane, San Jose, CA 95100",
+"e3k": "¶1B (i)",
+"e3v": "Thứ Năm 12/11/2026, 10:00–12:00",
+"e4k": "¶1B (ii)",
+"e4v": "Thứ Sáu 13/11/2026, 10:00–12:00",
+"e5k": "¶2A Sửa chữa",
+"e5v": "Thợ ống nước sửa vòi bếp bị rỉ",
+"e6k": "¶3A(1) Đã giao",
+"e6v": "Agent C đưa tận tay Tenant B, Thứ Hai 09/11/2026, 15:00",
+"w1": "Đưa tay chiều Thứ Hai lúc 3 giờ, nên sớm nhất được vào là 3 giờ chiều Thứ Ba. Chọn sáng Thứ Năm cho dư giờ và nằm trong giờ làm việc.",
+"w2": "Ghi 2 khung giờ để Tenant B chọn, khỏi phải làm giấy mới.",
+"w3": "Ghi rõ sửa gì. Ghi chung chung “kiểm tra nhà” là dễ cãi nhau.",
+"l_meth": "Cách giao giấy",
+"o_personal": "Đưa tận tay người thuê",
+"o_sub": "Đưa người lớn ở căn đó",
+"o_door": "Để ở cửa / nhét dưới cửa",
+"o_mail": "Gửi thư",
+"o_email": "Chỉ gửi email hoặc tin nhắn",
+"l_purp": "Lý do vào nhà",
+"o_repair": "Sửa chữa (cần thiết hoặc đã thỏa thuận)",
+"o_service": "Dịch vụ (cần thiết hoặc đã thỏa thuận)",
+"o_show": "Dẫn người mua, ngân hàng, người thuê, thợ đi coi",
+"o_safety": "Báo khói, máy báo CO, dây giằng bình nước nóng",
+"o_inspect": "Kiểm tra trước khi dọn ra (người thuê yêu cầu)",
+"o_emerg": "Khẩn cấp (cháy, ngập nước, rò gas)",
+"o_aband": "Người thuê bỏ nhà hoặc đã giao trả nhà",
+"o_check": "Chỉ ghé coi nhà ra sao",
+"l_dd": "Ngày giao (hoặc ngày gửi thư)",
+"l_dt": "Giờ giao",
+"l_pd": "Ngày định vào",
+"l_pt": "Giờ định vào",
+"k_earl": "Sớm nhất được vào",
+"k_bad": "Kết quả",
+"w_any": "Không cần báo trước",
+"w_bad": "Giấy báo không hợp lệ",
+"w_badp": "Lý do không hợp lệ",
+"n_rule": "Luật báo trước",
+"n_biz": "Giờ làm việc dùng để tính",
+"n_plan": "Giờ mình định vào",
+"n_box": "Ô cần đánh trong form",
+"n_say": "Giấy phải ghi",
+"rule_24": "24 giờ sau khi giao",
+"rule_6": "6 ngày sau khi gửi thư",
+"rule_none": "Không có",
+"biz": "Thứ Hai–Thứ Sáu, 8:00–17:00 ({est})",
+"say": "Ngày, khoảng giờ, lý do",
+"pl_ok": "Được",
+"pl_early": "Sớm quá",
+"pl_hours": "Ngoài giờ làm việc ({est})",
+"pl_na": "—",
+"t_ok": "Lý do hợp lệ",
+"t_none": "Không cần báo",
+"t_bad": "Không được",
+"r_repair": "Sửa chữa có trong danh sách của §1954. Ghi rõ sửa gì trong form (¶2A).",
+"r_service": "Dịch vụ cần thiết hoặc đã thỏa thuận có trong danh sách của §1954 (¶2B).",
+"r_show": "Dẫn người mua, ngân hàng, người thuê mới, thợ hoặc nhà thầu đi coi có trong danh sách (¶2C). Bán nhà kéo dài vài tháng? Dùng NSE cho gọn.",
+"r_safety": "Báo khói, máy báo CO và dây giằng bình nước nóng đều có điều luật Health & Safety Code riêng cho phép vào (¶2D).",
+"r_inspect": "Lần kiểm tra luật cho phép, như kiểm tra trước khi dọn ra (Civ. §1950.5(f)). Ghi vào ¶2E.",
+"r_emerg": "Khẩn cấp thật sự thì chủ được vào không cần báo. Vào xong để lại giấy và giữ bằng chứng chuyện khẩn cấp ({est}).",
+"r_aband": "Người thuê đã bỏ nhà hoặc giao trả nhà thì không cần báo. Phải chắc là bỏ thật — đoán sai là thành khóa cửa đuổi người trái luật ({est}).",
+"r_check": "“Ghé coi chơi” không phải lý do §1954 cho phép. Chọn lý do thật — sửa chữa, kiểm an toàn — hoặc đừng vào. Vào hoài để làm áp lực người thuê là quấy rối.",
+"r_email": "Email hay tin nhắn không bắt đầu tính 24 giờ hay 6 ngày, trừ khi lease cho phép báo điện tử ({est}). Đưa tay, để ở cửa, hoặc gửi thư.",
+"x_24": "24 giờ là mức tối thiểu luật coi là hợp lý — không phải giấy phép vào bất cứ giờ nào sau đó.",
+"x_mail": "Gửi thư: ngày vào nhà phải cách ngày gửi ít nhất 6 ngày. Ghi ngày gửi thư ở ¶3.",
+"x_oral": "Sửa chữa đã thỏa thuận: nếu người thuê đồng ý bằng miệng, vào trong vòng 1 tuần kể từ lúc đồng ý thì không cần NOE bằng giấy.",
+"x_wknd": "Luật ghi “giờ làm việc bình thường” nhưng không định nghĩa. Cuối tuần và buổi tối: hỏi người thuê đồng ý ngay lúc đó ({est}).",
+"x_sj": "San Jose: từ chối cho vào hợp pháp có thể thành just cause theo TPO — nhưng chỉ sau khi đã báo đúng cách như giấy này.",
+"ns1": "Bán nhà và cần dẫn khách nhiều lần? Dùng <a href=\"/t566/\">Giấy báo bán nhà và vào nhà (NSE)</a>: 1 giấy, rồi mỗi lần chỉ cần báo miệng.",
+"ns2": "Người thuê sắp dọn ra? Đưa <a href=\"/t568/\">giấy báo quyền kiểm tra trước khi dọn (NRI)</a>, rồi đưa NOE cho lần vào đó.",
+"ns3": "Đọc cơ bản trong <a href=\"/t53/\">tóm tắt luật thuê nhà</a>, hoặc coi <a href=\"/t560/\">mọi form địa ốc giải nghĩa</a>.",
+"m1": "<b>“Qua 24 giờ rồi, vào lúc nào cũng được.”</b> Sai. 24 giờ là mức sàn, không phải chìa khóa. Vẫn phải có ngày, khung giờ, lý do thật, và trong giờ làm việc. Tôi đã thấy chủ mất người thuê tốt chỉ vì một lần “ghé coi chút” lúc 7 giờ tối.",
+"m2": "<b>“Tôi nhắn tin rồi, vậy là báo rồi.”</b> Tin nhắn không có ngày giờ thì không phải NOE. Email hay tin nhắn chỉ tính khi lease cho phép báo điện tử — mà vậy cũng nên giữ bản giấy.",
+"m3": "<b>“Nhà của tôi mà.”</b> Còn lease thì đó là nhà của người ta. Vào hoài để làm áp lực là quấy rối theo §1954(c). Tòa không quan tâm ai đứng tên giấy chủ quyền.",
+"ft_form": "C.A.R. form NOE, Revised 6/23 — form thuộc bản quyền C.A.R.; trang này chỉ giải thích.",
+"sms": "Chào Ken, tôi vừa dùng tool Giấy báo vào nhà: giao {del} ({meth}), lý do: {purp}. Sớm nhất được vào: {earl}. Định vào: {plan} → {chk}. Ken kiểm giùm được không?",
+"subj": "Kiểm tra giấy báo vào nhà — {n}",
+"body": "Tên: {n}\nEmail: {e}\nĐiện thoại: {ph}\n\nNgày giao: {del} ({meth})\nLý do: {purp}\n\nKết quả: {tag}\nSớm nhất được vào: {earl}\nĐịnh vào: {plan} → {chk}\n\nGửi từ tool T565 tools.kenlamrealty.com"
+}
+};
+
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const fill=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+function D(s){const [y,m,d]=s.split('-').map(Number);return new Date(Date.UTC(y,m-1,d));}
+function DT(ds,ts){const [y,m,d]=ds.split('-').map(Number);const [h,mi]=(ts||'00:00').split(':').map(Number);return new Date(Date.UTC(y,m-1,d,h||0,mi||0));}
+function iso(d){return d.toISOString().slice(0,10);}
+function addDays(d,n){return new Date(d.getTime()+n*864e5);}
+function addYears(d,n){return new Date(Date.UTC(d.getUTCFullYear()+n,d.getUTCMonth(),d.getUTCDate()));}
+function todayStr(){const t=new Date();return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');}
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fdate(d){const L=I18N[lang],w=L.wd[d.getUTCDay()],y=d.getUTCFullYear(),m=d.getUTCMonth(),dd=d.getUTCDate();
+  return lang==='vi'? w+' '+String(dd).padStart(2,'0')+'/'+String(m+1).padStart(2,'0')+'/'+y : w+', '+MON[m]+' '+dd+', '+y;}
+function ftime(d){const h=d.getUTCHours(),mi=String(d.getUTCMinutes()).padStart(2,'0');
+  return lang==='vi'? h+':'+mi : ((h%12)||12)+':'+mi+' '+(h<12?'AM':'PM');}
+function fdt(d){return fdate(d)+(lang==='vi'?', ':' · ')+ftime(d);}
+let last={};
+function segWire(ids,set){ids.forEach(id=>{$(id).onclick=()=>{ids.forEach(j=>$(j).setAttribute('aria-pressed',j===id?'true':'false'));set($(id).dataset.v);calc();};});}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
+}
+
+
+function inBiz(t){const wd=t.getUTCDay(),h=t.getUTCHours()+t.getUTCMinutes()/60;return LAW.bizDays.includes(wd)&&h>=LAW.bizStartHour&&h<LAW.bizEndHour;}
+function nextBiz(t){
+  for(let k=0;k<15;k++){
+    const wd=t.getUTCDay(),h=t.getUTCHours()+t.getUTCMinutes()/60;
+    if(LAW.bizDays.includes(wd)){
+      if(h<LAW.bizStartHour) return new Date(Date.UTC(t.getUTCFullYear(),t.getUTCMonth(),t.getUTCDate(),LAW.bizStartHour,0));
+      if(h<LAW.bizEndHour) return t;
+    }
+    t=new Date(Date.UTC(t.getUTCFullYear(),t.getUTCMonth(),t.getUTCDate()+1,LAW.bizStartHour,0));
+  }
+  return t;
+}
+const BOX={repair:'2A',service:'2B',show:'2C',safety:'2D',inspect:'2E'};
+/* pure rule: i={meth,purp,dd,dt,pd,pt} */
+function noeRule(i){
+  const o={kind:'ok',notes:[]};
+  if(i.purp==='emerg'||i.purp==='aband'){o.kind='none';return o;}
+  if(i.purp==='check'){o.kind='badp';return o;}
+  if(i.meth==='email'){o.kind='bad';return o;}
+  o.box=BOX[i.purp];
+  let raw;
+  if(i.meth==='mail'){ raw=addDays(DT(i.dd,'00:00'),LAW.mailDays); o.rule='6'; o.notes.push('mail'); }
+  else { raw=new Date(DT(i.dd,i.dt).getTime()+LAW.noticeHours*36e5); o.rule='24'; o.notes.push('24'); }
+  o.raw=raw; o.earliest=nextBiz(raw);
+  if(i.pd){ const p=DT(i.pd,i.pt||'09:00'); o.plan=p; o.planChk = p<o.earliest?'early':(!inBiz(p)?'hours':'ok'); if(o.planChk==='hours') o.notes.push('wknd'); }
+  if(i.purp==='repair') o.notes.push('oral');
+  return o;
+}
+function calc(){
+  const d=I18N[lang], meth=$('meth').value, purp=$('purp').value;
+  const i={meth,purp,dd:$('dd').value||todayStr(),dt:$('dt').value||'09:00',pd:$('pd').value,pt:$('pt').value};
+  const r=noeRule(i);
+  const tag=$('tag');
+  tag.className='tag'+(r.kind==='ok'?'':r.kind==='none'?' ok':' bad');
+  tag.textContent = r.kind==='ok'?d.t_ok : r.kind==='none'?d.t_none : d.t_bad;
+  $('why').textContent=fill(r.kind==='bad'?d.r_email:d['r_'+purp],{est:d.est});
+  const ok=r.kind==='ok';
+  ['lRule','lBiz','lPlan','lBox','lSay'].forEach(id=>$(id).hidden=!ok);
+  if(ok){
+    $('bigK').textContent=d.k_earl; $('big').textContent=fdt(r.earliest); $('bigV').classList.remove('word');
+    $('oRule').textContent = r.rule==='6'?d.rule_6:d.rule_24;
+    $('oBiz').textContent = fill(d.biz,{est:d.est});
+    $('oPlan').textContent = r.plan? fdt(r.plan)+' → '+fill(d['pl_'+r.planChk],{est:d.est}) : d.pl_na;
+    $('oPlan').style.color = r.plan&&r.planChk!=='ok'?'var(--warn)':(r.plan?'var(--ok)':'');
+    $('oBox').textContent='¶'+r.box; $('oSay').textContent=d.say;
+  } else {
+    $('bigK').textContent=d.k_bad; $('bigV').classList.add('word');
+    $('big').textContent = r.kind==='none'?d.w_any : r.kind==='bad'?d.w_bad : d.w_badp;
+  }
+  const notes=r.notes.map(k=>fill(d['x_'+k],{est:d.est}));
+  notes.push(d.x_sj);
+  $('xNote').innerHTML=notes.join('<br>'); $('xNote').classList.toggle('hide',!notes.length);
+  last={del:fdt(DT(i.dd,i.dt)),meth:d['o_'+meth],purp:d['o_'+purp],tag:tag.textContent,
+    earl: ok?fdt(r.earliest):$('big').textContent, plan: r.plan?fdt(r.plan):'—', chk: ok&&r.plan?fill(d['pl_'+r.planChk],{est:d.est}):'—'};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last));
+}
+['meth','purp','dd','dt','pd','pt'].forEach(id=>{$(id).addEventListener('input',calc);$(id).addEventListener('change',calc);});
+if(typeof module!=='undefined'){module.exports={noeRule};}
+
+
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], o=Object.assign({},last,{n:$('fname').value.trim()||'—',e:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'});
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (Lead Email Parsing). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,o))+'&body='+encodeURIComponent(fill(d.body,o));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả công cụ';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
