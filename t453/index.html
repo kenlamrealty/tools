@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RGM Radon Và Nấm Mốc</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+/* ---- T227 thêm (không đổi class cũ) ---- */
+.task .dt{grid-column:2;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:13px;color:var(--muted)}
+.task .dt b{color:var(--fg);font-weight:500;font-variant-numeric:tabular-nums}
+.task .dt .hard{color:var(--warn);font-weight:500}
+.task .dt .soft{font-style:italic}
+.task .dt .gcal{padding:3px 9px;font-size:12px}
+.next-k{font-size:14px;color:var(--muted)}
+.next-k b{color:var(--fg);font-weight:500}
+.icsrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.icsrow .btn{padding:10px 14px;font-size:14px}
+.dd.hide{display:none}
+</style>
+
+<style>
+/* ---- Forms group (T480–T455) thêm, không đổi class cũ ---- */
+.sumc{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px 20px}
+.sumc .r{display:grid;grid-template-columns:minmax(0,7.5em) minmax(0,1fr);gap:4px 14px;padding:11px 0;border-bottom:1px solid var(--line);font-size:15px}
+.sumc .r:last-child{border-bottom:0}
+.sumc .r b{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);font-weight:600;padding-top:2px}
+@media (max-width:380px){.sumc .r{grid-template-columns:1fr}}
+.walk{display:grid;gap:14px;min-width:0}
+.walk h2,.tool h2,.mythl h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.walk .lead{margin:0;font-size:14px;color:var(--muted)}
+.chunk{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:10px;min-width:0}
+.chunk .ref{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);font-weight:600}
+.chunk h3{font-family:var(--display);font-weight:400;font-size:23px;line-height:1.15;margin:0}
+.chunk p{margin:0;font-size:15px}
+.pg{margin:0;background:var(--brass-soft);border-radius:10px;padding:8px;min-width:0}
+.pg .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:4px}
+.pg img{display:block;width:max(100%,640px);max-width:none;height:auto;background:#fff;border-radius:4px}
+.pg figcaption{font-size:12px;color:var(--muted);margin-top:6px;display:flex;justify-content:space-between;gap:6px 10px;flex-wrap:wrap}
+.pg figcaption a{color:var(--brass);text-decoration:none}
+@media (min-width:700px){.pg .hint{display:none}}
+.ex{font-size:14px;line-height:1.5;background:var(--bg);border-left:3px solid var(--brass);padding:9px 12px;border-radius:0 8px 8px 0}
+.ex b{font-weight:600}
+.tool{display:grid;gap:16px;min-width:0}
+.tool .sub2{margin:0;font-size:14px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:999px;padding:9px 13px;font:inherit;font-size:14px;line-height:1.25;cursor:pointer;text-align:left}
+.chip[aria-pressed="true"]{background:var(--brass-soft);border-color:var(--brass);font-weight:500}
+.chip[aria-pressed="true"]::before{content:"✓ ";color:var(--brass)}
+.lvl{font-size:15px;border-radius:10px;padding:12px 14px;line-height:1.45}
+.lvl b{font-weight:600}
+.lvl.hi{background:var(--warn);color:#FFFDF8}
+.lvl.mid{border:1.5px solid var(--warn);color:var(--fg)}
+.lvl.lo{background:var(--brass-soft)}
+.todo{margin:0;padding-left:20px;display:grid;gap:8px;font-size:14px;line-height:1.5}
+.items{display:grid;gap:0;border-top:1px solid var(--line)}
+.it{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.it .p{font-family:var(--display);font-size:24px;line-height:1;color:var(--brass);min-width:2.4em}
+.it .h{font-weight:500;font-size:15px}
+.it .h small{font-weight:400;color:var(--muted);font-size:12px;margin-left:6px}
+.it .w{grid-column:2;font-size:13.5px;color:var(--muted);line-height:1.5}
+.it.core .p{color:var(--muted)}
+.grp{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 0}
+.mythl{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.mythl ul{margin:0;padding-left:18px;display:grid;gap:12px;font-size:14px;line-height:1.55}
+.mythl b{color:var(--warn);font-weight:500}
+.vidw{display:grid;gap:8px}
+.vidw .k{font-size:13px;color:var(--muted);text-align:center}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:17px;padding:12px 4px}
+.line .a.big2{font-size:17px}
+.seg.g2{display:grid;grid-template-columns:1fr 1fr}.seg.g2 button{border-top:1px solid var(--line)}.seg.g2 button:nth-child(-n+2){border-top:0}
+.fine{font-size:12.5px;color:var(--muted);margin:0;line-height:1.5}
+</style>
+<meta name="description" content="C.A.R. RGM (HUD Form 9548-E) explained line by line, plus a radon checker: your pCi/L against the EPA 4 pCi/L action level, what to do next, and what this HUD release gives up.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t453/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="RGM — Radon Gas and Mold Notice (HUD), explained · Ken Lam Tools">
+<meta property="og:description" content="C.A.R. RGM (HUD Form 9548-E) explained line by line, plus a radon checker: your pCi/L against the EPA 4 pCi/L action level, what to do next, and what this HUD release gives up.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t453/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/" data-i="back">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools · T453</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title"></h1>
+    <p class="sub" data-i="sub"></p>
+  </header>
+
+  <section class="sumc" aria-label="Tóm tắt / Summary">
+    <div class="r"><b data-i="sum_what"></b><span data-i="s_what"></span></div>
+    <div class="r"><b data-i="sum_when"></b><span data-i="s_when"></span></div>
+    <div class="r"><b data-i="sum_who"></b><span data-i="s_who"></span></div>
+    <div class="r"><b data-i="sum_after"></b><span data-i="s_after"></span></div>
+  </section>
+
+  <section class="walk" aria-label="Walk-through">
+    <h2 data-i="wk_title"></h2>
+    <p class="lead" data-i="wk_lead"></p>
+    <article class="chunk">
+      <div class="ref" data-i="c1_r"></div>
+      <h3 data-i="c1_t"></h3>
+      <figure class="pg"><div class="scroll"><img src="p01.jpg" data-a="c1_alt" alt="" loading="eager" decoding="async"></div>
+        <figcaption><span class="hint" data-i="hint"></span><a href="p01.jpg" target="_blank" rel="noopener" data-i="zoom"></a></figcaption></figure>
+      <p data-i="c1_p"></p>
+      <div class="ex"><b data-i="ex_k"></b> <span data-i="c1_e"></span></div>
+    </article>
+    <article class="chunk">
+      <div class="ref" data-i="c2_r"></div>
+      <h3 data-i="c2_t"></h3>
+      <figure class="pg"><div class="scroll"><img src="p02.jpg" data-a="c2_alt" alt="" loading="eager" decoding="async"></div>
+        <figcaption><span class="hint" data-i="hint"></span><a href="p02.jpg" target="_blank" rel="noopener" data-i="zoom"></a></figcaption></figure>
+      <p data-i="c2_p"></p>
+      <div class="ex"><b data-i="ex_k"></b> <span data-i="c2_e"></span></div>
+    </article>
+    <article class="chunk">
+      <div class="ref" data-i="c3_r"></div>
+      <h3 data-i="c3_t"></h3>
+      <figure class="pg"><div class="scroll"><img src="p03.jpg" data-a="c3_alt" alt="" loading="lazy" decoding="async"></div>
+        <figcaption><span class="hint" data-i="hint"></span><a href="p03.jpg" target="_blank" rel="noopener" data-i="zoom"></a></figcaption></figure>
+      <p data-i="c3_p"></p>
+      <div class="ex"><b data-i="ex_k"></b> <span data-i="c3_e"></span></div>
+    </article>
+    <article class="chunk">
+      <div class="ref" data-i="c4_r"></div>
+      <h3 data-i="c4_t"></h3>
+      <figure class="pg"><div class="scroll"><img src="p04.jpg" data-a="c4_alt" alt="" loading="lazy" decoding="async"></div>
+        <figcaption><span class="hint" data-i="hint"></span><a href="p04.jpg" target="_blank" rel="noopener" data-i="zoom"></a></figcaption></figure>
+      <p data-i="c4_p"></p>
+      <div class="ex"><b data-i="ex_k"></b> <span data-i="c4_e"></span></div>
+    </article>
+    <article class="chunk">
+      <div class="ref" data-i="c5_r"></div>
+      <h3 data-i="c5_t"></h3>
+      <figure class="pg"><div class="scroll"><img src="p05.jpg" data-a="c5_alt" alt="" loading="lazy" decoding="async"></div>
+        <figcaption><span class="hint" data-i="hint"></span><a href="p05.jpg" target="_blank" rel="noopener" data-i="zoom"></a></figcaption></figure>
+      <p data-i="c5_p"></p>
+      <div class="ex"><b data-i="ex_k"></b> <span data-i="c5_e"></span></div>
+    </article>
+    <article class="chunk">
+      <div class="ref" data-i="c6_r"></div>
+      <h3 data-i="c6_t"></h3>
+      <figure class="pg"><div class="scroll"><img src="p06.jpg" data-a="c6_alt" alt="" loading="lazy" decoding="async"></div>
+        <figcaption><span class="hint" data-i="hint"></span><a href="p06.jpg" target="_blank" rel="noopener" data-i="zoom"></a></figcaption></figure>
+      <p data-i="c6_p"></p>
+      <div class="ex"><b data-i="ex_k"></b> <span data-i="c6_e"></span></div>
+    </article>
+  </section>
+
+  <section class="tool" aria-label="Tool">
+    <h2 data-i="tl_title"></h2>
+    <p class="sub2" data-i="tl_sub"></p>
+    <section class="inputs" aria-label="Inputs">
+      <div class="row2">
+        <div class="field"><label for="rad"><span data-i="l_rad"></span></label><div class="ctl"><input id="rad" type="number" inputmode="decimal" step="0.1" min="0" value="5.2"><span class="post">pCi/L</span></div></div>
+        <div class="field"><label for="yr"><span data-i="l_yr"></span></label><div class="ctl"><input id="yr" type="number" inputmode="numeric" min="1850" max="2030" value="1972"></div></div>
+      </div>
+      <div class="field"><label><span data-i="l_hud"></span></label>
+        <div class="seg" role="group"><button type="button" id="hYes" aria-pressed="true" data-i="h_yes"></button><button type="button" id="hNo" aria-pressed="false" data-i="h_no"></button></div></div>
+      <div class="row2">
+        <div class="field"><label><span data-i="l_base"></span></label>
+          <div class="seg" role="group"><button type="button" id="bNo" aria-pressed="true" data-i="no"></button><button type="button" id="bYes" aria-pressed="false" data-i="yes"></button></div></div>
+        <div class="field"><label><span data-i="l_mold"></span></label>
+          <div class="seg" role="group"><button type="button" id="mNo" aria-pressed="false" data-i="no"></button><button type="button" id="mYes" aria-pressed="false" data-i="yes"></button><button type="button" id="mUnk" aria-pressed="true" data-i="unk"></button></div></div>
+      </div>
+    </section>
+    <section class="result" aria-live="polite">
+      <div class="total"><div class="k" data-i="r_total"></div><div class="v"><span id="big">—</span> <small id="bigU">pCi/L</small></div></div>
+      <div class="lvl" id="lvl"></div>
+      <div class="lines" id="lines"></div>
+      <div><div class="k" style="font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px" data-i="r_todo"></div><ol class="todo" id="todo"></ol></div>
+      <div class="status" id="rel"></div>
+      <p class="fine" data-i="fine"></p>
+    </section>
+  </section>
+
+  <section class="mythl" aria-label="Myths">
+    <h2 data-i="myth_title"></h2>
+    <ul><li data-i="m1"></li><li data-i="m2"></li><li data-i="m3"></li></ul>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title"></h2>
+    <ol><li data-i="nx1"></li><li data-i="nx2"></li><li data-i="nx3"></li><li data-i="nx4"></li></ol>
+  </section>
+
+  <div class="vidw">
+    <video class="kl-vid" src="video.mp4" poster="poster.jpg" controls playsinline preload="none" style="width:100%;max-width:360px;display:block;margin:0 auto;border-radius:12px" aria-label="Video 45s"></video>
+    <div class="k" data-i="vid_k"></div>
+  </div>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email"></button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms"></a>
+    <a class="btn" id="videoBtn" href="/t453/video.mp4" target="_blank" rel="noopener" data-i="b_video"></a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title"></h2>
+    <p data-i="f_sub"></p>
+    <div class="field"><label for="fname"><span data-i="f_name"></span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone"></span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send"></button>
+    <div class="ok" id="sent" hidden data-i="f_ok"></div>
+    <div class="copyrow"><span data-i="f_or"></span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy"></button></div>
+  </section>
+
+  <footer>
+    <span data-i="ft_est"></span>
+    <span class="src"><span data-i="ft_src"></span>: <a href="https://www.hud.gov/sites/documents/9548-e.pdf" target="_blank" rel="noopener">HUD-9548-E</a> ·
+      <a href="https://epa.gov/radon/what-epas-action-level-radon-and-what-does-it-mean" target="_blank" rel="noopener">EPA — radon action level</a> ·
+      <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=HSC&sectionNum=26147" target="_blank" rel="noopener">H&amp;S Code §26147</a> ·
+      C.A.R. Form RGM Rev 12/23 · C.A.R. Form SBSA Rev 6/26 ¶A2, ¶A5, ¶A6</span>
+    <span data-i="ft_img"></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd"></span>: 2026-11-06 · <a href="/cong-cu/" data-i="ft_all"></a> · <a href="/t402/" data-i="ft_forms"></a></span>
+  </footer>
+</div>
+
+<script>
+const COMMON={"vi": {"lang": "English", "back": "← Tất cả tools", "sum_what": "Là gì", "sum_when": "Khi nào gặp", "sum_who": "Ai ký", "sum_after": "Ký rồi thì sao", "wk_title": "Đi qua form từng khúc", "wk_lead": "Hình chụp thật từ form (đã che địa chỉ thật, thay bằng 1234 Example Lane). Hình rộng thì kéo ngang để coi hết.", "ex_k": "Trong ví dụ của mình:", "zoom": "Mở hình lớn ⤢", "hint": "Kéo ngang để coi hết", "myth_title": "Nhiều người hiểu sai", "nx_title": "Bước tiếp theo", "vid_k": "Video 45 giây", "b_email": "Gửi kết quả qua email", "b_sms": "Hỏi Ken", "b_video": "Xem video 45 giây", "f_title": "Gửi kết quả này về email", "f_sub": "Ken nhận được sẽ trả lời, giải thích thêm chỗ anh chị còn thắc mắc. Không spam.", "f_name": "Tên", "f_phone": "Phone (không bắt buộc)", "f_send": "Gửi", "f_ok": "Đã mở email. Bấm Send là xong. Không mở được thì copy số ở dưới nhắn Ken.", "f_or": "Hoặc text:", "f_copy": "Copy", "ft_est": "Thông tin chung, không phải tư vấn luật hay thuế. Mỗi căn nhà, mỗi hợp đồng khác nhau. Hỏi luật sư trước khi ký nếu còn thắc mắc.", "ft_src": "Nguồn (tra 06/11/2026)", "ft_upd": "Cập nhật", "ft_all": "Tất cả tools", "ft_forms": "Mọi forms", "ft_img": "Hình trích từ C.A.R. Form RGM Revised 12/23 (© California Association of REALTORS®) để giải thích. Không thay luật sư."}, "en": {"lang": "Tiếng Việt", "back": "← All tools", "sum_what": "What it is", "sum_when": "When you see it", "sum_who": "Who signs", "sum_after": "After you sign", "wk_title": "Walk through the form, part by part", "wk_lead": "Real images from the form (the real address is covered and replaced with 1234 Example Lane). Swipe sideways on wide images.", "ex_k": "In our example:", "zoom": "Open large image ⤢", "hint": "Swipe to see it all", "myth_title": "What people often get wrong", "nx_title": "Next steps", "vid_k": "45-second video", "b_email": "Email me the result", "b_sms": "Ask Ken", "b_video": "Watch 45-sec video", "f_title": "Email this result to yourself", "f_sub": "Ken will reply and explain whatever is still unclear. No spam.", "f_name": "Name", "f_phone": "Phone (optional)", "f_send": "Send", "f_ok": "Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.", "f_or": "Or text:", "f_copy": "Copy", "ft_est": "General information, not legal or tax advice. Every home and every contract is different. Talk to an attorney before signing if anything is unclear.", "ft_src": "Sources (checked 11/06/2026)", "ft_upd": "Updated", "ft_all": "All tools", "ft_forms": "All forms", "ft_img": "Images excerpted from C.A.R. Form RGM Revised 12/23 (© California Association of REALTORS®) for explanation. Not a substitute for an attorney."}};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const usd=n=>'$'+Math.round(n).toLocaleString('en-US');
+const usd2=n=>'$'+(Math.round(n*100)/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+function seg(ids,cur){ ids.forEach(([id,v])=>$(id).setAttribute('aria-pressed',v===cur?'true':'false')); }
+
+/* ===== Số liệu — sửa ở đây khi đổi (tra 06/11/2026; nguồn /home/claude/forms/FACTS.md §13) =====
+   EPA_ACTION = 4 pCi/L: EPA khuyên sửa nếu ≥ 4 (~150 Bq/m³). EPA_CONSIDER = 2: cân nhắc sửa ở 2–4. Không có mức an toàn tuyệt đối.
+     https://epa.gov/radon/what-epas-action-level-radon-and-what-does-it-mean
+   BQ_PER_PCI = 37: 1 pCi/L = 37 Bq/m³ (đổi đơn vị).
+   LEAD_YEAR = 1978: nhà xây trước 1978 → khai sơn chì (LPD) và luật RRP của EPA (SBSA ¶D3).
+   RGM Rev 12/23 = HUD Form 9548-E: chỉ cho nhà HUD-owned; AS IS; người mua tự chịu sửa + hậu quả; release HUD và M&M contractor.
+   California không bắt test radon khi bán nhà (FACTS: ESTIMATE) → câu chữ để "thường". "Test ở tầng thấp nhất có người ở" = hướng dẫn chung, KEN DUYỆT. */
+const EPA_ACTION=4, EPA_CONSIDER=2, BQ_PER_PCI=37, LEAD_YEAR=1978;
+
+const T={vi:{
+ title:'RGM — Thông báo radon và nấm mốc (nhà HUD)',
+ sub:'Một trang HUD bắt người mua ký khi mua nhà HUD. Đọc xong biết mình đang miễn trừ cho ai, và kết quả radon của mình nằm ở mức nào.',
+ s_what:'Thông báo và giấy miễn trừ (release) của HUD về khí radon và nấm mốc. Bản C.A.R. của HUD Form 9548-E, 1 trang.',
+ s_when:'Chỉ khi mua nhà HUD, tức nhà vay FHA bị HUD lấy lại rồi bán ra. Nhà mua bán bình thường không dùng form này.',
+ s_who:'Người mua (Purchaser). Tối đa 2 chữ ký người mua ở cuối trang.',
+ s_after:'Bạn nhận nhà AS IS. Radon, mốc có thì tự sửa, tự chịu hậu quả kể cả sức khỏe. Không kiện HUD hay công ty quản lý (M&M contractor) về radon, mốc được nữa.',
+ c1_r:'Đầu trang',c1_t:'Form của HUD, chỉ dành cho nhà HUD',c1_alt:'RGM đầu trang: tên người mua, Property Case #, địa chỉ',
+ c1_p:'Tiêu đề ghi rõ: U.S. Department of Housing and Urban Development. Đây là form HUD, C.A.R. in lại. Điền tên người mua, số hồ sơ nhà (Property Case #) do HUD cấp, và địa chỉ.',
+ c1_e:'Anh A (người mua) mua căn HUD 1234 Example Lane, San Jose, CA 95100. Số case HUD ghi vô ô thứ hai, địa chỉ ô thứ ba.',
+ c2_r:'Đoạn 1–2',c2_t:'Radon, mốc có thể gây bệnh nặng. Nhà bán AS IS',c2_alt:'RGM đoạn in đậm và đoạn AS IS',
+ c2_p:'Câu in hoa: radon và một số loại mốc có thể gây bệnh nặng. Đoạn kế: nhà bán "AS IS", không hứa gì về tình trạng. HUD và M&M contractor (công ty HUD thuê quản lý, rao bán) nói họ không biết gì về radon, mốc, ngoài những gì đã đăng trên web.',
+ c2_e:'Trang rao nhà HUD không nhắc radon. Không có nghĩa là không có radon. Chỉ là HUD không biết.',
+ c3_r:'Đoạn 3',c3_t:'Radon là gì, mốc là gì',c3_alt:'RGM đoạn định nghĩa radon và mốc',
+ c3_p:'Radon: khí phóng xạ, không màu, không mùi. Mốc: nấm mọc thấy được bằng mắt, kể cả khi phải gỡ tường hay lật thảm mới thấy.',
+ c3_e:'Không ngửi được, không thấy được → cách duy nhất biết radon là test. Mốc nằm dưới tấm thảm phòng ngủ vẫn tính là mốc.',
+ c4_r:'Đoạn 4–5',c4_t:'Không dựa vào HUD. Tự test trước khi close',c4_alt:'RGM đoạn không dựa vào lời người bán, nên test trước khi close',
+ c4_p:'Người mua cam kết không dựa vào lời HUD nói, hay HUD không nói. Agent địa ốc thường không đủ chuyên môn về radon, mốc. Câu in hoa, gạch dưới: nên thuê chuyên gia test radon và mốc TRƯỚC KHI CLOSE. Câu cuối: người mua tự chịu mọi chi phí sửa và thiệt hại, kể cả sức khỏe.',
+ c4_e:'Anh A đặt test radon và kiểm tra mốc trong thời gian inspection. Kết quả 5.2 pCi/L, trên mức 4 của EPA. Anh A tự trả tiền làm hệ thống giảm radon, hoặc quyết định trước khi close.',
+ c5_r:'Đoạn 6',c5_t:'Giấy miễn trừ: không kiện HUD về radon, mốc',c5_alt:'RGM đoạn release, indemnify, hold harmless',
+ c5_p:'Đổi lại việc HUD bán nhà, người mua miễn trừ (release), bồi thường (indemnify), và không đòi (hold harmless) HUD và M&M contractor về radon, mốc. Cả bây giờ lẫn sau này.',
+ c5_e:'Hai năm sau Anh A phát hiện mốc trong tường bếp. Theo form này, Anh A không đòi HUD hay M&M contractor được.',
+ c6_r:'Đoạn 7 · chữ ký',c6_t:'Đã có cơ hội hỏi luật sư. Ký là xong',c6_alt:'RGM đoạn cuối và chỗ ký tên',
+ c6_p:'Người mua xác nhận đã có cơ hội đưa luật sư coi, đã đọc và hiểu. Lời cam kết này là lý do HUD đồng ý bán. Ghi ngày, ký, in tên.',
+ c6_e:'Anh A muốn luật sư coi → làm trước khi ký. Ký rồi mới hỏi thì form đã ghi là anh có cơ hội rồi.',
+ tl_title:'Kết quả radon của tôi nằm ở mức nào?',tl_sub:'Nhập số pCi/L trong báo cáo test (để trống nếu chưa test). Tool so với mức của EPA và nói việc nên làm. Không lưu, không gửi đi đâu.',
+ l_rad:'Kết quả radon',l_yr:'Năm xây nhà',l_hud:'Đây là nhà HUD?',h_yes:'Có, nhà HUD',h_no:'Không, nhà thường',
+ l_base:'Có tầng hầm hoặc crawlspace?',l_mold:'Thấy mốc hoặc dấu nước?',yes:'Có',no:'Không',unk:'Chưa biết',
+ r_total:'Radon',r_todo:'Việc nên làm',
+ lv_hi:'<b>Nên sửa.</b> Bằng hoặc trên mức hành động của EPA: 4 pCi/L.',
+ lv_mid:'<b>Cân nhắc sửa.</b> EPA khuyên cân nhắc ở mức 2–4 pCi/L.',
+ lv_lo:'<b>Thấp.</b> Dưới 2 pCi/L. EPA nói không có mức nào an toàn tuyệt đối.',
+ lv_none:'<b>Chưa có kết quả.</b> Radon không màu, không mùi. Chỉ có test mới biết.',
+ ln_bq:'<b>Đổi ra Bq/m³</b><small>1 pCi/L = 37 Bq/m³</small>',ln_epa:'<b>Mức hành động EPA</b><small>sửa nếu bằng hoặc trên</small>',ln_x:'<b>So với mức 4</b>',
+ t_test:'Đặt test radon trong thời gian inspection, trước khi close. Thường test ở tầng thấp nhất có người ở.',
+ t_pro:'Thuê chuyên gia giảm radon (mitigation). Hỏi giá trước khi bỏ contingency.',
+ t_retest:'Test lại sau khi làm hệ thống, để chắc số đã xuống.',
+ t_consider:'Hỏi chuyên gia có nên làm hệ thống không. Test lại lần 2 để chắc.',
+ t_lo:'Giữ báo cáo test. Sau này sửa nhà lớn (đào móng, làm tầng hầm) thì test lại.',
+ t_base:'Có tầng hầm/crawlspace: khí từ đất dễ vào. Test đúng tầng thấp nhất có người ở.',
+ t_moldY:'Thấy mốc: thuê environmental hygienist test và tìm nguồn nước trước khi close (SBSA ¶A6).',
+ t_moldU:'Inspection thường không test mốc, không nhìn sau tường (SBSA ¶A5). Muốn chắc thì thuê test riêng.',
+ t_lead:'Nhà xây trước 1978: có thể có sơn chì. Đọc tờ khai sơn chì; thợ sửa phải có chứng chỉ RRP (SBSA ¶D3).',
+ rel_hud:'<b>Form RGM áp dụng.</b> Ký là bạn: nhận nhà AS IS, tự chịu sửa radon/mốc và hậu quả sức khỏe, và miễn trừ cho HUD + M&M contractor mọi khiếu nại về radon, mốc, bây giờ và sau này.',
+ rel_no:'<b>Nhà thường không dùng RGM.</b> Người bán vẫn phải khai điều mình biết (TDS, SPQ). Bạn có quyền inspection trong thời gian contingency của hợp đồng RPA. Mốc và radon được nhắc trong SBSA ¶A2, ¶A6.',
+ fine:'Số EPA: mức hành động 4 pCi/L, cân nhắc 2–4. Tool chỉ để hiểu, không thay chuyên gia radon hay luật sư.',
+ m1:'<b>"HUD đã kiểm tra nhà rồi."</b> Không. Form ghi rõ HUD không biết gì về radon, mốc ngoài những gì đã đăng. Nhà HUD thường bỏ trống lâu, ống nước, mái hư mà không ai hay. Test đi, tiền test rẻ hơn tiền sửa nhiều.',
+ m2:'<b>"Mốc hiện ra sau này thì kiện HUD."</b> Không được. Ký RGM là đã miễn trừ cho HUD và M&M contractor mọi khiếu nại về radon, mốc, cả sau này. Hỏi luật sư thì hỏi trước khi ký.',
+ m3:'<b>"Bay Area không có radon."</b> Mức radon khác nhau từng căn, từng khu. Nhà bên cạnh thấp không có nghĩa nhà mình thấp. Chỉ có test mới biết. EPA: từ 4 pCi/L là nên sửa.',
+ nx1:'Mốc, radon, môi trường trong mua bán thường: đọc SBSA ¶A2, ¶A6 ở <a href="/t454/">T454</a>.',
+ nx2:'Thời hạn inspection và bỏ contingency trong hợp đồng mua: <a href="/t401/">T401 (RPA)</a> và lịch escrow <a href="/t60/">T60</a>.',
+ nx3:'Người bán khai gì về nước, mốc: <a href="/t455/">T455 (SPQ)</a>.',
+ nx4:'Cho thuê nhà có mốc? Coi phần disclosures trong lease ở <a href="/t490/">T490 (RLMM)</a>. Mọi forms: <a href="/t402/">T402</a>.',
+ sms:'Chào Ken, tôi xem tool RGM (T453) trên tools.kenlamrealty.com: {s}. Cho tôi hỏi thêm.',
+ subj:'Radon và nấm mốc (RGM) — {n}',
+ body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\n{lines}\n\nThông tin chung, không thay chuyên gia hay luật sư.\nGửi từ tool T453 tools.kenlamrealty.com/t453/'
+},en:{
+ title:'RGM — Radon gas and mold notice (HUD homes)',
+ sub:'A one-page HUD release buyers sign when buying a HUD home. Learn who you are releasing, and where your radon result stands.',
+ s_what:'HUD\'s notice and release about radon gas and mold. The C.A.R. reproduction of HUD Form 9548-E, 1 page.',
+ s_when:'Only when buying a HUD-owned home (an FHA-loan home HUD took back and resells). Ordinary resales do not use this form.',
+ s_who:'The purchaser(s). Up to two purchaser signatures at the bottom.',
+ s_after:'You take the home AS IS. Any radon or mold is yours to fix, including health effects. You can no longer bring radon or mold claims against HUD or its M&M contractor.',
+ c1_r:'Top of page',c1_t:'A HUD form, for HUD homes only',c1_alt:'RGM top: buyer name, Property Case #, address',
+ c1_p:'The header says it: U.S. Department of Housing and Urban Development. It is HUD\'s form, reprinted by C.A.R. Fill in the buyer\'s name, the HUD Property Case #, and the address.',
+ c1_e:'Mr. A (buyer) buys the HUD home at 1234 Example Lane, San Jose, CA 95100. The HUD case number goes in the second box, the address in the third.',
+ c2_r:'Paragraphs 1–2',c2_t:'Radon and mold can cause serious illness. Sold AS IS',c2_alt:'RGM bold notice and AS IS paragraph',
+ c2_p:'All caps: radon gas and some molds can cause serious health problems. Next: the home is sold "AS IS", with no promises about condition. HUD and its M&M contractor (the company HUD hires to manage and market it) say they know nothing about radon or mold beyond what they posted online.',
+ c2_e:'The HUD listing says nothing about radon. That does not mean there is none. It means HUD doesn\'t know.',
+ c3_r:'Paragraph 3',c3_t:'What radon is, what mold is',c3_alt:'RGM definitions of radon and mold',
+ c3_p:'Radon: an invisible, odorless radioactive gas. Mold: visible fungus growth, including growth you only see after removing a wall or lifting carpet.',
+ c3_e:'You can\'t smell or see it → the only way to know about radon is a test. Mold under the bedroom carpet still counts as mold.',
+ c4_r:'Paragraphs 4–5',c4_t:'Don\'t rely on HUD. Test before closing',c4_alt:'RGM no-reliance paragraph and test-before-closing advice',
+ c4_p:'The buyer promises not to rely on what HUD said, or didn\'t say. Real estate agents generally aren\'t qualified to advise on radon or mold. In caps, underlined: hire qualified professionals to test for radon and mold BEFORE CLOSING. Last line: the buyer alone pays for any remediation and damages, including health effects.',
+ c4_e:'Mr. A orders a radon test and a mold check during the inspection period. Result: 5.2 pCi/L, above EPA\'s 4. Mr. A pays for a mitigation system himself, or decides before closing.',
+ c5_r:'Paragraph 6',c5_t:'The release: no radon or mold claims against HUD',c5_alt:'RGM release, indemnify, hold harmless paragraph',
+ c5_p:'In exchange for the sale, the buyer releases, indemnifies and holds harmless HUD and the M&M contractor from radon and mold claims, now and in the future.',
+ c5_e:'Two years later Mr. A finds mold inside the kitchen wall. Under this form, he can\'t claim against HUD or the M&M contractor.',
+ c6_r:'Paragraph 7 · signatures',c6_t:'You had the chance to ask a lawyer. Signing ends it',c6_alt:'RGM last paragraph and signature lines',
+ c6_p:'The buyer confirms they had the chance to have an attorney review it, and read and understood it. These promises are why HUD agrees to sell. Date, sign, print name.',
+ c6_e:'Mr. A wants a lawyer to look → do it before signing. Afterwards, the form already says he had the chance.',
+ tl_title:'Where does my radon result stand?',tl_sub:'Enter the pCi/L from your test report (leave blank if not tested yet). The tool compares it with EPA\'s levels and lists next steps. Nothing is saved or sent.',
+ l_rad:'Radon result',l_yr:'Year built',l_hud:'Is it a HUD home?',h_yes:'Yes, HUD home',h_no:'No, regular sale',
+ l_base:'Basement or crawlspace?',l_mold:'Visible mold or water stains?',yes:'Yes',no:'No',unk:'Not sure',
+ r_total:'Radon',r_todo:'What to do',
+ lv_hi:'<b>Fix it.</b> At or above EPA\'s action level of 4 pCi/L.',
+ lv_mid:'<b>Consider fixing.</b> EPA suggests considering it at 2–4 pCi/L.',
+ lv_lo:'<b>Low.</b> Under 2 pCi/L. EPA says no level is completely safe.',
+ lv_none:'<b>No result yet.</b> Radon has no color or smell. Only a test tells.',
+ ln_bq:'<b>In Bq/m³</b><small>1 pCi/L = 37 Bq/m³</small>',ln_epa:'<b>EPA action level</b><small>fix at or above</small>',ln_x:'<b>Compared with 4</b>',
+ t_test:'Order a radon test during the inspection period, before closing. It is usually done on the lowest lived-in level.',
+ t_pro:'Hire a radon mitigation professional. Get a price before removing contingencies.',
+ t_retest:'Retest after the system is installed to confirm the level dropped.',
+ t_consider:'Ask a professional whether a system makes sense. Retest to confirm.',
+ t_lo:'Keep the report. Retest after major work (foundation, basement).',
+ t_base:'Basement/crawlspace: soil gas gets in more easily. Test on the lowest lived-in level.',
+ t_moldY:'Visible mold: hire an environmental hygienist to test and find the water source before closing (SBSA ¶A6).',
+ t_moldU:'A general inspection usually doesn\'t test for mold or look behind walls (SBSA ¶A5). Order a separate test to be sure.',
+ t_lead:'Built before 1978: lead paint is possible. Read the lead disclosure; contractors need EPA RRP certification (SBSA ¶D3).',
+ rel_hud:'<b>RGM applies.</b> By signing you take the home AS IS, pay for any radon/mold work and health effects yourself, and release HUD + the M&M contractor from all radon and mold claims, now and later.',
+ rel_no:'<b>Regular sales don\'t use RGM.</b> The seller still must disclose what they know (TDS, SPQ). You have inspection rights during the RPA contingency period. Mold and radon are covered in SBSA ¶A2, ¶A6.',
+ fine:'EPA figures: action level 4 pCi/L, consider 2–4. For understanding only; not a substitute for a radon professional or an attorney.',
+ m1:'<b>"HUD already inspected the house."</b> No. The form says HUD knows nothing about radon or mold beyond what it posted. HUD homes often sit empty, with leaks nobody sees. Test it; a test costs far less than a repair.',
+ m2:'<b>"If mold shows up later, I\'ll sue HUD."</b> You can\'t. Signing RGM releases HUD and the M&M contractor from radon and mold claims, including future ones. Ask a lawyer before you sign, not after.',
+ m3:'<b>"There\'s no radon in the Bay Area."</b> Levels vary home to home. A low neighbor doesn\'t mean a low house. Only a test tells. EPA: fix at 4 pCi/L or above.',
+ nx1:'Mold, radon and environmental hazards in ordinary sales: SBSA ¶A2, ¶A6 in <a href="/t454/">T454</a>.',
+ nx2:'Inspection deadlines and contingency removal in the purchase contract: <a href="/t401/">T401 (RPA)</a> and the escrow calendar <a href="/t60/">T60</a>.',
+ nx3:'What sellers disclose about water and mold: <a href="/t455/">T455 (SPQ)</a>.',
+ nx4:'Renting out a home with mold? See the lease disclosures in <a href="/t490/">T490 (RLMM)</a>. All forms: <a href="/t402/">T402</a>.',
+ sms:'Hi Ken, I used the RGM tool (T453) on tools.kenlamrealty.com: {s}. I have a question.',
+ subj:'Radon and mold (RGM) — {n}',
+ body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\n{lines}\n\nGeneral info, not a substitute for a professional or attorney.\nSent from tool T453 tools.kenlamrealty.com/t453/'
+}};
+
+let hud='yes', base='no', mold='unk';
+const HUD=[['hYes','yes'],['hNo','no']], BASE=[['bNo','no'],['bYes','yes']], MOLD=[['mNo','no'],['mYes','yes'],['mUnk','unk']];
+const line=(n,a,cls)=>'<div class="line'+(cls?' '+cls:'')+'"><span class="n">'+n+'</span><span class="a">'+a+'</span></div>';
+const strip=s=>s.replace(/<small>/g,' (').replace(/<\/small>/g,')').replace(/<[^>]+>/g,'');
+function level(v){ if(v===null) return 'none'; if(v>=EPA_ACTION) return 'hi'; if(v>=EPA_CONSIDER) return 'mid'; return 'lo'; }
+const f1=n=>(Math.round(n*10)/10).toLocaleString('en-US');
+
+function calc(d){
+  const s=$('rad').value.trim(), v=(s===''||isNaN(+s))?null:Math.max(0,+s), yr=+$('yr').value||0, lv=level(v);
+  $('big').textContent=v===null?'—':f1(v); $('bigU').textContent=v===null?'':'pCi/L';
+  $('lvl').className='lvl '+(lv==='none'?'mid':lv); $('lvl').innerHTML=d['lv_'+lv];
+  let h=''; if(v!==null){ h=line(d.ln_bq,Math.round(v*BQ_PER_PCI).toLocaleString('en-US')+' Bq/m³')+line(d.ln_epa,EPA_ACTION+' pCi/L')+line(d.ln_x,(v>=EPA_ACTION?'+':'')+f1(v-EPA_ACTION)+' pCi/L',v>=EPA_ACTION?'warnl':''); }
+  $('lines').innerHTML=h;
+  const todo=[];
+  if(lv==='none') todo.push(d.t_test); if(lv==='hi') todo.push(d.t_pro,d.t_retest); if(lv==='mid') todo.push(d.t_consider); if(lv==='lo') todo.push(d.t_lo);
+  if(base==='yes') todo.push(d.t_base);
+  if(mold==='yes') todo.push(d.t_moldY); if(mold==='unk') todo.push(d.t_moldU);
+  if(yr>0&&yr<LEAD_YEAR) todo.push(d.t_lead);
+  $('todo').innerHTML=todo.map(t=>'<li>'+t+'</li>').join('');
+  $('rel').className='status '+(hud==='yes'?'warn':'ok'); $('rel').innerHTML=hud==='yes'?d.rel_hud:d.rel_no;
+  const L=[strip(d.r_total)+': '+(v===null?'—':f1(v)+' pCi/L'), strip(d['lv_'+lv]), strip(d.l_yr)+': '+(yr||'—'), strip(d.l_hud)+' '+strip(hud==='yes'?d.h_yes:d.h_no), strip(d.l_base)+' '+strip(d[base]), strip(d.l_mold)+' '+strip(d[mold]), '', strip(d.r_todo)+':'].concat(todo.map((t,i)=>(i+1)+'. '+strip(t)));
+  return {lines:L.join('\n'), short:'radon '+(v===null?'—':f1(v)+' pCi/L')+', '+(lang==='vi'?'năm xây ':'built ')+(yr||'—')+', '+strip(hud==='yes'?d.h_yes:d.h_no)};
+}
+function init(){
+  ['rad','yr'].forEach(id=>{ $(id).addEventListener('input',run); $(id).addEventListener('change',run); });
+  HUD.forEach(([id,v])=>$(id).onclick=()=>{hud=v;seg(HUD,hud);run();});
+  BASE.forEach(([id,v])=>$(id).onclick=()=>{base=v;seg(BASE,base);run();});
+  MOLD.forEach(([id,v])=>$(id).onclick=()=>{mold=v;seg(MOLD,mold);run();});
+}
+
+/* ---- khung chung (giống T227) ---- */
+const I18N={vi:Object.assign({},COMMON.vi,T.vi),en:Object.assign({},COMMON.en,T.en)};
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+let LAST={lines:'',short:''};
+function run(){ const d=I18N[lang]; try{ LAST=calc(d)||LAST; }catch(e){ console.error(e); }
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(d.sms.replace('{s}',LAST.short)); }
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  document.querySelectorAll('[data-a]').forEach(el=>{const k=el.getAttribute('data-a'); if(typeof d[k]==='string') el.setAttribute('alt',d[k]);});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; run();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace('{lines}',LAST.lines);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing), giống T227. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+init();
+applyLang();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack');if(!a)return;
+try{if(/[?&]embed=1/.test(location.search))a.style.display='none';}catch(e){}})();
+</script>
+</body>
+</html>
