@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pre-Possession Notice to Pay (PPN) · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+
+</style>
+<meta name="description" content="C.A.R. form PPN explained: the 2-day deadline before move-in, what happens if the tenant doesn’t pay, and an AB 12 deposit-cap checker.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t509/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Pre-Possession Notice to Pay (PPN) · Ken Lam Tools">
+<meta property="og:description" content="C.A.R. form PPN explained: the 2-day deadline before move-in, what happens if the tenant doesn’t pay, and an AB 12 deposit-cap checker.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t509/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T55 additions */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl select:focus-visible{outline:none}
+.ctl .chev{color:var(--muted);font-size:13px;pointer-events:none}
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.field[hidden]{display:none}
+.law{display:grid;gap:4px}
+.law .tag{justify-self:start;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:4px 11px;background:var(--brass-soft);color:var(--fg);font-weight:500}
+.law .tag.ex{background:transparent;border:1px dashed var(--muted);color:var(--muted)}
+.law .why{font-size:14px;color:var(--muted);margin:0}
+.total .v.word{font-size:46px}
+.cal{display:flex;flex-wrap:wrap;gap:8px}
+.cal a{font-size:13px;color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:var(--bg)}
+.cal a:hover{border-color:var(--brass)}
+.steps{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.steps h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.legal{font-size:12px;color:var(--muted);line-height:1.5}
+footer .src a{overflow-wrap:anywhere}
+.line .a.w{white-space:normal;text-align:right;min-width:0;max-width:55%}
+.line .n{flex:1 1 auto}
+
+
+/* Forms-explained additions */
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px;min-width:0}
+.box h2,.tool h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0;line-height:1.15}
+.box p{margin:0;font-size:15px}
+.box ul{margin:0;padding-left:20px;display:grid;gap:6px;font-size:15px}
+.box a{color:var(--brass)}
+.parts{display:grid;gap:8px}
+.parts details{border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:0 14px}
+.parts summary{cursor:pointer;padding:12px 0;font-weight:500;font-size:15px;list-style:none;display:flex;gap:10px;align-items:baseline}
+.parts summary::-webkit-details-marker{display:none}
+.parts summary::before{content:'+';color:var(--brass);font-weight:600;width:12px;flex:none}
+.parts details[open] summary::before{content:'–'}
+.parts summary .pn{color:var(--brass);font-size:12px;letter-spacing:.06em;text-transform:uppercase;flex:none}
+.parts details > div{padding:0 0 12px 22px;font-size:14.5px;display:grid;gap:6px}
+.parts details > div p{margin:0}
+.parts details > div .so{color:var(--muted);font-size:13.5px;border-left:2px solid var(--brass);padding-left:10px}
+.exform{border:1px dashed var(--brass);border-radius:12px;padding:14px 16px;background:var(--bg);display:grid;gap:0;font-size:14px}
+.exform .r{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px dotted var(--line)}
+.exform .r:last-child{border-bottom:0}
+.exform .r span:first-child{color:var(--muted);min-width:0;flex:none;max-width:38%}
+.exform .r span:last-child{text-align:right;font-weight:500;min-width:0;overflow-wrap:anywhere}
+.exform .stamp{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);padding-bottom:6px}
+.why3{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px;color:var(--muted)}
+.why3 b{color:var(--fg);font-weight:500}
+.tool{display:grid;gap:14px}
+.flag{font-size:14px;border-radius:10px;padding:10px 12px;line-height:1.45;background:var(--brass-soft);border:1px solid var(--warn)}
+.flag b{color:var(--warn)}
+.flag.good{border-color:var(--ok)}
+.flag.good b{color:var(--ok)}
+.flag.hide{display:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips:empty{display:none}
+.chips span{font-size:13px;border:1px solid var(--line);border-radius:999px;padding:4px 10px;background:var(--bg);font-variant-numeric:tabular-nums}
+.nolist{margin:6px 0 0;padding-left:18px;display:grid;gap:4px}
+.vid{display:grid;justify-items:center;gap:8px}
+.vid video{width:100%;max-width:360px;aspect-ratio:9/16;border-radius:14px;background:#000;border:1px solid var(--line)}
+.vid p{margin:0;font-size:13px;color:var(--muted)}
+.total .v.mid{font-size:44px}
+.ctl input[type=datetime-local]{font-size:16px;min-height:48px}
+
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/" data-i="back">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Pre-Possession Notice to Pay (PPN)</h1>
+    <p class="sub" data-i="sub">Use it when a tenant signed the lease but hasn’t paid rent or deposit before move-in: pay within 2 days or the lease can be cancelled.</p>
+  </header>
+
+  <section class="box"><h2 data-i="w_t">What does this form say?</h2><p data-i="w_b">The lease is signed, but the tenant hasn’t paid the first month’s rent or the deposit yet, and hasn’t moved in. This notice says: “Pay what the lease says within 2 days, or I can cancel the lease.” It’s like reserving a table at a restaurant: if you never show up with the deposit, they give the table to someone else. The key word is <b>before</b>. Once the tenant has the keys and is living there, this form is the wrong tool.</p></section>
+  <section class="box"><h2 data-i="h_t">Who uses it, and when</h2><ul><li data-i="h0"><b>Gives it:</b> the housing provider (owner or manager).</li><li data-i="h1"><b>Gets it:</b> the tenant who signed the lease but hasn’t paid.</li><li data-i="h2"><b>When:</b> after the lease is signed and before the tenant takes possession (gets keys, moves in).</li><li data-i="h3"><b>Deadline:</b> 2 calendar days after delivery, or another number you write in. Weekends count.</li></ul></section>
+  <section class="box"><h2 data-i="p_t">Read the form, part by part</h2><div class="parts"><details><summary><span data-i="pt0n" class="pn">Top</span><span data-i="pt0t">Which lease, which home, who</span></summary><div><p data-i="pt0b">Fill in the lease date, the address, the housing provider and the tenant. This ties the notice to one specific signed agreement.</p><p data-i="pt0s" class="so">Use the exact names from the lease, every tenant who signed.</p></div></details>
+<details><summary><span data-i="pt1n" class="pn">A</span><span data-i="pt1t">Rent</span></summary><div><p data-i="pt1b">The rent amount still owed, as set in the lease (paragraph 5 of C.A.R. form RLMM).</p></div></details>
+<details><summary><span data-i="pt2n" class="pn">B</span><span data-i="pt2t">Security deposit</span></summary><div><p data-i="pt2b">The deposit still owed, also from paragraph 5 of the lease.</p><p data-i="pt2s" class="so">Since 7/1/2024 the deposit is capped (AB 12): 1 month’s rent, or 2 months for a qualifying small landlord, never 2 for a servicemember. If the lease asked for more, fix the lease before you demand it.</p></div></details>
+<details><summary><span data-i="pt3n" class="pn">C–D</span><span data-i="pt3t">Other amounts</span></summary><div><p data-i="pt3b">Two blank lines for anything else the lease requires before move-in. Write what it is and the amount.</p></div></details>
+<details><summary><span data-i="pt4n" class="pn">Main</span><span data-i="pt4t">Pay in 2 days or the lease can be cancelled</span></summary><div><p data-i="pt4b">If the tenant doesn’t pay within 2 calendar days (or the number you fill in) after delivery, the housing provider may cancel the lease using C.A.R. form CLR. If a local rent or eviction ordinance applies, talk to a California real estate attorney before cancelling.</p><p data-i="pt4s" class="so">San Jose has its own tenant protection ordinance. A signed lease may already count as a tenancy there; don’t guess.</p></div></details>
+<details><summary><span data-i="pt5n" class="pn">Sign</span><span data-i="pt5t">Housing provider signs</span></summary><div><p data-i="pt5b">Up to two housing providers sign and date it.</p></div></details></div></section>
+  <section class="box"><h2 data-i="e_t">Sample: a filled-in PPN</h2><div class="exform"><div data-i="e_stamp" class="stamp">Example only · not a copy of the form</div><div class="r"><span data-i="ex0l">Lease dated</span><span data-i="ex0v">Nov 2, 2026</span></div><div class="r"><span data-i="ex1l">Premises</span><span data-i="ex1v">1234 Example Lane, San Jose, CA 95100</span></div><div class="r"><span data-i="ex2l">Parties</span><span data-i="ex2v">Housing Provider A · Tenant B</span></div><div class="r"><span data-i="ex3l">A Rent</span><span data-i="ex3v">$3,200</span></div><div class="r"><span data-i="ex4l">B Security deposit</span><span data-i="ex4v">$3,200</span></div><div class="r"><span data-i="ex5l">Days to pay</span><span data-i="ex5v">2 (pre-printed)</span></div><div class="r"><span data-i="ex6l">Delivered</span><span data-i="ex6v">Fri Nov 6, 2026 · due by Sun Nov 8</span></div></div><ul class="why3"><li data-i="ey0"><b>Why $3,200 deposit:</b> Housing Provider A is not a small landlord, so the cap is 1 month’s rent.</li><li data-i="ey1"><b>Why Sunday:</b> the form counts calendar days. Friday + 2 = Sunday, weekend or not.</li><li data-i="ey2"><b>Keys:</b> Housing Provider A keeps the keys until the $6,400 clears.</li></ul></section>
+  <section class="tool"><h2 data-i="k_t">Deadline and deposit check</h2>
+  <section class="inputs" aria-label="Inputs">
+    <div class="row2">
+      <div class="field"><label for="dlv"><span data-i="l_dlv">Date the PPN is delivered</span></label><div class="ctl"><input id="dlv" type="date" value="2026-11-06"></div></div>
+      <div class="field"><label for="days"><span data-i="l_days">Days to pay</span></label><div class="ctl"><input id="days" type="number" inputmode="numeric" min="1" max="30" step="1" value="2"><span class="post"><span data-i="l_days_p">calendar days</span></span></div></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label for="rent"><span data-i="l_rent">Monthly rent</span></label><div class="ctl"><span class="pre">$</span><input id="rent" type="number" inputmode="numeric" min="0" step="25" value="3200"></div></div>
+      <div class="field"><label for="dep"><span data-i="l_dep">Security deposit asked</span></label><div class="ctl"><span class="pre">$</span><input id="dep" type="number" inputmode="numeric" min="0" step="50" value="3200"></div></div>
+    </div>
+    <div class="field"><label for="oth"><span data-i="l_oth">Other amount on lines C–D (optional)</span></label><div class="ctl"><span class="pre">$</span><input id="oth" type="number" inputmode="numeric" min="0" step="25" value="0"></div></div>
+    <div class="field"><label><span data-i="l_small">Small landlord? (individual or all-individual LLC, owning ≤2 rental properties with ≤4 units total)</span></label><div class="seg" role="group"><button data-i="l_small_a" type="button" id="smN" aria-pressed="true">No</button><button data-i="l_small_b" type="button" id="smY" aria-pressed="false">Yes</button></div></div>
+    <div class="field"><label><span data-i="l_svc">Is the tenant a servicemember?</span></label><div class="seg" role="group"><button data-i="l_svc_a" type="button" id="svN" aria-pressed="true">No</button><button data-i="l_svc_b" type="button" id="svY" aria-pressed="false">Yes</button></div></div>
+    <div class="field"><label><span data-i="l_keys">Has the tenant already got the keys or moved in?</span></label><div class="seg" role="group"><button data-i="l_keys_a" type="button" id="kN" aria-pressed="true">Not yet</button><button data-i="l_keys_b" type="button" id="kY" aria-pressed="false">Yes</button></div></div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="law"><span class="tag" id="tag"></span><p class="why" id="why1"></p></div>
+    <div class="total"><div class="k" id="bigK"></div><div class="v mid" id="big"></div></div>
+    <div class="lines">
+      <div class="line"><span class="n"><b><span data-i="n_tot">Total to pay before move-in</span></b></span><span class="a" id="oTot">—</span></div>
+      <div class="line"><span class="n"><b><span data-i="n_cap">Deposit cap (AB 12)</span></b> <span id="oCapS"></span></span><span class="a" id="oCap">—</span></div>
+      <div class="line"><span class="n"><b><span data-i="n_dep">Deposit check</span></b></span><span class="a w" id="oDep">—</span></div>
+      <div class="line"><span class="n"><b><span data-i="n_next">If unpaid</span></b></span><span class="a w" id="oNext">—</span></div>
+    </div>
+    <div class="flag hide" id="flag"></div>
+    <div class="note" id="note"></div>
+  </section></section>
+  <section class="steps"><h2 data-i="ns_t">Next steps</h2><ol><li data-i="ns1">Don’t hand over keys until the money clears. Once the tenant is in, PPN is done and you’re in eviction territory.</li><li data-i="ns2">Tenant already moved in and won’t pay? Use the <a href="/t501/">3-Day Notice to Pay Rent or Quit (T501)</a>, not this form.</li><li data-i="ns3">Read the basics in <a href="/t53/">California rental law (T53)</a>, plan move-in with the <a href="/t54/">checklist (T54)</a>, or see all forms in <a href="/t500/">T500</a>.</li></ol></section>
+  <p data-i="m1" class="myth"><b>Many people get this wrong:</b> “I’ll give them the keys now, they promised to pay Monday.” Then Monday comes, no money, and the PPN is useless. You now need a 3-day notice and possibly a court case. I tell every owner the same thing: money first, keys second.</p><p data-i="m2" class="myth"><b>Also wrong:</b> “Two months’ deposit is normal.” Not anymore. Since July 2024 most owners can only take one month. The small-landlord exception is narrow, and it never applies to a servicemember.</p>
+
+  <section class="vid" aria-label="Video">
+    <video src="video.mp4" controls playsinline preload="metadata" poster="poster.jpg"></video>
+    <p data-i="vid_note">45-second explainer, vertical video.</p>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t509/video.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 45-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this result to yourself</h2>
+    <p data-i="f_sub">Ken will reply and help you check your situation. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done. If it didn't open, text Ken the number below.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span class="src"><span data-i="ft_src">Sources:</span> <a href="https://california.public.law/codes/civil_code_section_1950.5" target="_blank" rel="noopener">Civil Code §1950.5 (AB 12 deposit cap)</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=1950.5" target="_blank" rel="noopener">§1950.5 (leginfo)</a> · <a href="https://sanjoseca.gov/your-government/departments-offices/housing/housing-rental-rights" target="_blank" rel="noopener">San Jose rental rights</a></span>
+    <span class="legal" data-i="ft_car">C.A.R. form PPN, Revised 6/23 — the form is copyrighted by C.A.R.; this page only explains it.</span>
+    <span class="legal" data-i="legal">Not legal advice. Get one word wrong on a landlord notice and you can lose in court — ask an attorney before you serve it.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== LAW — every number for T509 (PPN) lives here. Checked 06/11/2026 (FACTS.md, PPN + AB 12). =====
+   PPN form (Rev. 6/23): pay within 2 calendar days (or other number filled in) after delivery, else housing provider
+     may cancel the Agreement with C.A.R. form CLR; consult an attorney if a local rent/eviction ordinance applies. (form text)
+     No statute directly; contractual under lease (RLMM ¶5). (ESTIMATE per FACTS)
+   AB 12, Civil Code 1950.5(c), eff. 7/1/2024: deposit cap 1 month's rent, furnished or not. Small landlord (natural
+     person, or LLC whose members are all natural persons, owning <=2 residential rental properties with <=4 units total)
+     may take 2 months; never for a servicemember tenant. Pre-7/1/2024 deposits grandfathered. (VERIFIED)
+     https://california.public.law/codes/civil_code_section_1950.5 */
+const LAW={defaultDays:2, capMonths:1, smallCapMonths:2, smallMaxProps:2, smallMaxUnits:4, capFrom:'2024-07-01'};
+
+/* inp:{dlv,days,rent,dep,oth,small,svc,keys} */
+function ppn(inp){
+  const r={};
+  r.days=Math.round(inp.days); r.badDays=!(r.days>=1);
+  r.due=addDays(D(inp.dlv), r.badDays?LAW.defaultDays:r.days);
+  r.capMonths = inp.small && !inp.svc ? LAW.smallCapMonths : LAW.capMonths;
+  r.cap = inp.rent*r.capMonths;
+  r.over = Math.max(0, inp.dep - r.cap);
+  r.total = inp.rent + inp.dep + inp.oth;
+  r.works = !inp.keys;
+  return r;
+}
+if(typeof module!=='undefined'){module.exports={ppn,LAW};}
+/* ---------- date helpers (UTC, no time zone drift) ---------- */
+function D(s){const [y,m,d]=s.split('-').map(Number);return new Date(Date.UTC(y,m-1,d));}
+function iso(d){return d.toISOString().slice(0,10);}
+function addDays(d,n){return new Date(d.getTime()+n*864e5);}
+function addMonths(d,n){const y=d.getUTCFullYear(),m=d.getUTCMonth()+n,day=d.getUTCDate();
+  const last=new Date(Date.UTC(y,m+1,0)).getUTCDate();return new Date(Date.UTC(y,m,Math.min(day,last)));}
+if(typeof module!=='undefined'){module.exports.D=D;module.exports.iso=iso;}
+</script>
+<script>
+const I18N={"en": {"w_t": "What does this form say?", "w_b": "The lease is signed, but the tenant hasn’t paid the first month’s rent or the deposit yet, and hasn’t moved in. This notice says: “Pay what the lease says within 2 days, or I can cancel the lease.” It’s like reserving a table at a restaurant: if you never show up with the deposit, they give the table to someone else. The key word is <b>before<\/b>. Once the tenant has the keys and is living there, this form is the wrong tool.", "h_t": "Who uses it, and when", "h0": "<b>Gives it:<\/b> the housing provider (owner or manager).", "h1": "<b>Gets it:<\/b> the tenant who signed the lease but hasn’t paid.", "h2": "<b>When:<\/b> after the lease is signed and before the tenant takes possession (gets keys, moves in).", "h3": "<b>Deadline:<\/b> 2 calendar days after delivery, or another number you write in. Weekends count.", "p_t": "Read the form, part by part", "pt0n": "Top", "pt0t": "Which lease, which home, who", "pt0b": "Fill in the lease date, the address, the housing provider and the tenant. This ties the notice to one specific signed agreement.", "pt0s": "Use the exact names from the lease, every tenant who signed.", "pt1n": "A", "pt1t": "Rent", "pt1b": "The rent amount still owed, as set in the lease (paragraph 5 of C.A.R. form RLMM).", "pt2n": "B", "pt2t": "Security deposit", "pt2b": "The deposit still owed, also from paragraph 5 of the lease.", "pt2s": "Since 7/1/2024 the deposit is capped (AB 12): 1 month’s rent, or 2 months for a qualifying small landlord, never 2 for a servicemember. If the lease asked for more, fix the lease before you demand it.", "pt3n": "C–D", "pt3t": "Other amounts", "pt3b": "Two blank lines for anything else the lease requires before move-in. Write what it is and the amount.", "pt4n": "Main", "pt4t": "Pay in 2 days or the lease can be cancelled", "pt4b": "If the tenant doesn’t pay within 2 calendar days (or the number you fill in) after delivery, the housing provider may cancel the lease using C.A.R. form CLR. If a local rent or eviction ordinance applies, talk to a California real estate attorney before cancelling.", "pt4s": "San Jose has its own tenant protection ordinance. A signed lease may already count as a tenancy there; don’t guess.", "pt5n": "Sign", "pt5t": "Housing provider signs", "pt5b": "Up to two housing providers sign and date it.", "e_t": "Sample: a filled-in PPN", "e_stamp": "Example only · not a copy of the form", "ex0l": "Lease dated", "ex0v": "Nov 2, 2026", "ex1l": "Premises", "ex1v": "1234 Example Lane, San Jose, CA 95100", "ex2l": "Parties", "ex2v": "Housing Provider A · Tenant B", "ex3l": "A Rent", "ex3v": "$3,200", "ex4l": "B Security deposit", "ex4v": "$3,200", "ex5l": "Days to pay", "ex5v": "2 (pre-printed)", "ex6l": "Delivered", "ex6v": "Fri Nov 6, 2026 · due by Sun Nov 8", "ey0": "<b>Why $3,200 deposit:<\/b> Housing Provider A is not a small landlord, so the cap is 1 month’s rent.", "ey1": "<b>Why Sunday:<\/b> the form counts calendar days. Friday + 2 = Sunday, weekend or not.", "ey2": "<b>Keys:<\/b> Housing Provider A keeps the keys until the $6,400 clears.", "k_t": "Deadline and deposit check", "l_dlv": "Date the PPN is delivered", "l_days": "Days to pay", "l_days_p": "calendar days", "l_rent": "Monthly rent", "l_dep": "Security deposit asked", "l_oth": "Other amount on lines C–D (optional)", "l_small": "Small landlord? (individual or all-individual LLC, owning ≤2 rental properties with ≤4 units total)", "l_small_a": "No", "l_small_b": "Yes", "l_svc": "Is the tenant a servicemember?", "l_svc_a": "No", "l_svc_b": "Yes", "l_keys": "Has the tenant already got the keys or moved in?", "l_keys_a": "Not yet", "l_keys_b": "Yes", "n_tot": "Total to pay before move-in", "n_cap": "Deposit cap (AB 12)", "n_dep": "Deposit check", "n_next": "If unpaid", "ns_t": "Next steps", "ns1": "Don’t hand over keys until the money clears. Once the tenant is in, PPN is done and you’re in eviction territory.", "ns2": "Tenant already moved in and won’t pay? Use the <a href=\"/t501/\">3-Day Notice to Pay Rent or Quit (T501)<\/a>, not this form.", "ns3": "Read the basics in <a href=\"/t53/\">California rental law (T53)<\/a>, plan move-in with the <a href=\"/t54/\">checklist (T54)<\/a>, or see all forms in <a href=\"/t500/\">T500<\/a>.", "m1": "<b>Many people get this wrong:<\/b> “I’ll give them the keys now, they promised to pay Monday.” Then Monday comes, no money, and the PPN is useless. You now need a 3-day notice and possibly a court case. I tell every owner the same thing: money first, keys second.", "m2": "<b>Also wrong:<\/b> “Two months’ deposit is normal.” Not anymore. Since July 2024 most owners can only take one month. The small-landlord exception is narrow, and it never applies to a servicemember.", "t_ok": "Before move-in · PPN works", "t_bad": "Tenant has possession · PPN no longer works", "w_ok": "{n} calendar days after delivery, weekends included. Counted to the end of that day (estimate).", "w_bad": "Once the tenant has the keys or lives there, a missed payment goes through a 3-day notice and, if needed, a court eviction.", "k_ok": "Pay by", "k_bad": "Use instead", "big_bad": "3-day notice", "cap1": "(1 month)", "cap2": "(2 months, small landlord)", "cap1s": "(1 month, servicemember)", "dep_ok": "OK: within the cap", "dep_over": "Over the cap by {x}", "f_over": "<b>Deposit over the legal cap.<\/b> {dep} asked, cap is {cap}. Don’t demand the extra {x}; fix the lease and the PPN amount first.", "f_svc": "Servicemember tenant: the 2-month small-landlord exception never applies.", "f_days": "<b>Days to pay must be at least 1.<\/b> The form’s default is 2.", "f_wk": "The deadline falls on a {wd}. Calendar days still count; just make sure the tenant has a way to pay that day.", "sat": "Saturday", "sun": "Sunday", "next_ok": "You may cancel the lease (C.A.R. form CLR) after {d}. Under a local ordinance, ask an attorney first.", "next_bad": "3-Day Notice to Pay Rent or Quit (T501), then court if needed.", "note": "First month’s rent is not part of the deposit cap. The cap applies to deposits taken on or after 7/1/2024.", "sms": "Hi Ken, I used the PPN tool (T509). Delivered {dl}, pay by {due}. Rent {r}, deposit {dep} (cap {cap}: {chk}). Total {tot}. Can you double-check?", "subj": "PPN pre-move-in payment check", "body": "Delivered: {dl}\nDays to pay: {n}\nPay by: {due}\n\nRent: {r}\nDeposit asked: {dep}\nOther: {oth}\nTotal before move-in: {tot}\nDeposit cap (AB 12): {cap}\nDeposit check: {chk}\nSmall landlord: {sm}\nServicemember: {sv}\nKeys handed over: {k}", "yes": "Yes", "no": "No", "back": "← All tools", "lang": "Tiếng Việt", "b_email": "Email me the result", "b_sms": "Ask Ken", "b_video": "Watch 45-sec video", "f_title": "Email this result to yourself", "f_sub": "Ken will reply and help you check your situation. No spam.", "f_name": "Name", "f_phone": "Phone (optional)", "f_send": "Send", "f_ok": "Email opened. Hit Send and you're done. If it didn't open, text Ken the number below.", "f_or": "Or text:", "f_copy": "Copy", "vid_note": "45-second explainer, vertical video.", "ft_src": "Sources:", "ft_car": "C.A.R. form PPN, Revised 6/23 — the form is copyrighted by C.A.R.; this page only explains it.", "legal": "Not legal advice. Get one word wrong on a landlord notice and you can lose in court — ask an attorney before you serve it.", "ft_upd": "Updated", "ft_all": "All tools", "title": "Pre-Possession Notice to Pay (PPN)", "sub": "Use it when a tenant signed the lease but hasn’t paid rent or deposit before move-in: pay within 2 days or the lease can be cancelled.", "doctitle": "Pre-Possession Notice to Pay (PPN) · Ken Lam Tools", "f_hdr": "Name: {n}\nEmail: {e}\nPhone: {ph}\n\n", "f_tail": "\n\nSent from tool T509 tools.kenlamrealty.com/t509/"}, "vi": {"w_t": "Form này nói gì?", "w_b": "Lease đã ký, nhưng người thuê chưa trả tháng tiền nhà đầu hay tiền cọc, và chưa dọn vào. Giấy này nói: “Trả đúng số trong lease trong 2 ngày, không thì tôi được hủy lease.” Giống như đặt bàn nhà hàng: không tới đặt cọc thì người ta nhường bàn cho khách khác. Chữ quan trọng là <b>trước<\/b>. Người thuê đã cầm chìa khóa và đang ở rồi thì form này không dùng được nữa.", "h_t": "Ai dùng, khi nào", "h0": "<b>Ai đưa:<\/b> chủ nhà (housing provider) hoặc người quản lý.", "h1": "<b>Ai nhận:<\/b> người thuê đã ký lease mà chưa trả tiền.", "h2": "<b>Lúc nào:<\/b> sau khi ký lease và trước khi người thuê nhận nhà (cầm chìa khóa, dọn vào).", "h3": "<b>Hạn chót:<\/b> 2 ngày lịch sau khi giao giấy, hoặc số ngày khác mình điền. Tính luôn Thứ Bảy, Chủ Nhật.", "p_t": "Đọc từng phần của form", "pt0n": "Đầu form", "pt0t": "Lease nào, nhà nào, ai với ai", "pt0b": "Điền ngày ký lease, địa chỉ, tên chủ nhà và người thuê. Nhờ vậy giấy này gắn với đúng một hợp đồng đã ký.", "pt0s": "Ghi đúng tên trong lease, đủ mọi người thuê đã ký.", "pt1n": "A", "pt1t": "Tiền thuê", "pt1b": "Số tiền thuê còn thiếu, theo lease (đoạn 5 của form C.A.R. RLMM).", "pt2n": "B", "pt2t": "Tiền cọc", "pt2b": "Tiền cọc còn thiếu, cũng theo đoạn 5 của lease.", "pt2s": "Từ 01/07/2024 tiền cọc có trần (AB 12): 1 tháng tiền thuê, hoặc 2 tháng nếu là chủ nhỏ đủ điều kiện, không bao giờ 2 tháng với quân nhân. Lease ghi nhiều hơn thì sửa lease trước khi đòi.", "pt3n": "C–D", "pt3t": "Khoản khác", "pt3b": "Hai dòng trống cho khoản khác lease bắt trả trước khi dọn vào. Ghi rõ là khoản gì, bao nhiêu.", "pt4n": "Đoạn chính", "pt4t": "Trả trong 2 ngày, không thì hủy lease", "pt4b": "Người thuê không trả trong 2 ngày lịch (hoặc số ngày mình điền) sau khi nhận giấy thì chủ nhà được hủy lease bằng form C.A.R. CLR. Nếu căn nhà thuộc luật thuê nhà hay luật đuổi nhà của city, hỏi luật sư địa ốc California trước khi hủy.", "pt4s": "San Jose có luật bảo vệ người thuê riêng. Lease đã ký có thể đã tính là có hợp đồng thuê; đừng đoán.", "pt5n": "Ký tên", "pt5t": "Chủ nhà ký", "pt5b": "Tối đa hai chủ nhà ký và ghi ngày.", "e_t": "Ví dụ điền mẫu", "e_stamp": "Chỉ là ví dụ · không phải bản sao form", "ex0l": "Ngày ký lease", "ex0v": "02/11/2026", "ex1l": "Địa chỉ", "ex1v": "1234 Example Lane, San Jose, CA 95100", "ex2l": "Hai bên", "ex2v": "Housing Provider A (chủ nhà A) · Tenant B (người thuê B)", "ex3l": "A Tiền thuê", "ex3v": "$3,200", "ex4l": "B Tiền cọc", "ex4v": "$3,200", "ex5l": "Số ngày để trả", "ex5v": "2 (in sẵn)", "ex6l": "Ngày giao", "ex6v": "T6, 06/11/2026 · hạn Chủ Nhật 08/11", "ey0": "<b>Vì sao cọc $3,200:<\/b> chủ nhà A không phải chủ nhỏ, nên trần là 1 tháng tiền thuê.", "ey1": "<b>Vì sao Chủ Nhật:<\/b> form tính ngày lịch. Thứ Sáu + 2 = Chủ Nhật, cuối tuần cũng vậy.", "ey2": "<b>Chìa khóa:<\/b> chủ nhà A giữ chìa tới khi $6,400 vào tài khoản.", "k_t": "Tính hạn chót và kiểm tra cọc", "l_dlv": "Ngày giao PPN", "l_days": "Số ngày để trả", "l_days_p": "ngày lịch", "l_rent": "Tiền thuê mỗi tháng", "l_dep": "Tiền cọc đòi", "l_oth": "Khoản khác ở dòng C–D (không bắt buộc)", "l_small": "Chủ nhỏ? (cá nhân hoặc LLC toàn thành viên cá nhân, có ≤2 bất động sản cho thuê, tổng ≤4 căn)", "l_small_a": "Không", "l_small_b": "Có", "l_svc": "Người thuê là quân nhân?", "l_svc_a": "Không", "l_svc_b": "Có", "l_keys": "Người thuê đã cầm chìa khóa hoặc dọn vào chưa?", "l_keys_a": "Chưa", "l_keys_b": "Rồi", "n_tot": "Tổng phải trả trước khi dọn vào", "n_cap": "Trần tiền cọc (AB 12)", "n_dep": "Kiểm tra cọc", "n_next": "Nếu không trả", "ns_t": "Bước tiếp theo", "ns1": "Tiền chưa vào tài khoản thì chưa giao chìa. Người thuê vào ở rồi là hết dùng PPN, chuyển sang chuyện đuổi nhà.", "ns2": "Người thuê đã dọn vào mà không trả? Dùng <a href=\"/t501/\">giấy báo 3 ngày trả tiền hoặc dọn đi (T501)<\/a>, không dùng form này.", "ns3": "Đọc thêm <a href=\"/t53/\">luật thuê nhà California (T53)<\/a>, chuẩn bị dọn vào với <a href=\"/t54/\">checklist (T54)<\/a>, hoặc xem hết các form ở <a href=\"/t500/\">T500<\/a>.", "m1": "<b>Nhiều người hiểu sai:<\/b> “Cứ đưa chìa trước, họ hứa Thứ Hai trả.” Tới Thứ Hai không có tiền, PPN hết tác dụng. Giờ phải làm giấy 3 ngày, có khi ra tòa. Tôi nói với chủ nhà nào cũng một câu: tiền trước, chìa sau.", "m2": "<b>Cũng sai:<\/b> “Cọc 2 tháng là bình thường.” Hết rồi. Từ tháng 7/2024 phần lớn chủ nhà chỉ được lấy 1 tháng. Ngoại lệ chủ nhỏ rất hẹp, và không bao giờ áp dụng cho quân nhân.", "t_ok": "Trước khi dọn vào · dùng PPN được", "t_bad": "Người thuê đã nhận nhà · hết dùng PPN", "w_ok": "{n} ngày lịch sau khi giao giấy, tính cả cuối tuần. Tính tới hết ngày đó (ước tính).", "w_bad": "Người thuê đã cầm chìa hoặc đang ở thì thiếu tiền phải đi đường giấy báo 3 ngày, và nếu cần thì ra tòa.", "k_ok": "Hạn chót trả", "k_bad": "Dùng thay vào", "big_bad": "Giấy 3 ngày", "cap1": "(1 tháng)", "cap2": "(2 tháng, chủ nhỏ)", "cap1s": "(1 tháng, quân nhân)", "dep_ok": "Được: nằm trong trần", "dep_over": "Vượt trần {x}", "f_over": "<b>Tiền cọc vượt trần luật.<\/b> Đòi {dep}, trần là {cap}. Đừng đòi {x} dư; sửa lease và số tiền trên PPN trước.", "f_svc": "Người thuê là quân nhân: ngoại lệ 2 tháng của chủ nhỏ không bao giờ áp dụng.", "f_days": "<b>Số ngày để trả phải ít nhất 1.<\/b> Form mặc định là 2.", "f_wk": "Hạn chót rơi vào {wd}. Vẫn tính ngày lịch; chỉ cần lo người thuê có cách trả tiền ngày đó.", "sat": "Thứ Bảy", "sun": "Chủ Nhật", "next_ok": "Sau {d} được hủy lease (form C.A.R. CLR). Có luật thuê nhà của city thì hỏi luật sư trước.", "next_bad": "Giấy báo 3 ngày trả tiền hoặc dọn đi (T501), cần thì ra tòa.", "note": "Tháng tiền thuê đầu tiên không tính vào trần tiền cọc. Trần áp dụng cho tiền cọc nhận từ 01/07/2024.", "sms": "Chào Ken, tôi vừa dùng tool PPN (T509). Giao giấy {dl}, hạn trả {due}. Tiền thuê {r}, cọc {dep} (trần {cap}: {chk}). Tổng {tot}. Ken kiểm giùm được không?", "subj": "Kiểm tra giấy PPN trả tiền trước khi dọn vào", "body": "Ngày giao: {dl}\nSố ngày để trả: {n}\nHạn chót: {due}\n\nTiền thuê: {r}\nCọc đòi: {dep}\nKhoản khác: {oth}\nTổng trước khi dọn vào: {tot}\nTrần cọc (AB 12): {cap}\nKiểm tra cọc: {chk}\nChủ nhỏ: {sm}\nQuân nhân: {sv}\nĐã giao chìa: {k}", "yes": "Có", "no": "Không", "back": "← Tất cả tools", "lang": "English", "b_email": "Gửi kết quả qua email", "b_sms": "Hỏi Ken", "b_video": "Xem video 45 giây", "f_title": "Gửi kết quả này về email", "f_sub": "Ken nhận được sẽ trả lời, giúp mình kiểm lại trường hợp của mình. Không spam.", "f_name": "Tên", "f_phone": "Số điện thoại (không bắt buộc)", "f_send": "Gửi", "f_ok": "Đã mở email. Bấm Gửi là xong. Không mở được thì nhắn Ken số dưới đây.", "f_or": "Hoặc nhắn tin:", "f_copy": "Chép", "vid_note": "Video giải thích 45 giây, quay dọc.", "ft_src": "Nguồn:", "ft_car": "C.A.R. form PPN, Revised 6/23 — form thuộc bản quyền C.A.R.; trang này chỉ giải thích.", "legal": "Không phải tư vấn pháp lý. Notice đuổi nhà sai một chữ là ra tòa thua — hỏi luật sư trước khi giao.", "ft_upd": "Cập nhật", "ft_all": "Tất cả tools", "title": "Giấy báo trả tiền trước khi dọn vào (PPN)", "sub": "Dùng khi người thuê đã ký lease mà chưa trả tiền thuê hay tiền cọc trước khi dọn vào: trả trong 2 ngày, không thì hủy lease.", "doctitle": "Giấy báo trả tiền trước khi dọn vào (PPN) · Ken Lam Tools", "f_hdr": "Tên: {n}\nEmail: {e}\nĐiện thoại: {ph}\n\n", "f_tail": "\n\nGửi từ tool T509 tools.kenlamrealty.com/t509/"}};
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const money=n=>'$'+Math.round(n).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const fill=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+const WD={en:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],vi:['CN','T2','T3','T4','T5','T6','T7']};
+const fdate=d=>{const y=d.getUTCFullYear(),m=d.getUTCMonth()+1,dd=d.getUTCDate();
+  return lang==='vi'?String(dd).padStart(2,'0')+'/'+String(m).padStart(2,'0')+'/'+y:d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'});};
+const fdateW=d=>WD[lang][d.getUTCDay()]+', '+fdate(d);
+function todayStr(){const t=new Date();return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');}
+let SUM={sms:'',body:'',subj:''};
+function seg(on,off,cb){$(on).setAttribute('aria-pressed','true');$(off).setAttribute('aria-pressed','false');cb();}
+let small=false, svc=false, keys=false;
+function calc(){
+  const d=I18N[lang];
+  const inp={dlv:$('dlv').value||todayStr(),days:num('days'),rent:Math.max(0,num('rent')),dep:Math.max(0,num('dep')),oth:Math.max(0,num('oth')),small,svc,keys};
+  const r=ppn(inp);
+  $('tag').textContent=r.works?d.t_ok:d.t_bad; $('tag').classList.toggle('ex',!r.works);
+  $('why1').textContent=r.works?fill(d.w_ok,{n:r.badDays?LAW.defaultDays:r.days}):d.w_bad;
+  $('bigK').textContent=r.works?d.k_ok:d.k_bad;
+  $('big').textContent=r.works?fdateW(r.due):d.big_bad;
+  $('oTot').textContent=money(r.total);
+  $('oCap').textContent=money(r.cap);
+  $('oCapS').textContent= r.capMonths===2? d.cap2 : (small&&svc? d.cap1s : d.cap1);
+  const chk = r.over>0 ? fill(d.dep_over,{x:money(r.over)}) : d.dep_ok;
+  $('oDep').textContent=chk; $('oDep').style.color = r.over>0 ? 'var(--warn)' : 'var(--ok)';
+  $('oNext').textContent=r.works?fill(d.next_ok,{d:fdate(r.due)}):d.next_bad;
+  const fl=[];
+  if(r.badDays) fl.push(d.f_days);
+  if(r.over>0) fl.push(fill(d.f_over,{dep:money(inp.dep),cap:money(r.cap),x:money(r.over)}));
+  if(svc && small) fl.push(d.f_svc);
+  const wd=r.due.getUTCDay(); if(r.works && (wd===0||wd===6)) fl.push(fill(d.f_wk,{wd:wd===0?d.sun:d.sat}));
+  $('flag').innerHTML=fl.join('<br>'); $('flag').classList.toggle('hide',!fl.length);
+  $('note').textContent=d.note;
+  const o={dl:fdate(D(inp.dlv)),n:r.badDays?LAW.defaultDays:r.days,due:r.works?fdate(r.due):'—',r:money(inp.rent),dep:money(inp.dep),oth:money(inp.oth),
+    tot:money(r.total),cap:money(r.cap),chk,sm:small?d.yes:d.no,sv:svc?d.yes:d.no,k:keys?d.yes:d.no};
+  SUM={subj:d.subj,body:fill(d.body,o),sms:fill(d.sms,o)};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(SUM.sms);
+}
+['dlv','days','rent','dep','oth'].forEach(id=>{$(id).addEventListener('input',calc);$(id).addEventListener('change',calc);});
+$('smY').onclick=()=>{small=true;seg('smY','smN',calc);}; $('smN').onclick=()=>{small=false;seg('smN','smY',calc);};
+$('svY').onclick=()=>{svc=true;seg('svY','svN',calc);}; $('svN').onclick=()=>{svc=false;seg('svN','svY',calc);};
+$('kY').onclick=()=>{keys=true;seg('kY','kN',calc);}; $('kN').onclick=()=>{keys=false;seg('kN','kY',calc);};
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; document.title=d.doctitle; calc();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], o={n:$('fname').value.trim()||'—',e:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'};
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing), như t55. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(SUM.subj+' — '+o.n)+'&body='+encodeURIComponent(fill(d.f_hdr,o)+SUM.body+d.f_tail);
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+</body>
+</html>
