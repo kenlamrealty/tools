@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Megan&#x27;s Law Database Disclosure (DBD) explained · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Enter your signing date and a few totals from your Loan Estimate and Closing Disclosure. See the last day you must get the CD, whether fees broke the tolerance limits, and what the lender owes back.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t312/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="Closing Disclosure vs. Loan Estimate · Ken Lam Tools">
+<meta property="og:description" content="The 3-day CD deadline, the 0% and 10% tolerance check, the refund the lender owes, and a 5-page CD walkthrough.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t312/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+html.embed .kl-back{display:none}
+html.embed body{padding-top:8px}
+/* T312 additions */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--fg);cursor:pointer}
+.chk input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;flex:none}
+.grp{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:8px}
+.grp .gh{font-size:13px;font-weight:500;color:var(--fg)}
+.grp .gh small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.grp details{font-size:13px;color:var(--muted)}
+.grp details summary{cursor:pointer;color:var(--brass)}
+.grp details ul{margin:6px 0 0;padding-left:18px;display:grid;gap:3px}
+.grp .ctl input{font-size:18px}
+.grp .row2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.grp .ctl{padding:0 8px}
+.mini{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.vd{display:grid;gap:0;border-top:1px solid var(--line)}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.line .n{flex:1 1 auto}
+.line .a.ok{color:var(--ok)}
+.line .a.bad{color:var(--warn)}
+.pill{display:inline-block;font-size:12px;border-radius:999px;padding:2px 9px;margin-left:6px;vertical-align:middle;border:1px solid currentColor}
+.pill.ok{color:var(--ok)}.pill.bad{color:var(--warn)}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px;scroll-margin-top:12px}
+.box h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.box ul,.box ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.box a{color:var(--brass)}
+.dates{display:grid;gap:0;border-top:1px solid var(--line)}
+.cd{display:grid;gap:14px}
+.pg{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 16px 6px;display:grid;gap:4px}
+.pg .ph{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:2px solid var(--brass);padding-bottom:8px;margin-bottom:4px}
+.pg .ph h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.pg .ph span{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+details.li{border-bottom:1px solid var(--line);scroll-margin-top:12px}
+details.li>summary{list-style:none;display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:10px 0;cursor:pointer;font-size:15px}
+details.li>summary::-webkit-details-marker{display:none}
+details.li>summary .n{min-width:0;flex:1 1 auto}
+details.li>summary .n b{font-weight:500}
+details.li>summary .n i{font-style:normal;display:inline-block;min-width:20px;color:var(--brass);font-weight:600}
+details.li>summary .n small{display:block;font-size:12px;color:var(--muted)}
+details.li>summary .a::after{content:'＋';color:var(--brass);font-size:13px}
+details.li[open]>summary .a::after{content:'－'}
+details.li[open]{background:linear-gradient(var(--brass-soft),var(--brass-soft)) no-repeat;background-size:3px 100%}
+.ex{display:grid;gap:8px;padding:0 0 14px 12px;font-size:14px;line-height:1.5}
+.ex p{margin:0}
+.ex .t{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);font-weight:600;margin-bottom:1px}
+.ex .ask{background:var(--brass-soft);border-radius:8px;padding:8px 10px}
+.ex .lk{font-size:12px}
+.ex .lk a{color:var(--brass);text-decoration:none}
+.ex .lk button{border:0;background:none;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;padding:0;margin-left:8px}
+.cl{list-style:none;margin:0;padding:0;display:grid;gap:0;border-top:1px solid var(--line)}
+.cl li{border-bottom:1px solid var(--line);padding:10px 0;scroll-margin-top:12px}
+.cl label{display:flex;gap:10px;align-items:flex-start;font-size:15px;cursor:pointer}
+.cl input{width:20px;height:20px;accent-color:var(--brass);margin:2px 0 0;flex:none}
+.cl small{display:block;font-size:13px;color:var(--muted)}
+.cl input:checked+span b{text-decoration:line-through;text-decoration-color:var(--brass)}
+.prog{font-size:13px;color:var(--muted)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.next a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.lead{font-size:13px;color:var(--muted);margin:0}
+footer .src a{overflow-wrap:anywhere}
+</style>
+
+<meta name="description" content="C.A.R. Form DBD in plain words: what the Megan&#x27;s Law notice means, why nobody checks for you, a dated self-check plan and a checklist for meganslaw.ca.gov.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t547/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:title" content="Megan&#x27;s Law Database Disclosure (DBD) explained · Ken Lam Tools">
+<meta property="og:description" content="C.A.R. Form DBD in plain words: what the Megan&#x27;s Law notice means, why nobody checks for you, a dated self-check plan and a checklist for meganslaw.ca.gov.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t547/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* T5xx forms group additions */
+.kick{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.box h3{font-size:15px;font-weight:500;margin:4px 0 0}
+.box p{margin:0;font-size:15px}
+.cmp{background:var(--brass-soft);border-radius:10px;padding:10px 12px;font-size:15px}
+.q{display:grid;gap:8px}
+.q>.lbl{font-size:13px;font-weight:500;color:var(--muted)}
+.seg{flex-wrap:wrap}
+.seg button{min-width:0;flex:1 1 auto}
+.opts{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.opts button{text-align:left;border:1px solid var(--line);background:var(--panel);color:var(--fg);font:inherit;font-size:15px;padding:10px 12px;border-radius:10px;cursor:pointer}
+.opts button small{display:block;color:var(--muted);font-size:12px}
+.opts button[aria-pressed="true"]{border-color:var(--brass);background:var(--brass-soft);font-weight:500}
+select.sel{width:100%;border:1px solid var(--line);background:var(--panel);color:var(--fg);font:inherit;font-size:16px;padding:12px;border-radius:10px}
+.total .v.txt{font-size:40px;line-height:1.08;text-wrap:balance}
+.total .v.ok{color:var(--ok)}.total .v.bad{color:var(--warn)}.total .v.mid{color:var(--brass)}
+.why{font-size:15px;margin:8px 0 0}
+.list{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.list b{font-weight:500}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tags span{font-size:13px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--muted)}
+.tags span.on{border-color:var(--warn);color:var(--fg);background:var(--brass-soft);font-weight:500}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th,.tbl td{text-align:left;vertical-align:top;padding:8px 6px;border-bottom:1px solid var(--line)}
+.tbl th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.tbl td:first-child{font-weight:500}
+.myths{display:grid;gap:12px}
+.bigdate{font-variant-numeric:tabular-nums}
+.ext{font-size:15px}
+.ext a{color:var(--brass);overflow-wrap:anywhere}
+.ex .doc{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;background:var(--bg);border:1px dashed var(--line);border-radius:8px;padding:8px 10px;white-space:pre-wrap;overflow-wrap:anywhere}
+.vid video{width:100%;border-radius:12px;background:#000;aspect-ratio:9/16;max-height:70vh;object-fit:contain}
+</style>
+
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← Tất cả tool</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <div class="kick" data-i="kick"></div>
+    <h1 data-i="title"></h1>
+    <p class="sub" data-i="sub"></p>
+  </header>
+
+  <section class="box" aria-label="Plain words">
+    <h2 data-i="eli_t"></h2>
+    <p data-i="eli"></p>
+    <p class="cmp" data-i="eli_cmp"></p>
+  </section>
+
+  <section class="box" aria-label="Quick check">
+    <h2 data-i="tool_t"></h2>
+    <div class="q"><span class="lbl" data-i="q_deal"></span><div class="opts" id="deal"></div></div>
+    <div class="q"><span class="lbl" data-i="q_role"></span><div class="seg" id="role"></div></div>
+    <div class="row2">
+      <div class="field"><label for="acc"><span data-i="q_acc"></span></label><div class="ctl"><input id="acc" type="date" value="2026-11-10"></div></div>
+      <div class="field"><label for="days"><span data-i="q_days"></span></label><div class="ctl"><input id="days" type="number" inputmode="numeric" min="1" max="60" step="1" value="17"><span class="post" data-i="u_days"></span></div></div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite" id="result">
+    <div class="total">
+      <div class="k" data-i="r_k"></div>
+      <div class="v txt" id="big">—</div>
+      <p class="why" id="why"></p>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="r_who"></b><small id="whoS"></small></span><span class="a" id="whoA"></span></div>
+      <div class="line"><span class="n"><b data-i="r_by"></b><small id="byS"></small></span><span class="a bigdate" id="byA" style="font-size:20px"></span></div>
+    </div>
+    <p class="ext"><a href="https://meganslaw.ca.gov/" target="_blank" rel="noopener" data-i="r_link"></a></p>
+    <div class="note" id="note"></div>
+  </section>
+  <p class="lead" data-i="disc_tool"></p>
+
+  <section class="box" id="checklist" aria-label="Self-check list">
+    <h2 data-i="ck_t"></h2>
+    <p class="prog" id="prog"></p>
+    <ul class="cl" id="cl"></ul>
+  </section>
+
+
+  <section class="cd" id="cd" aria-label="Form walkthrough"></section>
+  <p class="lead" data-i="cd_disc"></p>
+
+  <section class="box" aria-label="Who signs">
+    <h2 data-i="sg_t"></h2>
+    <div class="tw"><table class="tbl" id="sg"></table></div>
+  </section>
+
+  <section class="box" aria-label="Common mistakes">
+    <h2 data-i="my_t"></h2>
+    <div class="myths" id="myths"></div>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_t"></h2>
+    <ol id="nx"></ol>
+  </section>
+
+  <section class="box vid" id="video" aria-label="Video">
+    <h2 data-i="vd_t"></h2>
+    <video src="video.mp4" controls playsinline preload="metadata" poster=""></video>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="video.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 45-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title"></h2>
+    <p data-i="f_sub"></p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok"></div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span data-i="ft_est"></span>
+    <span class="src"><span data-i="ft_src">Sources (checked 06/11/2026):</span> <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=2079.10a." target="_blank" rel="noopener">Civil Code §2079.10a</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=PEN&amp;sectionNum=290.46." target="_blank" rel="noopener">Penal Code §290.46</a> · <a href="https://meganslaw.ca.gov/AboutMegansLaw/SummaryOfMegansLaw" target="_blank" rel="noopener">CA DOJ: Summary of Megan's Law</a> · <a href="https://meganslaw.ca.gov/" target="_blank" rel="noopener">meganslaw.ca.gov</a> · C.A.R. Form DBD (Revised 6/23)</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/t402/" data-i="ft_forms">All real estate forms</a> · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== RULES — T547 DBD. Looked up 06/11/2026 (see /home/claude/forms/facts/DBD.md) =====
+   Civil Code §2079.10a(a): notice required in (1) sale contracts for 1–4 unit residential, (2) leases of single-family residential,
+     (3) leases in multiunit residential with MORE THAN 4 units. 2–4 unit leases are not named.  (b) delivering the notice = no further duty on proximity.
+   Penal Code §290.46: DOJ site; some full address, some community+ZIP only, some excluded. (j) use only to protect a person at risk;
+     housing/insurance/loans/employment uses prohibited. (h)(1) misdemeanor misuse fine $10,000–$50,000.
+   INV_DAYS: RPA default buyer investigation contingency = 17 days after acceptance (ESTIMATE: confirm on current RPA). */
+const RULES={INV_DAYS:17,FINE_MIN:10000,FINE_MAX:50000,CIVIL_MAX:25000};
+const TOOL={code:'T547',path:'/t547/'};
+/*CALC-START*/
+const DEALS={buy14:'req',leaseSfr:'req',lease5:'req',lease24:'gap',other:'no'};
+function dbdCheck(deal,accISO,days){
+  const st=DEALS[deal]||'no';
+  let by=null,wkend=false;
+  if(accISO&&/^\d{4}-\d{2}-\d{2}$/.test(accISO)&&days>0){
+    const [y,m,d]=accISO.split('-').map(Number);
+    by=new Date(Date.UTC(y,m-1,d)+Math.round(days)*864e5);
+    wkend=by.getUTCDay()===0||by.getUTCDay()===6;
+  }
+  return {st,by,wkend};
+}
+if(typeof module!=='undefined'){module.exports={dbdCheck};}
+/*CALC-END*/
+const CK=['ck1','ck2','ck3','ck4','ck5','ck6','ck7'];
+let deal='buy14', role='buyer', ticks={};
+try{ ticks=JSON.parse(localStorage.getItem('kl_t511_ck')||'{}')||{}; }catch(e){ ticks={}; }
+
+const I18N={
+ en:{kick:'C.A.R. Form DBD · revised 6/23',title:"Megan's Law notice: check the sex-offender map yourself",
+  sub:'A one-page notice attached to a purchase contract or lease. It tells you the state keeps a public website, and that checking it is up to you.',
+  eli:"California runs a public website that lists registered sex offenders and, for many of them, where they live. Form DBD does one job: it tells you that site exists and that you can look. The seller doesn't have to check for you. Neither do the agents. Whether you look is your call, and the smart time is while you can still back out (your investigation contingency).",
+  eli_cmp:'Think of the sign at a pool: “No lifeguard on duty.” The sign does not tell you how deep the water is. It just reminds you to look before you jump.',
+  tool_t:'Quick check: does my deal need this notice, and by when should I look?',
+  q_deal:'What are you doing?',q_role:'You are the…',q_acc:'Offer accepted on',q_days:'Investigation period',u_days:'days',
+  deal:{buy14:['Buying a 1–4 unit home','house, condo, duplex to fourplex'],leaseSfr:['Renting a single-family home','lease or month-to-month'],lease5:['Renting in a building with 5+ units','apartment complex'],lease24:['Renting in a 2–4 unit building','duplex, triplex, fourplex'],other:['Something else','commercial, land, 5+ unit purchase']},
+  role:{buyer:'Buyer / tenant',seller:'Seller / landlord'},
+  r_k:'Megan’s Law notice',st:{req:'Required in this contract',gap:'Not named in the law, often given anyway',no:'Not required by §2079.10a'},
+  why:{req:'Civil Code §2079.10a puts this notice in every contract like yours. C.A.R. Form DBD is the usual way to give it.',gap:'§2079.10a names single-family leases and buildings with more than 4 units. A 2–4 unit lease is not named, yet many landlords attach the notice anyway. It costs nothing.',no:'This law covers 1–4 unit sales and residential leases. Your deal is outside it. You can still check the website yourself.'},
+  r_who:'Who has to check the website?',who_a:'Nobody',who_s:'Not the seller, not the agents. You check it yourself.',
+  r_by:'Finish your own check by',by_s:'{d} days after acceptance, the usual default for the buyer’s investigation period in the C.A.R. purchase agreement.',by_s_lease:'For a lease there is no contingency. Look before you sign.',by_wk:' Falls on a weekend: ask your agent whether it moves to the next business day.',
+  r_link:'Open meganslaw.ca.gov →',
+  note:{buyer:'<b>Your move:</b> search the address, the school and the park you use, take a dated screenshot, and decide before the date above. After it passes, walking away can cost your deposit.',seller:'<b>Your move:</b> sign the DBD and give it with the contract. Don’t tell buyers an area is “safe” or “clean”. If you rent: you may not use this website to screen tenants, except to protect someone at risk (Penal Code §290.46(j)).'},
+  disc_tool:'General information, not legal advice. This tool never looks up any address and says nothing about any neighborhood. Dates are calendar days; your contract controls.',
+  ck_t:'Your self-check list',prog:'{n} of 7 done',
+  ck:[['Open meganslaw.ca.gov and search the property address','Accept the terms first. Use the map with a radius you care about, e.g. 1 mile.'],['Also search the places you go every day','School, daycare, park, the walk to the bus stop.'],['Remember the map is not complete','Some people show only a ZIP code. Some are left off by law. Some are out of compliance. An empty map is not a promise.'],['Worried? Call local police','San Jose Police or the county Sheriff can explain what is public. Data can be out of date.'],['Screenshot with the date, save it with your purchase file','So you know exactly what you saw and when.'],['Decide before the investigation period ends','Cancel or ask for changes in writing, through your agent.'],['Use it only to keep people safe','Harassing anyone with this info is a crime. Misuse to commit a misdemeanor adds a $10,000–$50,000 fine.']],
+  form:{name:"Megan's Law Data Base Disclosure",tag:'C.A.R. DBD · 6/23',items:[
+   {id:'dbd-top',n:'Top',t:'Which contract, which home, who',s:'Ties the notice to your purchase agreement or lease',say:'Boxes to mark which agreement this page belongs to (purchase, lease, or other), the date of that agreement, the property, and who is buyer/tenant and seller/housing provider.',ex:'Ken checks “Residential Purchase Agreement”, dated 11/10/2026, for 1234 Example Lane, San Jose, CA 95100. Buyer: Anh Minh & Chị Lan Nguyen. Seller: Bác Hùng Tran.',doc:['☒ Residential Purchase Agreement  dated 11/10/2026','Property: 1234 Example Lane, San Jose, CA 95100','Buyer: Anh Minh & Chị Lan Nguyen','Seller: Bác Hùng Tran'],ask:'Which contract is this page attached to, and does the date match?'},
+   {id:'dbd-notice',n:'Notice',t:'The state website exists',s:'Penal Code §290.46 · meganslaw.ca.gov',say:'The Department of Justice keeps a public website about certain registered sex offenders. Depending on the person’s record, it shows either a street address or just the community and ZIP code.',ex:'Anh Minh types 1234 Example Lane into the search box, sets a 1-mile radius, and saves a dated screenshot on 11/12/2026. The tool you are using does not look up anything; only the state site does.',ask:'Can you show me how to search the site and save the result?'},
+   {id:'dbd-note',n:'Note',t:'Nobody checks for you',s:'Seller and agents are not required to look',say:'In plain terms: the seller and the brokers do not have to check the site. If you want more information, brokers suggest you check it during your investigation period. Brokers are not experts in this area.',ex:'Ken does not search for Anh Minh and does not say whether the street is safe. Acceptance 11/10/2026 + 17 days = Anh Minh finishes his own check by 11/27/2026.',ask:'What is the last day of my investigation contingency in this contract?'},
+   {id:'dbd-sign',n:'Sign',t:'Signatures and dates',s:'Up to 2 buyers/tenants and 2 sellers/landlords',say:'Each buyer/tenant and each seller/housing provider signs and dates. Signing shows you received the notice, nothing more.',ex:'Anh Minh and Chị Lan sign 11/10/2026 with the offer. Bác Hùng Tran signs 11/10/2026 when he accepts.',doc:['Buyer/Tenant: Minh Nguyen      Date 11/10/2026','Buyer/Tenant: Lan Nguyen       Date 11/10/2026','Seller: Hung Tran               Date 11/10/2026'],ask:'Is the signed copy in my file, and do I get a copy?'}]},
+  sg:[['Buyer / tenant','With the offer or when signing the lease','Copy to you; original to the agents and escrow file'],['Seller / landlord','When accepting the offer or signing the lease','Copy to both agents and escrow'],['Agents','No signature; they deliver the form','Keep it in the broker’s transaction file']],
+  myths:['<b>“The seller has to tell me if an offender lives nearby.”</b> No. Once this notice is delivered, the seller and agents don’t have to say more about who lives close by (Civil Code §2079.10a(b)). My blunt view after 23 years: any agent who tells you “this street is clean” is saying something they can’t know and shouldn’t say. Look it up yourself.','<b>“Empty map means a safe neighborhood.”</b> Wrong. Some people show only a ZIP code, some are excluded by law, some never updated their registration. The map is a starting point, not a guarantee.','<b>“If I find someone nearby I can warn the whole street.”</b> Careful. The law lets you use the info to protect people at risk. Using it to harass, or to deny housing, insurance or a job, is illegal and can bring fines and damages (Penal Code §290.46(h), (j)).'],
+  nx:['Ask for the full disclosure package before you offer: <a href="/t151/">T151</a>.','Learn what the seller must disclose: <a href="/t28/">T28</a>.','Renting? California and San Jose tenant rules: <a href="/t53/">T53</a>.','Every other form explained: <a href="/t402/">T402 · All real estate forms</a> · <a href="/t402/">Forms library</a>.'],
+  ft_est:'General information, not legal advice. This page does not search the Megan’s Law site and makes no claim about any address or person. Rules as checked 06/11/2026.',
+  sms:"Hi Ken, I'm looking at the Megan's Law notice (DBD) for {deal}. Accepted {acc}, I plan to finish my check by {by}. Can you help?",
+  sum:"Megan's Law notice (C.A.R. DBD)\nDeal: {deal}\nRole: {role}\nNotice: {st}\nWho checks: nobody is required, buyer checks\nFinish own check by: {by}\nSite: https://meganslaw.ca.gov/\nChecklist done: {n}/7"},
+ vi:{kick:'C.A.R. Form DBD · bản 6/23',title:'Megan’s Law: tự tra người phạm tội tình dục quanh nhà',
+  sub:'Tờ thông báo 1 trang gắn vào hợp đồng mua hoặc thuê. Nó báo có trang web của tiểu bang, và tra hay không là việc của bạn.',
+  eli:'California có một trang web công khai ghi danh người đã đăng ký là phạm tội tình dục, nhiều người có ghi luôn chỗ ở. Form DBD làm đúng một việc: báo cho bạn biết trang đó có thật và bạn được quyền vô coi. Seller không phải tra giùm. Agent cũng vậy. Tra hay không là bạn quyết, và lúc nên tra là khi còn được quyền rút lui (investigation contingency, tức thời gian được kiểm tra căn nhà).',
+  eli_cmp:'Giống tấm bảng ở hồ bơi: “Không có cứu hộ.” Tấm bảng không nói nước sâu bao nhiêu. Nó chỉ nhắc bạn tự nhìn trước khi nhảy.',
+  tool_t:'Kiểm tra nhanh: deal của tôi có cần tờ này không, nên tra trước ngày nào?',
+  q_deal:'Bạn đang làm gì?',q_role:'Bạn là…',q_acc:'Ngày offer được chấp nhận',q_days:'Thời gian kiểm tra',u_days:'ngày',
+  deal:{buy14:['Mua nhà 1–4 căn','nhà, condo, duplex tới fourplex'],leaseSfr:['Thuê nhà single family','hợp đồng thuê hoặc tháng-tháng'],lease5:['Thuê trong chung cư 5 căn trở lên','khu apartment'],lease24:['Thuê trong nhà 2–4 căn','duplex, triplex, fourplex'],other:['Việc khác','thương mại, đất, mua chung cư 5+ căn']},
+  role:{buyer:'Người mua / thuê',seller:'Người bán / chủ nhà'},
+  r_k:'Thông báo Megan’s Law',st:{req:'Bắt buộc có trong hợp đồng này',gap:'Luật không ghi rõ, nhưng thường vẫn đưa',no:'§2079.10a không bắt buộc'},
+  why:{req:'Civil Code §2079.10a bắt mọi hợp đồng như của bạn phải có thông báo này. Form DBD của C.A.R. là cách thường dùng.',gap:'§2079.10a ghi nhà single family cho thuê và chung cư hơn 4 căn. Nhà 2–4 căn cho thuê không được ghi tên, nhưng nhiều chủ nhà vẫn đưa tờ này cho chắc. Không tốn gì.',no:'Luật này chỉ nói về mua bán nhà 1–4 căn và thuê nhà ở. Deal của bạn nằm ngoài. Bạn vẫn có thể tự vô trang web tra.'},
+  r_who:'Ai phải tra trang web?',who_a:'Không ai',who_s:'Seller không, agent không. Bạn tự tra.',
+  r_by:'Nên tự tra xong trước',by_s:'{d} ngày sau ngày chấp nhận, là số ngày mặc định thường thấy cho thời gian kiểm tra của người mua trong hợp đồng mua C.A.R.',by_s_lease:'Thuê nhà thì không có contingency. Tra trước khi ký.',by_wk:' Rơi vào cuối tuần: hỏi agent có dời qua ngày làm việc kế không.',
+  r_link:'Mở meganslaw.ca.gov →',
+  note:{buyer:'<b>Việc của bạn:</b> tra địa chỉ căn nhà, trường của con, công viên hay đi, chụp màn hình có ngày, rồi quyết định trước ngày ở trên. Qua ngày đó mà rút lui thì có thể mất tiền cọc.',seller:'<b>Việc của bạn:</b> ký DBD và đưa kèm hợp đồng. Đừng nói với người mua khu này “an toàn” hay “sạch”. Nếu cho thuê: không được dùng trang này để lọc người thuê, trừ khi để bảo vệ người có nguy cơ (Penal Code §290.46(j)).'},
+  disc_tool:'Thông tin chung, không phải tư vấn luật. Tool này không tra địa chỉ nào và không nói gì về khu nào. Ngày tính theo ngày lịch; hợp đồng của bạn là chuẩn.',
+  ck_t:'Danh sách tự kiểm tra',prog:'Đã làm {n}/7',
+  ck:[['Mở meganslaw.ca.gov và tra địa chỉ căn nhà','Bấm đồng ý điều khoản trước. Dùng bản đồ với bán kính bạn quan tâm, vd 1 dặm.'],['Tra luôn những chỗ đi mỗi ngày','Trường, nhà giữ trẻ, công viên, đường đi bộ ra trạm bus.'],['Nhớ: bản đồ không đầy đủ','Có người chỉ hiện ZIP code. Có người được luật cho khỏi lên web. Có người không đăng ký đúng hạn. Bản đồ trống không phải lời hứa.'],['Lo thì gọi cảnh sát địa phương','San Jose Police hoặc Sheriff của county giải thích được cái gì là công khai. Dữ liệu có thể cũ.'],['Chụp màn hình có ngày, lưu chung hồ sơ mua nhà','Để biết chắc mình đã thấy gì, lúc nào.'],['Quyết định trước khi hết thời gian kiểm tra','Muốn hủy hay xin đổi điều kiện thì làm bằng giấy, qua agent.'],['Chỉ dùng để giữ an toàn cho người khác','Dùng thông tin này để quấy rối ai là phạm tội. Dùng sai để phạm tội nhẹ bị phạt thêm $10,000–$50,000.']],
+  form:{name:'Megan’s Law Data Base Disclosure',tag:'C.A.R. DBD · 6/23',items:[
+   {id:'dbd-top',n:'Đầu',t:'Hợp đồng nào, căn nào, ai',s:'Gắn tờ này vào hợp đồng mua hoặc thuê',say:'Mấy ô để đánh dấu tờ này đi theo hợp đồng nào (mua, thuê, hay loại khác), ngày của hợp đồng đó, căn nhà, ai là người mua/thuê và ai là người bán/chủ nhà.',ex:'Ken đánh dấu “Residential Purchase Agreement”, ngày 10/11/2026, căn 1234 Example Lane, San Jose, CA 95100. Buyer: Anh Minh & Chị Lan Nguyen. Seller: Bác Hùng Tran.',doc:['☒ Residential Purchase Agreement  ngày 10/11/2026','Căn nhà: 1234 Example Lane, San Jose, CA 95100','Buyer: Anh Minh & Chị Lan Nguyen','Seller: Bác Hùng Tran'],ask:'Tờ này gắn vào hợp đồng nào, ngày có khớp không?'},
+   {id:'dbd-notice',n:'Notice',t:'Có trang web của tiểu bang',s:'Penal Code §290.46 · meganslaw.ca.gov',say:'Bộ Tư pháp tiểu bang (DOJ) giữ một trang web công khai về một số người đã đăng ký là phạm tội tình dục. Tùy hồ sơ từng người, web ghi địa chỉ nhà, hoặc chỉ ghi khu và ZIP code.',ex:'Anh Minh gõ 1234 Example Lane vào ô tìm, chọn bán kính 1 dặm, chụp màn hình có ngày 12/11/2026. Tool bạn đang dùng không tra gì cả; chỉ trang của tiểu bang mới tra.',ask:'Chỉ giùm tôi cách tra trên web và lưu kết quả được không?'},
+   {id:'dbd-note',n:'Ghi chú',t:'Không ai tra giùm bạn',s:'Seller và agent không bắt buộc tra',say:'Nói gọn: seller và các broker không phải vô trang web tra. Bạn muốn biết thêm thì broker khuyên tự tra trong thời gian kiểm tra (investigation contingency). Broker không phải chuyên gia chuyện này.',ex:'Ken không tra giùm Anh Minh và không nói con đường đó an toàn hay không. Chấp nhận 10/11/2026 + 17 ngày = Anh Minh tự tra xong trước 27/11/2026.',ask:'Ngày cuối của investigation contingency trong hợp đồng này là ngày nào?'},
+   {id:'dbd-sign',n:'Ký',t:'Chữ ký và ngày',s:'Tối đa 2 người mua/thuê và 2 người bán/chủ nhà',say:'Mỗi người mua/thuê và mỗi người bán/chủ nhà ký và ghi ngày. Ký chỉ có nghĩa là đã nhận thông báo, không hơn.',ex:'Anh Minh và Chị Lan ký 10/11/2026 cùng lúc với offer. Bác Hùng Tran ký 10/11/2026 khi chấp nhận.',doc:['Buyer/Tenant: Minh Nguyen      Ngày 10/11/2026','Buyer/Tenant: Lan Nguyen       Ngày 10/11/2026','Seller: Hung Tran               Ngày 10/11/2026'],ask:'Bản đã ký có trong hồ sơ chưa, tôi có được giữ 1 bản không?'}]},
+  sg:[['Người mua / thuê','Khi viết offer hoặc ký hợp đồng thuê','Bạn giữ 1 bản; bản chính về agent và hồ sơ escrow'],['Người bán / chủ nhà','Khi chấp nhận offer hoặc ký hợp đồng thuê','Gửi cho 2 agent và escrow'],['Agent','Không ký; chỉ đưa form','Lưu trong hồ sơ giao dịch của broker']],
+  myths:['<b>“Seller phải nói cho tôi biết có người phạm tội ở gần.”</b> Không. Đưa tờ thông báo này rồi thì seller và agent không bắt buộc nói thêm ai sống gần (Civil Code §2079.10a(b)). Nói thẳng sau 23 năm làm nghề: agent nào bảo “con đường này sạch” là đang nói chuyện mình không biết và không nên nói. Tự tra đi.','<b>“Bản đồ trống là khu an toàn.”</b> Sai. Có người chỉ hiện ZIP code, có người được luật cho khỏi lên web, có người không cập nhật đăng ký. Bản đồ là chỗ bắt đầu, không phải giấy bảo đảm.','<b>“Thấy có người ở gần thì báo cả xóm.”</b> Cẩn thận. Luật cho dùng thông tin để bảo vệ người có nguy cơ. Dùng để quấy rối, hay để từ chối cho thuê nhà, bảo hiểm, việc làm là phạm luật, có thể bị phạt và bồi thường (Penal Code §290.46(h), (j)).'],
+  nx:['Xin trọn bộ disclosures trước khi viết offer: <a href="/t151/">T151</a>.','Seller phải khai những gì: <a href="/t28/">T28</a>.','Đi thuê? Luật thuê nhà California và San Jose: <a href="/t53/">T53</a>.','Các form khác giải thích từng đoạn: <a href="/t402/">T402 · Mọi forms địa ốc</a> · <a href="/t402/">Thư viện forms</a>.'],
+  ft_est:'Thông tin chung, không phải tư vấn luật. Trang này không tra trang Megan’s Law và không nói gì về bất kỳ địa chỉ hay người nào. Luật tra ngày 06/11/2026.',
+  sms:'Chào Ken, tôi đang coi tờ Megan’s Law (DBD) cho việc {deal}. Chấp nhận ngày {acc}, tôi định tự tra xong trước {by}. Ken chỉ giùm được không?',
+  sum:'Thông báo Megan’s Law (C.A.R. DBD)\nViệc: {deal}\nVai trò: {role}\nThông báo: {st}\nAi tra: không ai bắt buộc, người mua tự tra\nTự tra xong trước: {by}\nWeb: https://meganslaw.ca.gov/\nChecklist: {n}/7'}
+};
+function fdate(d){ if(!d) return '—'; const y=d.getUTCFullYear(),m=d.getUTCMonth()+1,dd=d.getUTCDate();
+  if(lang==='vi'){const w=['Chủ nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'][d.getUTCDay()];return w+' '+String(dd).padStart(2,'0')+'/'+String(m).padStart(2,'0')+'/'+y;}
+  return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}); }
+function seg(el,map,cur,cb){ el.innerHTML=Object.keys(map).map(k=>{const v=map[k];return '<button type="button" data-k="'+k+'" aria-pressed="'+(k===cur)+'">'+(Array.isArray(v)?esc(v[0])+'<small>'+esc(v[1])+'</small>':esc(v))+'</button>';}).join('');
+  el.onclick=e=>{const b=e.target.closest('button[data-k]'); if(!b) return; cb(b.dataset.k); toolLang(); run();}; }
+function toolLang(){ const d=L(); seg($('deal'),d.deal,deal,k=>deal=k); seg($('role'),d.role,role,k=>role=k);
+  $('cl').innerHTML=d.ck.map(([b,s],i)=>'<li id="'+CK[i]+'"><label><input type="checkbox" data-ck="'+CK[i]+'"'+(ticks[CK[i]]?' checked':'')+'><span><b>'+(i+1)+'. '+esc(b)+'</b><small>'+esc(s)+'</small></span></label></li>').join(''); prog(); }
+function prog(){ const n=CK.filter(k=>ticks[k]).length; $('prog').textContent=fill(L().prog,{n}); return n; }
+function toolInit(){
+  ['acc','days'].forEach(id=>{$(id).addEventListener('input',run);$(id).addEventListener('change',run);});
+  $('cl').addEventListener('change',e=>{const c=e.target.closest('[data-ck]'); if(!c) return; ticks[c.dataset.ck]=c.checked; try{localStorage.setItem('kl_t511_ck',JSON.stringify(ticks));}catch(x){} prog(); run();});
+}
+function calc(){
+  const d=L(), days=parseFloat($('days').value), isLease=deal!=='buy14'&&deal!=='other';
+  const r=dbdCheck(deal,$('acc').value,isFinite(days)?days:RULES.INV_DAYS);
+  const big=$('big'); big.textContent=d.st[r.st]; big.className='v txt '+(r.st==='no'?'ok':'mid');
+  $('why').textContent=d.why[r.st];
+  $('whoA').textContent=d.who_a; $('whoS').textContent=d.who_s;
+  $('byA').textContent=isLease?'—':fdate(r.by);
+  $('byS').textContent=isLease?d.by_s_lease:fill(d.by_s,{d:isFinite(days)?days:RULES.INV_DAYS})+(r.wkend?d.by_wk:'');
+  $('note').innerHTML=d.note[role];
+  const o={deal:d.deal[deal][0],role:d.role[role],st:d.st[r.st],acc:$('acc').value||'—',by:isLease?d.by_s_lease:fdate(r.by),n:prog()};
+  return {sum:fill(d.sum,o),sms:fill(d.sms,o)};
+}
+
+</script>
+<script>
+/* ===== Common engine for the forms group (T5xx). Tool script above defines TOOL, I18N, toolInit(), calc(). ===== */
+const C={
+ en:{eli_t:'In plain words',sg_t:'Who signs, when, and where it goes',sg_h:['Who','When','Then'],my_t:'What many people get wrong',nx_t:'Next steps',vd_t:'Watch the 45-second video',
+  L_say:'What the form says',L_ex:'Example',L_ask:'Ask your agent',L_link:'Link',
+  cd_disc:'Our own plain-language walkthrough, not the official C.A.R. form. Paragraph numbers follow the form; the wording is ours. Your agent gives you the real form to sign.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 45-sec video',
+  f_title:'Email this result to yourself',f_sub:'Ken will reply if you have questions. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, text Ken at the number below.",f_or:'Or text:',f_copy:'Copy',
+  ft_src:'Sources (checked 06/11/2026):',ft_upd:'Updated',ft_all:'All tools',ft_forms:'All real estate forms',lang:'Tiếng Việt',
+  subj:'{code} result — {n}',body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\n{sum}\n\nSent from tool {code} tools.kenlamrealty.com{path}'},
+ vi:{eli_t:'Nói cho dễ hiểu',sg_t:'Ai ký, khi nào, ký xong đi đâu',sg_h:['Ai','Khi nào','Ký xong'],my_t:'Nhiều người hiểu sai',nx_t:'Bước tiếp theo',vd_t:'Xem video 45 giây',
+  L_say:'Form nói gì',L_ex:'Ví dụ',L_ask:'Hỏi agent',L_link:'Link',
+  cd_disc:'Đây là phần diễn giải bằng lời của mình, không phải form C.A.R. chính thức. Số đoạn theo đúng form; câu chữ là của mình. Form thật để ký thì agent đưa.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 45 giây',
+  f_title:'Gửi kết quả này về email',f_sub:'Có gì thắc mắc Ken sẽ trả lời. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì nhắn Ken số dưới đây.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_src:'Nguồn (tra 06/11/2026):',ft_upd:'Cập nhật',ft_all:'Tất cả tool',ft_forms:'Mọi forms địa ốc',lang:'English',
+  subj:'Kết quả {code} — {n}',body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\n{sum}\n\nGửi từ tool {code} tools.kenlamrealty.com{path}'}
+};
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fill=(s,o)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const L=()=>Object.assign({},C[lang],I18N[lang]);
+let OUT={sum:'',sms:''};
+/* embed mode (?embed=1): iframe on kenlamrealty.com, height via postMessage klToolsHeight */
+const EMBED=/[?&]embed=1/.test(location.search);
+let klSend=()=>{};
+if(EMBED){ document.documentElement.classList.add('embed'); let lastH=0;
+  klSend=()=>{ const w=document.querySelector('.wrap'); const h=Math.ceil(w.getBoundingClientRect().bottom+window.scrollY+40); if(Math.abs(h-lastH)<4) return; lastH=h; try{ parent.postMessage({klToolsHeight:h},'*'); }catch(e){} };
+  window.addEventListener('resize',()=>klSend()); new ResizeObserver(()=>klSend()).observe(document.body);
+  document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('a[href]'); if(!a) return; const h=a.getAttribute('href'); if(h.startsWith('#')||a.target==='_blank') return; if(h.startsWith('/')) a.href='https://tools.kenlamrealty.com'+h; a.target='_top'; },true); }
+
+function buildForm(){
+  const d=L(), f=d.form, open=new Set([...document.querySelectorAll('details.li[open]')].map(x=>x.id));
+  let h='<article class="pg"><div class="ph"><h2>'+esc(f.name)+'</h2><span>'+esc(f.tag)+'</span></div>';
+  for(const it of f.items){
+    h+='<details class="li" id="'+it.id+'"'+(open.has(it.id)?' open':'')+'><summary><span class="n"><i>'+esc(it.n)+'</i> <b>'+esc(it.t)+'</b><small>'+esc(it.s)+'</small></span><span class="a"></span></summary>'+
+      '<div class="ex"><p><span class="t">'+d.L_say+'</span>'+esc(it.say)+'</p><p><span class="t">'+d.L_ex+'</span>'+esc(it.ex)+'</p>'+
+      (it.doc?'<div class="doc">'+it.doc.map(esc).join('\n')+'</div>':'')+
+      '<p class="ask"><span class="t">'+d.L_ask+'</span>“'+esc(it.ask)+'”</p><span class="lk"><a href="#'+it.id+'">#'+it.id+'</a></span></div></details>';
+  }
+  $('cd').innerHTML=h+'</article>';
+  $('sg').innerHTML='<thead><tr>'+d.sg_h.map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+d.sg.map(r=>'<tr>'+r.map(x=>'<td>'+esc(x)+'</td>').join('')+'</tr>').join('')+'</tbody>';
+  $('myths').innerHTML=d.myths.map(m=>'<p class="myth">'+m+'</p>').join('');
+  $('nx').innerHTML=d.nx.map(x=>'<li>'+x+'</li>').join('');
+}
+function applyLang(){
+  const d=L();
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  buildForm(); if(typeof toolLang==='function') toolLang(); run();
+}
+function run(){ const d=L(); OUT=calc()||OUT; $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(OUT.sms); klSend(); }
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus(); klSend();};
+$('sendBtn').onclick=()=>{
+  const d=L(), o={code:TOOL.code,path:TOOL.path,n:$('fname').value.trim()||'—',e:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—',sum:OUT.sum};
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,o))+'&body='+encodeURIComponent(fill(d.body,o));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false; klSend();
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+$('cd').addEventListener('toggle',()=>klSend(),true);
+function openHash(){ const h=decodeURIComponent(location.hash.slice(1)); if(!h) return; const el=document.getElementById(h); if(!el) return; if(el.tagName==='DETAILS') el.open=true; setTimeout(()=>el.scrollIntoView({block:'start'}),30); }
+window.addEventListener('hashchange',openHash);
+toolInit(); applyLang(); openHash();
+
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tool';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

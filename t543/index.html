@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FIRPTA Form AS · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="C.A.R. Form AS explained in plain words: who signs, when FIRPTA holds back 0%, 10% or 15% of the price, and California's separate Form 593.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t543/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:title" content="FIRPTA Form AS · Ken Lam Tools">
+<meta property="og:description" content="Enter the price and who the seller is. See the FIRPTA hold-back (0/10/15%), whether the seller can sign Form AS, and California's 3⅓%.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t543/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+html.embed .kl-back{display:none}
+html.embed body{padding-top:8px}
+/* T312 additions */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--fg);cursor:pointer}
+.chk input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;flex:none}
+.grp{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:8px}
+.grp .gh{font-size:13px;font-weight:500;color:var(--fg)}
+.grp .gh small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.grp details{font-size:13px;color:var(--muted)}
+.grp details summary{cursor:pointer;color:var(--brass)}
+.grp details ul{margin:6px 0 0;padding-left:18px;display:grid;gap:3px}
+.grp .ctl input{font-size:18px}
+.grp .row2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.grp .ctl{padding:0 8px}
+.mini{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.vd{display:grid;gap:0;border-top:1px solid var(--line)}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.line .n{flex:1 1 auto}
+.line .a.ok{color:var(--ok)}
+.line .a.bad{color:var(--warn)}
+.pill{display:inline-block;font-size:12px;border-radius:999px;padding:2px 9px;margin-left:6px;vertical-align:middle;border:1px solid currentColor}
+.pill.ok{color:var(--ok)}.pill.bad{color:var(--warn)}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px;scroll-margin-top:12px}
+.box h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.box ul,.box ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.box a{color:var(--brass)}
+.dates{display:grid;gap:0;border-top:1px solid var(--line)}
+.cd{display:grid;gap:14px}
+.pg{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 16px 6px;display:grid;gap:4px}
+.pg .ph{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:2px solid var(--brass);padding-bottom:8px;margin-bottom:4px}
+.pg .ph h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.pg .ph span{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+details.li{border-bottom:1px solid var(--line);scroll-margin-top:12px}
+details.li>summary{list-style:none;display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:10px 0;cursor:pointer;font-size:15px}
+details.li>summary::-webkit-details-marker{display:none}
+details.li>summary .n{min-width:0;flex:1 1 auto}
+details.li>summary .n b{font-weight:500}
+details.li>summary .n i{font-style:normal;display:inline-block;min-width:20px;color:var(--brass);font-weight:600}
+details.li>summary .n small{display:block;font-size:12px;color:var(--muted)}
+details.li>summary .a::after{content:'＋';color:var(--brass);font-size:13px}
+details.li[open]>summary .a::after{content:'－'}
+details.li[open]{background:linear-gradient(var(--brass-soft),var(--brass-soft)) no-repeat;background-size:3px 100%}
+.ex{display:grid;gap:8px;padding:0 0 14px 12px;font-size:14px;line-height:1.5}
+.ex p{margin:0}
+.ex .t{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);font-weight:600;margin-bottom:1px}
+.ex .ask{background:var(--brass-soft);border-radius:8px;padding:8px 10px}
+.ex .lk{font-size:12px}
+.ex .lk a{color:var(--brass);text-decoration:none}
+.ex .lk button{border:0;background:none;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;padding:0;margin-left:8px}
+.cl{list-style:none;margin:0;padding:0;display:grid;gap:0;border-top:1px solid var(--line)}
+.cl li{border-bottom:1px solid var(--line);padding:10px 0;scroll-margin-top:12px}
+.cl label{display:flex;gap:10px;align-items:flex-start;font-size:15px;cursor:pointer}
+.cl input{width:20px;height:20px;accent-color:var(--brass);margin:2px 0 0;flex:none}
+.cl small{display:block;font-size:13px;color:var(--muted)}
+.cl input:checked+span b{text-decoration:line-through;text-decoration-color:var(--brass)}
+.prog{font-size:13px;color:var(--muted)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.next a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.lead{font-size:13px;color:var(--muted);margin:0}
+footer .src a{overflow-wrap:anywhere}
+
+/* T5xx forms series */
+.kick{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:2px 0 0}
+.box p{margin:0;font-size:15px}
+.box .eli{display:grid;gap:8px}
+.sec{font-family:var(--display);font-weight:400;font-size:28px;margin:0}
+.ex .fill{border:1px dashed var(--line);border-radius:8px;padding:8px 10px;background:var(--bg)}
+.tbl{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px}
+.tbl th{text-align:left;font-weight:500;color:var(--muted);font-size:12px;padding:6px 6px 6px 0;border-bottom:1px solid var(--line)}
+.tbl td{vertical-align:top;padding:8px 6px 8px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.tbl td b{font-weight:500}
+.field select{width:100%;border:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;padding:12px 4px;min-width:0}
+.seg.v{flex-direction:column}
+.seg.v button{text-align:left;border-bottom:1px solid var(--line)}
+.seg.v button:last-child{border-bottom:0}
+.seg button{line-height:1.3}
+.big2{font-family:var(--display);font-weight:400;font-size:44px;line-height:1.05;margin-top:4px}
+.big2.ok{color:var(--ok)}.big2.bad{color:var(--warn)}
+.res-sub{margin:6px 0 0;font-size:15px}
+.vid video{width:100%;border-radius:12px;background:#000}
+.cks{display:grid;gap:8px}
+.line .a.ok{color:var(--ok)}.line .a.bad{color:var(--warn)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← Tất cả tool</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <p class="kick" data-i="kick"></p>
+    <h1 data-i="title"></h1>
+    <p class="sub" data-i="sub"></p>
+  </header>
+
+  <section class="box" aria-label="Plain words">
+    <h2 data-i="eli_t"></h2>
+    <div class="eli" data-i="eli"></div>
+  </section>
+
+  <section class="inputs" aria-label="Inputs">
+    <h2 class="sec" data-i="tl_t"></h2>
+    <div class="field">
+      <label for="price"><span data-i="l_price">Giá bán</span> <small data-i="l_price_s"></small></label>
+      <div class="ctl"><span class="pre">$</span><input id="price" type="number" inputmode="numeric" min="0" step="1000" value="950000"></div>
+    </div>
+    <div class="field">
+      <label data-i="l_sel">Người bán là ai (theo thuế)?</label>
+      <div class="seg v" data-k="sel" role="group">
+        <button type="button" data-v="us" aria-pressed="false" data-i="sel_us"></button>
+        <button type="button" data-v="fp" aria-pressed="true" data-i="sel_fp"></button>
+      </div>
+    </div>
+    <div class="field">
+      <label data-i="l_res">Người mua có định ở căn này không?</label>
+      <div class="seg v" data-k="res" role="group">
+        <button type="button" data-v="live" aria-pressed="true" data-i="res_live"></button>
+        <button type="button" data-v="no" aria-pressed="false" data-i="res_no"></button>
+      </div>
+    </div>
+    <div class="field">
+      <label data-i="l_home">California: seller ở căn này làm nhà chính 2 trong 5 năm qua?</label>
+      <div class="seg" data-k="home" role="group">
+        <button type="button" data-v="yes" aria-pressed="false" data-i="yes"></button>
+        <button type="button" data-v="no" aria-pressed="true" data-i="no"></button>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite" id="result">
+    <div class="total">
+      <div class="k" data-i="r_k">FIRPTA giữ lại</div>
+      <div class="v"><span id="big">—</span> <small id="pct"></small></div>
+      <p class="res-sub" id="why"></p>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="r_as">Form AS</b><small id="asS"></small></span><span class="a" id="asA"></span></div>
+      <div class="line"><span class="n"><b data-i="r_net">Seller còn nhận trước các phí khác</b><small data-i="r_net_s"></small></span><span class="a" id="net"></span></div>
+      <div class="line"><span class="n"><b data-i="r_ca">California Form 593 (riêng, khác FIRPTA)</b><small id="caS"></small></span><span class="a" id="caA"></span></div>
+    </div>
+    <div class="note" id="verdict"></div>
+  </section>
+
+
+  <section class="cd" aria-label="Form walkthrough">
+    <h2 class="sec" data-i="fs_t"></h2>
+    <p class="lead" data-i="fs_l"></p>
+    <div class="cd" id="formsim"></div>
+    <p class="lead" data-i="fs_disc"></p>
+  </section>
+
+  <section class="box" aria-label="Who signs">
+    <h2 data-i="sg_t"></h2>
+    <table class="tbl" id="signT"></table>
+  </section>
+
+  <section class="box" aria-label="Myths">
+    <h2 data-i="my_t"></h2>
+    <div id="myths" style="display:grid;gap:12px"></div>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_t"></h2>
+    <ol data-i="nx"></ol>
+  </section>
+
+  <section class="box vid" aria-label="Video">
+    <h2 data-i="v_t"></h2>
+    <video src="video.mp4" controls playsinline preload="metadata" poster=""></video>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email kết quả cho tôi</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Hỏi Ken</a>
+    <a class="btn" id="videoBtn" href="video.mp4" target="_blank" rel="noopener" data-i="b_video">Mở video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title"></h2>
+    <p data-i="f_sub"></p>
+    <div class="field"><label for="fname"><span data-i="f_name">Tên</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok"></div>
+    <div class="copyrow"><span data-i="f_or">Hoặc nhắn tin:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <p class="note" data-i="disc"></p>
+
+  <footer>
+    <span class="src"><span data-i="ft_src">Sources (checked 06/11/2026):</span> <a href="https://www.irs.gov/instructions/i8288" target="_blank" rel="noopener">IRS Instructions for Form 8288 (Rev. 01/2026)</a> · <a href="https://www.irs.gov/individuals/international-taxpayers/exceptions-from-firpta-withholding" target="_blank" rel="noopener">IRS: Exceptions from FIRPTA withholding</a> · <a href="https://www.irs.gov/individuals/international-taxpayers/firpta-withholding" target="_blank" rel="noopener">IRS: FIRPTA withholding</a> · <a href="https://www.irs.gov/forms-pubs/about-form-8288-b" target="_blank" rel="noopener">IRS Form 8288-B</a> · <a href="https://www.ftb.ca.gov/forms/misc/1016.html" target="_blank" rel="noopener">FTB Pub 1016 (Form 593)</a> · C.A.R. Form AS (Reviewed 6/25)</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/t402/" data-i="all_forms">Mọi forms địa ốc</a> · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* shared strings (forms series) */
+const CI={
+ en:{lang:'Tiếng Việt',back:'← All tools',
+  fs_t:'Read this form, section by section',fs_l:'Tap a section. Each one shows what it says in plain words, a filled-in example and what to ask your agent.',
+  fs_disc:'Our own plain-English walkthrough, not the C.A.R. form itself. Get the real form from your agent or escrow.',
+  L_say:'What it says',L_ex:'Example (filled in)',L_q:'Ask your agent',L_link:'Copy link',L_copied:'Copied ✓',
+  sg_t:'Who signs, when, and where it goes',sg_who:'Who',sg_when:'When',sg_where:'Then it goes to',
+  my_t:'What people get wrong',nx_t:'Next steps',v_t:'Watch the 45-second video',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Open the video',
+  f_title:'Email this to yourself',f_sub:'Ken will reply and go over it with you. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, text Ken the number below.",f_or:'Or text:',f_copy:'Copy',
+  disc:'This is a plain-language explanation and estimate, not legal or tax advice. For your deal, ask a California real estate attorney, a CPA or the agency named on the form.',
+  ft_src:'Sources (checked 06/11/2026):',ft_upd:'Updated',ft_all:'All tools',
+  all_forms:'All real estate forms explained'},
+ vi:{lang:'English',back:'← Tất cả tool',
+  fs_t:'Đọc form này từng đoạn',fs_l:'Bấm vào từng đoạn. Mỗi đoạn có: form nói gì bằng lời dễ hiểu, ví dụ đã điền sẵn, và câu nên hỏi agent.',
+  fs_disc:'Đây là phần giải thích của mình, không phải tờ form C.A.R. Form thật thì xin agent hoặc escrow.',
+  L_say:'Form nói gì',L_ex:'Ví dụ (đã điền)',L_q:'Hỏi agent',L_link:'Copy link',L_copied:'Đã copy ✓',
+  sg_t:'Ai ký, khi nào, ký xong đi đâu',sg_who:'Ai',sg_when:'Khi nào',sg_where:'Ký xong đi đâu',
+  my_t:'Nhiều người hiểu sai',nx_t:'Bước tiếp theo',v_t:'Xem video 45 giây',
+  b_email:'Email kết quả cho tôi',b_sms:'Hỏi Ken',b_video:'Mở video',
+  f_title:'Gửi kết quả này vào email',f_sub:'Ken sẽ trả lời và coi giùm với bạn. Không spam.',f_name:'Tên',f_phone:'Số phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Email đã mở. Bấm Send là xong. Nếu không mở được, nhắn Ken số bên dưới.',f_or:'Hoặc nhắn tin:',f_copy:'Copy',
+  disc:'Đây là phần giải thích và ước tính cho dễ hiểu, không phải tư vấn luật hay thuế. Với deal của bạn, hỏi luật sư địa ốc California, CPA, hoặc cơ quan ghi trên form.',
+  ft_src:'Nguồn (kiểm ngày 06/11/2026):',ft_upd:'Cập nhật',ft_all:'Tất cả tool',
+  all_forms:'Mọi forms địa ốc'}
+};
+
+/* ===== shared page code (T5xx forms series) ===== */
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−':'')+'$'+Math.round(Math.abs(n)).toLocaleString('en-US');
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const fill=(s,o)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const S={};
+let last={};
+
+/* ===== RULES — sửa 1 chỗ ở đây (checked 06/11/2026) =====
+   IRC §1445 / IRS Instructions for Form 8288 (Rev. 01/2026) https://www.irs.gov/instructions/i8288 :
+     15% of amount realized (general); 10% if buyer acquires for use as a residence and amount realized ≤ $1,000,000;
+     0% if buyer is an individual, acquires for use as a residence and amount realized ≤ $300,000.
+     Form 8288 + payment due by the 20th day after transfer.
+   Residence = buyer or family has definite plans to live there ≥ 50% of the days it is used, in each of the first two
+     12-month periods after transfer (IRS "Exceptions from FIRPTA withholding", reviewed 15-Jul-2026).
+   US seller (citizen / green card / substantial presence) = no FIRPTA withholding; signs C.A.R. AS (3A or 3B).
+   California (R&TC §18662, FTB Form 593): 3 1/3% of total sales price (or optional gain-based rate); exemptions include
+     seller's principal residence (IRC §121 test), price ≤ $100,000, etc. Detail in /t325/. Same numbers as T325 (checked 05/11/2026).
+*/
+const R={FULL:0.15, MID:0.10, LOW:0, LOW_MAX:300000, MID_MAX:1000000, CA:1/30, CA_MIN:100000, DAYS_8288:20};
+const INPUTS=['price'];
+/*CALC-START*/
+function firpta(price, foreign, live){
+  if(!foreign) return {rate:0, rule:'us'};
+  if(live && price<=R.LOW_MAX) return {rate:R.LOW, rule:'low'};
+  if(live && price<=R.MID_MAX) return {rate:R.MID, rule:'mid'};
+  return {rate:R.FULL, rule:live?'over':'full'};
+}
+function ca593(price, home){
+  if(price<=R.CA_MIN) return {amt:0, rule:'small'};
+  if(home) return {amt:0, rule:'home'};
+  return {amt:price*R.CA, rule:'std'};
+}
+/*CALC-END*/
+function calc(){
+  const d=I18N[lang], p=num('price'), fp=S.sel==='fp', live=S.res==='live', home=S.home==='yes';
+  const f=firpta(p,fp,live), w=p*f.rate, c=ca593(p,home);
+  $('big').textContent=fmt(w); $('pct').textContent=Math.round(f.rate*100)+'%';
+  $('why').textContent=d['why_'+f.rule];
+  $('asA').textContent=fp?d.as_no:d.as_yes; $('asA').className='a '+(fp?'bad':'ok');
+  $('asS').textContent=fp?d.as_no_s:d.as_yes_s;
+  $('net').textContent=fmt(p-w);
+  $('caA').textContent=c.amt>0?fmt(c.amt):'$0*';
+  $('caS').innerHTML=d['ca_'+c.rule];
+  $('verdict').innerHTML=fp?fill(d.v_fp,{w:fmt(w),n:R.DAYS_8288}):d.v_us;
+  last={p:fmt(p),s:fp?d.sel_fp_short:d.sel_us_short,b:live?d.yes:d.no,w:fmt(w),r:Math.round(f.rate*100)+'%',ca:fmt(c.amt)};
+}
+const FORM=[
+ {en:{h:"Seller's Affidavit of Nonforeign Status",p:'Page 1 of 2'},vi:{h:'Giấy cam kết người bán không phải người nước ngoài',p:'Trang 1/2'},items:[
+  {id:'as-1',no:'1',en:{n:'General information about FIRPTA',s:'Why the buyer may have to hold back tax',
+     say:"Federal law (IRC §1445) makes the BUYER hold back tax when the seller is a foreign person. To skip that, the seller gives a sworn statement with their tax ID, either to the buyer or to a 'qualified substitute': the escrow, title company or attorney closing the deal, or the buyer's agent. Never the seller's agent.",
+     ex:"1234 Example Lane, San Jose, CA 95100. Seller Bác Hùng Tran gives his signed AS to the escrow company, not to buyers Anh Minh & Chị Lan Nguyen directly.",
+     q:"Who is the qualified substitute in our deal: escrow or title?"},
+   vi:{n:'Thông tin chung về FIRPTA',s:'Vì sao người mua có thể phải giữ lại tiền thuế',
+     say:"Luật liên bang (IRC §1445) bắt NGƯỜI MUA giữ lại tiền thuế nếu người bán là foreign person (người nước ngoài theo thuế). Muốn khỏi giữ, người bán ký giấy cam kết có số thuế (TIN), đưa cho người mua hoặc cho 'qualified substitute' (người đứng giữa được luật cho phép): escrow, title hay luật sư lo closing, hoặc agent bên mua. Agent bên bán thì không được.",
+     ex:"1234 Example Lane, San Jose, CA 95100. Bác Hùng Tran (seller) ký AS rồi đưa cho công ty escrow, không đưa thẳng cho Anh Minh & Chị Lan Nguyen (buyer).",
+     q:"Trong deal này, qualified substitute là escrow hay title?"}},
+  {id:'as-2',no:'2',en:{n:"Seller's information",s:'A property · B seller name · C authority to sign',
+     say:"Write the property address and the seller's name. If a company, trust or estate is selling, the person signing declares they have authority to sign for it.",
+     ex:"2A: 1234 Example Lane, San Jose, CA 95100. 2B: Hùng Tran. 2C: blank (he sells as an individual, not a trust).",
+     q:"The house is in our family trust. Who signs and which box?"},
+   vi:{n:'Thông tin người bán',s:'A địa chỉ · B tên người bán · C quyền ký',
+     say:"Ghi địa chỉ căn nhà và tên người bán. Nếu bên bán là công ty, trust hay estate (di sản), người ký cam kết mình có quyền ký thay.",
+     ex:"2A: 1234 Example Lane, San Jose, CA 95100. 2B: Hùng Tran. 2C: để trống (bác bán với tư cách cá nhân, không qua trust).",
+     q:"Nhà để trong family trust. Ai ký, chọn ô nào?"}},
+  {id:'as-3',no:'3',en:{n:'Exemption claimed',s:'3A for a person · 3B for a company, trust or estate',
+     say:"Under penalty of perjury the seller checks why no withholding applies. 3A: I'm an individual and not a nonresident alien for US tax. 3B: the company, partnership, LLC, trust or estate is not foreign.",
+     ex:"Bác Hùng has a green card and lives in San Jose. He checks 3A. If his LLC owned the home, he'd check 3B instead.",
+     q:"I have a green card but spent most of this year in Vietnam. Can I still check 3A?"},
+   vi:{n:'Lý do được miễn',s:'3A cho cá nhân · 3B cho công ty, trust, estate',
+     say:"Người bán đánh dấu lý do không phải giữ thuế, và ký dưới hình phạt khai man (perjury). 3A: tôi là cá nhân, không phải nonresident alien (người nước ngoài không cư trú) theo thuế Mỹ. 3B: công ty, partnership, LLC, trust hay estate không phải loại nước ngoài.",
+     ex:"Bác Hùng có thẻ xanh, đang ở San Jose. Bác đánh dấu 3A. Nếu nhà đứng tên LLC của bác thì đánh dấu 3B.",
+     q:"Tôi có thẻ xanh nhưng năm nay ở Việt Nam gần hết năm. Vẫn đánh 3A được không?"}},
+  {id:'as-4',no:'4',en:{n:'Qualified substitute or direct to buyer',s:'4A usual way · 4B only if checked',
+     say:"4A: a qualified substitute (title or escrow) holds the affidavit and gives the buyer a sworn statement (C.A.R. Form QS) that it has a complete affidavit claiming an exemption. The seller's tax ID stays with escrow. 4B: only if checked, the seller fills in section 5 and hands the full form to the buyer.",
+     ex:"4A used. Escrow keeps Bác Hùng's affidavit and sends Anh Minh & Chị Lan a QS statement. 4B is not checked.",
+     q:"Is 4B checked? I don't want my Social Security number going to the buyer."},
+   vi:{n:'Qua người đứng giữa hay đưa thẳng buyer',s:'4A cách thường làm · 4B chỉ khi có đánh dấu',
+     say:"4A: qualified substitute (title hoặc escrow) giữ giấy cam kết, rồi đưa người mua một bản xác nhận có thề (C.A.R. Form QS) rằng họ đang giữ bản đầy đủ có xin miễn. Số thuế của người bán nằm lại ở escrow. 4B: chỉ khi có đánh dấu, người bán mới điền mục 5 và đưa nguyên tờ cho người mua.",
+     ex:"Dùng 4A. Escrow giữ giấy của Bác Hùng, gửi Anh Minh & Chị Lan bản QS. Ô 4B không đánh dấu.",
+     q:"Ô 4B có đánh dấu không? Tôi không muốn số Social Security tới tay người mua."}},
+  {id:'as-5',no:'5',en:{n:'Seller ID details',s:'TIN · address · phone (keep private)',
+     say:"Social Security number or EIN, home address (office address for an entity) and phone. The form warns: don't give this part to the buyer unless 4B is checked. Escrow and the seller's broker must not pass it on.",
+     ex:"Filled in only on the copy that stays with escrow: SSN ***-**-1234, home address, phone. The buyer's copy has this section blank.",
+     q:"Which copy has my SSN, and who can see it?"},
+   vi:{n:'Thông tin nhận dạng người bán',s:'Số thuế · địa chỉ · phone (giữ kín)',
+     say:"Số Social Security hoặc EIN, địa chỉ nhà (công ty thì ghi địa chỉ văn phòng), số phone. Form nhắc rõ: không đưa phần này cho người mua trừ khi có đánh dấu 4B. Escrow và agent bên bán không được chuyển cho ai.",
+     ex:"Chỉ điền trên bản escrow giữ: SSN ***-**-1234, địa chỉ nhà, phone. Bản của người mua để trống mục này.",
+     q:"Bản nào có số SSN của tôi, và ai được coi?"}},
+  {id:'as-6',no:'6',en:{n:'California withholding',s:'Separate state rule, Form 593',
+     say:"The seller agrees to give escrow what it needs for California's own withholding law (R&TC §18662). That's a different tax from FIRPTA. It can apply even to US citizens.",
+     ex:"Bác Hùng lived there as his main home for 6 years, so escrow notes the principal-residence exemption on Form 593. Withheld: $0.",
+     q:"Will escrow hold back California's 3⅓%, or am I exempt?"},
+   vi:{n:'Giữ thuế California',s:'Luật riêng của tiểu bang, Form 593',
+     say:"Người bán đồng ý đưa escrow đủ thông tin để làm theo luật giữ thuế của California (R&TC §18662). Đây là thuế khác với FIRPTA. Người có quốc tịch Mỹ cũng có thể bị giữ.",
+     ex:"Bác Hùng ở căn này làm nhà chính 6 năm, nên escrow ghi miễn vì principal residence trên Form 593. Giữ lại: $0.",
+     q:"Escrow có giữ 3⅓% của California không, hay tôi được miễn?"}},
+  {id:'as-sign',no:'✍',en:{n:'Signatures',s:'Seller signs · buyer acknowledges a copy',
+     say:"Seller signs and dates; a trustee notes if signing as grantor of a revocable trust; an entity adds a title. A false statement can mean a fine or prison. Buyers sign only that they received a copy, and misusing the seller's tax ID can bring liability.",
+     ex:"By: Hùng Tran, 10/12/2026. Buyers: Minh Nguyen, Lan Nguyen, received copy 10/14/2026 (QS route, no SSN shown).",
+     q:"Does every seller on title sign a separate AS?"},
+   vi:{n:'Chữ ký',s:'Người bán ký · người mua ký đã nhận bản sao',
+     say:"Người bán ký và ghi ngày; nếu ký với tư cách người lập revocable trust thì ghi rõ; công ty thì ghi chức vụ. Khai sai có thể bị phạt tiền hoặc ở tù. Người mua chỉ ký là đã nhận bản sao, và dùng bậy số thuế của người bán có thể bị kiện.",
+     ex:"By: Hùng Tran, 12/10/2026. Buyer: Minh Nguyen, Lan Nguyen, đã nhận bản sao 14/10/2026 (đi đường QS, không thấy SSN).",
+     q:"Mỗi người đứng tên trên title phải ký 1 tờ AS riêng hả?"}}]},
+ {en:{h:'Federal guidelines (back page)',p:'Page 2 of 2'},vi:{h:'Hướng dẫn liên bang (mặt sau)',p:'Trang 2/2'},items:[
+  {id:'as-fp',no:'A',en:{n:'Who is a "foreign person"',s:'Not a US citizen and not a resident alien',
+     say:"A US person is a US citizen or a resident alien. Everyone else is a foreign person for FIRPTA. The test is done for each seller separately. The back page says buyers withhold 15% of the gross price if the seller is foreign, with some limits.",
+     ex:"Two sellers on 1234 Example Lane: Bác Hùng (green card, US person) and his brother living in Vietnam on a tourist visa (foreign person). Only the brother's share faces withholding.",
+     q:"We're two owners. Is withholding figured on my brother's share only?"},
+   vi:{n:'Ai là "foreign person"',s:'Không có quốc tịch Mỹ và không phải resident alien',
+     say:"US person là người có quốc tịch Mỹ hoặc resident alien (người nước ngoài cư trú theo thuế). Ai không thuộc hai nhóm đó là foreign person theo FIRPTA. Mỗi người bán xét riêng. Mặt sau ghi: người bán là foreign person thì người mua giữ 15% giá bán gộp, có vài giới hạn.",
+     ex:"1234 Example Lane có 2 người đứng tên: Bác Hùng (thẻ xanh, là US person) và em trai bác ở Việt Nam, visa du lịch (foreign person). Chỉ phần của người em bị xét giữ thuế.",
+     q:"Nhà có 2 người đứng tên. Tiền giữ chỉ tính trên phần của em tôi thôi phải không?"}},
+  {id:'as-gc',no:'B',en:{n:'Green card test',s:'Permanent resident at any time this year',
+     say:"If you were a lawful permanent resident at any time during the calendar year, you count as a US resident for tax.",
+     ex:"Bác Hùng got his green card in 2015 and still holds it in 2026: he passes this test.",
+     q:"My green card expired but I never gave it up. Do I still pass?"},
+   vi:{n:'Thử nghiệm thẻ xanh',s:'Có thường trú nhân lúc nào đó trong năm',
+     say:"Nếu trong năm dương lịch, có lúc nào bạn là thường trú nhân hợp pháp, bạn được coi là cư dân Mỹ về thuế.",
+     ex:"Bác Hùng có thẻ xanh từ 2015, năm 2026 vẫn còn: bác đạt thử nghiệm này.",
+     q:"Thẻ xanh tôi hết hạn nhưng chưa bao giờ bỏ. Vẫn đạt không?"}},
+  {id:'as-sp',no:'C',en:{n:'Substantial presence test',s:'31 days this year and 183 weighted days over 3 years',
+     say:"No green card? You're still a US resident if you were here at least 31 days this year AND the total reaches 183 when you count all days this year, one third of last year's and one sixth of the year before.",
+     ex:"Visitor in 2026: 120 days. 2025: 180 days (counts 60). 2024: 180 days (counts 30). 120 + 60 + 30 = 210, over 183: resident.",
+     q:"Can a CPA check my days before I sign 3A?"},
+   vi:{n:'Thử nghiệm có mặt đủ ngày',s:'31 ngày năm nay và 183 ngày tính theo 3 năm',
+     say:"Không có thẻ xanh? Bạn vẫn là cư dân Mỹ về thuế nếu năm nay ở Mỹ ít nhất 31 ngày, VÀ tổng đủ 183 khi tính: hết số ngày năm nay, 1/3 số ngày năm ngoái, 1/6 số ngày năm kia.",
+     ex:"Năm 2026 ở 120 ngày. 2025 ở 180 ngày (tính 60). 2024 ở 180 ngày (tính 30). 120 + 60 + 30 = 210, hơn 183: là cư dân.",
+     q:"CPA đếm ngày giùm tôi trước khi tôi ký 3A được không?"}},
+  {id:'as-days',no:'D',en:{n:'Days that don\'t count',s:'Commuters, transit, medical, exempt visas',
+     say:"Commuting daily from Canada or Mexico, passing through in under 24 hours, or being stuck here by a medical problem that started here doesn't count. Diplomats, certain J-visa teachers and trainees, and F or J students are 'exempt individuals' whose days aren't counted, within year limits.",
+     ex:"Bác Hùng's niece on an F-1 student visa lived in San Jose 300 days in 2026. Those days don't count, so she's still a nonresident alien.",
+     q:"I was on an F-1 for 4 years. Do any of those days count?"},
+   vi:{n:'Những ngày không tính',s:'Đi làm qua biên giới, quá cảnh, bệnh, visa được miễn',
+     say:"Đi làm mỗi ngày từ Canada hay Mexico, quá cảnh dưới 24 tiếng, hay kẹt lại vì bệnh phát ra khi đang ở Mỹ thì không tính. Nhà ngoại giao, giáo viên hay thực tập sinh visa J, du học sinh visa F hoặc J là 'exempt individual': ngày của họ không tính, có giới hạn số năm.",
+     ex:"Cháu gái Bác Hùng học visa F-1, ở San Jose 300 ngày năm 2026. Mấy ngày đó không tính, nên cháu vẫn là nonresident alien.",
+     q:"Tôi ở visa F-1 4 năm. Có ngày nào được tính không?"}},
+  {id:'as-close',no:'E',en:{n:'Closer connection & special rules',s:'Under 183 days with a foreign tax home',
+     say:"Even if you pass the day count, you may not be treated as resident if you were here under 183 days this year, have a tax home abroad and a closer connection there. A person can be nonresident and resident in the same year, usually the year they arrive or leave.",
+     ex:"An owner who spent 150 days in San Jose in 2026 but works and files taxes in Vietnam may count as nonresident. A CPA decides, not the agent.",
+     q:"Should I file Form 8840 for closer connection? Ask a CPA."},
+   vi:{n:'Gắn bó với nước khác & luật đặc biệt',s:'Dưới 183 ngày và nhà thuế ở nước ngoài',
+     say:"Dù đủ số ngày, bạn có thể không bị coi là cư dân nếu năm nay ở Mỹ dưới 183 ngày, có nơi đóng thuế ở nước ngoài và gắn bó với nước đó hơn. Một người có thể vừa nonresident vừa resident trong cùng 1 năm, thường là năm mới qua hoặc năm rời Mỹ.",
+     ex:"Người chủ ở San Jose 150 ngày năm 2026 nhưng làm việc và khai thuế ở Việt Nam có thể là nonresident. CPA quyết, không phải agent.",
+     q:"Tôi có nên nộp Form 8840 (closer connection) không? Hỏi CPA."}},
+  {id:'as-spouse',no:'F',en:{n:'Married to a US citizen',s:'Still nonresident for withholding',
+     say:"A nonresident alien married to a US citizen or resident can choose to be treated as resident for most income tax purposes. For withholding taxes, they're still nonresident.",
+     ex:"Bác Hùng's wife has no green card and lives in Vietnam. Even if they file jointly, her half of the sale faces FIRPTA review.",
+     q:"We file a joint return. Is my wife still a foreign person for FIRPTA?"},
+   vi:{n:'Có vợ/chồng là công dân Mỹ',s:'Vẫn là nonresident khi tính giữ thuế',
+     say:"Người nonresident alien có vợ/chồng là công dân hay cư dân Mỹ có thể chọn được coi là cư dân cho hầu hết thuế thu nhập. Riêng chuyện giữ thuế thì vẫn bị coi là nonresident.",
+     ex:"Vợ Bác Hùng không có thẻ xanh, đang ở Việt Nam. Dù hai bác khai thuế chung, phần một nửa của bác gái vẫn bị xét FIRPTA.",
+     q:"Vợ chồng tôi khai thuế chung. Vợ tôi vẫn là foreign person theo FIRPTA hả?"}},
+  {id:'as-ent',no:'G',en:{n:'Companies, Guam/USVI, trustees',s:'Where it was formed; who runs the trust',
+     say:"A company or partnership is domestic if formed in the US or under US or state law. Guam and US Virgin Islands corporations have special tests. A nonresident alien trustee, administrator or executor makes the trust or estate count as nonresident, even if every beneficiary is American.",
+     ex:"If Bác Hùng's trust is run by a trustee living in Vietnam without US residency, the trust counts as nonresident, though his kids in San Jose are the beneficiaries.",
+     q:"Our trustee lives overseas. Should we change trustees before selling?"},
+   vi:{n:'Công ty, Guam/USVI, người quản lý trust',s:'Lập ở đâu; ai đứng quản lý',
+     say:"Công ty hay partnership là trong nước nếu lập ở Mỹ hoặc theo luật Mỹ hay luật tiểu bang. Công ty lập ở Guam và US Virgin Islands có thử nghiệm riêng. Trustee, người quản lý hay người thi hành di chúc là nonresident alien thì trust hay estate bị coi là nonresident, dù mọi người thừa hưởng đều là người Mỹ.",
+     ex:"Nếu trust của Bác Hùng do một trustee ở Việt Nam, không cư trú Mỹ, đứng quản lý, trust bị coi là nonresident, dù các con bác ở San Jose là người thừa hưởng.",
+     q:"Trustee của tụi tôi ở nước ngoài. Có nên đổi trustee trước khi bán không?"}}]}
+];
+const I18N={
+ en:Object.assign({},CI.en,{
+  kick:'C.A.R. Form AS · Reviewed 6/25',title:"Seller's FIRPTA affidavit (Form AS), explained",
+  sub:'The seller swears they are not a foreign person for US tax, so the buyer does not have to hold back up to 15% of the price.',
+  eli_t:'In plain words',
+  eli:"<p>When a foreign person sells a US home, the IRS worries the tax will leave the country with them. So the law makes the buyer hold back part of the price and send it to the IRS first.</p><p>Form AS is the seller saying, under oath: 'I'm not foreign for tax. Don't hold anything back.'</p><p>Think of a store that keeps a deposit when a tourist rents a bike. Locals show ID and skip the deposit. Form AS is that ID.</p><p>California has its own, smaller hold-back (Form 593). It's a different rule.</p>",
+  tl_t:'Quick check: how much gets held back?',l_price:'Sale price',l_price_s:'(the whole price, not the profit)',
+  l_sel:'Who is the seller for US tax?',sel_us:'US person: citizen, green card, or passes the day test',sel_fp:'Foreign person: none of the above (or a foreign company/trust)',
+  sel_us_short:'US person',sel_fp_short:'Foreign person',
+  l_res:'Will the buyer live there?',res_live:'Yes: the buyer (a person) or family plans to live there ≥ 50% of the days it is used, each of the first 2 years',res_no:'No: rental, flip, vacation home, or a company is buying',
+  l_home:"California: was it the seller's main home 2 of the last 5 years?",yes:'Yes',no:'No',
+  r_k:'FIRPTA held back at closing',r_as:'Form AS',as_yes:'Sign it',as_no:"Can't sign",
+  as_yes_s:'Check 3A (a person) or 3B (company, trust, estate). Escrow keeps it.',as_no_s:'Signing would be a false statement under oath. Escrow withholds instead.',
+  r_net:'Price minus FIRPTA',r_net_s:'Before loan payoff, commission, Form 593 and other costs',
+  r_ca:'California Form 593 (separate from FIRPTA)',
+  ca_std:'Usually 3⅓% of the price unless an exemption applies. US citizens too. <a href="/t325/">Check it in T325</a>.',
+  ca_home:'* Likely exempt as principal residence (main home 2 of last 5 years). Escrow confirms on Form 593. <a href="/t325/">T325</a>.',
+  ca_small:'* No California withholding when the price is $100,000 or less. <a href="/t325/">T325</a>.',
+  why_us:'US seller: no FIRPTA withholding. Sign Form AS.',
+  why_low:'Foreign seller, but price ≤ $300,000 and the buyer will live there: exempt (0%).',
+  why_mid:'Foreign seller, price ≤ $1,000,000 and the buyer will live there: reduced 10%.',
+  why_over:'Foreign seller and price over $1,000,000: 15%, even if the buyer will live there.',
+  why_full:'Foreign seller and the buyer will not live there: 15% of the full price.',
+  v_us:'No FIRPTA hold-back. Escrow needs the signed AS before closing. Each seller on title signs their own.',
+  v_fp:'Escrow holds back <b>{w}</b> and sends it to the IRS with Form 8288 within {n} days of closing. This is a prepayment, not the final tax. The seller files a US tax return to get back what was over. To ask the IRS to lower it before closing, a CPA can file Form 8288-B.',
+  nx:'<li>Listing a home? Ask escrow on day one: is any seller a foreign person? Don\'t wait for the closing week.</li><li>Foreign seller: call a CPA about Form 8288-B (to lower the hold-back) and the US tax return that gets the extra back.</li><li>Check California\'s separate 3⅓% in <a href="/t325/">T325: Tax withheld when you sell</a>.</li><li>See every other form explained: <a href="/t402/">All real estate forms</a>.</li>',
+  sign:[['Each seller (one form per seller)','Before closing, in the escrow package','Escrow or title (qualified substitute). Not the buyer unless 4B is checked.'],['Escrow / title','After it has the complete AS','Gives the buyer a sworn statement (C.A.R. Form QS)'],['Buyer(s)','When they receive the copy or QS','Kept in the buyer\'s file. Never share the seller\'s TIN.'],['Seller (California)','Before closing','Form 593 info to escrow, then to the FTB']],
+  myths:["<b>\"I barely made a profit, so nothing gets held.\"</b> Wrong. FIRPTA is a cut of the price, not the profit: 15%, or 10% when the buyer will live there and the price is $1M or less. A $950,000 sale with a $40,000 gain can still hold back $95,000. You get the extra back, months later, through a tax return.",
+   "<b>\"My spouse is a US citizen, so I'm fine.\"</b> Not for withholding. The back of the form says it plainly: a nonresident married to a US citizen is still nonresident for withholding, even if you file jointly.",
+   "<b>\"Just sign the AS and skip the hold-back.\"</b> I've seen sellers try. It's a sworn statement. A false one risks a fine or prison, and a buyer who knew it was false can end up owing the tax. Take the hold-back and file for the refund. It's the cheaper mistake."],
+  subj:'FIRPTA check: {p}',body:'Hi Ken,\n\nFIRPTA check (T543):\nPrice: {p}\nSeller: {s}\nBuyer will live there: {b}\nFIRPTA held back: {w} ({r})\nCalifornia 593 (estimate): {ca}\n\nName: {n}\nEmail: {e}\nPhone: {ph}',
+  sms:'Hi Ken, FIRPTA question (T543): price {p}, seller {s}, held back {w} ({r}). Can you help?'}),
+ vi:Object.assign({},CI.vi,{
+  kick:'C.A.R. Form AS · bản Reviewed 6/25',title:'Giấy cam kết FIRPTA của người bán (Form AS)',
+  sub:'Người bán thề mình không phải người nước ngoài theo thuế Mỹ, để người mua khỏi phải giữ lại tới 15% giá nhà.',
+  eli_t:'Nói cho dễ hiểu',
+  eli:'<p>Người nước ngoài bán nhà ở Mỹ, IRS sợ tiền thuế theo họ ra khỏi nước. Nên luật bắt người mua giữ lại một phần giá bán, gửi cho IRS trước.</p><p>Form AS là người bán thề: "Tôi không phải người nước ngoài theo thuế. Đừng giữ gì hết."</p><p>Giống tiệm cho thuê xe đạp: khách du lịch thì phải để cọc. Người địa phương đưa ID là khỏi cọc. Form AS chính là cái ID đó.</p><p>California có khoản giữ riêng, nhỏ hơn (Form 593). Đó là luật khác.</p>',
+  tl_t:'Kiểm tra nhanh: bị giữ lại bao nhiêu?',l_price:'Giá bán',l_price_s:'(nguyên giá bán, không phải tiền lời)',
+  l_sel:'Người bán là ai theo thuế Mỹ?',sel_us:'US person: công dân, thẻ xanh, hoặc ở Mỹ đủ ngày',sel_fp:'Foreign person: không thuộc nhóm trên (hoặc công ty/trust nước ngoài)',
+  sel_us_short:'US person',sel_fp_short:'Foreign person',
+  l_res:'Người mua có định ở căn này không?',res_live:'Có: người mua (cá nhân) hoặc gia đình định ở ≥ 50% số ngày căn nhà được dùng, mỗi năm trong 2 năm đầu',res_no:'Không: cho thuê, flip, nhà nghỉ mát, hoặc công ty mua',
+  l_home:'California: seller ở căn này làm nhà chính 2 trong 5 năm qua?',yes:'Có',no:'Không',
+  r_k:'FIRPTA giữ lại lúc close',r_as:'Form AS',as_yes:'Ký được',as_no:'Không ký được',
+  as_yes_s:'Đánh 3A (cá nhân) hoặc 3B (công ty, trust, estate). Escrow giữ giấy.',as_no_s:'Ký là khai gian dưới lời thề. Escrow giữ tiền thay.',
+  r_net:'Giá bán trừ FIRPTA',r_net_s:'Chưa trừ tiền nợ nhà, commission, Form 593 và phí khác',
+  r_ca:'California Form 593 (riêng, khác FIRPTA)',
+  ca_std:'Thường giữ 3⅓% giá bán nếu không được miễn. Công dân Mỹ cũng bị. <a href="/t325/">Tính ở T325</a>.',
+  ca_home:'* Nhiều khả năng được miễn vì là nhà chính (ở 2 trong 5 năm). Escrow xác nhận trên Form 593. <a href="/t325/">T325</a>.',
+  ca_small:'* Giá bán từ $100,000 trở xuống thì California không giữ. <a href="/t325/">T325</a>.',
+  why_us:'Người bán là US person: không giữ FIRPTA. Ký Form AS.',
+  why_low:'Người bán là foreign person, nhưng giá ≤ $300,000 và người mua sẽ ở: được miễn (0%).',
+  why_mid:'Người bán là foreign person, giá ≤ $1,000,000 và người mua sẽ ở: giảm còn 10%.',
+  why_over:'Người bán là foreign person và giá trên $1,000,000: 15%, dù người mua có ở.',
+  why_full:'Người bán là foreign person và người mua không ở: 15% nguyên giá bán.',
+  v_us:'Không bị giữ FIRPTA. Escrow cần tờ AS đã ký trước ngày close. Mỗi người đứng tên ký một tờ riêng.',
+  v_fp:'Escrow giữ lại <b>{w}</b>, gửi IRS bằng Form 8288 trong vòng {n} ngày sau close. Đây là tiền trả trước, chưa phải thuế cuối cùng. Người bán khai thuế Mỹ để lấy lại phần dư. Muốn xin IRS giảm trước khi close, CPA có thể nộp Form 8288-B.',
+  nx:'<li>Sắp listing? Hỏi escrow ngay ngày đầu: có người bán nào là foreign person không. Đừng đợi tới tuần close.</li><li>Người bán là foreign person: gọi CPA về Form 8288-B (xin giảm tiền giữ) và tờ khai thuế Mỹ để lấy lại phần dư.</li><li>Tính khoản 3⅓% riêng của California ở <a href="/t325/">T325: Tiền thuế bị giữ lúc bán nhà</a>.</li><li>Coi các form khác: <a href="/t402/">Mọi forms địa ốc</a>.</li>',
+  sign:[['Từng người bán (mỗi người 1 tờ)','Trước ngày close, trong bộ giấy escrow gửi','Escrow hoặc title (qualified substitute). Không đưa người mua, trừ khi đánh dấu 4B.'],['Escrow / title','Sau khi có tờ AS đầy đủ','Đưa người mua bản xác nhận có thề (C.A.R. Form QS)'],['Người mua','Khi nhận bản sao hoặc QS','Cất trong hồ sơ người mua. Không bao giờ chia sẻ số thuế của người bán.'],['Người bán (California)','Trước ngày close','Thông tin Form 593 đưa escrow, rồi gửi FTB']],
+  myths:['<b>"Bán gần huề vốn, chắc không bị giữ."</b> Sai. FIRPTA tính trên giá bán, không phải tiền lời: 15%, hoặc 10% nếu người mua sẽ ở và giá không quá $1 triệu. Bán $950,000, lời có $40,000, vẫn có thể bị giữ $95,000. Phần dư lấy lại được, nhưng phải chờ khai thuế, vài tháng.',
+   '<b>"Vợ/chồng tôi là công dân Mỹ, tôi khỏi lo."</b> Không đúng cho chuyện giữ thuế. Mặt sau form ghi rõ: người nonresident có vợ/chồng là công dân Mỹ vẫn bị coi là nonresident khi giữ thuế, dù hai người khai thuế chung.',
+   '<b>"Cứ ký AS đại cho khỏi bị giữ."</b> Tôi gặp người làm vậy rồi. Đây là lời thề. Khai gian có thể bị phạt tiền hoặc ở tù, và người mua biết mà vẫn nhận có thể phải chịu tiền thuế thay. Chịu bị giữ rồi khai thuế lấy lại. Lỗi đó rẻ hơn nhiều.'],
+  subj:'Kiểm tra FIRPTA: {p}',body:'Chào anh Ken,\n\nKiểm tra FIRPTA (T543):\nGiá bán: {p}\nNgười bán: {s}\nNgười mua sẽ ở: {b}\nFIRPTA giữ lại: {w} ({r})\nCalifornia 593 (ước tính): {ca}\n\nTên: {n}\nEmail: {e}\nPhone: {ph}',
+  sms:'Chào anh Ken, em hỏi FIRPTA (T543): giá {p}, người bán {s}, bị giữ {w} ({r}). Anh giúp em với.'})
+};
+
+function buildForm(){
+  const d=I18N[lang], open=new Set([...document.querySelectorAll('details.li[open]')].map(x=>x.id));
+  let h='';
+  for(const p of FORM){
+    h+='<article class="pg"><div class="ph"><h2>'+esc(p[lang].h)+'</h2><span>'+esc(p[lang].p)+'</span></div>';
+    for(const it of p.items){ const e=it[lang];
+      h+='<details class="li" id="'+it.id+'"'+(open.has(it.id)?' open':'')+'><summary><span class="n"><i>'+esc(it.no)+'</i> <b>'+esc(e.n)+'</b><small>'+esc(e.s)+'</small></span><span class="a"></span></summary>'+
+        '<div class="ex"><p><span class="t">'+d.L_say+'</span>'+esc(e.say)+'</p>'+
+        '<p class="fill"><span class="t">'+d.L_ex+'</span>'+esc(e.ex)+'</p>'+
+        '<p class="ask"><span class="t">'+d.L_q+'</span>“'+esc(e.q)+'”</p>'+
+        '<span class="lk"><a href="#'+it.id+'">#'+it.id+'</a><button type="button" data-cp="'+it.id+'">'+d.L_link+'</button></span></div></details>';
+    }
+    h+='</article>';
+  }
+  $('formsim').innerHTML=h;
+  $('signT').innerHTML='<thead><tr><th>'+d.sg_who+'</th><th>'+d.sg_when+'</th><th>'+d.sg_where+'</th></tr></thead><tbody>'+
+    d.sign.map(r=>'<tr><td><b>'+r[0]+'</b></td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>').join('')+'</tbody>';
+  $('myths').innerHTML=d.myths.map(m=>'<p class="myth">'+m+'</p>').join('');
+}
+function setSeg(k,v){S[k]=v;document.querySelectorAll('.seg[data-k="'+k+'"] button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));}
+document.querySelectorAll('.seg[data-k]').forEach(g=>{
+  const k=g.dataset.k; const on=g.querySelector('button[aria-pressed="true"]')||g.querySelector('button'); S[k]=on.dataset.v;
+  g.addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; setSeg(k,b.dataset.v); run();});
+});
+function run(){ calc(); const d=I18N[lang]; $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,last)); klSend(); }
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; $('klBack').textContent=d.back;
+  if(typeof onLang==='function') onLang();
+  buildForm(); run();
+}
+const EMBED=/[?&]embed=1/.test(location.search);
+let klSend=()=>{};
+if(EMBED){ document.documentElement.classList.add('embed'); let lastH=0;
+  klSend=()=>{ const w=document.querySelector('.wrap'); const h=Math.ceil(w.getBoundingClientRect().bottom+window.scrollY+40); if(Math.abs(h-lastH)<4) return; lastH=h; try{ parent.postMessage({klToolsHeight:h},'*'); }catch(e){} };
+  window.addEventListener('resize',()=>klSend()); new ResizeObserver(()=>klSend()).observe(document.body);
+  document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('a[href]'); if(!a) return; const h=a.getAttribute('href'); if(h.startsWith('#')||a.target==='_blank'||/^(mailto|sms|tel):/.test(h)) return; if(h.startsWith('/')) a.href='https://tools.kenlamrealty.com'+h; a.target='_top'; },true); }
+INPUTS.forEach(id=>{$(id).addEventListener('input',run);$(id).addEventListener('change',run);});
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus(); klSend();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], o=Object.assign({},last,{n:$('fname').value.trim()||'—',e:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'});
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,o))+'&body='+encodeURIComponent(fill(d.body,o));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false; klSend();
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+$('formsim').addEventListener('click',async e=>{const b=e.target.closest('[data-cp]'); if(!b) return; e.preventDefault();
+  const u=location.origin+location.pathname+'#'+b.dataset.cp; try{await navigator.clipboard.writeText(u);}catch(x){} b.textContent=I18N[lang].L_copied; try{history.replaceState(null,'','#'+b.dataset.cp);}catch(x){} });
+$('formsim').addEventListener('toggle',()=>klSend(),true);
+function openHash(){ const h=decodeURIComponent(location.hash.slice(1)); if(!h) return; const el=document.getElementById(h); if(!el) return; if(el.tagName==='DETAILS') el.open=true; setTimeout(()=>el.scrollIntoView({block:'start'}),30); }
+window.addEventListener('hashchange',openHash);
+applyLang(); openHash();
+
+</script>
+</body>
+</html>

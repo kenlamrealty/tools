@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Extension of Lease · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="C.A.R. Form EL explained in Vietnamese and English: filled-in sample, lease extension calculator (months, % increase, AB 1482 cap 8.6% San Jose) and the just-cause rule.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t808/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:title" content="Extension of Lease · Ken Lam Tools">
+<meta property="og:description" content="C.A.R. Form EL explained in Vietnamese and English: filled-in sample, lease extension calculator (months, % increase, AB 1482 cap 8.6% San Jose) and the just-cause rule.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t808/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T55 additions */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl select:focus-visible{outline:none}
+.ctl .chev{color:var(--muted);font-size:13px;pointer-events:none}
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.field[hidden]{display:none}
+.law{display:grid;gap:4px}
+.law .tag{justify-self:start;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:4px 11px;background:var(--brass-soft);color:var(--fg);font-weight:500}
+.law .tag.ex{background:transparent;border:1px dashed var(--muted);color:var(--muted)}
+.law .why{font-size:14px;color:var(--muted);margin:0}
+.total .v.word{font-size:46px}
+.cal{display:flex;flex-wrap:wrap;gap:8px}
+.cal a{font-size:13px;color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:var(--bg)}
+.cal a:hover{border-color:var(--brass)}
+.steps{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.steps h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.legal{font-size:12px;color:var(--muted);line-height:1.5}
+footer .src a{overflow-wrap:anywhere}
+.line .a.w{white-space:normal;text-align:right;min-width:0;max-width:55%}
+.line .n{flex:1 1 auto}
+
+/* Forms group (T800–T810) additions */
+.chip{justify-self:start;font-size:12px;letter-spacing:.06em;border:1px solid var(--brass);color:var(--brass);border-radius:999px;padding:3px 10px;font-weight:500}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:12px;min-width:0}
+.card h2,.sec-h{font-family:var(--display);font-weight:400;font-size:26px;margin:0;line-height:1.15}
+.card p{margin:0;font-size:15px}
+.card ul,.card ol{margin:0;padding-left:20px;display:grid;gap:6px;font-size:15px}
+.card a{color:var(--brass)}
+.ex{background:var(--brass-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.facts{display:flex;flex-wrap:wrap;gap:6px}
+.facts span{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:4px 10px;color:var(--muted);background:var(--bg)}
+.sample{border:1px dashed var(--muted);border-radius:12px;padding:12px;display:grid;gap:8px;background:var(--bg);min-width:0}
+.sample .stamp{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--warn);font-weight:500}
+.sample .shead{font-size:14px;color:var(--muted);overflow-wrap:anywhere}
+.sample .shead b{color:var(--fg);font-weight:500}
+.sample .pg{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+details.para{border:1px solid var(--line);border-radius:10px;background:var(--panel);min-width:0}
+details.para summary{list-style:none;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;cursor:pointer}
+details.para summary::-webkit-details-marker{display:none}
+details.para summary .no{font-size:12px;font-weight:500;color:var(--brass);white-space:nowrap}
+details.para summary .val{font-size:15px;min-width:0;overflow-wrap:anywhere}
+details.para summary .val small{display:block;color:var(--muted);font-size:12px}
+details.para summary .tg{font-size:12px;color:var(--muted);white-space:nowrap}
+details.para summary .tg::after{content:' ▾'}
+details.para[open] summary .tg{color:var(--brass)}
+details.para .say{padding:10px 12px 12px;font-size:14px;color:var(--fg);border-top:1px solid var(--line)}
+@media (max-width:380px){details.para summary{grid-template-columns:minmax(0,1fr)}details.para summary .tg{display:none}}
+.box{display:inline-block;width:14px;height:14px;border:1.5px solid var(--muted);border-radius:3px;vertical-align:-2px;margin-right:4px;text-align:center;line-height:11px;font-size:11px}
+.box.on{border-color:var(--brass);color:var(--brass)}
+.note.bad{background:transparent;border:1px solid var(--warn);color:var(--fg)}
+.note.good{background:transparent;border:1px solid var(--ok);color:var(--fg)}
+.note small{color:var(--muted)}
+.est{font-size:11px;letter-spacing:.06em;text-transform:uppercase;border:1px dashed var(--muted);border-radius:999px;padding:1px 7px;color:var(--muted);margin-left:6px;white-space:nowrap;font-weight:400}
+.chk{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.chk label{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;font-size:15px;cursor:pointer}
+.chk input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--brass)}
+.chk small{color:var(--muted);display:block;font-size:13px}
+.chk h3{font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);margin:6px 0 0;font-weight:500}
+.vid{display:grid;justify-items:center;gap:10px}
+.vid video{width:100%;max-width:320px;aspect-ratio:9/16;border-radius:14px;background:#000;object-fit:cover}
+.op{border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myths{display:grid;gap:10px}
+.next{display:grid;gap:8px}
+.next a{display:flex;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-decoration:none;color:var(--fg);background:var(--bg);font-size:15px}
+.next a b{font-weight:500}
+.next a:hover{border-color:var(--brass)}
+.next a span{color:var(--muted);white-space:nowrap}
+.ctl input[type=time]{font-size:17px;min-height:48px}
+.seg{flex-wrap:wrap}
+.seg button{min-width:0}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.mtab{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.mtab th,.mtab td{padding:8px 4px;border-bottom:1px solid var(--line);text-align:right}
+.mtab th:first-child,.mtab td:first-child{text-align:left}
+.mtab th{font-weight:500;color:var(--muted);font-size:12px}
+.mtab tr.tot td{font-weight:600}
+.hide{display:none}
+.total .v small.blk{display:block;margin-top:6px}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <span class="chip">C.A.R. Form EL</span>
+    <h1 data-i="title"></h1>
+    <p class="sub" data-i="sub"></p>
+  </header>
+
+  <section class="card">
+    <h2 data-i="h_eli"></h2>
+    <p data-i="eli1"></p>
+    <p data-i="eli2"></p>
+    <p class="ex" data-i="eli3"></p>
+    <p data-i="eli4"></p>
+    <div class="facts"><span data-i="f1"></span><span data-i="f2"></span><span data-i="f3"></span><span data-i="f4"></span></div>
+  </section>
+
+  <section class="card" aria-label="Sample">
+    <h2 data-i="h_form"></h2>
+    <p class="meta" data-i="tap"></p>
+    <div class="sample">
+      <div class="stamp" data-i="stamp"></div>
+      <div class="shead" data-i="s_head"></div>
+      <details class="para"><summary><span class="no" data-i="pn0"></span><span class="val" data-i="pv0"></span><span class="tg" data-i="open"></span></summary><div class="say" data-i="ps0"></div></details>
+      <details class="para"><summary><span class="no" data-i="pnN"></span><span class="val" data-i="pvN"></span><span class="tg" data-i="open"></span></summary><div class="say" data-i="psN"></div></details>
+      <details class="para"><summary><span class="no" data-i="pn1"></span><span class="val" data-i="pv1"></span><span class="tg" data-i="open"></span></summary><div class="say" data-i="ps1"></div></details>
+      <details class="para"><summary><span class="no" data-i="pn2"></span><span class="val" data-i="pv2"></span><span class="tg" data-i="open"></span></summary><div class="say" data-i="ps2"></div></details>
+      <details class="para"><summary><span class="no" data-i="pn3"></span><span class="val" data-i="pv3"></span><span class="tg" data-i="open"></span></summary><div class="say" data-i="ps3"></div></details>
+      <details class="para"><summary><span class="no" data-i="pn4"></span><span class="val" data-i="pv4"></span><span class="tg" data-i="open"></span></summary><div class="say" data-i="ps4"></div></details>
+      <details class="para"><summary><span class="no" data-i="pn5a"></span><span class="val" data-i="pv5a"></span><span class="tg" data-i="open"></span></summary><div class="say" data-i="ps5a"></div></details>
+      <details class="para"><summary><span class="no" data-i="pn5b"></span><span class="val" data-i="pv5b"></span><span class="tg" data-i="open"></span></summary><div class="say" data-i="ps5b"></div></details>
+      <details class="para"><summary><span class="no" data-i="pnS"></span><span class="val" data-i="pvS"></span><span class="tg" data-i="open"></span></summary><div class="say" data-i="psS"></div></details>
+    </div>
+  </section>
+
+  <h2 class="sec-h" data-i="t_h"></h2>
+  <section class="inputs" aria-label="Inputs">
+    <div class="row2">
+      <div class="field">
+        <label for="oldEnd"><span data-i="l_old"></span></label>
+        <div class="ctl"><input id="oldEnd" type="date" value="2026-11-30"></div>
+      </div>
+      <div class="field">
+        <label for="newEnd"><span data-i="l_new"></span></label>
+        <div class="ctl"><input id="newEnd" type="date" value="2027-11-30"></div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="oldRent"><span data-i="l_or"></span></label>
+        <div class="ctl"><span class="pre">$</span><input id="oldRent" type="number" inputmode="numeric" min="0" step="25" value="3200"><span class="post" data-i="per_mo"></span></div>
+      </div>
+      <div class="field">
+        <label for="newRent"><span data-i="l_nr"></span></label>
+        <div class="ctl"><span class="pre">$</span><input id="newRent" type="number" inputmode="numeric" min="0" step="25" value="3400"><span class="post" data-i="per_mo"></span></div>
+      </div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_ab"></span> <small data-i="l_ab_s"></small></label>
+      <div class="seg" role="group">
+        <button type="button" id="abY" aria-pressed="true" data-i="yes"></button>
+        <button type="button" id="abN" aria-pressed="false" data-i="no"></button>
+        <button type="button" id="abU" aria-pressed="false" data-i="unsure"></button>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="law"><span class="tag" id="tag"></span><p class="why" id="why"></p></div>
+    <div class="total">
+      <div class="k" data-i="k_pct"></div>
+      <div class="v"><span id="big">0%</span> <small id="bigU"></small></div>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_len"></b></span><span class="a w" id="oLen">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_inc"></b></span><span class="a" id="oInc">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_cap"></b></span><span class="a" id="oCap">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_max"></b></span><span class="a" id="oMax">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_eff"></b></span><span class="a" id="oEff">—</span></div>
+    </div>
+    <div class="note" id="capNote"></div>
+    <div class="note" id="jcNote"></div>
+    <div class="note" id="xNote"></div>
+    <p class="meta"><span data-i="t55a"></span> <a href="/t55/" style="color:var(--brass)" data-i="t55b"></a></p>
+  </section>
+
+  <section class="card">
+    <h2 data-i="h_myth"></h2>
+    <div class="myths">
+      <p class="myth" data-i="m1"></p>
+      <p class="myth" data-i="m2"></p>
+      <p class="myth" data-i="m3"></p>
+    </div>
+    <h2 data-i="h_op"></h2>
+    <p class="op" data-i="op1"></p>
+    <p class="op" data-i="op2"></p>
+  </section>
+
+  <section class="card">
+    <h2 data-i="h_next"></h2>
+    <div class="next">
+      <a href="/t55/"><b data-i="nx1"></b><span>T55 →</span></a>
+      <a href="/t803/"><b data-i="nx2"></b><span>T803 →</span></a>
+      <a href="/t807/"><b data-i="nx3"></b><span>T807 →</span></a>
+      <a href="/t53/"><b data-i="nx4"></b><span>T53 →</span></a>
+    </div>
+  </section>
+
+  <section class="vid" aria-label="Video">
+    <h2 class="sec-h" data-i="h_video">Video 45 giây</h2>
+    <video src="video.mp4" controls playsinline preload="metadata" poster="poster.jpg"></video>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Gửi kết quả qua email</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Hỏi Ken</a>
+    <a class="btn" id="videoBtn" href="/t808/video.mp4" target="_blank" rel="noopener" data-i="b_video">Xem video 45 giây</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Gửi kết quả này về email</h2>
+    <p data-i="f_sub"></p>
+    <div class="field"><label for="fname"><span data-i="f_name">Tên</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok"></div>
+    <div class="copyrow"><span data-i="f_or">Hoặc text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+
+  <footer>
+    <span class="legal" data-i="legal"></span>
+    <span class="legal" data-i="copy"></span>
+    <span class="src"><span data-i="ft_src">Nguồn:</span> <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=1946.2" target="_blank" rel="noopener">Civil Code §1946.2</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=1947.12" target="_blank" rel="noopener">§1947.12</a> · <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=1941.1" target="_blank" rel="noopener">§1941.1 (AB 628)</a> · <a href="https://www.dir.ca.gov/OPRL/CPI/PresentCCPIchange.PDF" target="_blank" rel="noopener">CA DIR California CPI</a> · <a href="https://sanjoseca.gov/your-government/departments-offices/housing/housing-rental-rights" target="_blank" rel="noopener">San Jose rental rights</a></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 06/11/2026 · <a href="/" data-i="ft_all">Mọi tool</a></span>
+  </footer>
+
+
+</div>
+
+<script>
+/* ---------- shared helpers (forms group) ---------- */
+let lang='vi';
+try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+const $=id=>document.getElementById(id);
+const money=(n,c)=>{const neg=n<0; n=Math.abs(n); const s=c?n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):Math.round(n).toLocaleString('en-US'); return (neg?'-$':'$')+s;};
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+function D(s){if(!s)return null;const [y,m,d]=s.split('-').map(Number);if(!y||!m||!d)return null;return new Date(Date.UTC(y,m-1,d));}
+function iso(d){return d.toISOString().slice(0,10);}
+function addDays(d,n){return new Date(d.getTime()+n*864e5);}
+function addMonths(d,n){const y=d.getUTCFullYear(),m=d.getUTCMonth()+n,day=d.getUTCDate();const last=new Date(Date.UTC(y,m+1,0)).getUTCDate();return new Date(Date.UTC(y,m,Math.min(day,last)));}
+function daysBetween(a,b){return Math.round((b.getTime()-a.getTime())/864e5);}
+const p2=n=>String(n).padStart(2,'0');
+const fdate=d=>{if(!d)return '—';const y=d.getUTCFullYear(),m=p2(d.getUTCMonth()+1),dd=p2(d.getUTCDate());return lang==='vi'?dd+'/'+m+'/'+y:m+'/'+dd+'/'+y;};
+const ftime=(h,mi)=>{if(lang==='vi')return p2(h)+':'+p2(mi);const ap=h>=12?'PM':'AM';const hh=h%12===0?12:h%12;return hh+':'+p2(mi)+' '+ap;};
+const fill=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]??m);
+let last={};
+function T(){return Object.assign({},I18N_C[lang],I18N[lang]);}
+function applyLang(){
+  const d=T();
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  $('klBack').textContent=d.back; calc();
+}
+function wire(ids){ids.forEach(id=>{$(id).addEventListener('input',calc);$(id).addEventListener('change',calc);});}
+function setSms(){ $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(T().sms,last)); }
+function initCommon(){
+  $('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+  $('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+  $('sendBtn').onclick=()=>{
+    const d=T(), o=Object.assign({},last,{n:$('fname').value.trim()||'—',em:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—'});
+    /* LEAD → FUB: email to ken@kenlamrealty.com (FUB lead email parsing). Nothing is stored on this page. */
+    const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,o))+'&body='+encodeURIComponent(fill(d.body,o));
+    const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+    $('sent').hidden=false;
+  };
+  $('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+  applyLang();
+}
+const I18N_C={
+ vi:{lang:'English',back:'← Tất cả tools',
+  h_eli:'Giải thích dễ hiểu',h_form:'Form mẫu điền sẵn',h_tool:'Tool',h_myth:'Nhiều người hiểu sai',h_op:'Ý kiến người làm nghề',h_next:'Bước tiếp theo',h_video:'Video 45 giây',
+  stamp:'Bản minh họa, không phải form thật',tap:'Bấm từng đoạn để coi “Đoạn này nói gì”.',open:'Đoạn này nói gì',est:'Ước tính',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 45 giây',
+  f_title:'Gửi kết quả này về email',f_sub:'Ken nhận được sẽ trả lời, giúp mình kiểm lại cho đúng trường hợp. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong. Không mở được thì copy số dưới đây nhắn Ken.',f_or:'Hoặc text:',f_copy:'Copy',
+  legal:'Thông tin chung, không phải tư vấn pháp lý. Form C.A.R. chỉ agent/member được dùng; hỏi luật sư trước khi gửi notice.',
+  copy:'C.A.R. form là tài liệu có bản quyền của California Association of REALTORS®; trang này chỉ giải thích bằng lời của mình.',
+  ft_src:'Nguồn:',ft_upd:'Cập nhật',ft_all:'Mọi tool'},
+ en:{lang:'Tiếng Việt',back:'← All tools',
+  h_eli:'Plain-English explainer',h_form:'Filled-in sample',h_tool:'Tool',h_myth:'What people get wrong',h_op:'A practitioner’s take',h_next:'Next steps',h_video:'45-second video',
+  stamp:'Illustration only, not the real form',tap:'Tap each paragraph to see “What this says”.',open:'What this says',est:'Estimate',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 45-sec video',
+  f_title:'Email this result to yourself',f_sub:'Ken will reply and help you check it against your own situation. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done. If it didn't open, text Ken the number below.",f_or:'Or text:',f_copy:'Copy',
+  legal:'General information, not legal advice. C.A.R. forms are for agents/members only; talk to an attorney before you serve a notice.',
+  copy:'C.A.R. forms are copyrighted by the California Association of REALTORS®; this page only explains them in our own words.',
+  ft_src:'Sources:',ft_upd:'Updated',ft_all:'All tools'}
+};
+
+
+/* ===== LAW — every legal figure for this page. Checked 06/11/2026 (see /home/claude/forms/FACTS.md §1–2). =====
+   AB 1482 cap, Civil Code §1947.12(a): 5% + CPI, max 10%, per 12 months, measured from the lowest rent in the prior 12 months.
+   CPI for San Jose / Santa Clara County = California CPI (DIR), April→April, because Santa Clara is not in a BLS metro index.
+     Aug 1 2026–Jul 31 2027: CA CPI Apr 2026 = 3.6% → 8.6%.  Aug 1 2025–Jul 31 2026: 7.7% (prior year).
+     Computed from statute + https://www.dir.ca.gov/OPRL/CPI/PresentCCPIchange.PDF (no official HCD/DOJ table).
+   Just cause, Civil Code §1946.2: applies after 12 months. Tenant refusing, after a written request, to sign a written
+     extension or renewal of similar length and similar terms = at-fault just cause, §1946.2(b)(1)(E).
+   No statute governs extensions themselves.
+   Stove/fridge, AB 628 (Civ 1941.1(a)(10)-(11)): leases entered, amended or EXTENDED on/after Jan 1 2026.
+   Sunset of §1946.2 and §1947.12: Jan 1, 2030. */
+const LAW={
+  ab1482:{base:5,max:10,periods:[
+    {from:'2025-08-01',to:'2026-07-31',pct:7.7},
+    {from:'2026-08-01',to:'2027-07-31',pct:8.6}]},
+  jcMonths:12,
+  ab628From:'2026-01-01',
+  sunset:'2030-01-01'
+};
+
+function pickPeriod(dt){const s=iso(dt);for(const p of LAW.ab1482.periods){if(s>=p.from&&s<=p.to)return {p,stale:false};}
+  const lst=LAW.ab1482.periods[LAW.ab1482.periods.length-1];return {p:s>lst.to?lst:LAW.ab1482.periods[0],stale:true};}
+/* months + leftover days between two dates (calendar) */
+function monthsDays(a,b){let m=0;while(addMonths(a,m+1)<=b)m++;const rest=daysBetween(addMonths(a,m),b);return {m,d:rest};}
+/* pure calc: {oldEnd,newEnd,oldRent,newRent,ab:'y'|'n'|'u'} */
+function elCalc(i){
+  const a=D(i.oldEnd), b=D(i.newEnd), o={};
+  o.ok=!!(a&&b&&b>a);
+  if(o.ok){o.len=monthsDays(a,b);}
+  o.inc=i.newRent-i.oldRent;
+  o.pct=i.oldRent>0?o.inc/i.oldRent*100:0;
+  const per=a?pickPeriod(a):{p:LAW.ab1482.periods[1],stale:true};
+  o.capPct=Math.min(per.p.pct,LAW.ab1482.max); o.stale=per.stale;
+  o.maxRent=Math.round(i.oldRent*(1+o.capPct/100)*100)/100;
+  o.over=i.ab!=='n' && i.newRent>o.maxRent+0.004;
+  o.excess=o.over?i.newRent-o.maxRent:0;
+  o.eff=a;
+  o.ab628=a && iso(a)>=LAW.ab628From;
+  return o;
+}
+
+const I18N={
+ vi:{title:'Gia hạn hợp đồng thuê (EL)',sub:'Form 1 trang để kéo dài lease đang có: đổi ngày hết hạn, tiền thuê mới, tiền cọc thêm. Không cần làm lease mới.',
+  eli1:'Form EL giống như <b>gia hạn thẻ tập gym</b>. Thẻ cũ vẫn giữ nguyên luật chơi. Chỉ ghi thêm: tới ngày nào, giá bao nhiêu.',
+  eli2:'Chủ nhà (Housing Provider) hoặc agent soạn. Người thuê và chủ nhà cùng ký. Thường gặp 30–60 ngày trước khi lease 1 năm hết hạn, khi hai bên muốn ở tiếp mà không muốn ký lại cả bộ lease dày cộm.',
+  eli3:'Ví dụ: anh An thuê căn 3bd/2ba ở San Jose, lease hết 30/11/2026, giá $3,200. Chủ nhà muốn gia hạn tới 30/11/2027 với giá $3,400. Một trang EL là xong. Giá mới bắt đầu từ ngày lease cũ lẽ ra hết hạn.',
+  eli4:'Có 2 chỗ quan trọng. Một: nhà thuộc AB 1482 thì giá mới không được vượt mức trần. Hai: nếu chủ nhà đưa EL bằng văn bản, điều khoản tương tự và hợp pháp, mà người thuê từ chối ký, luật coi đó là một <b>lý do chính đáng (just cause)</b> để chấm dứt thuê.',
+  f1:'1 trang + 1 trang hướng dẫn',f2:'Bản 12/25',f3:'Người ký: người thuê + chủ nhà',f4:'Gặp: trước khi lease hết hạn',
+  s_head:'Gia hạn cho lease ngày <b>01/12/2025</b> · <b>1234 Example Lane, San Jose, CA 95100</b>',
+  pn0:'Phần đầu',pv0:'Người thuê: Nguyễn Văn An<small>Chủ nhà: Trần Minh Bình · Lease ngày 01/12/2025</small>',
+  ps0:'Ghi rõ đây là phụ lục của lease nào (ngày ký, địa chỉ), ai là người thuê, ai là chủ nhà. Mọi điều khoản cũ của lease vẫn giữ, trừ những gì EL đổi.',
+  pnN:'Lưu ý',pvN:'Nhà có trần tăng giá? Hỏi luật sư trước khi đổi điều khoản',
+  psN:'Form nhắc chủ nhà: nhà có bị giới hạn tăng giá theo luật tiểu bang hay city thì nên hỏi luật sư trước khi dùng EL để đổi điều khoản. Thay đổi có hiệu lực từ ngày lease cũ hết hạn, trừ khi ghi khác.',
+  pn1:'Đoạn 1',pv1:'Gia hạn tới: 30/11/2027',ps1:'Ngày hết hạn mới. Từ 30/11/2026 tới 30/11/2027 là gia hạn đúng 12 tháng.',
+  pn2:'Đoạn 2',pv2:'Tiền thuê: $3,400/tháng',ps2:'Tiền thuê mới. Ví dụ tăng $200 = 6.25%, dưới trần 8.6% của San Jose ($3,475.20). Nhà thuộc AB 1482 mà ghi số vượt trần là sai luật.',
+  pn3:'Đoạn 3',pv3:'Cọc tăng thêm: $0',ps3:'Số tiền cọc cộng thêm (nếu có). Muốn tăng cọc theo giá mới thì hỏi luật sư trước về giới hạn cọc của AB 12.',
+  pn4:'Đoạn 4',pv4:'<span class="box on">✓</span>Kèm phụ lục RCJC',ps4:'Đánh dấu nếu gắn kèm phụ lục giới hạn tăng giá & just cause (form RCJC). Coi giải thích ở <a href="/t803/">T803</a>.',
+  pn5a:'Đoạn 5A',pv5a:'Chủ nhà cấp bếp + tủ lạnh<small><span class="box"></span>Người thuê tự mang tủ lạnh: không</small>',
+  ps5a:'Luật mới AB 628: lease ký, sửa hoặc <b>gia hạn</b> từ 01/01/2026 thì chủ nhà phải cấp bếp và tủ lạnh chạy tốt. Người thuê muốn xài tủ lạnh riêng phải đồng ý bằng văn bản; sau đó báo trước 30 ngày là đổi ý được. Ô ở 5A(2) chỉ đánh khi câu xác nhận này chưa từng có trong lease.',
+  pn5b:'Đoạn 5B',pv5b:'Điều khoản khác: (trống)',ps5b:'Chỗ ghi thêm thỏa thuận riêng (vd đổi ai trả rác, thêm 1 con mèo). Ghi gọn, rõ, đừng mâu thuẫn với lease cũ.',
+  pnS:'Chữ ký',pvS:'Nguyễn Văn An · Trần Minh Bình<small>Ký ngày 20/10/2026</small>',psS:'Mọi người thuê và chủ nhà ký, ghi ngày. Ký xong mỗi bên giữ 1 bản.',
+  t_h:'Tool: kiểm tra bản gia hạn',
+  l_old:'Ngày lease cũ hết hạn',l_new:'Ngày hết hạn mới',l_or:'Tiền thuê hiện tại',l_nr:'Tiền thuê mới',per_mo:'/tháng',
+  l_ab:'Nhà có thuộc AB 1482?',l_ab_s:'(không chắc thì kiểm ở T803)',yes:'Có',no:'Không',unsure:'Không chắc',
+  k_pct:'Tăng tiền thuê',n_len:'Gia hạn thêm',n_inc:'Tăng mỗi tháng',n_cap:'Trần AB 1482 (San Jose)',n_max:'Giá mới tối đa',n_eff:'Giá mới bắt đầu',
+  mo:'tháng',dy:'ngày',bad_dates:'Ngày mới phải sau ngày cũ',
+  tag_y:'AB 1482 · trần {cap}%',tag_n:'Không bị trần AB 1482',tag_u:'Chưa rõ · tạm tính trần {cap}%',
+  why_y:'Trần = 5% + CPI California (Apr→Apr), tối đa 10%. San Jose dùng CPI California, không dùng CPI vùng SF.',
+  why_n:'Không bị trần tiểu bang. Vẫn phải coi lease và luật city (vd rent control chung cư cũ ở San Jose).',
+  why_u:'Chưa biết thì cứ tính như có trần cho an toàn. Kiểm năm xây, loại nhà, chủ là ai ở T803.',
+  c_over:'⚠ Vượt trần {x}/tháng. Giá tối đa là {m}. Ghi số này vô EL là trái luật; bớt xuống hoặc hỏi luật sư.',
+  c_ok:'Trong mức trần. Còn dư {x}/tháng trước khi chạm trần.',
+  c_none:'Không bị trần tiểu bang, nhưng tăng mạnh dễ làm người thuê bỏ đi. Cân nhắc giá thị trường.',
+  c_dec:'Giảm hoặc giữ nguyên giá: không có vấn đề trần.',
+  c_cap_note:'Trần tính theo giá thấp nhất trong 12 tháng qua và cộng hết các lần tăng trong 12 tháng. Mỗi người thuê tối đa 2 lần tăng/12 tháng.',
+  jc:'<b>Just cause:</b> người thuê đã ở từ {n} tháng trở lên mà từ chối ký bản gia hạn tương tự (cùng thời hạn, điều khoản giống, hợp pháp) sau khi chủ nhà yêu cầu bằng văn bản, thì đó là lý do có lỗi theo Civil Code §1946.2(b)(1)(E). Vẫn phải gửi notice đúng thủ tục.',
+  jc_over:'<b>Just cause:</b> bản này đang vượt trần. Điều khoản trái luật thì đừng trông vào lý do “từ chối ký gia hạn” (§1946.2(b)(1)(E)). Sửa giá trước.',
+  jc_n:'<b>Just cause:</b> nhà không thuộc AB 1482 thì có thể không cần lý do theo luật tiểu bang. Chung cư ở San Jose còn có luật TPO riêng; kiểm lại với city.',
+  x_stale:'Con số trần cho ngày này chưa công bố (sau 31/07/2027 hoặc trước 01/08/2025). Đang dùng con số gần nhất. Kiểm lại trước khi ký.',
+  x_628:'Gia hạn từ 01/01/2026: nhớ đoạn 5A (bếp + tủ lạnh, AB 628).',
+  x_short:'Gia hạn ngắn hơn lease cũ? Lý do just cause chỉ áp dụng khi bản gia hạn có “thời hạn tương tự”.',
+  t55a:'Muốn tăng giá giữa chừng, không gia hạn?',t55b:'Dùng tool T55 tính mức tăng →',
+  m1:'<b>“Gia hạn là ký lại lease mới.”</b> Không. EL chỉ đổi vài điều khoản; phần còn lại của lease cũ vẫn chạy. Lease cũ lỗi thời (thiếu điều khoản luật mới) thì nên cân nhắc làm lease mới.',
+  m2:'<b>“Hai bên đồng ý thì tăng bao nhiêu cũng được.”</b> Không, nếu nhà thuộc AB 1482. Người thuê ký đồng ý giá vượt trần cũng không làm nó hợp pháp.',
+  m3:'<b>“Người thuê không ký gia hạn là đuổi được liền.”</b> Phải đủ điều kiện: yêu cầu bằng văn bản, thời hạn tương tự, điều khoản hợp pháp, và vẫn phải gửi notice đúng luật.',
+  op1:'Gửi EL sớm, 60 ngày trước khi hết hạn. Gửi trễ, lease tự chuyển qua month-to-month, và chủ nhà mất lợi thế thương lượng.',
+  op2:'Ý kiến gây tranh cãi: nhiều chủ nhà nên tăng ít hơn mức trần. Một người thuê tốt ở thêm 1 năm thường đáng hơn vài trăm đô, vì một tháng nhà trống cộng tiền sơn sửa là ăn hết phần tăng.',
+  nx1:'Tính mức tăng tiền thuê hợp pháp',nx2:'Phụ lục giới hạn tăng giá & just cause (RCJC)',nx3:'Thông báo thay đổi điều kiện thuê (CTT)',nx4:'Luật chủ nhà – người thuê',
+  sms:'Chào Ken, tôi vừa dùng tool gia hạn lease (EL): hết {oe} → {ne}, thuê {or} → {nr} ({pct}). AB 1482: {ab}. Ken kiểm giùm được không?',
+  subj:'Kiểm tra gia hạn lease (EL) — {n}',
+  body:'Tên: {n}\nEmail: {em}\nPhone: {ph}\n\nLease cũ hết: {oe}\nHết hạn mới: {ne}\nGia hạn: {len}\nTiền thuê: {or} → {nr}\nTăng: {pct} ({inc}/tháng)\nAB 1482: {ab}\nGiá tối đa theo trần: {mx}\nKết quả: {st}\n\nGửi từ tool T808 tools.kenlamrealty.com'},
+ en:{title:'Extension of Lease (EL)',sub:'A 1-page form that stretches an existing lease: new end date, new rent, extra deposit. No new lease needed.',
+  eli1:'Form EL is like <b>renewing a gym membership</b>. The rules on the old card stay the same. You only write: until when, and for how much.',
+  eli2:'The housing provider (landlord) or agent fills it out. Tenant and housing provider both sign. It usually shows up 30–60 days before a 1-year lease ends, when both sides want to keep going without re-signing the whole lease.',
+  eli3:'Example: An rents a 3bd/2ba in San Jose, lease ends 11/30/2026 at $3,200. The owner wants to extend to 11/30/2027 at $3,400. One EL page does it. The new rent starts the day the old lease was set to end.',
+  eli4:'Two things matter. One: if the home is covered by AB 1482, the new rent can’t pass the cap. Two: if the owner offers a written extension with similar, lawful terms and the tenant refuses to sign, the law treats that as a <b>just cause</b> to end the tenancy.',
+  f1:'1 page + 1 instruction page',f2:'Revised 12/25',f3:'Signed by: tenant + housing provider',f4:'When: before the lease ends',
+  s_head:'Extends the lease dated <b>12/01/2025</b> · <b>1234 Example Lane, San Jose, CA 95100</b>',
+  pn0:'Top',pv0:'Tenant: Nguyễn Văn An<small>Housing provider: Trần Minh Bình · Lease dated 12/01/2025</small>',
+  ps0:'Names the lease it changes (date, address), the tenant and the housing provider. Everything in the old lease stays, except what the EL changes.',
+  pnN:'Note',pvN:'Rent cap applies? Ask a lawyer before changing terms',
+  psN:'The form warns: if the home is under a state or local rent cap, talk to a lawyer before using EL to change terms. Changes take effect on the old end date unless stated otherwise.',
+  pn1:'Para 1',pv1:'Extended to: 11/30/2027',ps1:'The new end date. 11/30/2026 to 11/30/2027 is exactly 12 months.',
+  pn2:'Para 2',pv2:'Rent: $3,400/mo',ps2:'The new rent. A $200 raise = 6.25%, under San Jose’s 8.6% cap ($3,475.20). Writing a number over the cap on a covered home breaks the law.',
+  pn3:'Para 3',pv3:'Deposit increase: $0',ps3:'Any extra deposit. If you want to raise the deposit to match the new rent, ask a lawyer about the AB 12 deposit limit first.',
+  pn4:'Para 4',pv4:'<span class="box on">✓</span>RCJC addendum attached',ps4:'Check it when the Rent Cap and Just Cause Addendum (RCJC) is attached. See <a href="/t803/">T803</a>.',
+  pn5a:'Para 5A',pv5a:'Owner provides stove + fridge<small><span class="box"></span>Tenant brings own fridge: no</small>',
+  ps5a:'New law AB 628: leases signed, amended or <b>extended</b> on/after 01/01/2026 must come with a working stove and fridge. A tenant who wants their own fridge must agree in writing, and can change their mind with 30 days’ notice. The 5A(2) box is only for when that acknowledgment was never in the lease.',
+  pn5b:'Para 5B',pv5b:'Other terms: (blank)',ps5b:'Room for side deals (who pays trash, adding a cat). Keep it short, clear, and don’t contradict the old lease.',
+  pnS:'Signatures',pvS:'Nguyễn Văn An · Trần Minh Bình<small>Signed 10/20/2026</small>',psS:'All tenants and housing providers sign and date. Everyone keeps a copy.',
+  t_h:'Tool: check the extension',
+  l_old:'Old lease end date',l_new:'New end date',l_or:'Current rent',l_nr:'New rent',per_mo:'/mo',
+  l_ab:'Covered by AB 1482?',l_ab_s:'(not sure? check T803)',yes:'Yes',no:'No',unsure:'Not sure',
+  k_pct:'Rent increase',n_len:'Extended by',n_inc:'Increase per month',n_cap:'AB 1482 cap (San Jose)',n_max:'Max new rent',n_eff:'New rent starts',
+  mo:'months',dy:'days',bad_dates:'New end date must be after the old one',
+  tag_y:'AB 1482 · {cap}% cap',tag_n:'No AB 1482 cap',tag_u:'Unknown · using {cap}% cap',
+  why_y:'Cap = 5% + California CPI (Apr→Apr), max 10%. San Jose uses the California CPI, not the SF-area CPI.',
+  why_n:'No state cap. The lease and city rules still apply (e.g. San Jose rent control on older apartments).',
+  why_u:'Not sure? Play it safe and assume the cap applies. Check year built, type and owner at T803.',
+  c_over:'⚠ Over the cap by {x}/mo. Max is {m}. Writing this on the EL is illegal; lower it or ask a lawyer.',
+  c_ok:'Within the cap. {x}/mo of room left.',
+  c_none:'No state cap, but a big jump can push a good tenant out. Check the market.',
+  c_dec:'Same or lower rent: no cap issue.',
+  c_cap_note:'The cap is measured from the lowest rent in the past 12 months, and all increases in 12 months count together. At most 2 increases per tenant in 12 months.',
+  jc:'<b>Just cause:</b> if the tenant has been there {n}+ months and refuses, after a written request, to sign an extension of similar length with similar, lawful terms, that is an at-fault cause under Civil Code §1946.2(b)(1)(E). You still have to serve a proper notice.',
+  jc_over:'<b>Just cause:</b> this extension is over the cap. Don’t count on “refused to sign an extension” (§1946.2(b)(1)(E)) with unlawful terms. Fix the rent first.',
+  jc_n:'<b>Just cause:</b> if AB 1482 doesn’t cover the home, state just cause may not apply. San Jose apartments also have the city TPO; check with the city.',
+  x_stale:'The cap for this date isn’t published (after 07/31/2027 or before 08/01/2025). Using the closest figure. Check again before signing.',
+  x_628:'Extension on/after 01/01/2026: don’t skip para 5A (stove + fridge, AB 628).',
+  x_short:'Shorter than the old lease? The just-cause rule only covers an extension of “similar duration”.',
+  t55a:'Raising rent mid-lease instead of extending?',t55b:'Use tool T55 →',
+  m1:'<b>“An extension is a brand-new lease.”</b> No. EL changes a few terms; the rest of the old lease keeps running. If the old lease is outdated (missing new-law clauses), consider a fresh lease.',
+  m2:'<b>“If both sides agree, any increase is fine.”</b> Not on an AB 1482 home. A tenant signing off on an over-cap rent doesn’t make it legal.',
+  m3:'<b>“Tenant won’t sign, so I can evict right away.”</b> Only if: written request, similar length, lawful terms, and a proper notice after that.',
+  op1:'Send the EL early, 60 days out. Wait too long and the lease rolls to month-to-month, and the owner loses leverage.',
+  op2:'Hot take: many owners should raise less than the cap. A good tenant staying one more year is usually worth more than a few hundred dollars, because one vacant month plus paint eats the whole raise.',
+  nx1:'Max legal rent increase',nx2:'Rent Cap & Just Cause Addendum (RCJC)',nx3:'Notice of Change in Terms (CTT)',nx4:'Landlord–tenant law',
+  sms:'Hi Ken, I used the lease extension tool (EL): ends {oe} → {ne}, rent {or} → {nr} ({pct}). AB 1482: {ab}. Can you double-check?',
+  subj:'Lease extension check (EL) — {n}',
+  body:'Name: {n}\nEmail: {em}\nPhone: {ph}\n\nOld end: {oe}\nNew end: {ne}\nExtended by: {len}\nRent: {or} → {nr}\nIncrease: {pct} ({inc}/mo)\nAB 1482: {ab}\nMax rent under cap: {mx}\nResult: {st}\n\nSent from tool T808 tools.kenlamrealty.com'}
+};
+let ab='y';
+function calc(){
+  const d=T(), i={oldEnd:$('oldEnd').value,newEnd:$('newEnd').value,oldRent:Math.max(0,num('oldRent')),newRent:Math.max(0,num('newRent')),ab};
+  const r=elCalc(i);
+  const lenTxt=r.ok?(r.len.m+' '+d.mo+(r.len.d?' + '+r.len.d+' '+d.dy:'')):d.bad_dates;
+  $('oLen').textContent=lenTxt;
+  $('big').textContent=(r.pct>=0?'+':'')+r.pct.toFixed(2)+'%';
+  $('bigU').textContent=(r.inc>=0?'+':'')+money(r.inc)+d.per_mo;
+  $('oInc').textContent=(r.inc>=0?'+':'')+money(r.inc);
+  $('oCap').textContent=ab==='n'?'—':r.capPct.toFixed(1)+'%';
+  $('oMax').textContent=ab==='n'?'—':money(r.maxRent,true);
+  $('oEff').textContent=fdate(r.eff);
+  $('tag').textContent=fill(d['tag_'+ab],{cap:r.capPct.toFixed(1)});
+  $('tag').classList.toggle('ex',ab==='n');
+  $('why').textContent=d['why_'+ab];
+  const cn=$('capNote'); cn.classList.remove('bad','good');
+  let st;
+  if(ab==='n'){st=d.c_none;}
+  else if(r.inc<=0){st=d.c_dec;cn.classList.add('good');}
+  else if(r.over){st=fill(d.c_over,{x:money(r.excess,true),m:money(r.maxRent,true)});cn.classList.add('bad');}
+  else {st=fill(d.c_ok,{x:money(r.maxRent-i.newRent,true)});cn.classList.add('good');}
+  cn.innerHTML=st+(ab!=='n'?'<br><small>'+d.c_cap_note+'</small>':'');
+  $('jcNote').innerHTML=ab==='n'?d.jc_n:(r.over?d.jc_over:fill(d.jc,{n:LAW.jcMonths}));
+  const notes=[]; if(r.stale&&ab!=='n')notes.push(d.x_stale); if(r.ab628)notes.push(d.x_628);
+  if(r.ok&&r.len.m<12&&r.len.m>=0)notes.push(d.x_short);
+  $('xNote').innerHTML=notes.join('<br>'); $('xNote').classList.toggle('hide',!notes.length);
+  last={oe:fdate(D(i.oldEnd)),ne:fdate(D(i.newEnd)),len:lenTxt,or:money(i.oldRent),nr:money(i.newRent),pct:r.pct.toFixed(2)+'%',inc:money(r.inc),
+    ab:{y:d.yes,n:d.no,u:d.unsure}[ab],mx:ab==='n'?'—':money(r.maxRent,true),st:st.replace(/<[^>]+>/g,'')};
+  setSms();
+}
+function setAb(v){ab=v;['abY','abN','abU'].forEach(id=>$(id).setAttribute('aria-pressed',String(id==='ab'+v.toUpperCase())));calc();}
+$('abY').onclick=()=>setAb('y'); $('abN').onclick=()=>setAb('n'); $('abU').onclick=()=>setAb('u');
+wire(['oldEnd','newEnd','oldRent','newRent']);
+initCommon();
+
+</script>
+</body>
+</html>
