@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Đồng Hồ Nước Riêng WSM</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* ---- T27 thêm (không đổi class cũ) ---- */
+.ctl input[type=date]{font-size:17px;min-height:48px}
+.fx{font-size:12px;color:var(--muted);font-weight:400}
+.status{font-size:15px;border-radius:10px;padding:10px 12px;line-height:1.45}
+.status.ok{background:var(--brass-soft)}
+.status.warn{border:1px solid var(--warn)}
+.status b{font-weight:500}
+.status.warn b{color:var(--warn)}
+.line .n small{display:block;font-size:12px;margin-top:2px}
+.line.sum .n b,.line.sum .a{color:var(--fg);font-weight:600}
+.line.dim{opacity:.6}
+.line.warnl .a{color:var(--warn)}
+.dl{display:grid;gap:10px}
+.dl h2,.idr h2,.next h2,.tlw h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.dd{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:6px;min-width:0}
+.dd .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dd .t{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.dd .left{font-size:13px;color:var(--muted);white-space:nowrap}
+.dd .date{font-family:var(--display);font-size:34px;line-height:1.05;font-variant-numeric:tabular-nums}
+.dd p{margin:0;font-size:14px;color:var(--muted)}
+.dd p b{color:var(--warn);font-weight:500}
+.gcal{justify-self:start;font-size:12px;color:var(--brass);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;white-space:nowrap;background:var(--panel)}
+.gcal:hover{border-color:var(--brass)}
+.idr{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.idr .r{display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.idr .r b{color:var(--fg);font-weight:500;font-size:15px}
+.tlw{display:grid;gap:12px}
+.tlw .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.tlw .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.phase{display:grid;border-top:1px solid var(--line);padding-top:14px}
+.ph-h{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;margin-bottom:2px}
+.ph-h h3{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15;margin:0}
+.ph-n{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.task input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;cursor:pointer}
+.task .tt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;line-height:1.4;text-align:left;padding:0;cursor:pointer;min-width:0}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.task .why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.task .why[hidden]{display:none}
+.myth{font-size:14px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin:0}
+.myth b{color:var(--warn);font-weight:500}
+.myth a,.next a,.idr a{color:var(--brass)}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.next ol{margin:0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.reset{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:0}
+footer .src{line-height:1.6}
+footer .src a{word-break:break-word}
+.xal{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:12px}.xal h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0}.mhl{list-style:none;margin:0;padding:0;display:grid;gap:10px}.mhl li{display:grid;gap:2px;border-top:1px solid var(--line);padding-top:10px}.mhl li:first-child{border-top:0;padding-top:0}.mhl a{color:var(--fg);text-decoration:none;font-weight:500}.mhl a b{color:var(--brass);font-weight:600;margin-right:4px}.mhl span{color:var(--muted);font-size:14px}
+
+/* ---- Giải nghĩa forms (T480–T402) ---- */
+.wrap{max-width:620px}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:4px 10px;color:var(--muted);background:var(--panel);min-width:0}
+.chip b{color:var(--fg);font-weight:500}
+.sec{display:grid;gap:12px;min-width:0}
+.sec>h2{font-family:var(--display);font-weight:400;font-size:28px;line-height:1.15;margin:0}
+.sec>p.lead{margin:0;font-size:14px;color:var(--muted)}
+.mock{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 16px 6px;min-width:0}
+.mock-h{display:flex;justify-content:space-between;align-items:baseline;gap:6px 12px;flex-wrap:wrap;border-bottom:2px solid var(--fg);padding-bottom:10px;margin-bottom:4px}
+.mock-h b{font-size:14px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.stamp{font-size:11px;color:var(--warn);border:1px solid var(--warn);border-radius:6px;padding:2px 7px;letter-spacing:.02em}
+.mock-meta{font-size:13px;color:var(--muted);padding:8px 0;border-bottom:1px solid var(--line);display:grid;gap:2px}
+.mock-meta b{color:var(--fg);font-weight:500}
+.grp{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--brass);padding:14px 0 4px;font-weight:500}
+details.para{border-bottom:1px solid var(--line)}
+details.para summary{display:grid;grid-template-columns:2.6em minmax(0,1fr) auto;gap:2px 8px;padding:11px 0;cursor:pointer;list-style:none;align-items:baseline}
+details.para summary::-webkit-details-marker{display:none}
+details.para .pn{font-weight:600;color:var(--brass);font-variant-numeric:tabular-nums;font-size:14px}
+details.para .pt{font-size:15px;font-weight:500;min-width:0}
+details.para .pv{grid-column:2;font-size:13px;color:var(--muted);min-width:0;overflow-wrap:anywhere}
+details.para .pc{color:var(--muted);font-size:18px;line-height:1;transition:transform .15s}
+details.para[open] .pc{transform:rotate(45deg)}
+details.para .pb{display:grid;gap:8px;padding:0 0 14px 2.6em;font-size:14px;line-height:1.55}
+details.para .pb p{margin:0}
+details.para .pb b{font-weight:600;color:var(--fg)}
+details.para .pb .ex{background:var(--brass-soft);border-radius:8px;padding:8px 10px}
+@media (max-width:420px){details.para .pb{padding-left:0}}
+.xall{justify-self:start;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:13px;padding:5px 12px;border-radius:999px;cursor:pointer}
+.tool{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:14px;min-width:0}
+.tool h3{font-family:var(--display);font-weight:400;font-size:22px;margin:0}
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;padding:12px 4px}
+.ctl input[type=text],.ctl input[type=date]{font-size:17px}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45;cursor:pointer}
+.chk input{width:20px;height:20px;accent-color:var(--brass);margin:1px 0 0;flex:none}
+.verdict{border-radius:10px;padding:12px 14px;font-size:15px;line-height:1.5}
+.verdict.ok{background:var(--brass-soft)}
+.verdict.bad{border:1px solid var(--warn)}
+.verdict.bad b{color:var(--warn)}
+.verdict b{font-weight:600}
+.sub2{font-size:13px;color:var(--muted);margin:0}
+.vidbox{display:grid;gap:10px;justify-items:center}
+.vidbox video{width:100%;max-width:360px;aspect-ratio:9/16;border-radius:14px;background:#0c1b28;border:1px solid var(--line);display:block}
+.lst{margin:0;padding-left:20px;display:grid;gap:8px;font-size:14px;line-height:1.5}
+.lst b{font-weight:600}
+.opinion{font-size:15px;line-height:1.55;background:var(--panel);border-left:3px solid var(--brass);padding:12px 16px;margin:0;border-radius:0 10px 10px 0}
+.law{font-size:13px;color:var(--muted);line-height:1.5}
+.law b{color:var(--fg);font-weight:500}
+</style>
+<meta name="description" content="C.A.R. Form WSM explained in Vietnamese and English: how a submetered water bill works, what a landlord may charge, and a bill checker.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t493/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Đồng Hồ Nước Riêng WSM · Ken Lam Tools">
+<meta property="og:description" content="C.A.R. Form WSM explained in Vietnamese and English: how a submetered water bill works, what a landlord may charge, and a bill checker.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t493/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/t402/" data-i="back">← Tất cả forms</a>
+  <header>
+    <div class="brand">
+      <span data-i="eyebrow">Giải nghĩa forms · C.A.R. Form WSM</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title">Đồng hồ nước riêng (WSM): chủ nhà được tính gì?</h1>
+    <p class="sub" data-i="sub">Căn thuê có đồng hồ nước riêng thì tiền nước tính riêng, và bill chỉ được có 4 khoản. Form WSM ghi hết luật chơi.</p>
+    <div class="chips" id="chips"></div>
+  </header>
+
+  <section class="sec" aria-label="Form">
+    <h2 data-i="f_title">Form minh họa</h2>
+    <p class="lead" data-i="f_lead"></p>
+    <div class="mock">
+      <div class="mock-h"><b data-i="mock_name"></b><span class="stamp" data-i="stamp">Ví dụ minh họa — không phải form thật</span></div>
+      <div class="mock-meta" id="mockMeta"></div>
+      <div id="paras"></div>
+    </div>
+    <button type="button" class="xall" id="xall" data-i="xall">Mở hết</button>
+  </section>
+
+  <section class="sec" aria-label="Tool">
+    <h2 data-i="t_title"></h2>
+    <p class="lead" data-i="t_lead"></p>
+    <div class="tool">
+      <div class="row2">
+        <div class="field"><label for="gal" data-i="l_gal">Số đồng hồ riêng tháng này (gallon)</label>
+          <div class="ctl"><input id="gal" type="number" inputmode="numeric" min="0" step="100" value="4200"><span class="post">gal</span></div></div>
+        <div class="field"><label for="rate"><span data-i="l_rate">Giá nước của công ty nước</span> <small data-i="l_rate_s">($ / HCF, xem bill công ty)</small></label>
+          <div class="ctl"><span class="pre">$</span><input id="rate" type="number" inputmode="decimal" min="0" step="0.01" value="7.42"></div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="fixed"><span data-i="l_fixed">Phí cố định cả khu / tháng</span> <small data-i="l_fixed_s">(trên bill công ty nước)</small></label>
+          <div class="ctl"><span class="pre">$</span><input id="fixed" type="number" inputmode="decimal" min="0" step="1" value="48"></div></div>
+        <div class="field"><label for="units" data-i="l_units">Số căn chia phí cố định</label>
+          <div class="ctl"><input id="units" type="number" inputmode="numeric" min="1" step="1" value="4"><span class="post" data-i="u_units">căn</span></div></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="fee" data-i="l_fee">Phí làm bill chủ nhà ghi</label>
+          <div class="ctl"><span class="pre">$</span><input id="fee" type="number" inputmode="decimal" min="0" step="0.25" value="2.5"></div></div>
+        <div class="field"><label for="late" data-i="l_late">Phí trễ hạn trên bill</label>
+          <div class="ctl"><span class="pre">$</span><input id="late" type="number" inputmode="decimal" min="0" step="1" value="0"></div></div>
+      </div>
+      <label class="chk"><input type="checkbox" id="first" checked><span data-i="l_first">Đây là lần trễ đầu tiên</span></label>
+      <div class="field"><label for="billed"><span data-i="l_billed">Tổng bill nước chủ nhà gửi</span> <small data-i="l_billed_s">(để trống = chưa có bill)</small></label>
+        <div class="ctl"><span class="pre">$</span><input id="billed" type="number" inputmode="decimal" min="0" step="0.01" value="56.16"></div></div>
+      <section class="result" aria-live="polite">
+        <div class="total"><div class="k" data-i="r_k">Bill nước hợp lệ ước tính</div><div class="v" id="rTotal">$0</div></div>
+        <div class="verdict" id="rVerdict"></div>
+        <div class="lines">
+          <div class="line"><span class="n"><b data-i="n_use">A · Tiền nước theo đồng hồ</b> <small id="sUse"></small></span><span class="a" id="oUse"></span></div>
+          <div class="line"><span class="n"><b data-i="n_fix">B · Phần phí cố định</b> <small id="sFix"></small></span><span class="a" id="oFix"></span></div>
+          <div class="line"><span class="n"><b data-i="n_fee">C · Phí làm bill</b> <small id="sFee"></small></span><span class="a" id="oFee"></span></div>
+          <div class="line"><span class="n"><b data-i="n_late">D · Phí trễ</b> <small id="sLate"></small></span><span class="a" id="oLate"></span></div>
+        </div>
+        <p class="sub2" id="rFam"></p>
+        <div class="note" data-i="r_note">Ước tính. Phí cố định ở đây chia đều theo số căn; luật chỉ nói "một phần". Hỏi chủ nhà xin bảng tính (đoạn 7).</div>
+      </section>
+    </div>
+  </section>
+
+  <section class="sec" aria-label="Myths">
+    <h2 data-i="w_title">Nhiều người hiểu sai</h2>
+    <ol class="lst" id="wrongs"></ol>
+  </section>
+
+  <section class="sec" aria-label="Opinion">
+    <h2 data-i="o_title">Ý kiến của Ken</h2>
+    <p class="opinion" data-i="opinion"></p>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="nx_title">Bước tiếp theo</h2>
+    <ol id="nexts"></ol>
+  </section>
+
+  <section class="sec vidbox" aria-label="Video">
+    <h2 data-i="v_title" style="justify-self:start">Video 45 giây</h2>
+    <video src="web.mp4" controls playsinline preload="metadata" aria-label="Video"></video>
+  </section>
+
+  <section class="actions">
+    <a class="btn primary" id="emailBtn" href="mailto:ken@kenlamrealty.com" data-i="b_email">Gửi kết quả cho Ken qua email</a>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Nhắn Ken</a>
+    <a class="btn" id="videoBtn" href="/t493/web.mp4" target="_blank" rel="noopener" data-i="b_video">Xem video 45 giây</a>
+    <a class="btn" href="/t402/" data-i="b_all">Tất cả forms</a>
+  </section>
+
+  <footer>
+    <span data-i="ft_dis"></span>
+    <span class="src"><span data-i="ft_src">Nguồn</span>:
+      <a href="https://www.car.org/" target="_blank" rel="noopener">C.A.R. Form WSM (rev 6/23)</a> ·
+      <a href="https://leginfo.legislature.ca.gov/faces/codes_displayexpandedbranch.xhtml?tocCode=CIV&amp;division=3.&amp;title=5.&amp;part=4.&amp;chapter=2.5." target="_blank" rel="noopener">Civil Code § 1954.201–1954.219 (submeters)</a> ·
+      <a href="https://www.cdfa.ca.gov/exec/county/documents/countycommissionersealercontactinfo.pdf" target="_blank" rel="noopener">CDFA County Sealers</a></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · BRG Realty Corp · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/t402/" data-i="b_all2">Tất cả forms</a> · <a href="/cong-cu/" data-i="ft_all">Tất cả tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số liệu luật — sửa ở đây khi luật đổi =====
+   Nguồn: /home/claude/forms/FACTS.md (Civil Code §§ 1954.201–1954.219). Form WSM rev 6/23.
+   GAL_PER_HCF 748: 1 HCF = 100 cubic feet = 748 gallon (đổi đơn vị).
+   FAMILY4_GPD 200: con số form ghi (đoạn 2B).
+   REPAIR_DAYS 21: form đoạn 6.
+   FEE_CAP_USD / FEE_CAP_PCT: phí làm bill tối đa (Civil Code § 1954.205(a)(3)) — từ FACTS.
+   LATE_CAP_USD / LATE_AFTER_DAYS: phí trễ (Civil Code § 1954.213) — từ FACTS. null = chưa có số, hiện "kiểm lại". */
+const GAL_PER_HCF=748, FAMILY4_GPD=200, REPAIR_DAYS=21;
+const FEE_CAP_USD=4.75, FEE_CAP_PCT=25;
+const LATE_CAP_USD=7, LATE_CAP_NEXT_USD=10, LATE_AFTER_DAYS=25;
+const PARAS=[{"n": {"vi": "Đầu", "en": "Top"}, "t": {"vi": "Gắn vào hợp đồng nào, ai với ai", "en": "Which agreement, between whom"}, "v": {"vi": "Gắn vào RLMM · 1234 Example Lane, Unit B · Chị Thu Example (Tenant)", "en": "Attached to RLMM · 1234 Example Lane, Unit B · Thu Example (Tenant)"}, "s": {"vi": "Phần đầu ghi addendum này nằm trong hợp đồng nào: hợp đồng thuê RLMM, hợp đồng thuê lại sau khi bán (Residential Lease After Sale), hoặc loại khác. Ghi ngày hợp đồng, địa chỉ, tên Tenant và Housing Provider (chủ nhà hoặc người quản lý).", "en": "The top says which agreement this addendum belongs to: the RLMM lease, a Residential Lease After Sale, or another one. It lists the agreement date, the address, the Tenant and the Housing Provider (owner or manager)."}, "m": {"vi": "Addendum này không đứng một mình. Nó là một phần của hợp đồng thuê. Ký rồi là ràng buộc y như hợp đồng chính.", "en": "This addendum does not stand alone. It becomes part of the lease, and it binds both sides just like the main lease."}, "e": {"vi": "Căn Unit B ở 1234 Example Lane, San Jose, CA 95100. Chủ nhà là Anh Minh & Chị Hạnh Example, người thuê là Chị Thu Example. Đoạn 9A của RLMM được đánh dấu \"Water Submeters\" và WSM đi kèm.", "en": "Unit B at 1234 Example Lane, San Jose, CA 95100. Owners Minh & Hạnh Example, tenant Thu Example. RLMM paragraph 9A is checked \"Water Submeters\" and the WSM is attached."}}, {"n": "1", "t": {"vi": "Tiền nước tính riêng, ngoài tiền thuê", "en": "Water billed separately from rent"}, "v": {"vi": "Có", "en": "Yes"}, "s": {"vi": "Tenant sẽ nhận bill nước riêng, không gộp vào tiền thuê.", "en": "The tenant gets a separate water bill. It is not part of the rent."}, "m": {"vi": "Tiền thuê $2,800 là $2,800. Tiền nước là một khoản khác mỗi tháng, lên xuống theo đồng hồ nước riêng (submeter) của căn mình.", "en": "Rent stays the rent. Water is another amount each month that goes up or down with your own unit's submeter."}, "e": {"vi": "Tháng 1 Chị Thu trả rent $2,800 và một bill nước riêng $56.16.", "en": "In January Thu pays $2,800 rent plus a separate $56.16 water bill."}}, {"n": "2", "t": {"vi": "Ước tính tiền nước mỗi tháng", "en": "Estimated monthly water bill"}, "v": {"vi": "$45 / tháng · cách A", "en": "$45 / month · method A"}, "s": {"vi": "Chủ nhà phải ghi trước một con số ước tính tiền nước mỗi tháng, và chọn cách tính: (A) trung bình hoặc trung vị bill nước của các căn tương tự trong cùng khu 6 tháng qua, hoặc (B) tính theo một gia đình 4 người xài trong nhà khoảng 200 gallon mỗi ngày, cộng các phí cố định hằng tháng.", "en": "The landlord must write an estimated monthly water bill up front and pick how it was estimated: (A) the average or median bill of similar units at the property over the last 6 months, or (B) a family of four using about 200 gallons a day indoors, plus all fixed monthly charges."}, "m": {"vi": "Con số này giúp anh chị so sánh trước khi ký. Nó là ước tính, không phải giá cố định. Xài nhiều hơn thì trả nhiều hơn.", "en": "This lets you compare before you sign. It is an estimate, not a fixed price. Use more, pay more."}, "e": {"vi": "200 gallon × 30 ngày = 6,000 gallon, khoảng 8 HCF (1 HCF = 748 gallon). Nếu cách B ra $55 mà nhà 2 người của Chị Thu chỉ xài 3,500 gallon thì bill thật sẽ thấp hơn.", "en": "200 gallons × 30 days = 6,000 gallons, about 8 HCF (1 HCF = 748 gallons). If method B gives $55 but Thu's 2-person home uses only 3,500 gallons, the real bill will be lower."}}, {"n": "3", "t": {"vi": "Ngày gửi bill và hạn trả", "en": "Billing date and due date"}, "v": {"vi": "Gửi trước ngày 5 · trả trước ngày 25", "en": "Sent by the 5th · due by the 25th"}, "s": {"vi": "Chủ nhà ghi ngày gửi bill mỗi tháng (hoặc cách khác). Tenant trả theo cùng cách trả tiền thuê trong hợp đồng, trước một ngày nhất định, hoặc trong số ngày sau khi nhận bill, hoặc cách khác ghi vào.", "en": "The landlord fills in the day each bill goes out (or another schedule). The tenant pays the same way rent is paid under the lease, by a set date, or within a number of days after the bill, or another way written in."}, "m": {"vi": "Trả tiền nước như trả rent: cùng cách (check, chuyển khoản…). Ghi rõ ngày để khỏi cãi nhau chuyện trễ.", "en": "Pay water the way you pay rent, by the same method. Clear dates prevent fights about late payment."}, "e": {"vi": "Bill tháng 3 gửi ngày 05/03, Chị Thu trả trước 25/03 bằng chuyển khoản như rent.", "en": "The March bill goes out 03/05; Thu pays by 03/25 by transfer, same as rent."}}, {"n": "4", "t": {"vi": "Hỏi về bill nước thì hỏi ai", "en": "Who to ask about the bill"}, "v": {"vi": "Property Manager · 9 AM–5 PM · Thứ 2–6", "en": "Property Manager · 9 AM–5 PM · Mon–Fri"}, "s": {"vi": "Thắc mắc về bill nước thì hỏi chủ nhà, property manager, hoặc công ty làm bill (billing agent), theo địa chỉ, email hoặc số điện thoại trong hợp đồng, trong giờ và ngày ghi ở đây. Nếu số điện thoại trong hợp đồng không phải số địa phương hay số miễn phí thì phải ghi thêm một số khác.", "en": "Questions about the water bill go to the landlord, property manager or billing agent, at the address, email or phone in the lease, during the hours and days filled in here. If the lease phone number is not local or toll-free, another number must be listed."}, "m": {"vi": "Anh chị có quyền hỏi, và phải có người trả lời trong giờ làm việc. Không ai được bắt anh chị gọi số đường dài để hỏi bill.", "en": "You have the right to ask, and someone must answer during set hours. Nobody can make you call a long-distance number to ask about a bill."}, "e": {"vi": "Bill tháng 4 tự nhiên gấp đôi. Chị Thu email property manager trong giờ 9–5, thứ 2–6, như ghi ở đoạn 4.", "en": "The April bill doubles. Thu emails the property manager, 9–5, Mon–Fri, as listed in paragraph 4."}}, {"n": "5", "t": {"vi": "Bill nước chỉ được tính 4 khoản", "en": "Only 4 charges allowed"}, "v": {"vi": "A + B + C + D", "en": "A + B + C + D"}, "s": {"vi": "Bill nước hằng tháng CHỈ được có: (A) tiền nước theo số đồng hồ riêng, tính theo giá luật cho phép (Civil Code § 1954.205(a)); (B) một phần phí cố định của công ty nước; (C) phí làm bill của chủ nhà hoặc billing agent, theo mức luật cho phép; (D) phí trễ hạn, đúng số tiền và thời điểm theo Civil Code § 1954.213.", "en": "The monthly bill may ONLY include: (A) water used as measured by the submeter, at rates the law allows (Civil Code § 1954.205(a)); (B) a portion of the water company's fixed fee; (C) a billing fee for the landlord's or billing agent's costs, within the legal limit; (D) a late fee, in the amounts and at the times allowed by Civil Code § 1954.213."}, "m": {"vi": "Ngoài 4 khoản này là không được. Không được cộng \"phí bảo trì đồng hồ\", không được tính giá nước cao hơn giá công ty nước. Phí làm bill có trần: thấp hơn giữa $4.75 (số gốc 2018, có điều chỉnh CPI) và 25% tiền nước theo đồng hồ (Civil Code § 1954.205). Phí trễ: chỉ khi bill chưa trả 25 ngày sau ngày gửi; $7 lần trễ đầu, $10 các lần sau; tổng phí trễ không quá 10% bill trong 12 tháng; chủ nhà không được cắt nước (Civil Code § 1954.213). Tiền nước không phải là rent.", "en": "Anything outside these 4 is not allowed. No \"meter maintenance fee\", no marking up the water rate. The billing fee has a cap: the lesser of $4.75 (2018 base, CPI-adjusted) or 25% of the usage charge (Civil Code § 1954.205). Late fee: only once the bill is unpaid 25 days after mailing; $7 for the first late bill, $10 after that; total late fees no more than 10% of the bill in 12 months; no water shut-off (Civil Code § 1954.213). Water charges are not rent."}, "e": {"vi": "Bill của Chị Thu: nước $41.66 + phần phí cố định $12.00 + phí làm bill $2.50 = $56.16. Nếu thấy dòng \"service fee $15\" là phải hỏi.", "en": "Thu's bill: water $41.66 + fixed-fee share $12.00 + billing fee $2.50 = $56.16. A line like \"service fee $15\" is worth questioning."}}, {"n": "6", "t": {"vi": "Báo rò rỉ: chủ nhà sửa trong 21 ngày", "en": "Report leaks: landlord fixes within 21 days"}, "v": {"vi": "Báo bằng email", "en": "Reported by email"}, "s": {"vi": "Tenant phải báo cho chủ nhà hoặc property manager (theo địa chỉ, email, số điện thoại đã ghi) khi có rò rỉ, nhỏ giọt, vòi hay bồn cầu không tắt hẳn, hoặc thiết bị tiết kiệm nước bị hư. Chủ nhà phải kiểm tra và, nếu cần, sửa trong 21 ngày. Không sửa thì bill nước phải được điều chỉnh theo luật.", "en": "The tenant must tell the landlord or manager (at the listed address, email or phone) about leaks, drips, fixtures that will not shut off (including a toilet), or broken water-saving devices. The landlord must check and, if needed, repair within 21 days. If not, the water bill gets adjusted as the law requires."}, "m": {"vi": "Bồn cầu chảy rỉ rả có thể làm bill tăng mạnh. Báo bằng giấy hoặc email để có ngày giờ làm bằng. Quá 21 ngày chưa sửa thì luật giới hạn tiền nước của thời gian đó; quá 180 ngày thì không được tính tiền nước theo đồng hồ nữa (Civil Code § 1954.210).", "en": "A running toilet can push a bill way up. Report it in writing or by email so there is a dated record. If it is not fixed within 21 days, the law caps usage charges for that period; after 180 days unfixed, no usage charges at all (Civil Code § 1954.210)."}, "e": {"vi": "Chị Thu email ngày 02/05 báo bồn cầu chảy. Hạn sửa là 23/05. Thợ tới 10/05, xong.", "en": "Thu emails on 05/02 about a running toilet. The fix deadline is 05/23. A plumber comes 05/10. Done."}}, {"n": "7", "t": {"vi": "Tenant xin thông tin về đồng hồ", "en": "Tenant may ask for meter information"}, "v": {"vi": "Hỏi là phải đưa", "en": "Must be given on request"}, "s": {"vi": "Nếu tenant hỏi, chủ nhà phải cho biết: đồng hồ riêng nằm ở đâu, cách tính bill hằng tháng, ngày đồng hồ được kiểm định (certified) gần nhất, và ngày kiểm định kế tiếp nếu biết.", "en": "If the tenant asks, the landlord must give: where the submeter is, how the monthly bill is calculated, when the submeter was last certified, and when it is next due for certification, if known."}, "m": {"vi": "Anh chị không phải đoán. Xin cách tính là được; luật cho chủ nhà 7 ngày để đưa.", "en": "You do not have to guess. Ask for the math; the law gives the landlord 7 days to provide it."}, "e": {"vi": "Chị Thu xin bảng tính: 4,200 gallon = 5.61 HCF × giá công ty nước. Đồng hồ ở hộc sau garage, kiểm định 2025.", "en": "Thu asks for the math: 4,200 gallons = 5.61 HCF × the utility rate. The meter is in the box behind the garage, certified 2025."}}, {"n": "8", "t": {"vi": "Nghi đồng hồ sai: báo bằng giấy, rồi gọi County Sealer", "en": "Meter looks wrong: notify in writing, then the County Sealer"}, "v": {"vi": "County Sealer: Santa Clara County", "en": "County Sealer: Santa Clara County"}, "s": {"vi": "Nếu tenant nghĩ số đồng hồ sai hoặc đồng hồ hư, trước hết phải báo chủ nhà bằng giấy và xin kiểm tra. Nếu chủ nhà không giải quyết, tenant có thể liên lạc County Sealer (văn phòng cân đo của quận) để xin thử đồng hồ. Form có chỗ ghi địa chỉ, email, điện thoại của County Sealer, và một link danh sách County Sealer của tiểu bang (CDFA).", "en": "If the tenant thinks the reading is wrong or the meter is broken, they must first notify the landlord in writing and ask for an investigation. If it is not resolved, the tenant may contact the county sealer (the county weights-and-measures office) and ask for a test. The form has blanks for the sealer's address, email and phone, plus a state (CDFA) contact list link."}, "m": {"vi": "Có thứ tự: giấy cho chủ nhà trước, County sau. Nhảy thẳng lên County mà chưa báo chủ nhà là sai bước.", "en": "There is an order: writing to the landlord first, the county second. Going straight to the county skips a step."}, "e": {"vi": "Bill tháng 6 của Chị Thu nhảy lên 9,000 gallon trong lúc đi vắng 2 tuần. Chị gửi thư xin kiểm tra. Hai tuần không ai trả lời, chị liên lạc County Sealer của Santa Clara County.", "en": "Thu's June bill jumps to 9,000 gallons while she was away 2 weeks. She sends a letter asking for a check. No answer in 2 weeks, so she contacts the Santa Clara County sealer."}}, {"n": {"vi": "Cuối", "en": "End"}, "t": {"vi": "Chỉ là tóm tắt luật · chữ ký", "en": "Overview of the law only · signatures"}, "v": {"vi": "2 Tenant · 2 Housing Provider", "en": "2 Tenants · 2 Housing Providers"}, "s": {"vi": "Form nói rõ nó chỉ tóm tắt luật đồng hồ nước riêng. Luật đầy đủ nằm ở Civil Code từ § 1954.201 trở đi. Hai bên ký, ghi ngày, và xác nhận đã nhận bản sao.", "en": "The form says it is only a general overview of the submeter law. The full law is in the Civil Code starting at § 1954.201. Both sides sign, date, and confirm they got a copy."}, "m": {"vi": "Form không thay luật. Khi form và luật khác nhau, luật thắng. Giữ bản sao có chữ ký.", "en": "The form does not replace the law. If they ever differ, the law wins. Keep your signed copy."}, "e": null}];
+const COMMON={
+ vi:{back:'← Tất cả forms',f_title:'Form minh họa',stamp:'Ví dụ minh họa — không phải form thật',xall:'Mở hết',xnone:'Đóng hết',
+  says:'Nó nói gì',means:'Nghĩa là gì cho anh chị',ex:'Ví dụ',w_title:'Nhiều người hiểu sai',o_title:'Ý kiến của Ken',nx_title:'Bước tiếp theo',
+  v_title:'Video 45 giây',b_email:'Gửi kết quả cho Ken qua email',b_sms:'Nhắn Ken',b_video:'Xem video 45 giây',b_all:'Tất cả forms',b_all2:'Tất cả forms',
+  ft_src:'Nguồn',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  ft_dis:'Thông tin chung, không phải tư vấn pháp lý. Hỏi luật sư cho trường hợp riêng. Ken là broker, không phải luật sư. Form C.A.R. có bản quyền; trang này chỉ giải thích bằng lời của Ken, không chép lại form.'},
+ en:{back:'← All forms',f_title:'Sample form',stamp:'Sample for illustration — not the real form',xall:'Open all',xnone:'Close all',
+  says:'What it says',means:'What it means for you',ex:'Example',w_title:'Common mistakes',o_title:"Ken's take",nx_title:'Next steps',
+  v_title:'45-second video',b_email:'Email my result to Ken',b_sms:'Text Ken',b_video:'Watch the 45-sec video',b_all:'All forms',b_all2:'All forms',
+  ft_src:'Sources',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  ft_dis:'General information, not legal advice. Ask an attorney about your own situation. Ken is a broker, not a lawyer. C.A.R. forms are copyrighted; this page explains them in our own words and does not reproduce the form.'}
+};
+const PAGE={"vi": {"eyebrow": "Giải nghĩa forms · C.A.R. Form WSM", "title": "Đồng hồ nước riêng (WSM): chủ nhà được tính gì?", "sub": "Căn thuê có đồng hồ nước riêng thì tiền nước tính riêng, và bill chỉ được có 4 khoản. Form WSM ghi hết luật chơi.", "chips": ["<b>Ai ký:</b> Tenant + chủ nhà", "<b>Khi nào:</b> căn có submeter nước", "<b>Số trang:</b> 1", "<b>Bản:</b> rev 6/23"], "f_lead": "Bấm từng đoạn để xem nó nói gì, nghĩa là gì, và ví dụ với 1234 Example Lane.", "mock_name": "Water Submeter Addendum (WSM)", "mock_meta": ["<b>Gắn vào:</b> RLMM ngày 01/12/2026", "<b>Căn:</b> 1234 Example Lane, Unit B, San Jose, CA 95100", "<b>Tenant:</b> Chị Thu Example", "<b>Housing Provider:</b> Anh Minh & Chị Hạnh Example"], "t_title": "Kiểm bill nước của anh chị", "t_lead": "Nhập số đồng hồ và giá nước trên bill công ty nước. Tool tính bill hợp lệ ước tính và chỉ ra khoản nào vượt.", "l_gal": "Số đồng hồ riêng tháng này (gallon)", "l_rate": "Giá nước của công ty nước", "l_rate_s": "($ / HCF, xem bill công ty)", "l_fixed": "Phí cố định cả khu / tháng", "l_fixed_s": "(trên bill công ty nước)", "l_units": "Số căn chia phí cố định", "u_units": "căn", "l_fee": "Phí làm bill chủ nhà ghi", "l_late": "Phí trễ hạn trên bill", "l_billed": "Tổng bill nước chủ nhà gửi", "l_billed_s": "(để trống = chưa có bill)", "r_k": "Bill nước hợp lệ ước tính", "n_use": "A · Tiền nước theo đồng hồ", "n_fix": "B · Phần phí cố định", "n_fee": "C · Phí làm bill", "n_late": "D · Phí trễ", "s_use": "{g} gal = {h} HCF × {r}", "s_fix": "{f} chia {u} căn", "s_fee": "trần: thấp hơn giữa $4.75 và 25% tiền nước = {c}", "l_first": "Đây là lần trễ đầu tiên", "s_fee_unk": "trần: kiểm lại", "s_late": "tối đa {c}, chỉ khi chưa trả {d} ngày sau ngày gửi bill", "s_late_unk": "mức tối đa: kiểm lại", "fam": "So với cách B của form: gia đình 4 người xài {g} gal/tháng ≈ {h} HCF ≈ {c} (chưa tính phí làm bill).", "i_fee": "Phí làm bill {x} cao hơn trần ước tính {c}.", "i_fee_unk": "Trần phí làm bill: kiểm lại với Ken.", "i_late": "Phí trễ {x} cao hơn mức tối đa {c}.", "i_over": "Bill {b} cao hơn bill hợp lệ ước tính {a} khoảng {d}. Xin bảng tính (đoạn 7).", "v_bad": "Cần hỏi lại.", "v_ok": "Nhìn ổn.", "v_ok_b": "Bill {b} nằm trong mức ước tính.", "v_ok_n": "Nhập tổng bill để so.", "r_note": "Ước tính. Phí cố định ở đây chia đều theo số căn; luật chỉ nói \"một phần\". Hỏi chủ nhà xin bảng tính (đoạn 7).", "res": "Đồng hồ: {g} gal. Bill hợp lệ ước tính: {a}. Bill nhận: {b}. {v}", "res_s": "bill hợp lệ ước tính {a}, bill nhận {b}", "wrongs": ["<b>\"Có đồng hồ riêng thì chủ nhà tính giá nào cũng được.\"</b> Sai. Chỉ được tính theo giá luật cho phép, không cộng lời trên giá nước.", "<b>\"Bồn cầu rỉ là lỗi của tenant, tenant chịu hết.\"</b> Không hẳn. Tenant phải báo; chủ nhà phải sửa trong 21 ngày. Quá hạn thì bill phải điều chỉnh.", "<b>\"Con số ước tính ở đoạn 2 là giá cố định.\"</b> Không. Đó chỉ là ước tính để so trước khi ký. Bill thật theo đồng hồ."], "opinion": "Theo Ken, đồng hồ nước riêng là công bằng cho cả hai bên, vì ai xài nấy trả. Nhưng chủ nhà nào không chịu đưa bảng tính khi được hỏi thì đó là dấu hiệu nên cẩn thận. Bill minh bạch là bill không sợ ai hỏi.", "nexts": ["Trước khi ký: hỏi con số ước tính ở đoạn 2 và cách tính A hay B.", "Chụp bill công ty nước (giá / HCF, phí cố định) hoặc xin chủ nhà bảng tính theo đoạn 7.", "Thấy rò rỉ: email ngay, ghi ngày. Đếm 21 ngày.", "Nghi đồng hồ sai: gửi thư cho chủ nhà trước, rồi mới tới County Sealer."], "mail_subj": "T493 WSM — kiểm bill nước", "mail_body": "Chào Ken,\n\nTôi dùng tool T493 (WSM) trên tools.kenlamrealty.com:\n{r}\n\nTên:\nPhone:\n", "sms": "Chào Ken, tôi xem tool T493 đồng hồ nước: {r}. Cho tôi hỏi thêm."}, "en": {"eyebrow": "Forms explained · C.A.R. Form WSM", "title": "Water submeter addendum (WSM): what can the landlord charge?", "sub": "If your rental has its own water submeter, water is billed separately and the bill can only have 4 kinds of charges. The WSM spells out the rules.", "chips": ["<b>Who signs:</b> tenant + landlord", "<b>When:</b> unit has a water submeter", "<b>Pages:</b> 1", "<b>Version:</b> rev 6/23"], "f_lead": "Tap each paragraph to see what it says, what it means, and an example at 1234 Example Lane.", "mock_name": "Water Submeter Addendum (WSM)", "mock_meta": ["<b>Attached to:</b> RLMM dated 12/01/2026", "<b>Unit:</b> 1234 Example Lane, Unit B, San Jose, CA 95100", "<b>Tenant:</b> Thu Example", "<b>Housing Provider:</b> Minh & Hạnh Example"], "t_title": "Check your water bill", "t_lead": "Enter the meter reading and the rate from the water company bill. The tool estimates the allowed bill and flags anything over the limit.", "l_gal": "This month's submeter reading (gallons)", "l_rate": "Water company's rate", "l_rate_s": "($ per HCF, from the utility bill)", "l_fixed": "Fixed charge for the property / month", "l_fixed_s": "(on the utility bill)", "l_units": "Units sharing the fixed charge", "u_units": "units", "l_fee": "Landlord's billing fee", "l_late": "Late fee on the bill", "l_billed": "Total water bill you received", "l_billed_s": "(leave blank if none yet)", "r_k": "Estimated allowed water bill", "n_use": "A · Water used per meter", "n_fix": "B · Share of fixed fee", "n_fee": "C · Billing fee", "n_late": "D · Late fee", "s_use": "{g} gal = {h} HCF × {r}", "s_fix": "{f} split {u} ways", "s_fee": "cap: lesser of $4.75 or 25% of usage = {c}", "l_first": "This is the first late bill", "s_fee_unk": "cap: to be confirmed", "s_late": "max {c}, only if unpaid {d} days after mailing", "s_late_unk": "maximum: to be confirmed", "fam": "Compared with the form's method B: a family of four uses {g} gal/month ≈ {h} HCF ≈ {c} (before the billing fee).", "i_fee": "Billing fee {x} is above the estimated cap {c}.", "i_fee_unk": "Billing fee cap: confirm with Ken.", "i_late": "Late fee {x} is above the maximum {c}.", "i_over": "Bill {b} is about {d} above the estimated allowed bill {a}. Ask for the calculation (paragraph 7).", "v_bad": "Worth asking about.", "v_ok": "Looks fine.", "v_ok_b": "The {b} bill is within the estimate.", "v_ok_n": "Enter the bill total to compare.", "r_note": "Estimate. The fixed fee is split evenly by unit here; the law only says \"a portion\". Ask the landlord for the calculation (paragraph 7).", "res": "Meter: {g} gal. Estimated allowed bill: {a}. Bill received: {b}. {v}", "res_s": "estimated allowed bill {a}, bill received {b}", "wrongs": ["<b>\"With a submeter the landlord can charge any rate.\"</b> No. Only rates the law allows, with no markup on the water itself.", "<b>\"A running toilet is the tenant's problem, so the tenant pays it all.\"</b> Not quite. The tenant must report it; the landlord must fix it within 21 days. After that the bill gets adjusted.", "<b>\"The estimate in paragraph 2 is a fixed price.\"</b> No. It is only an estimate to compare before signing. The real bill follows the meter."], "opinion": "Ken's view: submeters are fair to both sides, because you pay for what you use. But a landlord who will not show the calculation when asked is a reason to be careful. A clean bill is one nobody is afraid to explain.", "nexts": ["Before signing: ask for the paragraph 2 estimate and whether it used method A or B.", "Keep a copy of the utility bill (rate per HCF, fixed charge) or ask for the calculation under paragraph 7.", "See a leak: email right away, note the date. Count 21 days.", "Meter looks wrong: write to the landlord first, then the County Sealer."], "mail_subj": "T493 WSM — water bill check", "mail_body": "Hi Ken,\n\nI used tool T493 (WSM) on tools.kenlamrealty.com:\n{r}\n\nName:\nPhone:\n", "sms": "Hi Ken, I used the T493 water submeter tool: {r}. I have a question."}};
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const money=n=>(n<0?'−':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:Math.abs(n%1)>0.004?2:0,maximumFractionDigits:2});
+const money2=n=>(n<0?'−':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)?v:0};
+const T=k=>{const d=Object.assign({},COMMON[lang],PAGE[lang]);return d[k]!==undefined?d[k]:k};
+const fill=(s,o)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>o[k]!==undefined?o[k]:m);
+let RESULT={text:''};
+function renderParas(){
+  let h='';
+  PARAS.forEach(p=>{
+    if(p.g) { h+='<div class="grp">'+esc(p.g[lang])+'</div>'; return; }
+    h+='<details class="para"><summary><span class="pn">'+esc(typeof p.n==='object'?p.n[lang]:p.n)+'</span><span class="pt">'+esc(p.t[lang])+'</span><span class="pc" aria-hidden="true">+</span>'
+      +(p.v&&p.v[lang]?'<span class="pv">'+esc(p.v[lang])+'</span>':'')+'</summary><div class="pb">'
+      +'<p><b>'+esc(T('says'))+':</b> '+p.s[lang]+'</p>'
+      +'<p><b>'+esc(T('means'))+':</b> '+p.m[lang]+'</p>'
+      +(p.e&&p.e[lang]?'<p class="ex"><b>'+esc(T('ex'))+':</b> '+p.e[lang]+'</p>':'')+'</div></details>';
+  });
+  $('paras').innerHTML=h;
+  $('chips').innerHTML=PAGE[lang].chips.map(c=>'<span class="chip">'+c+'</span>').join('');
+  $('mockMeta').innerHTML=PAGE[lang].mock_meta.map(c=>'<span>'+c+'</span>').join('');
+  $('wrongs').innerHTML=PAGE[lang].wrongs.map(c=>'<li>'+c+'</li>').join('');
+  $('nexts').innerHTML=PAGE[lang].nexts.map(c=>'<li>'+c+'</li>').join('');
+}
+let allOpen=false;
+$('xall').onclick=()=>{allOpen=!allOpen;document.querySelectorAll('details.para').forEach(d=>d.open=allOpen);$('xall').textContent=T(allOpen?'xnone':'xall');};
+function links(){
+  const body=fill(T('mail_body'),{r:RESULT.text});
+  $('emailBtn').href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(T('mail_subj'))+'&body='+encodeURIComponent(body);
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(T('sms'),{r:RESULT.short||RESULT.text}));
+}
+
+function calc(){
+  const gal=Math.max(0,num('gal')), rate=Math.max(0,num('rate')), fixed=Math.max(0,num('fixed')), units=Math.max(1,Math.round(num('units'))||1);
+  const fee=Math.max(0,num('fee')), late=Math.max(0,num('late'));
+  const billedRaw=$('billed').value.trim(), billed=billedRaw===''?null:Math.max(0,num('billed'));
+  const hcf=gal/GAL_PER_HCF, use=hcf*rate, fix=fixed/units;
+  const capFee = FEE_CAP_USD==null?null:(FEE_CAP_PCT==null?FEE_CAP_USD:Math.min(FEE_CAP_USD,use*FEE_CAP_PCT/100));
+  const lateCap = LATE_CAP_USD==null?null:($('first').checked?LATE_CAP_USD:LATE_CAP_NEXT_USD);
+  const feeOk = capFee==null?fee:Math.min(fee,capFee);
+  const lateOk = lateCap==null?late:Math.min(late,lateCap);
+  const allowed=use+fix+feeOk+lateOk;
+  $('rTotal').textContent=money2(allowed);
+  $('oUse').textContent=money2(use); $('sUse').textContent=fill(T('s_use'),{g:gal.toLocaleString('en-US'),h:hcf.toFixed(2),r:money2(rate)});
+  $('oFix').textContent=money2(fix); $('sFix').textContent=fill(T('s_fix'),{f:money2(fixed),u:units});
+  $('oFee').textContent=money2(feeOk); $('sFee').textContent=capFee==null?T('s_fee_unk'):fill(T('s_fee'),{c:money2(capFee)});
+  $('oLate').textContent=money2(lateOk); $('sLate').textContent=lateCap==null?T('s_late_unk'):fill(T('s_late'),{c:money2(lateCap),d:LATE_AFTER_DAYS==null?'?':LATE_AFTER_DAYS});
+  const fam=FAMILY4_GPD*30; $('rFam').textContent=fill(T('fam'),{g:fam.toLocaleString('en-US'),h:(fam/GAL_PER_HCF).toFixed(1),c:money2(fam/GAL_PER_HCF*rate+fix)});
+  const issues=[];
+  if(capFee!=null && fee>capFee+0.005) issues.push(fill(T('i_fee'),{x:money2(fee),c:money2(capFee)}));
+  if(capFee==null && fee>0) issues.push(T('i_fee_unk'));
+  if(lateCap!=null && late>lateCap+0.005) issues.push(fill(T('i_late'),{x:money2(late),c:money2(lateCap)}));
+  if(billed!=null && billed>allowed+0.5) issues.push(fill(T('i_over'),{b:money2(billed),a:money2(allowed),d:money2(billed-allowed)}));
+  const v=$('rVerdict');
+  if(issues.length){ v.className='verdict bad'; v.innerHTML='<b>'+T('v_bad')+'</b> '+issues.join(' '); }
+  else { v.className='verdict ok'; v.innerHTML='<b>'+T('v_ok')+'</b> '+(billed!=null?fill(T('v_ok_b'),{b:money2(billed)}):T('v_ok_n')); }
+  RESULT={text:fill(T('res'),{g:gal.toLocaleString('en-US'),a:money2(allowed),b:billed==null?'—':money2(billed),v:v.textContent}),
+          short:fill(T('res_s'),{a:money2(allowed),b:billed==null?'—':money2(billed)})};
+}
+function applyLang(){
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i');const v=T(k);if(typeof v==='string'&&v!==k) el.innerHTML=v;});
+  $('langBtn').textContent=T('lang'); document.documentElement.lang=lang; allOpen=false;
+  renderParas(); calc(); links();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+document.querySelectorAll('.tool input,.tool select').forEach(el=>{el.addEventListener('input',()=>{calc();links();});el.addEventListener('change',()=>{calc();links();});});
+applyLang();
+</script>
+</body>
+</html>
