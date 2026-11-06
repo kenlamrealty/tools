@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Đi kiểm nhà lần cuối (VP) · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T145 additions */
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.cmp div{border:1px solid var(--line);border-radius:10px;padding:12px}
+.cmp .k{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.cmp .v{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums;margin-top:2px}
+.cmp p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.cards{display:grid;gap:10px}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
+.card b{font-weight:500;font-size:15px}
+.card span{font-size:14px;color:var(--muted)}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a,.card a,.cmp a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+
+
+/* T43x form-explainer additions */
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.wrap{grid-template-columns:minmax(0,1fr)}
+.wrap>*{min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px;min-width:0}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.panel p{margin:0}
+.quick{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+@media (max-width:420px){.quick{grid-template-columns:minmax(0,1fr)}}
+.quick>div{border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.quick .k{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.quick .v{font-size:15px;margin-top:2px;overflow-wrap:anywhere}
+.seg.wrapN{flex-wrap:wrap}
+.seg.wrapN button{flex:1 1 45%;border-bottom:1px solid var(--line)}
+.seg button{min-width:0}
+textarea.ta{width:100%;min-height:110px;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:10px;padding:12px;font:inherit;font-size:16px;resize:vertical}
+textarea.ta:focus{outline:none;border-color:var(--brass)}
+.ctl input[type=text],.ctl input[type=date]{font-size:18px}
+.total .v.word{font-size:36px;line-height:1.12;text-wrap:balance;overflow-wrap:anywhere}
+.total .v.ok{color:var(--ok)} .total .v.warn{color:var(--warn)}
+.line .a{white-space:normal;text-align:right}
+.list{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.list li{overflow-wrap:anywhere}
+.chk{display:grid;gap:8px}
+.chk label{display:flex;gap:10px;align-items:flex-start;font-size:15px;min-width:0}
+.chk label span{min-width:0;overflow-wrap:anywhere}
+.chk input{width:18px;height:18px;margin-top:3px;accent-color:var(--brass);flex:none}
+.chk label.done span{color:var(--muted);text-decoration:line-through}
+.chk small{display:block;color:var(--muted);font-size:13px}
+details.acc{border:1px solid var(--line);border-radius:10px;padding:0 14px;background:var(--panel)}
+details.acc summary{cursor:pointer;padding:12px 0;font-weight:500;font-size:15px}
+details.acc[open] summary{border-bottom:1px solid var(--line)}
+details.acc div{padding:10px 0 14px;font-size:15px;color:var(--fg)}
+.accs{display:grid;gap:8px}
+.sim{border:1px dashed var(--brass);border-radius:12px;padding:14px;display:grid;gap:8px;background:var(--bg);min-width:0}
+.sim .st{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.sim .sr{display:grid;grid-template-columns:minmax(0,40%) minmax(0,1fr);gap:10px;font-size:14px;border-bottom:1px solid var(--line);padding-bottom:6px}
+@media (max-width:420px){.sim .sr{grid-template-columns:minmax(0,1fr);gap:2px}}
+.sim .sr span:first-child{color:var(--muted)}
+.sim .sr span:last-child{overflow-wrap:anywhere;font-family:'Courier New',monospace;font-size:14px}
+.sim pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;font-family:'Courier New',monospace;font-size:14px}
+.ken{font-size:15px;margin:0;background:var(--brass-soft);border-radius:10px;padding:12px 14px}
+.ken b{font-weight:500}
+.vid{justify-items:center}
+.vid h2{justify-self:start}
+.vid video{width:100%;max-width:360px;aspect-ratio:9/16;border-radius:12px;background:#000}
+.law{margin:0;font-size:15px}
+.copyr{font-size:12px}
+.pbtn{justify-self:start}
+@media print{
+  body{background:#fff;color:#000;padding:0}
+  .wrap>*:not(.printable){display:none!important}
+  .printable{border:0;padding:0}
+  .printable .pbtn{display:none}
+}
+
+
+</style>
+<meta name="description" content="Form VP (Verification of Property Condition): đi kiểm nhà lần cuối trước close. Tính ngày nên đi (mặc định 5 ngày trước COE), checklist in ra, và vì sao không nên bỏ.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t447/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:title" content="Đi kiểm nhà lần cuối (VP) · Ken Lam Tools">
+<meta property="og:description" content="Form VP (Verification of Property Condition): đi kiểm nhà lần cuối trước close. Tính ngày nên đi (mặc định 5 ngày trước COE), checklist in ra, và vì sao không nên bỏ.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t447/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← Tất cả tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title">Đi kiểm nhà lần cuối (Form VP)</h1>
+    <p class="sub" data-i="sub">Giống như trước khi nhận xe sửa ở tiệm, mình đi một vòng coi cái đã hẹn sửa có sửa chưa, xe có trầy thêm chỗ nào không. Form VP là tờ giấy ghi lại lần đi coi nhà cuối cùng đó (final walk-through), ngay trước ngày close.</p>
+  </header>
+
+  <section class="panel" aria-labelledby="qT">
+    <h2 id="qT" data-i="q_t">Khung nhanh</h2>
+    <div class="quick"><div><div class="k" data-i="q_who">Ai đưa</div><div class="v" data-i="qv_who">Agent bên mua đưa cho người mua, thường ngay lúc đi kiểm.</div></div><div><div class="k" data-i="q_sign">Ai ký</div><div class="v" data-i="qv_sign">Người mua (tới 2 người) và người bán (tới 2 người), có ngày.</div></div><div><div class="k" data-i="q_when">Lúc nào</div><div class="v" data-i="qv_when">Sau khi đi kiểm, trước ngày close. Hợp đồng VLPA để mặc định 5 ngày trước COE (ngày close).</div></div><div><div class="k" data-i="q_req">Có bắt buộc không</div><div class="v" data-i="qv_req">Không phải contingency (điều kiện để rút lui). Người mua được quyền đi kiểm, cũng có thể bỏ, nhưng form ghi bỏ là làm ngược lời khuyên của broker.</div></div><div><div class="k" data-i="q_pages">Mấy trang</div><div class="v" data-i="qv_pages">1 trang</div></div><div><div class="k" data-i="q_rev">Bản</div><div class="v" data-i="qv_rev">Revised 6/24</div></div></div>
+  </section>
+
+  <section class="panel inputs" aria-labelledby="toolT">
+    <h2 id="toolT" data-i="tool_t">Lịch và checklist đi kiểm</h2>
+    <p class="hint" data-i="tool_h">Nhập ngày close và các món người bán đã hẹn sửa. Ra ngày nên đi kiểm và một checklist in ra mang theo.</p>
+    <div class="row2">
+      <div class="field">
+        <label for="coe"><span data-i="l_coe">Ngày close (COE)</span></label>
+        <div class="ctl"><input id="coe" type="date"></div>
+      </div>
+      <div class="field">
+        <label for="days"><span data-i="l_days">Đi kiểm trong vòng</span></label>
+        <div class="ctl"><input id="days" type="number" inputmode="numeric" min="1" max="30" step="1" value="5"><span class="post" data-i="u_days">ngày trước</span></div>
+      </div>
+    </div>
+    <p class="hint" data-i="h_days">Mặc định 5 ngày trước COE theo VLPA (đoạn 3J). Hợp đồng nhà ở (RPA) cũng có ô này (ngoài form VP); coi số ngày ghi trong hợp đồng của bạn.</p>
+    <div class="field">
+      <label for="reps"><span data-i="l_reps">Các món người bán đã hẹn sửa (mỗi dòng 1 món)</span></label>
+      <textarea class="ta" id="reps" rows="4" data-ph="ph_reps"></textarea>
+    </div>
+    <div class="field">
+      <span class="fl" data-i="l_waive">Bạn định bỏ không đi kiểm?</span>
+      <div class="seg" role="group" id="waiveSeg">
+        <button type="button" data-v="no" aria-pressed="true" data-i="w_no">Có đi kiểm</button>
+        <button type="button" data-v="yes" aria-pressed="false" data-i="w_yes">Bỏ (waive)</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" id="vk">—</div>
+      <div class="v word" id="verdict">—</div>
+    </div>
+    <div class="note hide" id="waiveWarn"></div>
+    <div class="lines">
+      <div class="line"><span class="n"><b data-i="n_coe">Ngày close</b></span><span class="a" id="oCoe">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_win">Khoảng đi kiểm</b></span><span class="a" id="oWin">—</span></div>
+      <div class="line"><span class="n"><b data-i="n_left">Còn bao lâu tới ngày đi kiểm</b></span><span class="a" id="oLeft">—</span></div>
+    </div>
+  </section>
+
+  <section class="panel printable" aria-labelledby="walkT">
+    <h2 id="walkT" data-i="walk_t">Checklist đi kiểm (in ra mang theo)</h2>
+    <p class="hint" id="walkHead"></p>
+    <div class="chk" id="walkList"></div>
+    <p class="hint" data-i="walk_h">Món nào chưa xong, ghi vào phần ngoại lệ của form VP trước khi ký. Mấy món chung ở dưới là gợi ý của Ken (ngoài form), không phải danh sách trong form.</p>
+    <button class="btn pbtn" type="button" id="printBtn" data-i="b_print">In checklist</button>
+  </section>
+
+
+  <section class="panel" aria-labelledby="accT">
+    <h2 id="accT" data-i="acc_t">Giải thích từng phần</h2>
+    <div class="accs">
+      <details class="acc"><summary data-i="acc1_h">1A. Mục đích</summary><div data-i="acc1_b">Lần đi kiểm này để người mua yên tâm về tình trạng căn nhà.</div></details>
+      <details class="acc"><summary data-i="acc2_h">1B. Không phải contingency</summary><div data-i="acc2_b">Trừ khi hai bên thỏa thuận khác, đi kiểm lần cuối không phải điều kiện để rút lui. Ký VP (hay bỏ đi kiểm) không làm thay đổi bổn phận của người bán về tình trạng nhà lúc giao. Và nó không dựa trên lời nói của agent hay văn phòng.</div></details>
+      <details class="acc"><summary data-i="acc3_h">1C. Agent không chịu trách nhiệm thay</summary><div data-i="acc3_b">Hai bên đồng ý không bắt broker, agent và nhân viên văn phòng chịu trách nhiệm cho chuyện giữa người mua và người bán về tình trạng nhà.</div></details>
+      <details class="acc"><summary data-i="acc4_h">2A. Nhà còn như lúc chấp nhận offer</summary><div data-i="acc4_b">Người mua xác nhận căn nhà về cơ bản còn giống như ngày offer được chấp nhận (Acceptance).</div></details>
+      <details class="acc"><summary data-i="acc5_h">2B. Sửa xong, trừ ngoại lệ</summary><div data-i="acc5_b">Người mua xác nhận người bán đã làm xong các món sửa đã thỏa thuận, TRỪ những món ghi ở các dòng ngoại lệ. Đây là chỗ quan trọng nhất của form.</div></details>
+      <details class="acc"><summary data-i="acc6_h">Ai đi kiểm, ngày giờ nào</summary><div data-i="acc6_b">Ghi người mua hay ai thay mặt đi kiểm, ngày, giờ (AM/PM). Cũng có thể dựa thêm vào kết quả của inspector người mua chọn.</div></details>
+      <details class="acc"><summary data-i="acc7_h">3. Ô bỏ đi kiểm (waive)</summary><div data-i="acc7_b">Nếu tick ô này, người mua bỏ quyền đi kiểm lần cuối. Form ghi rõ làm vậy là ngược lời khuyên của broker.</div></details>
+      <details class="acc"><summary data-i="acc8_h">Chữ ký</summary><div data-i="acc8_b">Người mua và người bán ký, ghi ngày, và xác nhận đã nhận bản sao.</div></details>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="exT">
+    <h2 id="exT" data-i="ex_t">Ví dụ với 1234 Example Lane</h2>
+    <p data-i="ex_story">Anh Tâm & chị Hoa Nguyễn mua 1234 Example Lane của bà Mai Trần, close ngày 15/12/2026 (ví dụ). Sau inspection, bà Mai hẹn sửa ống nước rỉ dưới bồn rửa bếp và thay 2 kính cửa sổ phòng ngủ. Ngày 10/12, Ken đi kiểm với anh chị. Cửa sổ thay rồi. Dưới bồn rửa vẫn còn ẩm. Anh chị không ký kiểu "mọi thứ ok". Ken ghi món đó vào phần ngoại lệ, xin hóa đơn sửa, và hai bên thống nhất sửa lại trước close.</p>
+    <div class="sim">
+      <div class="st" data-i="ex_sim">Bản mô phỏng (dữ liệu giả, không phải form thật)</div>
+      <div class="sr"><span data-i="sim1_l">Property Address</span><span data-i="sim1_v">1234 Example Lane, San Jose, CA 95100</span></div>
+      <div class="sr"><span data-i="sim2_l">Ngoại lệ (2B)</span><span data-i="sim2_v">Ống nước dưới bồn rửa bếp vẫn còn ẩm. Người bán sửa lại và đưa hóa đơn trước close.</span></div>
+      <div class="sr"><span data-i="sim3_l">Ai đi kiểm</span><span data-i="sim3_v">Anh Tâm & chị Hoa Nguyễn, cùng Ken Lam</span></div>
+      <div class="sr"><span data-i="sim4_l">Ngày, giờ</span><span data-i="sim4_v">10/12/2026, 10:00 AM (ví dụ)</span></div>
+      <div class="sr"><span data-i="sim5_l">Bỏ đi kiểm (3)</span><span data-i="sim5_v">Không tick</span></div>
+      <div class="sr"><span data-i="sim6_l">Ký</span><span data-i="sim6_v">Người mua: Tâm Nguyễn, Hoa Nguyễn · Người bán: Mai Trần</span></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="myT">
+    <h2 id="myT" data-i="my_t">Nhiều người hiểu sai</h2>
+    <p class="myth" data-i="my1"><b>"Walk-through là lần chót để rút lui hay đòi bớt giá."</b> Không. Form ghi rõ đây không phải contingency. Nó để xác nhận nhà như cũ và sửa đã xong.</p>
+      <p class="myth" data-i="my2"><b>"Inspection rồi, khỏi walk-through."</b> Inspection làm từ mấy tuần trước. Từ đó tới close có thể hư mới, hoặc sửa chưa xong. Bỏ là ngược lời khuyên của broker.</p>
+      <p class="myth" data-i="my3"><b>"Ký VP rồi vẫn đòi sửa được."</b> Ký là xác nhận đã sửa xong, trừ món ghi trong ngoại lệ. Món nào chưa ổn mà không ghi thì sau này khó nói.</p>
+    <p class="ken" data-i="ken1"><b>Kinh nghiệm Ken:</b> Người ta hay đi walk-through như đi coi nhà mới, vui vẻ, chụp hình. Tôi thì cầm danh sách sửa, đi từng món, mở từng vòi nước. Ký VP là bạn nói "nhà ổn". Chưa ổn thì đừng ký trống phần ngoại lệ.</p>
+  </section>
+
+  <section class="panel steps" aria-labelledby="nsT">
+    <h2 id="nsT" data-i="ns_t">Bước tiếp theo</h2>
+    <ol>
+      <li data-i="ns1">Mua đất trống? Lịch các hạn ở <a href="/t441/">Hợp đồng VLPA (T441)</a>.</li>
+      <li data-i="ns2">Chuyển tiền close? Đọc <a href="/t444/">Lừa đảo wire (T444)</a> trước.</li>
+      <li data-i="ns3">Bảo hiểm nhà đã có chưa? Coi <a href="/t443/">Bảo hiểm trước khi mua (T443)</a>.</li>
+      <li data-i="ns4">Mọi form khác: <a href="/t402/">Mọi form giải nghĩa (T402)</a>.</li>
+    </ol>
+  </section>
+
+  <section class="panel vid" aria-labelledby="vidT">
+    <h2 id="vidT" data-i="vid_t">Xem video 45 giây</h2>
+    <video src="video.mp4" poster="poster.jpg" controls playsinline preload="metadata"></video>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Gửi kết quả qua email</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Hỏi Ken</a>
+    <a class="btn" href="/t402/" data-i="b_all">Mọi form giải nghĩa</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Gửi kết quả này về email</h2>
+    <p data-i="f_sub">Kết quả trong 1 email gửi Ken. Ken coi giùm và trả lời. Không spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Tên</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Số phone (không bắt buộc)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Đã mở email. Bấm Gửi là xong. Nếu không mở được, chép số ở dưới nhắn Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Hoặc nhắn tin:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Chép số</button></div>
+  </section>
+
+  <footer>
+    <span class="copyr" data-i="copyr">Form VP là của California Association of REALTORS®. Trang này chỉ giải thích, không thay thế form hay tư vấn luật.</span>
+    <span data-i="ft_est">Thông tin chung, không phải tư vấn luật hay thuế. Hợp đồng và form thật của bạn mới là cái quyết định. Có tranh chấp thì hỏi luật sư.</span>
+    <span class="who">Ken Lam · Broker Associate · BRG Realty Corp · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 6 Nov 2026 · <a href="/t402/" data-i="ft_hub">Mọi form giải nghĩa</a> · <a href="/cong-cu/" data-i="ft_all">Tất cả tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Mặc định / thời hạn — sửa ở đây ===== */
+const CFG={"WALK_DAYS_BEFORE_COE": 5, "STD_ITEMS": ["same", "rcpt", "water", "power", "appl", "doors", "leak", "keys"]};
+const PAGE={code:'T447',path:'/t447/',form:'VP'};
+const I18N={
+"vi": {
+"q_t": "Khung nhanh",
+"q_who": "Ai đưa",
+"q_sign": "Ai ký",
+"q_when": "Lúc nào",
+"q_req": "Có bắt buộc không",
+"q_pages": "Mấy trang",
+"q_rev": "Bản",
+"acc_t": "Giải thích từng phần",
+"ex_t": "Ví dụ với 1234 Example Lane",
+"ex_sim": "Bản mô phỏng (dữ liệu giả, không phải form thật)",
+"my_t": "Nhiều người hiểu sai",
+"ns_t": "Bước tiếp theo",
+"vid_t": "Xem video 45 giây",
+"b_email": "Gửi kết quả qua email",
+"b_sms": "Hỏi Ken",
+"b_all": "Mọi form giải nghĩa",
+"f_title": "Gửi kết quả này về email",
+"f_sub": "Kết quả trong 1 email gửi Ken. Ken coi giùm và trả lời. Không spam.",
+"f_name": "Tên",
+"f_phone": "Số phone (không bắt buộc)",
+"f_send": "Gửi",
+"f_ok": "Đã mở email. Bấm Gửi là xong. Nếu không mở được, chép số ở dưới nhắn Ken.",
+"f_or": "Hoặc nhắn tin:",
+"f_copy": "Chép số",
+"ft_upd": "Cập nhật",
+"ft_all": "Tất cả tools",
+"ft_hub": "Mọi form giải nghĩa",
+"lang": "English",
+"ft_est": "Thông tin chung, không phải tư vấn luật hay thuế. Hợp đồng và form thật của bạn mới là cái quyết định. Có tranh chấp thì hỏi luật sư.",
+"doc_title": "Đi kiểm nhà lần cuối (VP) · Ken Lam Tools",
+"title": "Đi kiểm nhà lần cuối (Form VP)",
+"sub": "Giống như trước khi nhận xe sửa ở tiệm, mình đi một vòng coi cái đã hẹn sửa có sửa chưa, xe có trầy thêm chỗ nào không. Form VP là tờ giấy ghi lại lần đi coi nhà cuối cùng đó (final walk-through), ngay trước ngày close.",
+"qv_who": "Agent bên mua đưa cho người mua, thường ngay lúc đi kiểm.",
+"qv_sign": "Người mua (tới 2 người) và người bán (tới 2 người), có ngày.",
+"qv_when": "Sau khi đi kiểm, trước ngày close. Hợp đồng VLPA để mặc định 5 ngày trước COE (ngày close).",
+"qv_req": "Không phải contingency (điều kiện để rút lui). Người mua được quyền đi kiểm, cũng có thể bỏ, nhưng form ghi bỏ là làm ngược lời khuyên của broker.",
+"qv_pages": "1 trang",
+"qv_rev": "Revised 6/24",
+"tool_t": "Lịch và checklist đi kiểm",
+"tool_h": "Nhập ngày close và các món người bán đã hẹn sửa. Ra ngày nên đi kiểm và một checklist in ra mang theo.",
+"l_coe": "Ngày close (COE)",
+"l_days": "Đi kiểm trong vòng",
+"u_days": "ngày trước",
+"h_days": "Mặc định 5 ngày trước COE theo VLPA (đoạn 3J). Hợp đồng nhà ở (RPA) cũng có ô này (ngoài form VP); coi số ngày ghi trong hợp đồng của bạn.",
+"l_reps": "Các món người bán đã hẹn sửa (mỗi dòng 1 món)",
+"ph_reps": "vd: Sửa ống nước rỉ dưới bồn rửa bếp",
+"l_waive": "Bạn định bỏ không đi kiểm?",
+"w_no": "Có đi kiểm",
+"w_yes": "Bỏ (waive)",
+"vk_date": "Nên đi kiểm từ ngày",
+"vk_waive": "Lựa chọn của bạn",
+"v_waive": "Bạn chọn bỏ đi kiểm",
+"v_nodate": "Nhập ngày close",
+"warn": "<b>Cẩn thận.<\/b> Theo form VP, người mua bỏ đi kiểm là làm ngược lời khuyên của broker. Walk-through không phải contingency, nhưng là lần cuối bạn thấy căn nhà trước khi tiền chuyển đi. Bỏ thì mất cơ hội ghi lại món chưa sửa hoặc hư mới.",
+"n_coe": "Ngày close",
+"n_win": "Khoảng đi kiểm",
+"n_left": "Còn bao lâu tới ngày đi kiểm",
+"win": "Từ {a} tới trước ngày close ({n} ngày)",
+"win_n": "Trong {n} ngày trước close",
+"left": "Còn {n} ngày",
+"left0": "Hôm nay",
+"coe_wk": " — rơi vào cuối tuần (ngoài form: theo VLPA 32I và RPA, COE dời sang ngày làm việc kế; hỏi escrow ngày thật)",
+"leftp": "Đã tới khoảng đi kiểm",
+"walk_t": "Checklist đi kiểm (in ra mang theo)",
+"walk_on": "Ngày đi kiểm",
+"walk_h": "Món nào chưa xong, ghi vào phần ngoại lệ của form VP trước khi ký. Mấy món chung ở dưới là gợi ý của Ken (ngoài form), không phải danh sách trong form.",
+"b_print": "In checklist",
+"rep_item": "Đã sửa xong: {x}",
+"S": {
+"same": "Nhà còn giống lúc Acceptance (lúc hai bên ký chấp nhận offer): không hư mới, không mất đồ đi kèm. <small>Form VP đoạn 2A<\/small>",
+"rcpt": "Xin giấy tờ sửa chữa: hóa đơn, biên nhận đã trả, giấy ghi ai sửa và ngày nào. <small>VLPA đoạn 18, ngoài form VP<\/small>",
+"water": "Mở nước nóng, nước lạnh ở mọi vòi; xả toilet; coi dưới bồn rửa có ướt không. <small>Gợi ý, ngoài form<\/small>",
+"power": "Bật tắt đèn, ổ điện, quạt; thử máy lạnh, máy sưởi. <small>Gợi ý, ngoài form<\/small>",
+"appl": "Thử đồ gia dụng ở lại theo hợp đồng (bếp, máy rửa chén, tủ lạnh...). <small>Gợi ý, ngoài form<\/small>",
+"doors": "Mở đóng cửa, cửa sổ, cửa garage; khóa chạy được. <small>Gợi ý, ngoài form<\/small>",
+"leak": "Coi trần, sàn, tường có vết nước hay vết nứt mới không. <small>Gợi ý, ngoài form<\/small>",
+"keys": "Chìa khóa, remote garage, mã cửa: ai giao, giao lúc nào. <small>Gợi ý, ngoài form<\/small>"
+},
+"ex_reps": "Sửa ống nước rỉ dưới bồn rửa bếp\nThay 2 kính cửa sổ phòng ngủ bị nứt",
+"e_head": "CHECKLIST ĐI KIỂM NHÀ LẦN CUỐI (Form VP)",
+"sms": "Chào Ken, tôi vừa dùng tool đi kiểm nhà lần cuối (Form VP) trên tools.kenlamrealty.com: {s}. Cho tôi hỏi thêm.",
+"subj": "Form VP — {r} — {n}",
+"body": "Tên: {n}\nEmail: {e}\nPhone: {ph}\n\n{sum}\n\nGửi từ tool {code} tools.kenlamrealty.com{path}",
+"ex_story": "Anh Tâm & chị Hoa Nguyễn mua 1234 Example Lane của bà Mai Trần, close ngày 15/12/2026 (ví dụ). Sau inspection, bà Mai hẹn sửa ống nước rỉ dưới bồn rửa bếp và thay 2 kính cửa sổ phòng ngủ. Ngày 10/12, Ken đi kiểm với anh chị. Cửa sổ thay rồi. Dưới bồn rửa vẫn còn ẩm. Anh chị không ký kiểu \"mọi thứ ok\". Ken ghi món đó vào phần ngoại lệ, xin hóa đơn sửa, và hai bên thống nhất sửa lại trước close.",
+"copyr": "Form VP là của California Association of REALTORS®. Trang này chỉ giải thích, không thay thế form hay tư vấn luật.",
+"acc1_h": "1A. Mục đích",
+"acc1_b": "Lần đi kiểm này để người mua yên tâm về tình trạng căn nhà.",
+"acc2_h": "1B. Không phải contingency",
+"acc2_b": "Trừ khi hai bên thỏa thuận khác, đi kiểm lần cuối không phải điều kiện để rút lui. Ký VP (hay bỏ đi kiểm) không làm thay đổi bổn phận của người bán về tình trạng nhà lúc giao. Và nó không dựa trên lời nói của agent hay văn phòng.",
+"acc3_h": "1C. Agent không chịu trách nhiệm thay",
+"acc3_b": "Hai bên đồng ý không bắt broker, agent và nhân viên văn phòng chịu trách nhiệm cho chuyện giữa người mua và người bán về tình trạng nhà.",
+"acc4_h": "2A. Nhà còn như lúc chấp nhận offer",
+"acc4_b": "Người mua xác nhận căn nhà về cơ bản còn giống như ngày offer được chấp nhận (Acceptance).",
+"acc5_h": "2B. Sửa xong, trừ ngoại lệ",
+"acc5_b": "Người mua xác nhận người bán đã làm xong các món sửa đã thỏa thuận, TRỪ những món ghi ở các dòng ngoại lệ. Đây là chỗ quan trọng nhất của form.",
+"acc6_h": "Ai đi kiểm, ngày giờ nào",
+"acc6_b": "Ghi người mua hay ai thay mặt đi kiểm, ngày, giờ (AM/PM). Cũng có thể dựa thêm vào kết quả của inspector người mua chọn.",
+"acc7_h": "3. Ô bỏ đi kiểm (waive)",
+"acc7_b": "Nếu tick ô này, người mua bỏ quyền đi kiểm lần cuối. Form ghi rõ làm vậy là ngược lời khuyên của broker.",
+"acc8_h": "Chữ ký",
+"acc8_b": "Người mua và người bán ký, ghi ngày, và xác nhận đã nhận bản sao.",
+"sim1_l": "Property Address",
+"sim1_v": "1234 Example Lane, San Jose, CA 95100",
+"sim2_l": "Ngoại lệ (2B)",
+"sim2_v": "Ống nước dưới bồn rửa bếp vẫn còn ẩm. Người bán sửa lại và đưa hóa đơn trước close.",
+"sim3_l": "Ai đi kiểm",
+"sim3_v": "Anh Tâm & chị Hoa Nguyễn, cùng Ken Lam",
+"sim4_l": "Ngày, giờ",
+"sim4_v": "10/12/2026, 10:00 AM (ví dụ)",
+"sim5_l": "Bỏ đi kiểm (3)",
+"sim5_v": "Không tick",
+"sim6_l": "Ký",
+"sim6_v": "Người mua: Tâm Nguyễn, Hoa Nguyễn · Người bán: Mai Trần",
+"my1": "<b>\"Walk-through là lần chót để rút lui hay đòi bớt giá.\"<\/b> Không. Form ghi rõ đây không phải contingency. Nó để xác nhận nhà như cũ và sửa đã xong.",
+"my2": "<b>\"Inspection rồi, khỏi walk-through.\"<\/b> Inspection làm từ mấy tuần trước. Từ đó tới close có thể hư mới, hoặc sửa chưa xong. Bỏ là ngược lời khuyên của broker.",
+"my3": "<b>\"Ký VP rồi vẫn đòi sửa được.\"<\/b> Ký là xác nhận đã sửa xong, trừ món ghi trong ngoại lệ. Món nào chưa ổn mà không ghi thì sau này khó nói.",
+"ken1": "<b>Kinh nghiệm Ken:<\/b> Người ta hay đi walk-through như đi coi nhà mới, vui vẻ, chụp hình. Tôi thì cầm danh sách sửa, đi từng món, mở từng vòi nước. Ký VP là bạn nói \"nhà ổn\". Chưa ổn thì đừng ký trống phần ngoại lệ.",
+"ns1": "Mua đất trống? Lịch các hạn ở <a href=\"/t441/\">Hợp đồng VLPA (T441)<\/a>.",
+"ns2": "Chuyển tiền close? Đọc <a href=\"/t444/\">Lừa đảo wire (T444)<\/a> trước.",
+"ns3": "Bảo hiểm nhà đã có chưa? Coi <a href=\"/t443/\">Bảo hiểm trước khi mua (T443)<\/a>.",
+"ns4": "Mọi form khác: <a href=\"/t402/\">Mọi form giải nghĩa (T402)<\/a>."
+},
+"en": {
+"q_t": "Quick facts",
+"q_who": "Who gives it",
+"q_sign": "Who signs",
+"q_when": "When",
+"q_req": "Required?",
+"q_pages": "Pages",
+"q_rev": "Version",
+"acc_t": "Section by section",
+"ex_t": "Example: 1234 Example Lane",
+"ex_sim": "Mock-up (made-up data, not the real form)",
+"my_t": "What people get wrong",
+"ns_t": "Next steps",
+"vid_t": "Watch the 45-second video",
+"b_email": "Email me the result",
+"b_sms": "Ask Ken",
+"b_all": "All forms explained",
+"f_title": "Email this result",
+"f_sub": "Your result in one email to Ken. He looks it over and writes back. No spam.",
+"f_name": "Name",
+"f_phone": "Phone (optional)",
+"f_send": "Send",
+"f_ok": "Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.",
+"f_or": "Or text:",
+"f_copy": "Copy",
+"ft_upd": "Updated",
+"ft_all": "All tools",
+"ft_hub": "All forms explained",
+"lang": "Tiếng Việt",
+"ft_est": "General information, not legal or tax advice. Your actual contract and forms control. If there is a dispute, talk to a lawyer.",
+"doc_title": "Final walk-through (VP) · Ken Lam Tools",
+"title": "Final walk-through (Form VP)",
+"sub": "Like picking up your car from the shop: you walk around it to see if they fixed what they promised and did not scratch anything new. Form VP records that last look at the home, the final walk-through, right before closing.",
+"qv_who": "The buyer's agent gives it to the buyer, usually at the walk-through.",
+"qv_sign": "Buyers (up to 2) and sellers (up to 2), with dates.",
+"qv_when": "After the walk-through, before closing. The VLPA sets 5 days before COE (close of escrow) as the default.",
+"qv_req": "Not a contingency. The buyer has the right to do it, and may waive it, but the form says waiving goes against the broker's advice.",
+"qv_pages": "1 page",
+"qv_rev": "Revised 6/24",
+"tool_t": "Walk-through date and checklist",
+"tool_h": "Enter the closing date and the repairs the seller agreed to. Get the date to walk and a checklist to print and bring.",
+"l_coe": "Closing date (COE)",
+"l_days": "Walk within",
+"u_days": "days before",
+"h_days": "Default is 5 days before COE in the VLPA (para 3J). The home purchase agreement (RPA) has this box too (outside Form VP); check the number in your contract.",
+"l_reps": "Repairs the seller agreed to (one per line)",
+"ph_reps": "e.g. Fix leaking pipe under kitchen sink",
+"l_waive": "Are you planning to skip the walk-through?",
+"w_no": "I will walk it",
+"w_yes": "Skip (waive)",
+"vk_date": "Walk through starting",
+"vk_waive": "Your choice",
+"v_waive": "You chose to waive it",
+"v_nodate": "Enter the closing date",
+"warn": "<b>Careful.<\/b> Under Form VP, a buyer who skips the walk-through is acting against the broker's advice. It is not a contingency, but it is the last time you see the home before the money moves. Skip it and you lose the chance to note unfinished repairs or new damage.",
+"n_coe": "Closing date",
+"n_win": "Walk-through window",
+"n_left": "Time until the walk",
+"win": "From {a} until before closing ({n} days)",
+"win_n": "Within {n} days before closing",
+"left": "{n} days to go",
+"left0": "Today",
+"coe_wk": " — falls on a weekend (outside the form: under VLPA 32I and the RPA, COE moves to the next business day; ask escrow for the real date)",
+"leftp": "Window has started",
+"walk_t": "Walk-through checklist (print and bring)",
+"walk_on": "Walk-through date",
+"walk_h": "Anything not done goes in the exceptions part of Form VP before you sign. The general items below are Ken's suggestions (outside the form), not a list from the form.",
+"b_print": "Print checklist",
+"rep_item": "Repair done: {x}",
+"S": {
+"same": "Home is in the same condition as at Acceptance (when both sides signed the deal): no new damage, no missing included items. <small>Form VP para 2A<\/small>",
+"rcpt": "Get repair paperwork: invoices, paid receipts, a note of who did the work and when. <small>VLPA para 18, outside Form VP<\/small>",
+"water": "Run hot and cold water at every faucet; flush toilets; look under sinks for moisture. <small>Suggestion, outside the form<\/small>",
+"power": "Switch lights, outlets, fans; test air conditioning and heat. <small>Suggestion, outside the form<\/small>",
+"appl": "Test appliances that stay with the home (stove, dishwasher, fridge...). <small>Suggestion, outside the form<\/small>",
+"doors": "Open and close doors, windows, garage door; locks work. <small>Suggestion, outside the form<\/small>",
+"leak": "Check ceilings, floors and walls for new water stains or cracks. <small>Suggestion, outside the form<\/small>",
+"keys": "Keys, garage remotes, door codes: who hands them over, and when. <small>Suggestion, outside the form<\/small>"
+},
+"ex_reps": "Fix leaking pipe under kitchen sink\nReplace 2 cracked bedroom window panes",
+"e_head": "FINAL WALK-THROUGH CHECKLIST (Form VP)",
+"sms": "Hi Ken, I used the final walk-through tool (Form VP) on tools.kenlamrealty.com: {s}. I have a question.",
+"subj": "Form VP — {r} — {n}",
+"body": "Name: {n}\nEmail: {e}\nPhone: {ph}\n\n{sum}\n\nSent from tool {code} tools.kenlamrealty.com{path}",
+"ex_story": "Tam & Hoa Nguyen are buying 1234 Example Lane from Mrs. Mai Tran, closing 12/15/2026 (example). After inspection, Mrs. Tran agreed to fix a leaking pipe under the kitchen sink and replace 2 bedroom window panes. On 12/10, Ken walks the home with them. The windows are done. Under the sink is still damp. They do not sign an \"all good\". Ken writes that item as an exception, asks for the repair invoice, and both sides agree it gets fixed again before closing.",
+"copyr": "Form VP belongs to the California Association of REALTORS®. This page only explains it. It does not replace the form or legal advice.",
+"acc1_h": "1A. Purpose",
+"acc1_b": "The walk-through is so the buyer can be satisfied about the condition of the home.",
+"acc2_h": "1B. Not a contingency",
+"acc2_b": "Unless agreed otherwise, the final walk-through is not a contingency. Signing the VP, or waiving it, does not change the seller's duties about the condition of the home at possession. It is not based on anything the agents or brokerage said.",
+"acc3_h": "1C. Agents are held harmless",
+"acc3_b": "Both sides agree not to hold the brokers, agents or brokerage staff liable for claims between buyer and seller about the home's condition.",
+"acc4_h": "2A. Same condition as at acceptance",
+"acc4_b": "The buyer confirms the home is in substantially the same condition as on the date the offer was accepted.",
+"acc5_h": "2B. Repairs done, except listed items",
+"acc5_b": "The buyer confirms the agreed repairs are done, EXCEPT what is written on the exception lines. This is the most important part of the form.",
+"acc6_h": "Who walked it, and when",
+"acc6_b": "Records whether the buyer or someone else did the walk, the date and time (AM/PM). It can also rely on tests or inspections by inspectors the buyer chose.",
+"acc7_h": "3. Waiver box",
+"acc7_b": "If checked, the buyer gives up the final walk-through. The form says that is against the broker's advice.",
+"acc8_h": "Signatures",
+"acc8_b": "Buyers and sellers sign, date it, and confirm they received a copy.",
+"sim1_l": "Property Address",
+"sim1_v": "1234 Example Lane, San Jose, CA 95100",
+"sim2_l": "Exceptions (2B)",
+"sim2_v": "Pipe under kitchen sink still damp. Seller repairs again and provides invoice before closing.",
+"sim3_l": "Walked by",
+"sim3_v": "Tam & Hoa Nguyen, with Ken Lam",
+"sim4_l": "Date, time",
+"sim4_v": "12/10/2026, 10:00 AM (example)",
+"sim5_l": "Waiver (3)",
+"sim5_v": "Not checked",
+"sim6_l": "Signed",
+"sim6_v": "Buyers: Tam Nguyen, Hoa Nguyen · Seller: Mai Tran",
+"my1": "<b>\"The walk-through is my last chance to back out or renegotiate.\"<\/b> No. The form says it is not a contingency. It confirms condition and repairs.",
+"my2": "<b>\"We already had an inspection, so skip it.\"<\/b> The inspection was weeks ago. Things can break or repairs can stall since then. Skipping goes against the broker's advice.",
+"my3": "<b>\"I can sign and still ask for repairs later.\"<\/b> Signing confirms repairs are done, except the listed exceptions. Anything not written down is hard to raise later.",
+"ken1": "<b>Ken's take:<\/b> People treat the walk-through like a happy tour with photos. I bring the repair list and go item by item, opening every faucet. Signing the VP means you are saying \"the home is fine\". If it is not, do not leave the exceptions blank.",
+"ns1": "Buying land? Every deadline in <a href=\"/t441/\">VLPA purchase agreement (T441)<\/a>.",
+"ns2": "Wiring closing funds? Read <a href=\"/t444/\">Wire fraud (T444)<\/a> first.",
+"ns3": "Insurance in place? See <a href=\"/t443/\">Insurance before you buy (T443)<\/a>.",
+"ns4": "Every other form: <a href=\"/t402/\">All forms explained (T402)<\/a>."
+}
+};
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fill=(s,v)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+const strip=s=>String(s).replace(/<small>/g,' (').replace(/<\/small>/g,')').replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let last={r:'',short:'',sum:''};
+function seg(id,cb){ $(id).addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return;
+  $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); cb(b.dataset.v); calc();}); }
+function fmtDate(dt){ return dt.toLocaleDateString(lang==='vi'?'vi-VN':'en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}); }
+/* ===== Tool riêng của trang ===== */
+
+let waive='no', ticked={};
+function tool(d){
+  const ds=$('coe').value; let n=parseInt($('days').value,10); if(!isFinite(n)||n<1) n=CFG.WALK_DAYS_BEFORE_COE;
+  const reps=$('reps').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  let start=null, coe=null;
+  if(ds){ coe=new Date(ds+'T12:00:00'); start=new Date(coe); start.setDate(start.getDate()-n); }
+  const today=new Date(); today.setHours(12,0,0,0);
+  const v=$('verdict'), w=$('waiveWarn');
+  let r;
+  if(waive==='yes'){ $('vk').textContent=d.vk_waive; r=d.v_waive; v.className='v word warn'; w.innerHTML=d.warn; w.classList.remove('hide'); }
+  else { w.classList.add('hide'); $('vk').textContent=d.vk_date; v.className='v word';
+    r=start?fmtDate(start):d.v_nodate; }
+  v.textContent=r;
+  $('oCoe').textContent=coe?fmtDate(coe)+((coe.getDay()===0||coe.getDay()===6)?d.coe_wk:''):'—';
+  $('oWin').textContent=start?fill(d.win,{a:fmtDate(start),n}):fill(d.win_n,{n});
+  if(start){ const left=Math.round((start-today)/864e5); $('oLeft').textContent=left>0?fill(d.left,{n:left}):(left===0?d.left0:d.leftp); } else $('oLeft').textContent='—';
+  const items=reps.map((x,i)=>({k:'r'+i+':'+x,t:fill(d.rep_item,{x:esc(x)})})).concat(CFG.STD_ITEMS.map(k=>({k,t:d.S[k]})));
+  $('walkList').innerHTML=items.map(it=>'<label class="'+(ticked[it.k]?'done':'')+'"><input type="checkbox" data-k="'+esc(it.k)+'"'+(ticked[it.k]?' checked':'')+'><span>'+it.t+'</span></label>').join('');
+  $('walkHead').textContent=d.n_coe+': '+(coe?fmtDate(coe):'—')+' · '+d.walk_on+': '+(waive==='yes'?d.v_waive:(start?fmtDate(start):'—'));
+  const short=(waive==='yes'?d.v_waive:(d.vk_date+': '+r))+(coe?' · COE '+fmtDate(coe):'');
+  const sum=d.e_head+'\n'+d.n_coe+': '+(coe?fmtDate(coe):'—')+'\n'+strip(d.n_win)+': '+strip($('oWin').textContent)+'\n'+(waive==='yes'?strip(d.warn)+'\n':'')+
+    '\n'+strip(d.walk_t)+':\n'+items.map(it=>(ticked[it.k]?'[x] ':'[ ] ')+strip(it.t)).join('\n');
+  return {r,short,sum};
+}
+
+/* ===== Chung ===== */
+function calc(){
+  const d=I18N[lang]; const o=tool(d)||{}; last=o;
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(d.sms,{s:o.short||''}));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  document.querySelectorAll('[data-ph]').forEach(el=>{const k=el.getAttribute('data-ph'); if(typeof d[k]==='string') el.placeholder=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; document.title=strip(d.doc_title); calc();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const v={n,e,ph,r:strip(last.r||''),sum:strip(last.sum||''),code:PAGE.code,path:PAGE.path};
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj,v))+'&body='+encodeURIComponent(fill(d.body,v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+
+seg('waiveSeg',v=>waive=v);
+['coe','days','reps'].forEach(id=>$(id).addEventListener('input',calc));
+$('walkList').addEventListener('change',e=>{const k=e.target.dataset.k; if(!k) return; ticked[k]=e.target.checked; calc();});
+$('printBtn').onclick=()=>window.print();
+(function(){const t=new Date(); t.setDate(t.getDate()+30); $('coe').value=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');})();
+$('reps').value=I18N[lang].ex_reps;
+
+applyLang();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
