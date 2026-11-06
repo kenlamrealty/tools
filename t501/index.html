@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VLPA Explained · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="The C.A.R. Vacant Land Purchase Agreement (VLPA, Revised 6/26) explained section by section in plain English and Vietnamese, with a deadline calculator from your acceptance date and a buyer/seller to-do list.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t501/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:title" content="VLPA: Vacant Land Purchase Agreement, explained · Ken Lam Tools">
+<meta property="og:description" content="Enter your acceptance date. See every default deadline in the vacant land contract, and what the buyer or seller must do.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t501/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.hide{display:none!important}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px;min-width:0}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.facts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.facts>div{border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.facts .k{font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.facts .v{font-size:14px;margin-top:2px}
+@media (max-width:380px){.facts{grid-template-columns:1fr}}
+details.sec{border-top:1px solid var(--line);padding:10px 0}
+details.sec:last-child{border-bottom:1px solid var(--line)}
+details.sec summary{cursor:pointer;font-weight:500;font-size:15px;list-style:none;display:flex;gap:10px;align-items:baseline}
+details.sec summary::-webkit-details-marker{display:none}
+details.sec summary .n{color:var(--brass);font-variant-numeric:tabular-nums;min-width:2.6em;font-size:13px}
+details.sec summary::after{content:'+';margin-left:auto;color:var(--muted)}
+details.sec[open] summary::after{content:'–'}
+details.sec p{margin:8px 0 0;font-size:15px}
+details.sec p.ex{font-size:14px;color:var(--muted);background:var(--brass-soft);border-radius:8px;padding:8px 10px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap}
+.toolbar button{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.ctl input[type=date]{font-size:17px}
+.chk{display:flex;gap:10px;align-items:center;font-size:14px;cursor:pointer}
+.chk input{width:18px;height:18px;accent-color:var(--brass)}
+.dl{display:grid;gap:0;border-top:1px solid var(--line)}
+.dl .r{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.dl .r .t b{font-weight:500}
+.dl .r .t small{display:block;font-size:12px;color:var(--muted)}
+.dl .r .d{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap;text-align:right}
+.dl .r .d small{display:block;font-weight:400;font-size:12px;color:var(--muted)}
+.dl .r.key .d{color:var(--brass)}
+.tag{display:inline-block;font-size:11px;border:1px solid var(--line);border-radius:999px;padding:0 7px;margin-left:6px;color:var(--muted);font-weight:400;vertical-align:1px}
+.todo{margin:0;padding-left:20px;display:grid;gap:6px;font-size:15px}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a{color:var(--brass)}
+.qz{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+.qz:first-of-type{border-top:0;padding-top:0}
+.qz p{margin:0;font-weight:500;font-size:15px}
+.qz .opts{display:grid;gap:6px}
+.qz button{border:1px solid var(--line);background:var(--panel);color:var(--fg);font:inherit;font-size:14px;text-align:left;padding:10px 12px;border-radius:10px;cursor:pointer}
+.qz button.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.qz button.wrong{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
+.qz .fb{font-size:14px;color:var(--muted);margin:0}
+video.guide{width:100%;max-width:360px;aspect-ratio:9/16;border-radius:12px;background:#000;justify-self:center}
+.hol{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Forms · T501</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">VLPA: the vacant land purchase contract</h1>
+    <p class="sub" data-i="sub">This is the contract you sign to buy or sell a piece of land with no house on it. It sets the price, who pays what, and a clock for every step.</p>
+  </header>
+
+  <section class="panel" aria-label="Quick facts">
+    <div class="facts">
+      <div><div class="k" data-i="f1k">Who gives it</div><div class="v" data-i="f1v">The buyer's agent writes it as the offer</div></div>
+      <div><div class="k" data-i="f2k">Who signs</div><div class="v" data-i="f2v">Buyer (offer), seller (acceptance), agents</div></div>
+      <div><div class="k" data-i="f3k">When you see it</div><div class="v" data-i="f3v">When an offer is made on a lot or acreage</div></div>
+      <div><div class="k" data-i="f4k">Required?</div><div class="v" data-i="f4v">Not by law. It's the standard C.A.R. form for land</div></div>
+      <div><div class="k" data-i="f5k">Pages</div><div class="v" data-i="f5v">17-page contract + 8 pages of attached advisories = 25</div></div>
+      <div><div class="k" data-i="f6k">Version</div><div class="v" data-i="f6v">VLPA Revised 6/26 (current)</div></div>
+    </div>
+    <p class="hint" data-i="ver">Version check: C.A.R. revised the VLPA in December 2025 (to 12/25) and again in the June 2026 release (to 6/26), both times "conformed to changes in RPA". This page follows the 6/26 text. Older 6/25 or 12/25 copies may differ.</p>
+  </section>
+
+  <section class="panel" aria-label="Deadline calculator">
+    <h2 data-i="c_title">Your deadlines, from the acceptance date</h2>
+    <p class="hint" data-i="c_hint">Uses the form's printed default periods. If your contract wrote a different number in a blank, change it below. Day 0 is the acceptance day.</p>
+    <div class="seg" role="group" id="roleSeg">
+      <button type="button" data-v="b" aria-pressed="true" data-i="r_b">I'm the buyer</button>
+      <button type="button" data-v="s" aria-pressed="false" data-i="r_s">I'm the seller</button>
+    </div>
+    <div class="row2">
+      <div class="field"><label for="acc" data-i="l_acc">Acceptance date</label><div class="ctl"><input id="acc" type="date"></div></div>
+      <div class="field"><label for="coe" data-i="l_coe">Close of escrow in</label><div class="ctl"><input id="coe" type="number" inputmode="numeric" min="1" max="365" value="30"><span class="post" data-i="days">days</span></div></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label for="cont" data-i="l_cont">Contingency days <small>(form: 17)</small></label><div class="ctl"><input id="cont" type="number" inputmode="numeric" min="1" max="120" value="17"><span class="post" data-i="days">days</span></div></div>
+      <div class="field"><label for="sdoc" data-i="l_sdoc">Seller documents <small>(form: 7)</small></label><div class="ctl"><input id="sdoc" type="number" inputmode="numeric" min="1" max="60" value="7"><span class="post" data-i="days">days</span></div></div>
+    </div>
+    <div class="field"><label for="deliv" data-i="l_deliv">Seller documents actually delivered on <small>(optional)</small></label><div class="ctl"><input id="deliv" type="date"></div></div>
+    <label class="chk"><input type="checkbox" id="hasLoan" checked> <span data-i="k_loan">Buyer is getting a loan</span></label>
+    <label class="chk"><input type="checkbox" id="hasHoa"> <span data-i="k_hoa">Land is in an HOA / planned development</span></label>
+    <label class="chk"><input type="checkbox" id="hasEnt"> <span data-i="k_ent">Someone signs for a trust, LLC or company</span></label>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total"><div class="k" data-i="k_next">Your next deadline</div><div class="v" id="nextV" style="font-size:40px">—</div><div class="hint" id="nextT"></div></div>
+    <div class="dl" id="dl"></div>
+    <div class="note" id="dlNote"></div>
+    <div class="hol" id="holUsed"></div>
+    <button class="btn" type="button" id="copyDates" data-i="b_copy">Copy my dates</button>
+  </section>
+
+  <section class="panel steps">
+    <h2 id="todoH" data-i="todo_b">What the buyer must do</h2>
+    <ol class="todo" id="todo"></ol>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="s_title">What the form says, section by section</h2>
+    <p class="hint" data-i="s_hint">Plain-language summary of each paragraph, in the form's order. It is not the contract text. Read the real form before you sign.</p>
+    <div class="toolbar"><button type="button" id="openAll" data-i="open_all">Open all</button><button type="button" id="closeAll" data-i="close_all">Close all</button></div>
+    <div id="secs"></div>
+  </section>
+
+  <section class="panel" aria-label="Quiz">
+    <h2 data-i="q_title">Did you get it? 3 quick questions</h2>
+    <div id="quiz"></div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="m_title">Many people get this wrong</h2>
+    <div id="myths" style="display:grid;gap:12px"></div>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Next steps</h2>
+    <ol id="nsList"></ol>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="v_title">45-second video</h2>
+    <video class="guide" src="guide.mp4" controls playsinline preload="metadata" aria-label="VLPA video guide"></video>
+    <a class="btn" href="/t501/guide.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 45-sec video</a>
+  </section>
+
+  <section class="actions">
+    <a class="btn primary" id="emailBtn" href="mailto:ken@kenlamrealty.com" data-i="b_email">Email Ken my dates</a>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Text Ken a question</a>
+    <a class="btn" href="/t402/" data-i="b_lib">← Forms library</a>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_src">Sources:</span>
+      C.A.R. Form VLPA, Vacant Land Purchase Agreement and Joint Escrow Instructions, Revised 6/26 (with AD 12/24, FHDA 12/24, BHIA 6/24, WFA 6/25, BVLIA 6/23) ·
+      <a href="https://aorstore.car.org/products/vlpa-vacant-land-purchase-agreement-joint-escrow" target="_blank" rel="noopener">C.A.R. store: VLPA</a> ·
+      <a href="https://cdaronline.org/carformsrelease/" target="_blank" rel="noopener">Dec 2025 C.A.R. release list</a> ·
+      <a href="https://cdaronline.org/?p=13911" target="_blank" rel="noopener">June 2026 release list</a> ·
+      <a href="https://california.public.law/codes/government_code_section_6700" target="_blank" rel="noopener">Gov. Code §6700 (holidays)</a> ·
+      <a href="https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&amp;sectionNum=1057.3" target="_blank" rel="noopener">Civil Code §1057.3</a>
+      <span data-i="ft_chk">(checked 06/11/2026)</span></span>
+    <span data-i="ft_est">General information, not legal or tax advice. Dates are an estimate from the form's default periods; your signed contract, counter offers and addenda control. Confirm every date with your escrow officer.</span>
+    <span class="who">Ken Lam · BRG Realty Corp · DRE #01401822 · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 06/11/2026 · <a href="/t402/" data-i="ft_lib">Forms library</a> · <a href="/cong-cu/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Form defaults — edit here (checked 06/11/2026) =====
+   Source: C.A.R. Form VLPA Revised 6/26, para 3 (terms table), 8, 15, 17, 22, 26, 31, 32 (counting days).
+   Version history: Dec 2025 release VLPA 6/25 -> 12/25 "Conformed to changes in RPA" (cdaronline.org/carformsrelease);
+                    June 2026 release (week of 6/15/2026) 12/25 -> 6/26 "Conformed to changes in RPA" (cdaronline.org/?p=13911).
+   Counting (32I/32J): Day 0 = acceptance day; calendar days; deadline ends 11:59 pm; if it lands Sat/Sun/Legal Holiday
+   -> next day that is not (Allowable Performance Day). Deposit = BUSINESS days. COE also moves if recorder/lender/escrow closed.
+   Legal Holiday = Civil Code §§7, 7.1 + Gov Code §6700 (list per california.public.law mirror, 06/11/2026).
+   ESTIMATE: Sunday->Monday observance applied to fixed-date holidays only; Lunar New Year and Diwali dates from lunar
+   tables below; Good Friday (noon-3pm only) not counted. KEN DUYỆT: escrow's calendar wins. */
+const DEF={
+  depositBiz:3,   // 3D(1) initial deposit within 3 business days after Acceptance
+  verify:3,       // 3H(1)-(3) proof of cash / down payment / loan letter, 3 Days (if not attached to offer)
+  cont:17,        // 3L(1)-(10) contingencies, 3K assignment request, 17 Days
+  afterDeliv:5,   // 3L(7)-(10) or 5 Days after Delivery, whichever later
+  sellerDocs:7,   // 3N(1) Seller Delivery of Documents 7 Days
+  hoaFee:3,       // 3N(3) pay HOA document fees 3 Days
+  authority:3,    // 3N(4)/31 evidence of authority to sign 3 Days
+  escrowCopy:3,   // 22C copy of Agreement to escrow within 3 Days
+  fv:5,           // 3J final verification 5 Days prior to COE
+  nbp:2,          // 17E Notice to Perform: min 2 Days, not earlier than 2 Days before deadline
+  dce:3,          // 17G Demand to Close Escrow: min 3 Days, not earlier than 3 Days before COE
+  reportsCopy:3   // 15D(ii) give Seller copies of reports: 17 Days or 3 Days after receipt, later
+};
+const LNY={2025:'01-29',2026:'02-17',2027:'02-06',2028:'01-26',2029:'02-13'};  // ESTIMATE lunar table
+const DIWALI={2025:'10-20',2026:'11-08',2027:'10-29',2028:'10-17',2029:'11-05'}; // ESTIMATE lunar table
+
+const SEC=[
+ {n:'Packet',en:['What the 25 pages are','The packet is the 17-page VLPA plus attached advisories: Agency Disclosure (AD, 2 pages), Fair Housing advisory (FHDA, 2), Buyer Homeowners\' Insurance advisory (BHIA, 1), Wire Fraud advisory (WFA, 1) and Buyer\'s Vacant Land Additional Inspection advisory (BVLIA, 2). Only the 17 pages are the contract; the advisories are warnings you sign as received.','Think of it like a car purchase: the contract plus a stack of "please read this" sheets.'],
+  vi:['25 trang gồm những gì','Bộ này có hợp đồng VLPA 17 trang, kèm các tờ khuyến cáo: giải thích quan hệ đại diện (AD, 2 trang), luật nhà ở công bằng (FHDA, 2), khuyến cáo bảo hiểm cho người mua (BHIA, 1), cảnh giác lừa đảo chuyển tiền (WFA, 1) và khuyến cáo kiểm tra thêm khi mua đất trống (BVLIA, 2). Chỉ 17 trang là hợp đồng. Mấy tờ kia là lời nhắc, mình ký để xác nhận đã nhận.','Giống mua xe: một tờ hợp đồng, thêm một xấp giấy "xin đọc kỹ".']},
+ {n:'1',en:['Offer','Names the buyer (person, company, trust…) and the land by address and Assessor\'s Parcel Number (APN). The form warns the mailing address may not match the city that actually governs the land.','A lot with a "San Jose" mailing address can sit in unincorporated county land. Different rules, different permits.'],
+  vi:['Đề nghị mua','Ghi tên người mua (cá nhân, công ty, trust…) và miếng đất theo địa chỉ và số APN của Sở Thẩm định. Form nhắc: địa chỉ thư có thể khác với city thật sự quản lý miếng đất.','Đất có địa chỉ "San Jose" vẫn có thể nằm trong vùng county quản. Luật khác, giấy phép khác.']},
+ {n:'2',en:['Agency','Confirms which brokerage and agent represent the seller, the buyer, or both (dual agency). Both sides confirm they got the AD disclosure.',''],
+  vi:['Ai đại diện cho ai','Xác nhận công ty và agent nào làm cho người bán, người mua, hay cả hai (dual agency). Hai bên xác nhận đã nhận tờ AD.','']},
+ {n:'3',en:['The terms table (the cheat sheet)','Two pages of boxes that hold the deal: price, close of escrow (left blank for you to fill), offer expiration (3 days after the buyer signs, 5 PM, unless changed), deposit (within 3 business days by wire), loan terms, intended use (investment unless changed), proof of funds (3 days), final walk (5 days before close), and every contingency (17 days each). It also has "who pays" boxes: hazard report, Phase I environmental survey, escrow, title, transfer taxes, HOA fees.','If a number is written in a blank, that number wins over the printed default. Always look at the blanks first.'],
+  vi:['Bảng điều khoản (tờ tóm tắt)','Hai trang ô vuông chứa cả cái deal: giá, ngày close escrow (để trống cho mình điền), hạn offer (3 ngày sau khi người mua ký, 5 giờ chiều, nếu không ghi khác), tiền cọc (trong 3 ngày làm việc, chuyển wire), khoản vay, mục đích dùng (mặc định là đầu tư), giấy chứng minh tiền (3 ngày), đi xem lần cuối (5 ngày trước close), và mỗi contingency (17 ngày). Có thêm ô "ai trả": báo cáo vùng nguy hiểm, khảo sát môi trường Phase I, escrow, title, thuế chuyển nhượng, phí HOA.','Ô trống mà có ghi số thì số đó thắng số in sẵn. Luôn coi mấy ô trống trước.']},
+ {n:'4',en:['Addenda and advisories','Checkboxes for extra forms that become part of the deal (probate, short sale, back-up offer, septic/well/propane SWPI-C, 1031 exchange BXA/SXA) and advisories that are for information only.','Seller doing a 1031 exchange? The SXA box gets checked here.'],
+  vi:['Phụ lục và khuyến cáo','Ô đánh dấu các form phụ trở thành một phần hợp đồng (probate, short sale, offer dự phòng, hầm tự hoại/giếng/bình gas SWPI-C, đổi nhà 1031 BXA/SXA) và các tờ khuyến cáo chỉ để biết.','Người bán làm 1031? Ô SXA được đánh dấu ở đây.']},
+ {n:'5',en:['Deposit, cash, loans, credits','The deposit goes straight to escrow. An all-cash buyer has no loan contingency and must show proof of funds. The seller may call the buyer\'s lender for status. Seller credits get cut down if the lender allows less, with no automatic price change.','Seller agreed to a $20,000 credit but the lender allows $15,000? Credit drops to $15,000. Price stays the same unless you sign something new.'],
+  vi:['Tiền cọc, tiền mặt, vay, credit','Tiền cọc gửi thẳng vô escrow. Mua tiền mặt thì không có contingency vay và phải đưa giấy chứng minh tiền. Người bán được gọi lender của người mua hỏi tình trạng hồ sơ. Credit người bán cho mà lender chỉ cho phép ít hơn thì bị cắt bớt, giá không tự đổi.','Bên bán đồng ý credit $20,000 mà lender chỉ cho $15,000? Credit còn $15,000. Giá giữ nguyên, trừ khi ký giấy mới.']},
+ {n:'6',en:['Financing promises','Buyer gives a prequal/preapproval letter and must chase the exact type of financing written in the contract. Failing to get some other loan is no excuse to walk away.',''],
+  vi:['Cam kết về tiền vay','Người mua đưa thư prequal/preapproval và phải theo đúng loại vay đã ghi. Đi vay kiểu khác mà không được thì không phải lý do để bỏ hợp đồng.','']},
+ {n:'7',en:['Closing and possession','Land is sold "as-is" in its condition on the acceptance date, and the seller keeps it that way. Seller removes debris and personal items by closing. Anything left can be treated as abandoned; buyer gives a 3-day notice, then may clear it and ask the seller to pay.','Old trailer and tires on the lot? Seller should haul them before close.'],
+  vi:['Close và giao đất','Đất bán "as-is" theo tình trạng ngày chấp nhận offer, người bán giữ y như vậy. Người bán dọn rác và đồ cá nhân trước khi close. Đồ còn để lại coi như bỏ; người mua báo trước 3 ngày, rồi được dọn và đòi người bán trả tiền.','Có xe trailer cũ, lốp xe trên đất? Người bán phải dọn trước close.']},
+ {n:'8',en:['Contingencies (your exit doors)','Each is a right to cancel if something fails: loan, appraisal, manufactured home purchase, construction loan, investigation of the land, insurance, seller documents, title report, HOA documents, leased or liened items. A low appraisal is not a loan-contingency exit if you still qualify. Removing a contingency before you get the documents for it is against your agent\'s advice. Sale of your other home is NOT a contingency unless the COP form is attached.','Contingency = a door you can still walk out of. Remove it and the door locks.'],
+  vi:['Contingency (cửa thoát)','Mỗi cái là quyền hủy nếu có chuyện: vay, thẩm định giá, mua nhà manufactured, vay xây dựng, kiểm tra đất, bảo hiểm, tài liệu người bán, báo cáo title, giấy HOA, đồ thuê hoặc đồ bị cầm. Thẩm định thấp không phải lý do hủy theo contingency vay nếu mình vẫn đủ điều kiện vay. Bỏ contingency trước khi nhận đủ giấy là đi ngược lời khuyên của agent. Bán nhà khác của mình KHÔNG phải contingency, trừ khi kèm form COP.','Contingency là cánh cửa mình còn bước ra được. Bỏ nó là cửa khóa.']},
+ {n:'9',en:['What is included','Only what is written here or in the terms table counts. MLS ads and flyers do not. Attached fixtures stay. Crops on the land go to the buyer, but the seller may harvest on the normal schedule before closing.','Listing photo shows a water tank? If it is not attached or not written in, ask.'],
+  vi:['Bán kèm những gì','Chỉ tính những gì ghi ở đây hoặc trong bảng điều khoản. Quảng cáo MLS, tờ rơi không tính. Đồ gắn cố định ở lại. Cây trái trên đất thuộc người mua, nhưng người bán được thu hoạch đúng mùa trước close.','Hình listing có bồn nước? Không gắn cố định hoặc không ghi vô thì hỏi lại.']},
+ {n:'10',en:['Who pays for reports','The "who pays" box only covers the report or inspection, not the work it finds. City or county point-of-sale requirements need a separate written deal on cost. No deal by the investigation deadline means either side may cancel.',''],
+  vi:['Ai trả tiền báo cáo','Ô "ai trả" chỉ là tiền làm báo cáo, không phải tiền sửa những gì báo cáo tìm ra. Yêu cầu của city/county khi bán cần thỏa thuận riêng bằng giấy về chi phí. Tới hạn kiểm tra mà chưa thỏa thuận thì bên nào cũng được hủy.','']},
+ {n:'11',en:['Seller disclosures','Seller handles tax withholding paperwork (FIRPTA / California), gives Megan\'s Law and pipeline notices, natural hazard zones, HOA papers, solar and septic/well/propane info, and a long list of land issues it knows about: lawsuits, Williamson Act farm limits, deed restrictions, right-to-farm, endangered species or wetlands, contamination, shared roads or fences, no legal access (landlocked), easements, fill soil, sliding or flooding, zoning violations, nuisances, surveys and plans, violation notices. Also Mello-Roos taxes, insurance claims in the past 5 years, and the Seller Vacant Land Questionnaire (VLQ). New problems found before close must be disclosed.','Landlocked = no legal road in. You may own the land and still not be able to drive to it.'],
+  vi:['Người bán phải khai','Người bán lo giấy giữ thuế (FIRPTA / California), đưa thông báo Megan\'s Law, đường ống gas, vùng thiên tai, giấy HOA, thông tin solar và hầm tự hoại/giếng/bình gas, và một danh sách dài vấn đề đất mà họ biết: kiện tụng, hạn chế đất nông nghiệp Williamson Act, hạn chế trong deed, quyền làm nông, loài quý hiếm hoặc đất ngập nước, ô nhiễm, đường hay hàng rào dùng chung, không có lối vào hợp pháp (landlocked), easement, đất đổ, sạt lở hay ngập, vi phạm zoning, phiền hà hàng xóm, bản đo đạc và bản vẽ, giấy báo vi phạm. Thêm thuế Mello-Roos, claim bảo hiểm 5 năm qua, và bảng câu hỏi đất trống VLQ. Phát hiện chuyện mới trước close thì phải khai thêm.','Landlocked là không có đường vào hợp pháp. Đất là của mình mà xe chạy vô không được.']},
+ {n:'12–14',en:['Tenants, changes, deposits','If someone rents the land, seller hands over leases, a rent list, and (if checked) income/expense and tenant estoppel letters. Before changing leases or contracts during escrow, seller gives 7 days notice; buyer has 5 days to object. Tenant security deposits move to the buyer at close.',''],
+  vi:['Người thuê, thay đổi, tiền cọc thuê','Đất có người thuê thì người bán đưa hợp đồng thuê, bảng tiền thuê, và (nếu đánh dấu) sổ thu chi và giấy xác nhận của người thuê. Muốn đổi hợp đồng thuê hay dịch vụ trong lúc escrow, người bán báo trước 7 ngày; người mua có 5 ngày để phản đối. Tiền cọc của người thuê chuyển qua người mua khi close.','']},
+ {n:'15',en:['Buyer\'s investigation','Buyer may inspect, test and survey at buyer\'s cost, including a Phase I environmental survey (5 days after getting it to clear that part). No digging or destructive tests and no government inspectors without seller\'s OK. Buyer repairs any damage, carries insurance, and gives the seller free copies of reports (not the appraisal). The checklist for land: true lot lines (fences are not proof, lot sizes from agents are approximate), zoning and what you can build, utilities (sewer or septic, water, power), hazards, soil, flood/fire/quake zones, neighborhood, HOA rules, special taxes, rent rules, and whether a manufactured home can go there.','Want to build a house? Call the planning department and the utility companies before your 17 days run out, not after.'],
+  vi:['Người mua kiểm tra','Người mua được kiểm tra, thử nghiệm, đo đạc bằng tiền mình, gồm khảo sát môi trường Phase I (có 5 ngày sau khi nhận để bỏ phần đó). Không đào, không thử nghiệm phá hoại, không gọi thanh tra nhà nước nếu người bán chưa đồng ý. Người mua sửa hư hại, có bảo hiểm, và đưa người bán bản sao báo cáo miễn phí (trừ appraisal). Danh sách cho đất: ranh giới thật (hàng rào không phải bằng chứng, diện tích agent nói chỉ là ước chừng), zoning và được xây gì, điện nước cống (cống hay hầm tự hoại, nước, điện), độc hại, đất, vùng lụt/cháy/động đất, khu xóm, nội quy HOA, thuế đặc biệt, luật cho thuê, và có đặt nhà manufactured được không.','Muốn xây nhà? Gọi phòng planning và công ty điện nước trước khi hết 17 ngày, đừng đợi sau.']},
+ {n:'16',en:['Title','Buyer gets a preliminary title report within the seller-documents period. Title comes as-is (easements, restrictions) except money liens, which the seller pays off. Buyer gets a grant deed, including oil, mineral and water rights if the seller owns them, and a standard CLTA title policy. How you take title has legal and tax effects; ask a professional.',''],
+  vi:['Giấy tờ chủ quyền (title)','Người mua nhận báo cáo title sơ bộ trong hạn giao tài liệu. Title nhận như hiện trạng (easement, hạn chế) trừ nợ có thế chấp, người bán phải trả hết. Người mua nhận grant deed, gồm quyền dầu, khoáng sản, nước nếu người bán đang có, và bảo hiểm title CLTA tiêu chuẩn. Đứng tên kiểu nào có hậu quả luật và thuế, nên hỏi chuyên gia.','']},
+ {n:'17',en:['The clock and how to cancel','All removals and cancellations must be in writing. Buyer may ask for repairs; seller can say no. If the buyer misses a deadline, the contract does not end by itself: the buyer can still remove or cancel until the seller sends a Notice to Buyer to Perform (at least 2 days to act) and then cancels. Closing late needs a Demand to Close Escrow (at least 3 days). Getting the deposit back needs both signatures; refusing to sign in bad faith can cost up to $1,000 (Civil Code §1057.3).','Missing day 17 is not the end. But it hands the other side a weapon.'],
+  vi:['Đồng hồ và cách hủy','Bỏ contingency hay hủy đều phải bằng giấy. Người mua được xin sửa; người bán có quyền từ chối. Người mua trễ hạn thì hợp đồng không tự hết: người mua vẫn bỏ contingency hoặc hủy được cho tới khi người bán gửi Notice to Buyer to Perform (ít nhất 2 ngày để làm) rồi mới hủy. Close trễ thì cần Demand to Close Escrow (ít nhất 3 ngày). Lấy lại tiền cọc cần chữ ký hai bên; cố tình không ký có thể bị phạt tới $1,000 (Civil Code §1057.3).','Trễ ngày 17 chưa phải hết. Nhưng mình trao cho bên kia cây gậy.']},
+ {n:'18–20',en:['Repairs, final walk, prorations','Agreed repairs are done with permits and receipts before the final walk. The final walk (5 days before close) is not a contingency, only a check. Property taxes and similar bills are split as of closing on a 30-day month. The land will be reassessed, and supplemental tax bills follow.','New owner? Expect a supplemental property tax bill months after closing.'],
+  vi:['Sửa chữa, xem lần cuối, chia tiền','Sửa theo thỏa thuận phải có giấy phép và hóa đơn trước lần xem cuối. Lần xem cuối (5 ngày trước close) không phải contingency, chỉ để kiểm. Thuế nhà đất và các hóa đơn tương tự chia theo ngày close, tháng 30 ngày. Đất sẽ được định giá lại thuế, và có hóa đơn thuế bổ sung.','Chủ mới? Vài tháng sau close sẽ có hóa đơn thuế bổ sung (supplemental).']},
+ {n:'21',en:['Brokers','Agent pay comes from separate written agreements. The form lists what agents do NOT do: set the price, guarantee condition, find boundary lines, verify lot size, give legal or tax advice.',''],
+  vi:['Môi giới','Tiền công agent theo hợp đồng riêng bằng giấy. Form ghi rõ agent KHÔNG làm: quyết định giá, bảo đảm tình trạng đất, xác định ranh giới, kiểm diện tích, tư vấn luật hay thuế.','']},
+ {n:'22',en:['Escrow instructions','Lists which paragraphs escrow follows. A copy goes to escrow within 3 days; both sides sign escrow\'s papers within 5 days of getting them and pay required fees within 3 days. A federal FinCEN reporting section (cash or private-loan buyers that are trusts or companies, land meant for 1–4 homes) applies only "if in force"; a court vacated that rule in March 2026, and FinCEN has appealed.',''],
+  vi:['Hướng dẫn cho escrow','Liệt kê đoạn nào escrow phải theo. Bản hợp đồng gửi escrow trong 3 ngày; hai bên ký giấy của escrow trong 5 ngày sau khi nhận và đóng phí trong 3 ngày. Phần báo cáo FinCEN liên bang (người mua là trust/công ty, trả tiền mặt hoặc vay tư nhân, đất định xây 1–4 căn) chỉ áp dụng "nếu còn hiệu lực"; tòa đã hủy quy định này tháng 3/2026, FinCEN đang kháng cáo.','']},
+ {n:'23–31',en:['Other rules','Pick your own vendors. The sold price goes to MLS, and listing photos may stay online at least 3 years. Winner of a lawsuit gets attorney fees. Buyer may assign the contract only to its own wholly-owned entity or trust; anyone else needs seller consent, and the request must come by day 17. Environmental liability, ADA notice, true copies. A person signing for a trust or company proves authority within 3 days.',''],
+  vi:['Các điều khác','Tự chọn thợ, dịch vụ. Giá bán đưa lên MLS, hình listing có thể còn trên mạng ít nhất 3 năm. Bên thắng kiện được trả tiền luật sư. Người mua chỉ được chuyển hợp đồng cho công ty hoặc trust do chính mình sở hữu 100%; người khác thì cần người bán đồng ý, và phải xin trước ngày 17. Trách nhiệm môi trường, luật ADA, bản sao phải thật. Người ký thay trust hay công ty phải đưa giấy chứng minh quyền ký trong 3 ngày.','']},
+ {n:'32',en:['Definitions and counting days','"Acceptance" is when the signed final offer or counter is delivered back. Days are calendar days, except the deposit uses business days. The acceptance day is Day 0. A deadline that lands on a weekend or legal holiday moves to the next business day, ending 11:59 PM. Delivery by email counts once it reaches the inbox; if you can\'t open a link, say so within 3 days.','Accepted Friday at noon? Friday is Day 0, Saturday is Day 1.'],
+  vi:['Định nghĩa và cách đếm ngày','"Acceptance" là lúc offer hoặc counter cuối cùng đã ký được giao lại bên kia. Ngày là ngày lịch, riêng tiền cọc tính ngày làm việc. Ngày chấp nhận là Ngày 0. Hạn rơi vào cuối tuần hoặc ngày lễ thì dời qua ngày làm việc kế, hết lúc 11:59 tối. Gửi email tính là đã giao khi tới hộp thư; mở link không được thì phải báo trong 3 ngày.','Chấp nhận trưa thứ Sáu? Thứ Sáu là Ngày 0, thứ Bảy là Ngày 1.']},
+ {n:'33–35',en:['Fair housing, offer terms, time is of the essence','The sale follows anti-discrimination laws. Seller may keep taking backup offers after acceptance. Signing means you read the whole thing. Time is of the essence, and changes only count in writing signed by both.',''],
+  vi:['Công bằng nhà ở, điều kiện offer, đúng hạn','Việc bán theo luật chống kỳ thị. Sau khi chấp nhận, người bán vẫn được nhận offer dự phòng. Ký là coi như đã đọc hết. Thời hạn là điều cốt lõi, thay đổi chỉ tính khi có giấy hai bên ký.','']},
+ {n:'36',en:['Liquidated damages (initials)','Only if everyone initials: if the buyer backs out in default, the seller keeps the deposit actually paid as the full damages. An increased deposit needs a separate signed form (DID). The VLPA text sets no percentage cap.',''],
+  vi:['Bồi thường định trước (ký tắt)','Chỉ khi mọi người ký tắt: người mua bỏ ngang do lỗi mình thì người bán giữ số tiền cọc đã đóng, coi như đủ bồi thường. Tăng tiền cọc thì phải ký thêm form riêng (DID). Văn bản VLPA không ghi trần phần trăm.','']},
+ {n:'37–38',en:['Mediation and arbitration','Both sides agree to try mediation first. Sue without trying it and you lose the right to attorney fees. Arbitration is separate and optional: initialing it means giving up a court or jury trial.',''],
+  vi:['Hòa giải và trọng tài','Hai bên đồng ý thử hòa giải trước. Kiện mà chưa thử hòa giải thì mất quyền đòi tiền luật sư. Trọng tài là phần riêng, không bắt buộc: ký tắt là bỏ quyền ra tòa, bỏ bồi thẩm đoàn.','']},
+ {n:'39–40',en:['Offer and acceptance','The offer dies if the seller hasn\'t signed and delivered it by the deadline in 3C. Trusts, LLCs and estates write their full legal name and who signs. Seller accepts, or accepts subject to a counter offer.',''],
+  vi:['Offer và chấp nhận','Offer hết hiệu lực nếu người bán chưa ký và giao lại trước hạn ở 3C. Trust, LLC, di sản ghi đủ tên pháp lý và người ký. Người bán chấp nhận, hoặc chấp nhận kèm counter offer.','']},
+ {n:'Last',en:['Brokers section and escrow receipt','Agents list licenses and the email address for delivery. Escrow confirms it received the contract and deposit and writes down the acceptance date, which starts the clock.',''],
+  vi:['Phần môi giới và escrow xác nhận','Agent ghi số license và email nhận giấy tờ. Escrow xác nhận đã nhận hợp đồng và tiền cọc, ghi ngày chấp nhận — ngày bắt đầu đếm giờ.','']},
+ {n:'Adv.',en:['The advisories at the back','AD: what each agent owes you. FHDA: fair housing rules. BHIA: check insurance early; some carriers stopped writing new policies. WFA: never wire money without calling escrow at a number you already had. BVLIA: land needs extra checks for financing, building costs, utilities, environment, hazard reports and subdivision plans.','Got an email with "new wiring instructions"? Stop. Call escrow first.'],
+  vi:['Mấy tờ khuyến cáo phía sau','AD: agent có bổn phận gì với mình. FHDA: luật nhà ở công bằng. BHIA: hỏi bảo hiểm sớm, nhiều hãng đã ngưng bán hợp đồng mới. WFA: không bao giờ wire tiền khi chưa gọi escrow bằng số mình có từ trước. BVLIA: đất cần kiểm thêm về vay, chi phí xây, điện nước, môi trường, báo cáo thiên tai, chia lô.','Nhận email "đổi thông tin chuyển tiền"? Dừng lại. Gọi escrow trước.']}
+];
+
+const QUIZ=[
+ {en:['Offer accepted on a Friday. Which day is Day 1?',['Friday','Saturday','Monday'],1,'The acceptance day is Day 0. Every calendar day counts, so Saturday is Day 1.'],
+  vi:['Offer được chấp nhận thứ Sáu. Ngày 1 là ngày nào?',['Thứ Sáu','Thứ Bảy','Thứ Hai'],1,'Ngày chấp nhận là Ngày 0. Ngày lịch nào cũng tính, nên thứ Bảy là Ngày 1.']},
+ {en:['Day 17 passed and the buyer did not remove the investigation contingency. What happens?',['The contract is canceled automatically','The buyer loses the deposit','The seller must first send a Notice to Buyer to Perform before canceling'],2,'Paragraph 17 keeps the contract alive. The seller must give written notice with at least 2 days to act.'],
+  vi:['Qua ngày 17 mà người mua chưa bỏ contingency kiểm tra. Chuyện gì xảy ra?',['Hợp đồng tự hủy','Người mua mất cọc','Người bán phải gửi Notice to Buyer to Perform trước rồi mới hủy được'],2,'Đoạn 17 giữ hợp đồng còn sống. Người bán phải báo bằng giấy, cho ít nhất 2 ngày.']},
+ {en:['The "who pays" box says Seller pays the point-of-sale inspection. It finds $8,000 of required work. Who pays the $8,000?',['Seller, automatically','Buyer, automatically','Nobody yet: it needs a separate written agreement'],2,'Paragraph 10: the box covers the report only. The work needs its own agreement, or either side may cancel at the investigation deadline.'],
+  vi:['Ô "ai trả" ghi người bán trả tiền kiểm tra theo yêu cầu city. Báo cáo ra $8,000 tiền phải sửa. Ai trả $8,000?',['Người bán, tự động','Người mua, tự động','Chưa ai: phải có thỏa thuận riêng bằng giấy'],2,'Đoạn 10: ô đó chỉ cho tiền báo cáo. Tiền sửa cần thỏa thuận riêng, không thì tới hạn kiểm tra bên nào cũng được hủy.']}
+];
+
+const MYTH={
+ en:['<b>"Seventeen days means I have 17 business days."</b> No. They are calendar days. Only the deposit uses business days.',
+     '<b>"Land is simple, I don\'t need inspections."</b> Land hides the expensive surprises: no sewer, no legal access, a flood zone, contaminated soil, zoning that won\'t let you build. Paragraph 15 is your one window to find them.',
+     '<b>"The listing said 1 acre, so it\'s 1 acre."</b> The form says agents\' lot sizes are approximations. Only a survey tells you.',
+     '<b>"I can sell my contract to another investor anytime."</b> Only to your own wholly-owned entity or trust. Anyone else needs the seller\'s consent, and the seller can refuse if you\'re being paid for it.'],
+ vi:['<b>"17 ngày là 17 ngày làm việc."</b> Không. Là ngày lịch. Chỉ tiền cọc mới tính ngày làm việc.',
+     '<b>"Đất thì đơn giản, khỏi kiểm tra."</b> Đất giấu mấy cái bất ngờ tốn tiền nhất: không có cống, không có lối vào hợp pháp, vùng lụt, đất ô nhiễm, zoning không cho xây. Đoạn 15 là cửa sổ duy nhất để tìm ra.',
+     '<b>"Listing ghi 1 acre là 1 acre."</b> Form ghi rõ diện tích agent nói chỉ là ước chừng. Chỉ có đo đạc (survey) mới chắc.',
+     '<b>"Mua xong hợp đồng, sang tay cho nhà đầu tư khác lúc nào cũng được."</b> Chỉ được chuyển cho công ty hoặc trust do chính mình sở hữu 100%. Người khác thì cần người bán đồng ý, và người bán được từ chối nếu mình ăn tiền chênh.']
+};
+const NS={
+ en:['Write the acceptance date on your calendar and add every date from the calculator above.','Buyer: order the survey, soil and utility checks in week one. Planning departments are slow.','Seller: gather surveys, permits, plans and the VLQ questionnaire now, so you can deliver within 7 days.','Before wiring the deposit, call escrow at a number you got at the start. Never from an email.'],
+ vi:['Ghi ngày chấp nhận lên lịch, thêm mọi ngày ở bảng tính phía trên.','Người mua: đặt đo đạc, kiểm tra đất, hỏi điện nước ngay tuần đầu. Phòng planning làm chậm lắm.','Người bán: gom bản đo đạc, giấy phép, bản vẽ và bảng VLQ ngay bây giờ để giao kịp trong 7 ngày.','Trước khi wire tiền cọc, gọi escrow bằng số mình có từ đầu. Đừng bao giờ dùng số trong email.']
+};
+
+const I18N={
+ en:{title:'VLPA: the vacant land purchase contract',sub:'This is the contract you sign to buy or sell a piece of land with no house on it. It sets the price, who pays what, and a clock for every step.',
+  f1k:'Who gives it',f1v:"The buyer's agent writes it as the offer",f2k:'Who signs',f2v:'Buyer (offer), seller (acceptance), agents',f3k:'When you see it',f3v:'When an offer is made on a lot or acreage',
+  f4k:'Required?',f4v:"Not by law. It's the standard C.A.R. form for land",f5k:'Pages',f5v:'17-page contract + 8 pages of attached advisories = 25',f6k:'Version',f6v:'VLPA Revised 6/26 (current)',
+  ver:'Version check: C.A.R. revised the VLPA in December 2025 (to 12/25) and again in the June 2026 release (to 6/26), both times "conformed to changes in RPA". This page follows the 6/26 text. Older 6/25 or 12/25 copies may differ.',
+  c_title:'Your deadlines, from the acceptance date',c_hint:"Uses the form's printed default periods. If your contract wrote a different number in a blank, change it below. Day 0 is the acceptance day.",
+  r_b:"I'm the buyer",r_s:"I'm the seller",l_acc:'Acceptance date',l_coe:'Close of escrow in',days:'days',
+  l_cont:'Contingency days <small>(form: 17)</small>',l_sdoc:'Seller documents <small>(form: 7)</small>',l_deliv:'Seller documents actually delivered on <small>(optional)</small>',
+  k_loan:'Buyer is getting a loan',k_hoa:'Land is in an HOA / planned development',k_ent:'Someone signs for a trust, LLC or company',
+  k_next:'Your next deadline',b_copy:'Copy my dates',copied:'Copied ✓',todo_b:'What the buyer must do',todo_s:'What the seller must do',
+  s_title:'What the form says, section by section',s_hint:"Plain-language summary of each paragraph, in the form's order. It is not the contract text. Read the real form before you sign.",
+  open_all:'Open all',close_all:'Close all',q_title:'Did you get it? 3 quick questions',q_ok:'Right.',q_no:'Not quite.',
+  m_title:'Many people get this wrong',ns_t:'Next steps',v_title:'45-second video',b_video:'Watch 45-sec video',
+  b_email:'Email Ken my dates',b_sms:'Text Ken a question',b_lib:'← Forms library',
+  ft_src:'Sources:',ft_chk:'(checked 06/11/2026)',ft_est:"General information, not legal or tax advice. Dates are an estimate from the form's default periods; your signed contract, counter offers and addenda control. Confirm every date with your escrow officer.",
+  ft_upd:'Updated',ft_lib:'Forms library',ft_all:'All tools',lang:'Tiếng Việt',
+  day:'Day',dayAfter:'Day {n} after acceptance',beforeCoe:'{n} days before close',moved:'moved from {d} (weekend/holiday)',none:'Enter an acceptance date.',
+  passed:'All listed deadlines have passed.',inDays:'in {n} days',today:'today',
+  hol:'Holidays counted in this range: {l}',holNone:'No legal holidays fell in this range.',
+  note_b:'Removing a contingency is a written form (CR-B). Missing a date does not cancel the deal by itself, but it lets the seller send a Notice to Buyer to Perform with 2 days to act.',
+  note_s:"If the buyer misses a date, you can't cancel right away. First send a Notice to Buyer to Perform, no earlier than 2 days before the deadline, giving at least 2 days.",
+  who_b:'Buyer',who_s:'Seller',who_x:'Both',
+  rows:{dep:['Wire the initial deposit to escrow','3 business days'],copy:['Copy of contract to escrow','agents, 3 days'],ver:['Proof of funds / down payment / loan letter','if not attached to offer'],
+   auth:['Proof of authority to sign (trust/LLC)','3 days'],hoaf:['Order and pay for HOA documents','3 days'],sdocs:['Deliver disclosures, VLQ, title report, reports','7 days'],
+   inv:['Remove or cancel: investigation of the land','17 days'],ins:['Remove or cancel: insurance','17 days'],loan:['Remove or cancel: loan','17 days'],appr:['Remove or cancel: appraisal','17 days'],
+   rev:['Remove or cancel: seller documents + title report','17 days or 5 days after delivery, later'],hoar:['Remove or cancel: HOA documents','17 days or 5 days after delivery, later'],
+   asg:['Last day to ask to assign the contract','17 days'],rep:['Give seller copies of your inspection reports','17 days or 3 days after receipt'],
+   nbp:['Earliest day seller may send Notice to Buyer to Perform','2 days before the contingency deadline'],
+   fv:['Final verification (walk the land)','5 days before close, not a contingency'],dce:['Earliest Demand to Close Escrow','3 days before close'],coe:['Close of escrow','you fill in the days']},
+  todoB:['Wire the deposit within 3 business days. Call escrow to confirm the instructions first.','Send proof of funds and the lender letter within 3 days if they were not attached.','Order survey, soil, Phase I environmental (if you pay for it) and utility checks in week one.','Ask the city or county planning office what you can build. Get it in writing if you can.','Check insurance and the title report. Look at every easement.','Before day 17: sign a removal (CR-B) or cancel (CC). In writing.','Give the seller free copies of your reports (not the appraisal).','Walk the land 5 days before close.'],
+  todoS:['Deliver all disclosures, the VLQ questionnaire, surveys, permits and the title report within 7 days.','Disclose known problems: access, easements, fill, flooding, zoning violations, lawsuits, insurance claims (5 years).','Keep the land in the same condition. Give 7 days notice before changing leases or contracts.','Let the buyer inspect. You are not required to move personal property, but remove debris before close.','If the buyer misses a deadline, send a Notice to Buyer to Perform before you cancel.','Remove trash and personal items by closing, and hand over keys or gate codes.','Sign escrow papers within 5 days of receiving them. Pay off money liens at close.'],
+  sms:'Hi Ken, I used the VLPA deadline tool (T501). Acceptance {a}, close {c}. I have a question.',
+  subj:'T501 VLPA deadlines — {a}',body:'Role: {r}\nAcceptance: {a}\n\n{list}\n\nSent from tool T501 tools.kenlamrealty.com/t501/'},
+ vi:{title:'VLPA: hợp đồng mua đất trống',sub:'Đây là hợp đồng ký khi mua hoặc bán một miếng đất chưa có nhà. Nó định giá, ai trả gì, và có đồng hồ cho từng bước.',
+  f1k:'Ai đưa',f1v:'Agent bên mua soạn làm offer',f2k:'Ai ký',f2v:'Người mua (offer), người bán (chấp nhận), các agent',f3k:'Khi nào gặp',f3v:'Khi ra offer mua một lô đất hay đất rộng',
+  f4k:'Bắt buộc?',f4v:'Luật không bắt. Đây là form chuẩn C.A.R. cho đất',f5k:'Số trang',f5v:'Hợp đồng 17 trang + 8 trang khuyến cáo = 25',f6k:'Phiên bản',f6v:'VLPA Revised 6/26 (mới nhất)',
+  ver:'Kiểm phiên bản: C.A.R. sửa VLPA đợt tháng 12/2025 (thành 12/25) và lại sửa đợt tháng 6/2026 (thành 6/26), cả hai lần đều "cho khớp với RPA". Trang này theo bản 6/26. Bản cũ 6/25 hoặc 12/25 có thể khác.',
+  c_title:'Các hạn chót của mình, tính từ ngày chấp nhận',c_hint:'Dùng số ngày mặc định in sẵn trong form. Hợp đồng của mình có ghi số khác trong ô trống thì sửa ở dưới. Ngày chấp nhận là Ngày 0.',
+  r_b:'Tôi là người mua',r_s:'Tôi là người bán',l_acc:'Ngày chấp nhận offer',l_coe:'Close escrow sau',days:'ngày',
+  l_cont:'Số ngày contingency <small>(form: 17)</small>',l_sdoc:'Hạn người bán giao giấy <small>(form: 7)</small>',l_deliv:'Ngày người bán thật sự giao giấy <small>(nếu có)</small>',
+  k_loan:'Người mua có vay ngân hàng',k_hoa:'Đất nằm trong HOA / khu quy hoạch',k_ent:'Có người ký thay trust, LLC hay công ty',
+  k_next:'Hạn chót kế tiếp',b_copy:'Copy các ngày',copied:'Đã copy ✓',todo_b:'Người mua phải làm gì',todo_s:'Người bán phải làm gì',
+  s_title:'Form nói gì, từng phần một',s_hint:'Tóm tắt bằng lời thường từng đoạn, theo đúng thứ tự form. Đây không phải nguyên văn hợp đồng. Đọc form thật trước khi ký.',
+  open_all:'Mở hết',close_all:'Đóng hết',q_title:'Mình hiểu đúng chưa? 3 câu hỏi nhanh',q_ok:'Đúng rồi.',q_no:'Chưa đúng.',
+  m_title:'Nhiều người hiểu sai',ns_t:'Bước tiếp theo',v_title:'Video 45 giây',b_video:'Xem video 45 giây',
+  b_email:'Email các ngày cho Ken',b_sms:'Nhắn Ken hỏi',b_lib:'← Thư viện forms',
+  ft_src:'Nguồn:',ft_chk:'(tra ngày 06/11/2026)',ft_est:'Thông tin chung, không phải tư vấn luật hay thuế. Ngày tính ra là ước tính theo số ngày mặc định của form; hợp đồng đã ký, counter offer và phụ lục mới là quyết định. Hỏi lại escrow từng ngày.',
+  ft_upd:'Cập nhật',ft_lib:'Thư viện forms',ft_all:'Tất cả tools',lang:'English',
+  day:'Ngày',dayAfter:'Ngày {n} sau chấp nhận',beforeCoe:'{n} ngày trước close',moved:'dời từ {d} (cuối tuần/ngày lễ)',none:'Nhập ngày chấp nhận.',
+  passed:'Các hạn trong danh sách đã qua hết.',inDays:'còn {n} ngày',today:'hôm nay',
+  hol:'Ngày lễ có tính trong khoảng này: {l}',holNone:'Không có ngày lễ nào trong khoảng này.',
+  note_b:'Bỏ contingency phải ký form (CR-B). Trễ hạn không tự hủy deal, nhưng người bán được gửi Notice to Buyer to Perform, cho mình 2 ngày để làm.',
+  note_s:'Người mua trễ hạn thì mình chưa hủy liền được. Phải gửi Notice to Buyer to Perform trước, không sớm hơn 2 ngày trước hạn, cho ít nhất 2 ngày.',
+  who_b:'Người mua',who_s:'Người bán',who_x:'Hai bên',
+  rows:{dep:['Wire tiền cọc vô escrow','3 ngày làm việc'],copy:['Gửi bản hợp đồng cho escrow','agent lo, 3 ngày'],ver:['Giấy chứng minh tiền / tiền down / thư lender','nếu chưa kèm offer'],
+   auth:['Giấy chứng minh quyền ký (trust/LLC)','3 ngày'],hoaf:['Đặt và trả tiền giấy tờ HOA','3 ngày'],sdocs:['Giao giấy khai, VLQ, báo cáo title, các báo cáo','7 ngày'],
+   inv:['Bỏ hoặc hủy: kiểm tra đất','17 ngày'],ins:['Bỏ hoặc hủy: bảo hiểm','17 ngày'],loan:['Bỏ hoặc hủy: vay','17 ngày'],appr:['Bỏ hoặc hủy: thẩm định giá','17 ngày'],
+   rev:['Bỏ hoặc hủy: giấy người bán + báo cáo title','17 ngày hoặc 5 ngày sau khi giao, ngày nào trễ hơn'],hoar:['Bỏ hoặc hủy: giấy HOA','17 ngày hoặc 5 ngày sau khi giao, ngày nào trễ hơn'],
+   asg:['Hạn chót xin chuyển nhượng hợp đồng','17 ngày'],rep:['Đưa người bán bản sao báo cáo kiểm tra','17 ngày hoặc 3 ngày sau khi nhận'],
+   nbp:['Ngày sớm nhất người bán được gửi Notice to Buyer to Perform','2 ngày trước hạn contingency'],
+   fv:['Đi xem đất lần cuối','5 ngày trước close, không phải contingency'],dce:['Ngày sớm nhất gửi Demand to Close Escrow','3 ngày trước close'],coe:['Close escrow','mình tự điền số ngày']},
+  todoB:['Wire tiền cọc trong 3 ngày làm việc. Gọi escrow xác nhận thông tin trước.','Gửi giấy chứng minh tiền và thư lender trong 3 ngày nếu chưa kèm offer.','Tuần đầu đặt đo đạc, kiểm tra đất, Phase I môi trường (nếu mình trả) và hỏi điện nước.','Hỏi phòng planning của city/county mình được xây gì. Xin trả lời bằng giấy nếu được.','Coi bảo hiểm và báo cáo title. Đọc kỹ từng easement.','Trước ngày 17: ký bỏ contingency (CR-B) hoặc hủy (CC). Bằng giấy.','Đưa người bán bản sao báo cáo miễn phí (trừ appraisal).','Đi xem đất 5 ngày trước close.'],
+  todoS:['Giao hết giấy khai, bảng VLQ, bản đo đạc, giấy phép và báo cáo title trong 7 ngày.','Khai các vấn đề mình biết: lối vào, easement, đất đổ, ngập, vi phạm zoning, kiện tụng, claim bảo hiểm (5 năm).','Giữ đất y như cũ. Muốn đổi hợp đồng thuê hay dịch vụ thì báo trước 7 ngày.','Cho người mua kiểm tra. Không bắt buộc dời đồ, nhưng dọn rác trước close.','Người mua trễ hạn thì gửi Notice to Buyer to Perform trước rồi mới hủy.','Dọn rác, đồ cá nhân trước close, giao chìa khóa hay mã cổng.','Ký giấy escrow trong 5 ngày sau khi nhận. Trả hết nợ thế chấp lúc close.'],
+  sms:'Chào Ken, tôi vừa dùng tool hạn chót VLPA (T501). Chấp nhận {a}, close {c}. Cho tôi hỏi thêm.',
+  subj:'T501 VLPA hạn chót — {a}',body:'Vai trò: {r}\nNgày chấp nhận: {a}\n\n{list}\n\nGửi từ tool T501 tools.kenlamrealty.com/t501/'}
+};
+
+let lang='en'; try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+let role='b';
+const $=id=>document.getElementById(id);
+const fill=(s,v)=>s.replace(/\{(\w+)\}/g,(m,k)=>v[k]??m);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---- dates (local, no timezone drift) ---- */
+const D=(y,m,d)=>new Date(y,m,d,12);
+const key=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const add=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;};
+function parse(v){ if(!v) return null; const p=v.split('-').map(Number); return D(p[0],p[1]-1,p[2]); }
+function nth(y,m,dow,n){ const f=D(y,m,1); let d=1+((dow-f.getDay()+7)%7)+(n-1)*7; return D(y,m,d); }
+function lastDow(y,m,dow){ const l=D(y,m+1,0); return D(y,m,l.getDate()-((l.getDay()-dow+7)%7)); }
+const HOLCACHE={};
+function holidays(y){
+  if(HOLCACHE[y]) return HOLCACHE[y];
+  const h={}; const put=(d,n)=>{h[key(d)]=n;};
+  const fixed=[[0,1,"New Year's Day"],[1,12,'Lincoln Day'],[2,31,'Farmworkers Day'],[3,24,'Genocide Remembrance Day'],[5,19,'Juneteenth'],[6,4,'Independence Day'],[8,9,'Admission Day'],[10,11,'Veterans Day'],[11,25,'Christmas']];
+  fixed.forEach(([m,d,n])=>{const x=D(y,m,d); put(x,n); if(x.getDay()===0) put(add(x,1),n+' (observed)');});
+  put(nth(y,0,1,3),'MLK Day'); put(nth(y,1,1,3),"Washington's Birthday"); put(lastDow(y,4,1),'Memorial Day');
+  put(nth(y,8,1,1),'Labor Day'); put(nth(y,8,5,4),'Native American Day'); put(nth(y,9,1,2),'Columbus Day'); put(nth(y,10,4,4),'Thanksgiving');
+  if(LNY[y]){const p=LNY[y].split('-').map(Number); put(D(y,p[0]-1,p[1]),'Lunar New Year');}
+  if(DIWALI[y]){const p=DIWALI[y].split('-').map(Number); put(D(y,p[0]-1,p[1]),'Diwali');}
+  return HOLCACHE[y]=h;
+}
+const holName=d=>holidays(d.getFullYear())[key(d)];
+const HOLVI={"New Year's Day":'Tết Dương lịch','Lincoln Day':'Ngày Lincoln','Farmworkers Day':'Ngày Nông dân','Genocide Remembrance Day':'Ngày Tưởng niệm Diệt chủng','Juneteenth':'Juneteenth','Independence Day':'Lễ Độc lập 4/7','Admission Day':'Ngày gia nhập Liên bang','Veterans Day':'Ngày Cựu chiến binh','Christmas':'Giáng sinh','MLK Day':'Ngày MLK',"Washington's Birthday":'Ngày Tổng thống','Memorial Day':'Memorial Day','Labor Day':'Lễ Lao động','Native American Day':'Ngày Người bản địa','Columbus Day':'Columbus Day','Thanksgiving':'Lễ Tạ ơn','Lunar New Year':'Tết Âm lịch','Diwali':'Diwali'};
+const hn=n=>lang==='vi'?n.replace(/^(.*?)( \(observed\))?$/,(m,a,b)=>(HOLVI[a]||a)+(b?' (nghỉ bù)':'')):n;
+const isOff=d=>d.getDay()===0||d.getDay()===6||!!holName(d);
+function roll(d){ let x=new Date(d); while(isOff(x)) x=add(x,1); return x; }
+function bizAfter(d,n){ let x=new Date(d),c=0; while(c<n){ x=add(x,1); if(!isOff(x)) c++; } return x; }
+function fmt(d){ return d.toLocaleDateString(lang==='vi'?'vi-VN':'en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}); }
+function fmtS(d){ const w=d.toLocaleDateString(lang==='vi'?'vi-VN':'en-US',{weekday:'short'}); const dd=String(d.getDate()).padStart(2,'0'),mm=String(d.getMonth()+1).padStart(2,'0'),yy=String(d.getFullYear()).slice(2); return w+' '+(lang==='vi'?dd+'/'+mm:mm+'/'+dd)+'/'+yy; }
+function num(id,def){ const v=parseInt($(id).value,10); return (v>0&&v<1000)?v:def; }
+
+let lastRows=[];
+function calc(){
+  const t=I18N[lang], R=t.rows, acc=parse($('acc').value);
+  const loan=$('hasLoan').checked, hoa=$('hasHoa').checked, ent=$('hasEnt').checked;
+  if(!acc){ $('dl').innerHTML=''; $('nextV').textContent='—'; $('nextT').textContent=t.none; lastRows=[]; links(); return; }
+  const C=num('cont',DEF.cont), S=num('sdoc',DEF.sellerDocs), N=num('coe',30), deliv=parse($('deliv').value);
+  const rows=[]; const used={};
+  const mk=(k,who,raw,opt)=>{ opt=opt||{}; const due=opt.noRoll?raw:roll(raw); const r={k,who,raw,due,label:R[k][0],sub:opt.sub||R[k][1],key:opt.key};
+    let x=new Date(acc); const end=due; while(x<=end){ const n=holName(x); if(n) used[key(x)]=n; x=add(x,1);} rows.push(r); return r; };
+  const ad=n=>add(acc,n);
+  const later=(a,b)=>a>b?a:b;
+  const dep=bizAfter(acc,DEF.depositBiz); rows.push({k:'dep',who:'b',raw:dep,due:dep,label:R.dep[0],sub:R.dep[1],key:1});
+  { let x=add(acc,1); while(x<=dep){ const n=holName(x); if(n) used[key(x)]=n; x=add(x,1);} }
+  mk('copy','x',ad(DEF.escrowCopy),{sub:R.copy[1]});
+  mk('ver','b',ad(DEF.verify));
+  if(ent) mk('auth','x',ad(DEF.authority));
+  if(hoa) mk('hoaf','s',ad(DEF.hoaFee));
+  const sd=mk('sdocs','s',ad(S),{key:1,sub:fill(t.dayAfter,{n:S})});
+  const cDate=ad(C);
+  mk('inv','b',cDate,{key:1,sub:fill(t.dayAfter,{n:C})});
+  mk('ins','b',cDate,{sub:fill(t.dayAfter,{n:C})});
+  if(loan){ mk('loan','b',cDate,{sub:fill(t.dayAfter,{n:C})}); mk('appr','b',cDate,{sub:fill(t.dayAfter,{n:C})}); }
+  const dl=deliv?add(deliv,DEF.afterDeliv):add(sd.due,DEF.afterDeliv);
+  mk('rev','b',later(cDate,dl));
+  if(hoa) mk('hoar','b',later(cDate,dl));
+  mk('asg','b',cDate,{sub:fill(t.dayAfter,{n:C})});
+  mk('rep','b',cDate);
+  mk('nbp','s',add(cDate,-DEF.nbp),{noRoll:true});
+  const coe=mk('coe','x',ad(N),{key:1,sub:fill(t.dayAfter,{n:N})});
+  rows.splice(rows.indexOf(coe),1);
+  mk('fv','b',add(coe.due,-DEF.fv),{noRoll:true,sub:R.fv[1]});
+  mk('dce','x',add(coe.due,-DEF.dce),{noRoll:true});
+  rows.push(coe);
+  rows.sort((a,b)=>a.due-b.due);
+  const mine=rows.filter(r=>r.who===role||r.who==='x');
+  const W={b:t.who_b,s:t.who_s,x:t.who_x};
+  $('dl').innerHTML=mine.map(r=>{
+    const mv=(r.raw&&key(r.raw)!==key(r.due))?'<small>'+esc(fill(t.moved,{d:fmtS(r.raw)}))+'</small>':'';
+    return '<div class="r'+(r.key?' key':'')+'"><div class="t"><b>'+esc(r.label)+'</b><span class="tag">'+W[r.who]+'</span><small>'+esc(r.sub)+'</small></div><div class="d">'+fmtS(r.due)+mv+'</div></div>';
+  }).join('');
+  const today=new Date(); today.setHours(0,0,0,0);
+  const nx=mine.find(r=>r.due>=today);
+  if(nx){ const dd=Math.round((new Date(nx.due).setHours(0,0,0,0)-today)/864e5); $('nextV').textContent=fmt(nx.due); $('nextT').textContent=nx.label+' · '+(dd===0?t.today:fill(t.inDays,{n:dd})); }
+  else { $('nextV').textContent='—'; $('nextT').textContent=t.passed; }
+  const ul=Object.keys(used).sort().map(k=>hn(used[k])+' '+k.slice(5).replace('-','/'));
+  $('holUsed').textContent=ul.length?fill(t.hol,{l:ul.join(', ')}):t.holNone;
+  lastRows=mine; links();
+}
+function listText(){ return lastRows.map(r=>fmt(r.due)+' — '+r.label).join('\n'); }
+function links(){
+  const t=I18N[lang], a=$('acc').value||'—', coe=lastRows.find(r=>r.k==='coe');
+  const v={a, c:coe?fmt(coe.due):'—', r:role==='b'?t.who_b:t.who_s, list:listText()};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fill(t.sms,v));
+  $('emailBtn').href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(t.subj,v))+'&body='+encodeURIComponent(fill(t.body,v));
+}
+function renderTodo(){ const t=I18N[lang]; $('todoH').textContent=role==='b'?t.todo_b:t.todo_s; $('todo').innerHTML=(role==='b'?t.todoB:t.todoS).map(x=>'<li>'+esc(x)+'</li>').join(''); $('dlNote').textContent=role==='b'?t.note_b:t.note_s; }
+function renderSecs(){
+  const open=[...document.querySelectorAll('#secs details')].map(d=>d.open);
+  $('secs').innerHTML=SEC.map((s,i)=>{const c=s[lang]; return '<details class="sec"'+(open[i]?' open':'')+'><summary><span class="n">'+esc(s.n)+'</span><span>'+esc(c[0])+'</span></summary><p>'+esc(c[1])+'</p>'+(c[2]?'<p class="ex">'+esc(c[2])+'</p>':'')+'</details>';}).join('');
+}
+function renderQuiz(){
+  const t=I18N[lang];
+  $('quiz').innerHTML=QUIZ.map((q,i)=>{const c=q[lang]; return '<div class="qz" data-q="'+i+'"><p>'+(i+1)+'. '+esc(c[0])+'</p><div class="opts">'+c[1].map((o,j)=>'<button type="button" data-j="'+j+'">'+esc(o)+'</button>').join('')+'</div><p class="fb" aria-live="polite"></p></div>';}).join('');
+}
+$('quiz').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; const box=b.closest('.qz'), q=QUIZ[+box.dataset.q][lang], j=+b.dataset.j, t=I18N[lang];
+  box.querySelectorAll('button').forEach(x=>x.classList.remove('right','wrong')); b.classList.add(j===q[2]?'right':'wrong');
+  if(j!==q[2]) box.querySelectorAll('button')[q[2]].classList.add('right');
+  box.querySelector('.fb').textContent=(j===q[2]?t.q_ok:t.q_no)+' '+q[3];});
+function renderStatic(){
+  const t=I18N[lang];
+  $('myths').innerHTML=MYTH[lang].map(m=>'<p class="myth">'+m+'</p>').join('');
+  $('nsList').innerHTML=NS[lang].map(m=>'<li>'+esc(m)+'</li>').join('');
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  renderSecs(); renderQuiz(); renderStatic(); renderTodo(); calc();
+}
+$('roleSeg').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b) return; role=b.dataset.v;
+  $('roleSeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); renderTodo(); calc();});
+['acc','coe','cont','sdoc','deliv','hasLoan','hasHoa','hasEnt'].forEach(id=>{$(id).addEventListener('input',calc);$(id).addEventListener('change',calc);});
+$('openAll').onclick=()=>document.querySelectorAll('#secs details').forEach(d=>d.open=true);
+$('closeAll').onclick=()=>document.querySelectorAll('#secs details').forEach(d=>d.open=false);
+$('copyDates').onclick=async()=>{const t=I18N[lang]; try{await navigator.clipboard.writeText(listText());}catch(e){} $('copyDates').textContent=t.copied; setTimeout(()=>{$('copyDates').textContent=I18N[lang].b_copy},1600);};
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+(function(){const n=new Date(); $('acc').value=key(n);})();
+window.__t501={calc,roll,bizAfter,holidays,key,parse,rows:()=>lastRows};
+applyLang();
+</script>
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
