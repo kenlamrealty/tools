@@ -1,0 +1,1493 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hóa Giải Nhà · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+
+/* ===== Thêm cho T42 / T43 / T44 (không đổi class cũ) ===== */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;-webkit-appearance:none;appearance:none;cursor:pointer}
+.ctl .chev{color:var(--muted);font-size:12px;pointer-events:none}
+.ctl input[type=date]{font-size:18px;min-height:48px}
+.ctl input[type=text]{font-size:18px}
+.hint{font-size:12px;color:var(--muted);margin:0;line-height:1.45}
+.hint b{color:var(--fg);font-weight:500}
+.total .of{font-size:14px;color:var(--muted);margin-top:6px}
+.chip{font-size:12px;line-height:1.3;padding:3px 9px;border-radius:999px;border:1px solid var(--line);white-space:nowrap;flex:none;color:var(--muted)}
+.chip.ok{color:var(--ok);border-color:var(--ok)}
+.chip.mid{color:var(--brass);border-color:var(--brass)}
+.chip.no{color:var(--warn);border-color:var(--warn)}
+.grp-h{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);margin:6px 0 0;font-weight:500}
+.myth{font-size:14px;line-height:1.5;border-left:2px solid var(--brass);padding:2px 0 2px 12px;margin:0}
+.myth b{font-weight:500}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:12px}
+.next h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0;line-height:1.15}
+.steps{margin:0;padding:0;list-style:none;display:grid;gap:12px;counter-reset:st}
+.steps li{display:grid;grid-template-columns:26px minmax(0,1fr);gap:10px;font-size:15px;line-height:1.45;counter-increment:st}
+.steps li::before{content:counter(st);font-family:var(--display);font-size:22px;line-height:1;color:var(--brass)}
+.steps small{display:block;color:var(--muted);font-size:13px;margin-top:3px}
+.steps a{color:var(--brass);text-decoration:none}
+.dline{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.dline .n{color:var(--muted);min-width:0}
+.dline .n b{color:var(--fg);font-weight:500}
+.dline .a{font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+.tips{margin:0;padding-left:18px;font-size:14px;line-height:1.5;display:grid;gap:8px;color:var(--fg)}
+.tips li::marker{color:var(--brass)}
+.tips small{display:block;color:var(--muted);font-size:13px}
+.linkbtn{justify-self:start;border:1px solid var(--line);background:transparent;color:var(--brass);font:inherit;font-size:14px;padding:7px 13px;border-radius:999px;cursor:pointer}
+.linkbtn:hover{border-color:var(--brass)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0;line-height:1.15}
+.prog{display:grid;gap:6px;font-size:13px;color:var(--muted)}
+.prog b{color:var(--fg);font-weight:500}
+.gcal{color:var(--brass);text-decoration:none;white-space:nowrap;font-size:13px}
+.gcal:hover{text-decoration:underline}
+footer .src{line-height:1.6}
+.hide{display:none!important}
+.result > *,.inputs > *,.wrap > *,.panel > *{min-width:0}
+
+/* ===== Riêng T43: lịch 2 tháng ===== */
+.best{display:grid;gap:0;border-top:1px solid var(--line)}
+.bd{display:grid;gap:4px;padding:12px 0;border-bottom:1px solid var(--line)}
+.bd .hd{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.bd .dt{font-family:var(--display);font-size:28px;line-height:1.1;font-weight:400}
+.bd .dt small{font-family:var(--body);font-size:14px;color:var(--muted)}
+.bd .d{font-size:13px;color:var(--muted);line-height:1.5}
+.bd .d b{color:var(--fg);font-weight:500}
+.bd.first{background:var(--brass-soft);margin:0 -10px;padding:12px 10px;border-radius:8px;border-bottom-color:transparent}
+.cal-wrap{display:grid;gap:18px}
+.mon h3{font-family:var(--display);font-weight:400;font-size:24px;margin:0 0 8px}
+.grid7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.grid7 .wd{font-size:11px;color:var(--muted);text-align:center;padding:2px 0;letter-spacing:.04em}
+.dc{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:5px 2px 4px;display:grid;justify-items:center;gap:1px;cursor:pointer;font:inherit;color:var(--fg);min-height:58px}
+.dc .s{font-size:16px;font-weight:500;line-height:1.1;font-variant-numeric:tabular-nums}
+.dc .l{font-size:10.5px;color:var(--muted);line-height:1.2;font-variant-numeric:tabular-nums}
+.dc .c{font-size:10px;color:var(--muted);line-height:1.2}
+.dc .m{width:6px;height:6px;border-radius:50%;margin-top:2px;background:transparent}
+.dc.good{background:var(--brass-soft);border-color:var(--brass)}
+.dc.good .m{background:var(--ok)}
+.dc.no .m{background:var(--warn)}
+.dc.no .s{color:var(--warn)}
+.dc.past{opacity:.4}
+.dc.sel{outline:2px solid var(--fg);outline-offset:1px}
+.dc.top3 .s{text-decoration:underline;text-decoration-color:var(--brass);text-underline-offset:3px}
+.dc.blank{visibility:hidden}
+.det{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:8px;font-size:14px;line-height:1.5}
+.det .dt{font-family:var(--display);font-size:24px;line-height:1.15}
+.det .r{color:var(--muted)}
+.det .r b{color:var(--fg);font-weight:500}
+.legend .lg-g{background:var(--brass-soft);border:1px solid var(--brass)}
+.legend .lg-n{background:var(--warn)}
+</style>
+<meta name="description" content="Tick những gì thấy ở căn nhà, nhập tuổi và hướng nhà. Ra kế hoạch hóa giải theo ưu tiên, từ cách miễn phí tới sửa lớn, giá ước tính Bay Area, cần permit hay HOA không. Tham khảo.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t404/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Hóa Giải Nhà · Ken Lam Tools">
+<meta property="og:description" content="Tick những gì thấy ở căn nhà, nhập tuổi và hướng nhà. Ra kế hoạch hóa giải theo ưu tiên, từ cách miễn phí tới sửa lớn, giá ước tính Bay Area, cần permit hay HOA không. Tham khảo.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t404/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+<style>
+/* ===== Riêng T200: checklist nhóm, kế hoạch ===== */
+.step-h{font-family:var(--display);font-weight:400;font-size:26px;margin:0;line-height:1.15}
+.exban{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:var(--brass-soft);border:1px dashed var(--brass);border-radius:10px;padding:10px 12px;font-size:14px}
+.exban button{border:1px solid var(--brass);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 11px;border-radius:999px;cursor:pointer}
+.seg.wrap4{flex-wrap:wrap}
+.seg.wrap4 button{flex:1 1 45%;font-size:14px;padding:10px 6px}
+.linkline{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.grp{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.grp+.grp{margin-top:10px}
+.grp summary{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;font-weight:500;list-style:none}
+.grp summary::-webkit-details-marker{display:none}
+.grp summary::after{content:'▾';color:var(--muted);font-size:12px;margin-left:4px;transition:transform .15s}
+.grp[open] summary::after{transform:rotate(180deg)}
+.grp summary > span:first-child{flex:1;min-width:0}
+.opts{display:grid;border-top:1px solid var(--line)}
+.opt{display:grid;grid-template-columns:24px minmax(0,1fr);gap:10px;padding:11px 16px;border-bottom:1px solid var(--line);cursor:pointer;align-items:start}
+.opt:last-child{border-bottom:0}
+.opt input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--brass)}
+.opt b{font-weight:500;font-size:15px;display:block;line-height:1.35}
+.opt small{display:block;color:var(--muted);font-size:13px;line-height:1.4;margin-top:2px}
+.opt:has(input:checked){background:var(--brass-soft)}
+.picked{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}
+.picked .pk{color:var(--muted)}
+.pchip{border:1px solid var(--brass);background:var(--brass-soft);color:var(--fg);font:inherit;font-size:12.5px;padding:4px 10px;border-radius:999px;cursor:pointer;text-align:left;max-width:100%}
+.verdict{font-family:var(--display);font-size:30px;line-height:1.15;margin:4px 0 0}
+.verdict.ok{color:var(--ok)}
+.verdict.no{color:var(--warn)}
+.tiers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tc{border:1px solid var(--line);border-radius:10px;padding:10px 8px;display:grid;gap:2px;text-align:center}
+.tc .n{font-family:var(--display);font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
+.tc .l{font-size:12px;color:var(--muted);line-height:1.3}
+.tc.p1 .n{color:var(--warn)}
+.tc.p2 .n{color:var(--brass)}
+.tc.p3 .n{color:var(--ok)}
+.plus{font-size:14px;margin:0;line-height:1.5;border-left:2px solid var(--ok);padding:2px 0 2px 12px}
+.plan{display:grid;gap:12px}
+.pi{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:8px;background:var(--bg)}
+.pi.isdone{opacity:.6}
+.pi.isdone h3{text-decoration:line-through;text-decoration-color:var(--muted)}
+.ph{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.ph h3{font-size:16px;font-weight:600;margin:0;line-height:1.35;min-width:0}
+.dn{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted);white-space:nowrap;cursor:pointer;flex:none;border:1px solid var(--line);border-radius:999px;padding:4px 10px 4px 8px}
+.dn input{width:16px;height:16px;margin:0;accent-color:var(--ok)}
+.why{margin:0;font-size:14px;color:var(--muted);line-height:1.5}
+.why b{color:var(--fg);font-weight:500}
+.rms{list-style:none;margin:0;padding:0;display:grid;gap:0;border-top:1px solid var(--line)}
+.rm{padding:9px 0;border-bottom:1px solid var(--line);display:grid;gap:4px}
+.rm.dim .rt{color:var(--muted)}
+.rh{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.tier{font-size:12px;font-weight:600;letter-spacing:.03em}
+.tier.t1{color:var(--ok)}
+.tier.t2{color:var(--brass)}
+.tier.t3,.tier.t4{color:var(--warn)}
+.cost{font-size:15px;font-weight:500;font-variant-numeric:tabular-nums;text-align:right}
+.cost small{font-size:11px;font-weight:400;color:var(--muted)}
+.rt{font-size:14px;line-height:1.45}
+.tags{display:flex;flex-wrap:wrap;gap:5px}
+.tag{font-size:11.5px;line-height:1.3;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);text-decoration:none}
+.tag.k-logic{color:var(--ok);border-color:var(--ok)}
+.tag.k-pt{color:var(--brass);border-color:var(--brass)}
+.tag.k-dg{border-style:dashed}
+.tag.t-p,.tag.t-h,.tag.t-r{color:var(--warn);border-color:var(--warn)}
+.dis{margin:0;font-size:13px;line-height:1.45;color:var(--muted);background:var(--brass-soft);border-radius:8px;padding:8px 10px}
+.dis b{color:var(--fg);font-weight:500}
+.more{margin:0;font-size:13px}
+.more a{color:var(--brass);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">House remedies: what to fix first, and the cost</h1>
+    <p class="sub" data-i="sub">Enter your birth date and facing direction, then tick what you see in the house. Get a plan by priority, from free fixes to paid ones, with Bay Area cost estimates. For reference.</p>
+  </header>
+
+  <div class="exban hide" id="exBan"><span data-i="ex">Example — change it to match your home.</span><button type="button" id="exClear" data-i="ex_clear">Clear example, start fresh</button></div>
+
+  <section class="inputs" aria-label="Step 1">
+    <h2 class="step-h" data-i="s1">Step 1 · Who lives here, which way it faces</h2>
+    <p class="hint" data-i="s1s">Optional, but it lets the tool also check Bát trạch, flying stars and the move-in year.</p>
+    <div class="row2">
+      <div class="field">
+        <label for="b1"><span data-i="l_b1">Head of household birth date</span> <small data-i="l_b1s">(main earner)</small></label>
+        <div class="ctl"><input id="b1" type="date" min="1930-01-30" max="2030-12-31"></div>
+      </div>
+      <div class="field">
+        <label><span data-i="l_g">Gender</span></label>
+        <div class="seg" role="group"><button type="button" id="g1m" data-i="g_m">Male</button><button type="button" id="g1f" data-i="g_f">Female</button></div>
+      </div>
+    </div>
+    <p class="hint" id="h1hint"></p>
+    <button type="button" class="linkbtn" id="twoBtn">+ Add a second person (spouse)</button>
+    <div id="p2box" class="hide" style="display:grid;gap:6px">
+      <div class="row2">
+        <div class="field">
+          <label for="b2"><span data-i="l_b2">Second person birth date</span></label>
+          <div class="ctl"><input id="b2" type="date" min="1930-01-30" max="2030-12-31"></div>
+        </div>
+        <div class="field">
+          <label><span data-i="l_g">Gender</span></label>
+          <div class="seg" role="group"><button type="button" id="g2m" data-i="g_m">Male</button><button type="button" id="g2f" data-i="g_f">Female</button></div>
+        </div>
+      </div>
+      <p class="hint" id="h2hint"></p>
+    </div>
+
+    <div class="field">
+      <label><span data-i="l_face">Facing direction</span> <small data-i="l_face_s">(stand inside the front door, look out)</small></label>
+      <div class="seg" role="group"><button type="button" id="mDeg" data-i="m_deg">Degrees</button><button type="button" id="mDir" data-i="m_dir">8 directions</button></div>
+    </div>
+    <div id="degBox" style="display:grid;gap:8px">
+      <div class="row2">
+        <div class="field"><div class="ctl"><input id="deg" type="number" inputmode="decimal" min="0" max="360" step="0.5" placeholder="180" aria-label="Degrees"><span class="post">°</span></div></div>
+        <div class="field"><div class="seg" role="group"><button type="button" id="sMag" data-i="src_mag">Compass</button><button type="button" id="sTrue" data-i="src_true">Map</button></div></div>
+      </div>
+      <p class="hint" id="srcHint"></p>
+    </div>
+    <div id="dirBox" class="hide"><div class="field"><div class="ctl"><select id="dir" aria-label="Direction"></select><span class="chev">▾</span></div></div></div>
+    <div class="linkline"><a class="linkbtn" id="measure" href="/t406/" style="text-decoration:none" data-i="measure">Measure with your phone</a></div>
+    <p class="hint" id="faceHint"></p>
+
+    <div class="row2">
+      <div class="field">
+        <label for="my"><span data-i="l_my">Move-in year</span></label>
+        <div class="ctl"><input id="my" type="number" inputmode="numeric" min="1930" max="2043"></div>
+      </div>
+      <div class="field">
+        <label><span data-i="l_hoa">Is there an HOA?</span></label>
+        <div class="seg" role="group"><button type="button" id="hY" data-i="hoa_y">Yes</button><button type="button" id="hN" data-i="hoa_n">No</button></div>
+      </div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_role">You are</span></label>
+      <div class="seg wrap4" role="group"><button type="button" id="rBuy" data-i="r_buy">Looking to buy</button><button type="button" id="rLive" data-i="r_live">Bought, living here</button><button type="button" id="rSell" data-i="r_sell">Selling</button><button type="button" id="rRent" data-i="r_rent">Renting</button></div>
+    </div>
+    <div class="field">
+      <label for="rep"><span data-i="l_rep">Remodeling a side this year?</span> <small data-i="l_rep_s">(optional)</small></label>
+      <div class="ctl"><select id="rep"></select><span class="chev">▾</span></div>
+    </div>
+  </section>
+
+  <section class="inputs" aria-label="Step 2">
+    <h2 class="step-h" data-i="s2">Step 2 · Tick what you see</h2>
+    <p class="hint" data-i="s2s">Tap a group to open it. Tick what applies; the plan updates right below.</p>
+    <div id="chk"></div>
+    <div class="picked" id="picked"></div>
+    <button type="button" class="linkbtn" id="resetTicks" data-i="reset">Untick all</button>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_k">Things to do</div>
+      <div class="v"><span id="rN">0</span> <small id="rUnit">items</small></div>
+      <p class="verdict ok" id="verdict"></p>
+      <div class="of" id="verdictS"></div>
+    </div>
+    <div class="tiers" id="tiers"></div>
+    <div class="lines" id="tot"></div>
+    <div class="note" data-i="cost_note">Costs are Bay Area estimates.</div>
+    <div class="note hide" id="rentNote" data-i="rent_note"></div>
+    <div class="note hide" id="hoaNote" data-i="hoa_note"></div>
+    <div id="autoBox" class="hide" style="display:grid;gap:8px"><div id="auto" style="display:grid;gap:8px"></div></div>
+  </section>
+
+  <section class="panel" aria-label="Plan">
+    <h2 data-i="plan_h">Remedy plan</h2>
+    <div class="prog" id="prog"></div>
+    <p class="hint" data-i="legend"></p>
+    <div class="note hide" id="objNote" data-i="dis_obj"></div>
+    <div class="plan" id="plan"></div>
+  </section>
+
+  <section class="panel" aria-label="Role">
+    <h2 data-i="role_h">For your situation</h2>
+    <p class="myth" id="roleTxt" style="border-left-color:var(--brass)"></p>
+  </section>
+
+  <section class="panel" aria-label="Myths">
+    <h2 data-i="myth_h">Common mistakes</h2>
+    <div id="myths" style="display:grid;gap:10px"></div>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="ns_h">Next steps</h2>
+    <ol class="steps">
+      <li><span><span data-i="ns1"></span><small><a href="/t406/" data-i="ns1l">Tool T208</a></small></span></li>
+      <li><span><span data-i="ns2"></span><small><a href="/t413/" data-i="ns2l">Tool T201</a></small></span></li>
+      <li><span><span data-i="ns3"></span><small><a href="/t412/" data-i="ns3l">Tool T202</a></small></span></li>
+      <li><span><span data-i="ns4"></span><small><a href="/t408/" data-i="ns4l">Tool T206</a></small></span></li>
+      <li><span><span data-i="ns5"></span><small><a href="/t42/" data-i="ns5l">Tool T42</a></small></span></li>
+      <li><span><span data-i="ns6"></span><small><a href="/t70/" data-i="ns6l">Tool T70</a></small></span></li>
+    </ol>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the plan</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this plan to yourself</h2>
+    <p data-i="f_sub">Ken can send the plan back with contractor names if you need them. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#hoa-giai-nha" target="_blank" rel="noopener" data-i="ft_lib">House remedies</a> · <a href="https://kenlamrealty.com/library#video-phong-thuy" target="_blank" rel="noopener" data-i="ft_vid">Real estate video</a></span>
+    <span data-i="ft_est">For reference only.</span>
+    <span class="src"><span data-i="ft_src">Sources:</span>
+      <a href="https://www.masterseanchan.com/feng-shui-myths/" target="_blank" rel="noopener">Master Sean Chan · myths</a> ·
+      <a href="https://masterseanchan.com/blog/what-feng-shui-cure-really-is" target="_blank" rel="noopener">Sean Chan · real cures</a> ·
+      <a href="https://www.masterseanchan.com/fengshui-2026-flying-star-chart/" target="_blank" rel="noopener">Sean Chan · 2026 chart</a> ·
+      <a href="https://www.edgeprop.sg/property-news/protect-value-your-property-feng-shui" target="_blank" rel="noopener">Joey Yap · EdgeProp</a> ·
+      <a href="https://www.fengshuied.com/?p=504" target="_blank" rel="noopener">fengshuied</a> ·
+      <a href="https://www.absolutelyfengshui.com/?p=398" target="_blank" rel="noopener">absolutelyfengshui · 2-5</a> ·
+      <a href="https://www.fengshuiweb.co.uk/advice/flyingstars2024/7star.htm" target="_blank" rel="noopener">fengshuiweb · star 7</a> ·
+      <a href="https://thesun.my/style-life/feature/using-the-eight-mansions-system-in-practice-IA882813" target="_blank" rel="noopener">The Sun · Bát trạch</a> ·
+      <a href="https://thuviennhadat.vn/cam-nang-nha-dat/nhung-cach-xu-ly-huong-nha-khong-hop-tuoi-don-gian-ma-hieu-qua-605674.html" target="_blank" rel="noopener">Thư viện nhà đất · hướng nhà</a> ·
+      <a href="https://cafeland.vn/xu-huong/can-bep-hien-dai-co-con-toa-hung-huong-cat-126781.html" target="_blank" rel="noopener">Cafeland · tọa hung</a> ·
+      <a href="https://baodautu.vn/batdongsan/su-dung-guong-bat-quai-can-luu-y-gi-d46611.html" target="_blank" rel="noopener">Báo Đầu Tư · gương bát quái</a> ·
+      <a href="https://vnexpress.net/bi-hai-xem-tuoi-lam-nha-4557459.html" target="_blank" rel="noopener">VnExpress · xem tuổi làm nhà</a> ·
+      <a href="https://vnexpress.net/du-bao-van-khi-nam-binh-ngo-2026-5008167.html" target="_blank" rel="noopener">VnExpress · 2026</a> ·
+      <a href="https://wiki.batdongsan.com.vn/wiki/sua-nha-co-can-xem-tuoi-khong-790910" target="_blank" rel="noopener">Batdongsan · sửa nhà xem tuổi</a> ·
+      <a href="https://vtcnews.vn/the-nao-la-muon-tuoi-lam-nha-ar910673.html" target="_blank" rel="noopener">VTC · mượn tuổi</a> ·
+      <a href="https://www.homewyse.com/services/cost_to_install_pocket_door.html" target="_blank" rel="noopener">Homewyse · costs</a> ·
+      <a href="https://www.angi.com/articles/mirror-installation-cost.htm" target="_blank" rel="noopener">Angi · costs</a> ·
+      <a href="https://homegrail.com/how-much-does-it-cost-to-move-a-toilet/" target="_blank" rel="noopener">HomeGrail · move toilet</a> ·
+      <a href="https://www.sanjoseca.gov/businesses/development-services-permit-center/start-your-project/when-is-a-building-permit-required" target="_blank" rel="noopener">San Jose · permits</a> ·
+      <a href="https://california.public.law/codes/civil_code_section_4760" target="_blank" rel="noopener">Civil Code 4760</a> ·
+      <a href="https://www.davis-stirling.com/HOME/Statutes/Civil-Code-4765" target="_blank" rel="noopener">Civil Code 4765</a> ·
+      <a href="https://codes.findlaw.com/ca/civil-code/civ-sect-1940-45/" target="_blank" rel="noopener">Civil Code 1940.45</a> ·
+      <a href="https://law.justia.com/codes/california/code-civ/division-3/part-3/section-1710-2/" target="_blank" rel="noopener">Civil Code 1710.2</a>
+      <span data-i="src_date">(checked 04/11/2026)</span></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== FS CORE BEGIN (build từ /home/claude/fs, 04/11/2026) ===== */
+const TET={1930:130,1931:217,1932:206,1933:126,1934:214,1935:203,1936:124,1937:211,1938:131,1939:219,
+1940:208,1941:127,1942:215,1943:205,1944:125,1945:213,1946:202,1947:122,1948:210,1949:129,
+1950:217,1951:206,1952:127,1953:214,1954:203,1955:124,1956:212,1957:131,1958:218,1959:208,
+1960:128,1961:215,1962:205,1963:125,1964:213,1965:201,1966:121,1967:209,1968:129,1969:216,
+1970:206,1971:127,1972:215,1973:203,1974:123,1975:211,1976:131,1977:218,1978:207,1979:128,
+1980:216,1981:205,1982:125,1983:213,1984:202,1985:121,1986:209,1987:129,1988:217,1989:206,
+1990:127,1991:215,1992:204,1993:123,1994:210,1995:131,1996:219,1997:207,1998:128,1999:216,
+2000:205,2001:124,2002:212,2003:201,2004:122,2005:209,2006:129,2007:217,2008:207,2009:126,
+2010:214,2011:203,2012:123,2013:210,2014:131,2015:219,2016:208,2017:128,2018:216,2019:205,
+2020:125,2021:212,2022:201,2023:122,2024:210,2025:129,2026:217,2027:206,2028:126,2029:213,
+2030:202,2031:123,2032:211,2033:131};
+const TZ=7; // giờ Việt Nam
+function INT(d){return Math.floor(d)}
+function jdFromDate(dd,mm,yy){const a=INT((14-mm)/12),y=yy+4800-a,m=mm+12*a-3;let jd=dd+INT((153*m+2)/5)+365*y+INT(y/4)-INT(y/100)+INT(y/400)-32045;if(jd<2299161)jd=dd+INT((153*m+2)/5)+365*y+INT(y/4)-32083;return jd}
+function jdToDate(jd){let a,b,c;if(jd>2299160){a=jd+32044;b=INT((4*a+3)/146097);c=a-INT((b*146097)/4)}else{b=0;c=jd+32082}const d=INT((4*c+3)/1461),e=c-INT((1461*d)/4),m=INT((5*e+2)/153);return [e-INT((153*m+2)/5)+1,m+3-12*INT(m/10),b*100+d-4800+INT(m/10)]}
+function newMoon(k){const T=k/1236.85,T2=T*T,T3=T2*T,dr=Math.PI/180;let Jd1=2415020.75933+29.53058868*k+0.0001178*T2-0.000000155*T3;Jd1+=0.00033*Math.sin((166.56+132.87*T-0.009173*T2)*dr);const M=359.2242+29.10535608*k-0.0000333*T2-0.00000347*T3,Mpr=306.0253+385.81691806*k+0.0107306*T2+0.00001236*T3,F=21.2964+390.67050646*k-0.0016528*T2-0.00000239*T3;let C1=(0.1734-0.000393*T)*Math.sin(M*dr)+0.0021*Math.sin(2*dr*M);C1=C1-0.4068*Math.sin(Mpr*dr)+0.0161*Math.sin(dr*2*Mpr);C1=C1-0.0004*Math.sin(dr*3*Mpr);C1=C1+0.0104*Math.sin(dr*2*F)-0.0051*Math.sin(dr*(M+Mpr));C1=C1-0.0074*Math.sin(dr*(M-Mpr))+0.0004*Math.sin(dr*(2*F+M));C1=C1-0.0004*Math.sin(dr*(2*F-M))-0.0006*Math.sin(dr*(2*F+Mpr));C1=C1+0.0010*Math.sin(dr*(2*F-Mpr))+0.0005*Math.sin(dr*(2*Mpr+M));const deltat=T<-11?0.001+0.000839*T+0.0002261*T2-0.00000845*T3-0.000000081*T*T3:-0.000278+0.000265*T+0.000262*T2;return Jd1+C1-deltat}
+function sunLong(jdn){const T=(jdn-2451545.0)/36525,T2=T*T,dr=Math.PI/180,M=357.52910+35999.05030*T-0.0001559*T2-0.00000048*T*T2,L0=280.46645+36000.76983*T+0.0003032*T2;let DL=(1.914600-0.004817*T-0.000014*T2)*Math.sin(dr*M);DL+=(0.019993-0.000101*T)*Math.sin(dr*2*M)+0.000290*Math.sin(dr*3*M);let L=(L0+DL)*dr;L=L-Math.PI*2*INT(L/(Math.PI*2));return L}
+function getNewMoonDay(k){return INT(newMoon(k)+0.5+TZ/24)}
+function getSunLongitude(d){return INT(sunLong(d-0.5-TZ/24)/Math.PI*6)}
+function getLunarMonth11(yy){const off=jdFromDate(31,12,yy)-2415021,k=INT(off/29.530588853);let nm=getNewMoonDay(k);if(getSunLongitude(nm)>=9)nm=getNewMoonDay(k-1);return nm}
+function getLeapMonthOffset(a11){const k=INT((a11-2415021.076998695)/29.530588853+0.5);let last,i=1,arc=getSunLongitude(getNewMoonDay(k+i));do{last=arc;i++;arc=getSunLongitude(getNewMoonDay(k+i))}while(arc!=last&&i<14);return i-1}
+/* trả {d,m,y,leap,jd} */
+function solar2lunar(dd,mm,yy){const dayNumber=jdFromDate(dd,mm,yy),k=INT((dayNumber-2415021.076998695)/29.530588853);let monthStart=getNewMoonDay(k+1);if(monthStart>dayNumber)monthStart=getNewMoonDay(k);let a11=getLunarMonth11(yy),b11=a11,lunarYear;if(a11>=monthStart){lunarYear=yy;a11=getLunarMonth11(yy-1)}else{lunarYear=yy+1;b11=getLunarMonth11(yy+1)}const lunarDay=dayNumber-monthStart+1,diff=INT((monthStart-a11)/29);let lunarLeap=0,lunarMonth=diff+11;if(b11-a11>365){const leapMonthDiff=getLeapMonthOffset(a11);if(diff>=leapMonthDiff){lunarMonth=diff+10;if(diff==leapMonthDiff)lunarLeap=1}}if(lunarMonth>12)lunarMonth-=12;if(lunarMonth>=11&&diff<4)lunarYear-=1;return {d:lunarDay,m:lunarMonth,y:lunarYear,leap:lunarLeap,jd:dayNumber}}
+
+
+/* ===== FS CORE — phong thủy / tử vi cho bộ T180–T188 (Ken Lam Realty) =====
+   Một file, chép y chang vào mỗi tool. Sửa luật ở đây rồi build lại.
+   Lịch âm: thuật toán Hồ Ngọc Đức, UTC+7 (giống T40–T44).
+*/
+const CAN=['Giáp','Ất','Bính','Đinh','Mậu','Kỷ','Canh','Tân','Nhâm','Quý'];
+const CHI=['Tý','Sửu','Dần','Mão','Thìn','Tỵ','Ngọ','Mùi','Thân','Dậu','Tuất','Hợi'];
+const CHI_EN=['Rat','Ox','Tiger','Cat','Dragon','Snake','Horse','Goat','Monkey','Rooster','Dog','Pig'];
+const HANH=['kim','moc','thuy','hoa','tho'];
+const HANH_VI={kim:'Kim',moc:'Mộc',thuy:'Thủy',hoa:'Hỏa',tho:'Thổ'};
+const HANH_EN={kim:'Metal',moc:'Wood',thuy:'Water',hoa:'Fire',tho:'Earth'};
+const CAN_HANH=['moc','moc','hoa','hoa','tho','tho','kim','kim','thuy','thuy'];
+const CHI_HANH=['thuy','tho','moc','moc','tho','hoa','hoa','tho','kim','kim','tho','thuy'];
+const SINH={moc:'hoa',hoa:'tho',tho:'kim',kim:'thuy',thuy:'moc'};   // A sinh B
+const KHAC={moc:'tho',tho:'thuy',thuy:'hoa',hoa:'kim',kim:'moc'};   // A khắc B
+const NAP_AM=['Hải Trung Kim','Lư Trung Hỏa','Đại Lâm Mộc','Lộ Bàng Thổ','Kiếm Phong Kim','Sơn Đầu Hỏa','Giản Hạ Thủy','Thành Đầu Thổ','Bạch Lạp Kim','Dương Liễu Mộc',
+ 'Tuyền Trung Thủy','Ốc Thượng Thổ','Tích Lịch Hỏa','Tùng Bách Mộc','Trường Lưu Thủy','Sa Trung Kim','Sơn Hạ Hỏa','Bình Địa Mộc','Bích Thượng Thổ','Kim Bạch Kim',
+ 'Phú Đăng Hỏa','Thiên Hà Thủy','Đại Dịch Thổ','Thoa Xuyến Kim','Tang Đố Mộc','Đại Khê Thủy','Sa Trung Thổ','Thiên Thượng Hỏa','Thạch Lựu Mộc','Đại Hải Thủy'];
+const NAP_HANH=n=>({Kim:'kim',Mộc:'moc',Thủy:'thuy',Hỏa:'hoa',Thổ:'tho'})[n.split(' ').pop()];
+const mod=(a,n)=>((a%n)+n)%n;
+/* chỉ số 60 hoa giáp của (can,chi): 0 = Giáp Tý */
+function jiazi(c,z){for(let i=0;i<60;i++)if(i%10===c&&i%12===z)return i;return -1}
+function napAmCC(c,z){return NAP_AM[Math.floor(jiazi(c,z)/2)]}
+function yCan(y){return mod(y-4,10)} function yChi(y){return mod(y-4,12)}
+function canChiY(y){return CAN[yCan(y)]+' '+CHI[yChi(y)]}
+function napAmY(y){return napAmCC(yCan(y),yChi(y))}
+function tetOf(y){const v=TET[y];return v?{y,m:Math.floor(v/100),d:v%100}:null}
+function lunarYearOf(y,m,d){const t=tetOf(y);if(!t)return null;return (m*100+d)<(t.m*100+t.d)?y-1:y}
+
+/* ---- Âm → dương (Hồ Ngọc Đức) ---- */
+function lunar2solar(lD,lM,lY,leap){let a11,b11;if(lM<11){a11=getLunarMonth11(lY-1);b11=getLunarMonth11(lY)}else{a11=getLunarMonth11(lY);b11=getLunarMonth11(lY+1)}
+ const k=INT(0.5+(a11-2415021.076998695)/29.530588853);let off=lM-11;if(off<0)off+=12;
+ if(b11-a11>365){const lo=getLeapMonthOffset(a11);let lm=lo-2;if(lm<0)lm+=12;if(leap&&lM!=lm)return null;if(leap||off>=lo)off+=1}
+ const ms=getNewMoonDay(k+off);return jdToDate(ms+lD-1)}
+/* tháng âm nào trong năm âm lY là tháng nhuận (0 nếu không) */
+function leapMonthOf(lY){const a11=getLunarMonth11(lY-1),b11=getLunarMonth11(lY);if(b11-a11<=365)return 0;let lm=getLeapMonthOffset(a11)-2;if(lm<=0)lm+=12;return lm}
+
+/* ---- Tiết khí: kinh độ mặt trời chính xác theo thời điểm (độ) ---- */
+function sunDeg(jdUT){/* + aberration & nutation (Meeus) để tiết khí lệch < vài phút; lịch âm vẫn dùng sunLong gốc */const T=(jdUT+69/86400-2451545)/36525,Om=(125.04-1934.136*T)*Math.PI/180;return mod(sunLong(jdUT+69/86400)*180/Math.PI-0.00569-0.00478*Math.sin(Om),360)}
+/* JD (UT, có phần lẻ) lúc mặt trời đạt kinh độ deg, gần thời điểm jdGuess */
+function termJD(deg,jdGuess){let lo=jdGuess-20,hi=jdGuess+20;
+ const f=j=>{let x=mod(sunDeg(j)-deg+180,360)-180;return x};
+ for(let i=0;i<60;i++){const m=(lo+hi)/2;if(f(m)<0)lo=m;else hi=m}return (lo+hi)/2}
+const TIET=['Lập Xuân','Kinh Trập','Thanh Minh','Lập Hạ','Mang Chủng','Tiểu Thử','Lập Thu','Bạch Lộ','Hàn Lộ','Lập Đông','Đại Tuyết','Tiểu Hàn']; // bắt đầu tháng Dần..Sửu
+const KHI=['Vũ Thủy','Xuân Phân','Cốc Vũ','Tiểu Mãn','Hạ Chí','Đại Thử','Xử Thử','Thu Phân','Sương Giáng','Tiểu Tuyết','Đông Chí','Đại Hàn'];
+/* 24 tiết khí của năm dương y: [{name,deg,jd}] theo thứ tự thời gian từ Tiểu Hàn (285°) */
+function solarTerms(y){const out=[];const names=['Tiểu Hàn','Đại Hàn','Lập Xuân','Vũ Thủy','Kinh Trập','Xuân Phân','Thanh Minh','Cốc Vũ','Lập Hạ','Tiểu Mãn','Mang Chủng','Hạ Chí','Tiểu Thử','Đại Thử','Lập Thu','Xử Thử','Bạch Lộ','Thu Phân','Hàn Lộ','Sương Giáng','Lập Đông','Tiểu Tuyết','Đại Tuyết','Đông Chí'];
+ const j0=jdFromDate(6,1,y)-0.5;for(let i=0;i<24;i++){const deg=mod(285+15*i,360);const jd=termJD(deg,j0+i*15.22);out.push({name:names[i],deg,jd,jet:i%2===0})}return out}
+/* JD UT (phần lẻ) của một giờ đồng hồ địa phương, tz = giờ lệch UTC */
+function jdUT(y,m,d,h,mi,tz){return jdFromDate(d,m,y)-0.5+(h+(mi||0)/60-tz)/24}
+/* Ngày dương (theo giờ tz) từ JD UT */
+function dateFromJD(j,tz){const t=j+0.5+tz/24;const day=INT(t);const fr=t-day;const [d,m,y]=jdToDate(day);const mins=Math.round(fr*1440);return {y,m,d,h:INT(mins/60),mi:mins%60}}
+
+/* ---- Tứ trụ ----
+   Trụ năm đổi ở Lập Xuân (315°). Trụ tháng đổi ở mỗi tiết (315°+30k). Trụ ngày theo JD: can=(jd+9)%10, chi=(jd+1)%12.
+   Giờ Tý 23:00–00:59. HOUR23_NEXT=true: 23:00–23:59 tính sang ngày hôm sau (cách phổ biến). */
+let HOUR23_NEXT=true;
+function fourPillars(y,m,d,h,mi,tz){
+ const j=jdUT(y,m,d,h,mi,tz), L=sunDeg(j);
+ const mIdx=INT(mod(L-315,360)/30);                 // 0 = tháng Dần
+ // năm theo Lập Xuân: nếu trước Lập Xuân của năm dương y thì năm y-1
+ const lx=termJD(315,jdFromDate(4,2,y));
+ const Y=j<lx?y-1:y;
+ const yc=yCan(Y), yz=yChi(Y);
+ const mz=mod(mIdx+2,12), mc=mod(((yc%5)*2+2)+mIdx,10);
+ let jd=jdFromDate(d,m,y); if(h===23&&HOUR23_NEXT) jd+=1;
+ const dc=(jd+9)%10, dz=(jd+1)%12;
+ const hz=INT((h+1)/2)%12, hc=mod((dc%5)*2+hz,10);
+ // nếu 23h tính sang hôm sau thì can giờ theo ngày mới (đã cộng jd) — đúng Ngũ Thử Độn
+ return {y:[yc,yz],m:[mc,mz],d:[dc,dz],h:[hc,hz],L,Y,mIdx};
+}
+const ccStr=p=>CAN[p[0]]+' '+CHI[p[1]];
+/* Tàng can: [chính, phụ, dư] — chỉ số CAN */
+const TANG=[[9],[5,9,7],[0,2,4],[1],[4,1,9],[2,4,6],[3,5],[5,3,1],[6,8,4],[7],[4,7,3],[8,0]];
+/* đếm ngũ hành (cách giản lược, theo research): mỗi thiên can 1 điểm; mỗi địa chi 1 điểm chia cho tàng can
+   (1 can: 100%; 2 can: 70/30; 3 can: 60/30/10). Chi tháng (lệnh tháng) nhân 2. */
+const TANG_W={1:[1],2:[0.7,0.3],3:[0.6,0.3,0.1]};
+function countHanh(fp,monthX){const c={kim:0,moc:0,thuy:0,hoa:0,tho:0};const mx=monthX==null?2:monthX;
+ ['y','m','d','h'].forEach(k=>{const [cn,zh]=fp[k];c[CAN_HANH[cn]]+=1;const w=TANG_W[TANG[zh].length],f=k==='m'?mx:1;TANG[zh].forEach((t,i)=>{c[CAN_HANH[t]]+=w[i]*f})});
+ Object.keys(c).forEach(k=>c[k]=+c[k].toFixed(2));return c}
+/* Nhật chủ mạnh/yếu (phù ức giản lược): phe ta = hành nhật chủ + hành sinh nhật chủ; > 50% tổng điểm → thân vượng */
+function dayMaster(fp){const dm=CAN_HANH[fp.d[0]];const c=countHanh(fp);
+ const mom=Object.keys(SINH).find(k=>SINH[k]===dm);
+ const total=Object.values(c).reduce((a,b)=>a+b,0), self=c[dm]+c[mom], other=total-self;
+ const strong=self/total>0.5;
+ const kid=SINH[dm], boss=Object.keys(KHAC).find(k=>KHAC[k]===dm), wealth=KHAC[dm];
+ // thân vượng: dụng Tài, Thực Thương, Quan; thân nhược: dụng Ấn rồi Tỷ
+ const useful=strong?[wealth,kid,boss]:[mom,dm];
+ const avoid=strong?[mom,dm]:[boss,wealth];
+ return {dm,c,self:+self.toFixed(1),other:+other.toFixed(1),pct:Math.round(self/total*100),strong,useful,avoid,mom,kid,boss,wealth,lenh:CHI_HANH[fp.m[1]]};
+}
+
+/* ---- 24 sơn ---- Nhâm 337.5–352.5 ... theo chiều kim đồng hồ. pal = số Lạc Thư, yy = +1 dương / -1 âm (Huyền Không) */
+const SON=['Nhâm','Tý','Quý','Sửu','Cấn','Dần','Giáp','Mão','Ất','Thìn','Tốn','Tỵ','Bính','Ngọ','Đinh','Mùi','Khôn','Thân','Canh','Dậu','Tân','Tuất','Càn','Hợi'];
+const SON_EN=['Ren','Zi','Gui','Chou','Gen','Yin','Jia','Mao','Yi','Chen','Xun','Si','Bing','Wu','Ding','Wei','Kun','Shen','Geng','You','Xin','Xu','Qian','Hai'];
+const PAL_OF_DIR=[1,8,3,4,9,2,7,6];                     // N,NE,E,SE,S,SW,W,NW → Lạc Thư
+const DIR8=['N','NE','E','SE','S','SW','W','NW'];
+const DIR8_VI={N:'Bắc',NE:'Đông Bắc',E:'Đông',SE:'Đông Nam',S:'Nam',SW:'Tây Nam',W:'Tây',NW:'Tây Bắc',C:'Giữa nhà'};
+const DIR_OF_PAL={1:'N',8:'NE',3:'E',4:'SE',9:'S',2:'SW',7:'W',6:'NW',5:'C'};
+/* âm dương theo vị trí trong cung (1 Địa, 2 Thiên, 3 Nhân): cung 1,3,7,9: + - - ; cung 2,4,6,8: - + + */
+function sonYY(pal,pos){const a=[1,3,7,9].includes(pal)?[1,-1,-1]:[-1,1,1];return a[pos]}
+function sonOfDeg(deg){deg=mod(deg,360);const i=mod(INT((deg+22.5)/15),24);return i} // i: index SON, Nhâm bắt đầu ở 337.5
+function sonInfo(i){const d=INT(i/3); /* Nhâm,Tý,Quý = 0 (N) */return {i,name:SON[i],en:SON_EN[i],dir:DIR8[d],pal:PAL_OF_DIR[d],pos:i%3,center:mod(i*15-15,360),yy:sonYY(PAL_OF_DIR[d],i%3)}}
+/* khoảng cách tới ranh giới sơn (độ) — <3 thì cảnh báo kiêm hướng */
+function sonEdge(deg){deg=mod(deg,360);const x=mod(deg+22.5,15);return Math.min(x,15-x)}
+
+/* ---- Huyền Không phi tinh ----
+   Bay thuận: cung có số Lạc Thư k nhận n+(k-5). Bay nghịch: n-(k-5). Kết quả 1..9. */
+const n9=x=>mod(x-1,9)+1;
+function fly(center,fwd){const g={};for(let k=1;k<=9;k++)g[k]=n9(fwd?center+(k-5):center-(k-5));return g}
+/* vận theo năm (dương lịch, tính từ Lập Xuân): vận 1 bắt đầu 1864 */
+function periodOf(y){return mod(INT((y-1864)/20),9)+1}
+function natalChart(period,sitSon){const sit=sonInfo(sitSon), fac=sonInfo(mod(sitSon+12,24));
+ const P=fly(period,true);
+ const mk=(info)=>{const x=P[info.pal];let yy;if(x===5)yy=info.yy;else yy=sonYY(x,info.pos);return {x,fwd:yy>0,g:fly(x,yy>0)}};
+ const M=mk(sit), F=mk(fac);
+ const sp=sit.pal, fp=fac.pal;
+ let type='other';
+ if(M.g[sp]===period&&F.g[fp]===period)type='vsvh';
+ else if(M.g[fp]===period&&F.g[sp]===period)type='tshh';
+ else if(M.g[fp]===period&&F.g[fp]===period)type='stdh';
+ else if(M.g[sp]===period&&F.g[sp]===period)type='stdt';
+ // phục ngâm / phản ngâm: sao 5 nhập trung (sơn hoặc hướng)
+ const fu=[],fan=[];[['m',M],['f',F]].forEach(([k,s])=>{if(s.x===5){(s.fwd?fu:fan).push(k)}});
+ return {period,sit,fac,P,M:M.g,F:F.g,Mfwd:M.fwd,Ffwd:F.fwd,type,fu,fan};
+}
+/* sao năm: 2026 = 1 Bạch nhập trung; mỗi năm lùi 1. Năm tính từ Lập Xuân. */
+function yearStar(y){return n9(1-(y-2026))}
+/* sao tháng: tháng Dần của năm Tý/Ngọ/Mão/Dậu = 8, Thìn/Tuất/Sửu/Mùi = 5, Dần/Thân/Tỵ/Hợi = 2; mỗi tháng lùi 1 */
+function monthStar(y,mIdx){const z=yChi(y);const s=[0,6,3,9].includes(z)?8:([4,10,1,7].includes(z)?5:2);return n9(s-mIdx)}
+const STAR9=[null,'Nhất Bạch','Nhị Hắc','Tam Bích','Tứ Lục','Ngũ Hoàng','Lục Bạch','Thất Xích','Bát Bạch','Cửu Tử'];
+/* hung thần năm: Thái Tuế = chi năm; Tuế Phá đối diện; Tam Sát theo tam hợp (phương đối diện vượng phương) */
+const CHI_DEG=z=>mod(z*30,360);   // Tý 0°, Sửu 30°…
+const CHI_SON=z=>[1,3,5,7,9,11,13,15,17,19,21,23][z];
+function yearShas(y){const z=yChi(y);
+ const tamSat={0:'S',4:'S',8:'S', 2:'N',6:'N',10:'N', 5:'E',9:'E',1:'E', 11:'W',3:'W',7:'W'}[z];
+ const ys=yearStar(y),g=fly(ys,true);
+ const at=n=>DIR_OF_PAL[+Object.keys(g).find(k=>g[k]===n)];
+ return {z,thaiTue:CHI_SON(z),tuePha:CHI_SON(mod(z+6,12)),tamSat,nguHoang:at(5),nhiHac:at(2),center:ys,g};
+}
+
+/* ---- Bát trạch (giống T40) ---- */
+const QUAI_BY_NUM={1:'Kham',2:'Khon',3:'Chan',4:'Ton',6:'Can',7:'Doai',8:'Cang',9:'Ly'};
+const QUAI={Kham:{vi:'Khảm',el:'thuy',g:'E'},Ly:{vi:'Ly',el:'hoa',g:'E'},Chan:{vi:'Chấn',el:'moc',g:'E'},Ton:{vi:'Tốn',el:'moc',g:'E'},
+ Can:{vi:'Càn',el:'kim',g:'W'},Khon:{vi:'Khôn',el:'tho',g:'W'},Cang:{vi:'Cấn',el:'tho',g:'W'},Doai:{vi:'Đoài',el:'kim',g:'W'}};
+const BT_STARS=['sk','ty','dn','pv','hh','ls','nq','tm'];
+const BT_VI={sk:'Sinh Khí',ty:'Thiên Y',dn:'Diên Niên',pv:'Phục Vị',hh:'Họa Hại',ls:'Lục Sát',nq:'Ngũ Quỷ',tm:'Tuyệt Mệnh'};
+const BT={Kham:['SE','E','S','N','W','NW','NE','SW'],Ly:['E','SE','N','S','NE','SW','W','NW'],Chan:['S','N','SE','E','SW','NE','NW','W'],Ton:['N','S','E','SE','NW','W','SW','NE'],
+ Can:['W','NE','SW','NW','SE','N','E','S'],Khon:['NE','W','NW','SW','E','S','SE','N'],Cang:['SW','NW','W','NE','S','E','N','SE'],Doai:['NW','SW','NE','W','N','SE','S','E']};
+function quaiNum(y,g){let q=g==='m'?(11-(y%9))%9:((y%9)+4)%9;if(q===0)q=9;if(q===5)q=g==='m'?2:8;return q}
+function quaiOf(y,g){return QUAI_BY_NUM[quaiNum(y,g)]}
+function goodDirs(q){return BT[q].slice(0,4)}
+function starAt(q,dir){return BT_STARS[BT[q].indexOf(dir)]}
+/* quái của nhà theo hướng TỌA (8 hướng) */
+const HOUSE_QUAI_BY_SIT={N:'Kham',S:'Ly',E:'Chan',SE:'Ton',NW:'Can',SW:'Khon',NE:'Cang',W:'Doai'};
+
+/* ---- tuổi / hợp xung ---- */
+const isTamHop=(a,b)=>a!==b&&a%4===b%4;
+const isLucHop=(a,b)=>(a+b)%12===1;
+const isXung=(a,b)=>mod(a-b,12)===6;
+const isHai=(a,b)=>(a+b)%12===7;                 // lục hại: Tý-Mùi, Sửu-Ngọ, Dần-Tỵ, Mão-Thìn, Thân-Hợi, Dậu-Tuất
+const isHinh=(a,b)=>{const T=[[2,5,8],[1,10,7],[0,3]];return a!==b&&T.some(g=>g.includes(a)&&g.includes(b))};
+const canHop=(a,b)=>mod(a-b,10)===5;              // Giáp-Kỷ, Ất-Canh...
+const canXung=(a,b)=>[[0,6],[1,7],[2,8],[3,9]].some(([x,y])=>(a===x&&b===y)||(a===y&&b===x)); // Giáp-Canh, Ất-Tân, Bính-Nhâm, Đinh-Quý
+function hanhRel(a,b){ // quan hệ hành a với b nhìn từ a
+ if(a===b)return 'same';if(SINH[a]===b)return 'asinhb';if(SINH[b]===a)return 'bsinha';if(KHAC[a]===b)return 'akhacb';return 'bkhaca'}
+
+/* ===== TỬ VI ĐẨU SỐ — an sao cơ bản (14 chính tinh + phụ tinh chính) =====
+   Vị trí cung tính theo chi: 0 = Tý … 11 = Hợi. Lưới 4x4: Tỵ Ngọ Mùi Thân / Thìn . . Dậu / Mão . . Tuất / Dần Sửu Tý Hợi.
+   Nguồn & đối chiếu: xem ghi chú trong tool T182.
+*/
+const CUNG12=['Mệnh','Phụ Mẫu','Phúc Đức','Điền Trạch','Quan Lộc','Nô Bộc','Thiên Di','Tật Ách','Tài Bạch','Tử Tức','Phu Thê','Huynh Đệ'];
+const CUC={thuy:2,moc:3,kim:4,tho:5,hoa:6};
+const CUC_VI={2:'Thủy nhị cục',3:'Mộc tam cục',4:'Kim tứ cục',5:'Thổ ngũ cục',6:'Hỏa lục cục'};
+const CHINH=['Tử Vi','Thiên Cơ','Thái Dương','Vũ Khúc','Thiên Đồng','Liêm Trinh','Thiên Phủ','Thái Âm','Tham Lang','Cự Môn','Thiên Tướng','Thiên Lương','Thất Sát','Phá Quân'];
+/* Tứ hóa theo can năm: [Lộc, Quyền, Khoa, Kỵ] — KEN DUYỆT nếu thầy theo phái khác (Canh, Mậu, Nhâm hay khác nhau) */
+/* Canh: Khoa Thái Âm, Kỵ Thiên Đồng (horos.vn); phái Trình Minh Đức đảo lại. Nhâm Khoa: Tả Phù (đa số). KEN DUYỆT */
+let TU_HOA={0:['Liêm Trinh','Phá Quân','Vũ Khúc','Thái Dương'],1:['Thiên Cơ','Thiên Lương','Tử Vi','Thái Âm'],2:['Thiên Đồng','Thiên Cơ','Văn Xương','Liêm Trinh'],
+ 3:['Thái Âm','Thiên Đồng','Thiên Cơ','Cự Môn'],4:['Tham Lang','Thái Âm','Hữu Bật','Thiên Cơ'],5:['Vũ Khúc','Tham Lang','Thiên Lương','Văn Khúc'],
+ 6:['Thái Dương','Vũ Khúc','Thái Âm','Thiên Đồng'],7:['Cự Môn','Thái Dương','Văn Khúc','Văn Xương'],8:['Thiên Lương','Tử Vi','Tả Phù','Vũ Khúc'],9:['Phá Quân','Cự Môn','Thái Âm','Tham Lang']};
+const LOC_TON=[2,3,5,6,5,6,8,9,11,0];                        // theo can năm
+let KHOI_VIET={0:[1,7],4:[1,7],1:[0,8],5:[0,8],2:[11,9],3:[11,9],6:[6,2],7:[6,2],8:[3,5],9:[3,5]}; // [Khôi, Việt]
+const THIEN_MA=z=>({2:8,6:8,10:8, 8:2,0:2,4:2, 5:11,9:11,1:11, 11:5,3:5,7:5})[z];
+const TRIET=c=>[[8,9],[6,7],[4,5],[2,3],[0,1]][c%5];        // Giáp/Kỷ: Thân Dậu …
+function tuanOf(c,z){const start=mod(z-c,12);return [mod(start+10,12),mod(start+11,12)]} // 2 chi không vong của tuần năm sinh
+/* an Tử Vi: q = số nhỏ nhất để q*cục ≥ ngày; r = q*cục − ngày; từ Dần đi thuận q−1 cung, r chẵn thì đi thuận r, r lẻ thì nghịch r */
+function tuViPos(cuc,day){let q=Math.ceil(day/cuc);const r=q*cuc-day;const base=2+q-1;return mod(r%2===0?base+r:base-r,12)}
+/* lunar: {d,m,y(năm âm), leap}; hour: chi 0..11; gender 'm'|'f'. Tháng nhuận: ngày ≤15 tính tháng đó, >15 tính tháng sau (KEN DUYỆT) */
+function tuviChart(lunar,hour,gender){
+ let m=lunar.m; if(lunar.leap&&lunar.d>15) m=m%12+1;
+ const yc=yCan(lunar.y), yz=yChi(lunar.y);
+ const menh=mod(2+(m-1)-hour,12), than=mod(2+(m-1)+hour,12);
+ const canDan=(yc%5)*2+2; const canOf=z=>mod(canDan+mod(z-2,12),10);
+ const cucHanh=NAP_HANH(napAmCC(canOf(menh),menh)); const cuc=CUC[cucHanh];
+ const P=Array.from({length:12},(_,z)=>({z,can:canOf(z),cung:CUNG12[mod(z-menh,12)],chinh:[],phu:[],hoa:{}}));
+ const put=(z,name,main)=>{P[mod(z,12)][main?'chinh':'phu'].push(name)};
+ const tv=tuViPos(cuc,lunar.d), tp=mod(4-tv,12);
+ [[0,'Tử Vi'],[-1,'Thiên Cơ'],[-3,'Thái Dương'],[-4,'Vũ Khúc'],[-5,'Thiên Đồng'],[-8,'Liêm Trinh']].forEach(([o,n])=>put(tv+o,n,1));
+ [[0,'Thiên Phủ'],[1,'Thái Âm'],[2,'Tham Lang'],[3,'Cự Môn'],[4,'Thiên Tướng'],[5,'Thiên Lương'],[6,'Thất Sát'],[10,'Phá Quân']].forEach(([o,n])=>put(tp+o,n,1));
+ const lt=LOC_TON[yc]; put(lt,'Lộc Tồn'); put(lt+1,'Kình Dương'); put(lt-1,'Đà La');
+ put(4+(m-1),'Tả Phù'); put(10-(m-1),'Hữu Bật');
+ put(10-hour,'Văn Xương'); put(4+hour,'Văn Khúc');
+ put(11+hour,'Địa Kiếp'); put(11-hour,'Địa Không');
+ const kv=KHOI_VIET[yc]; put(kv[0],'Thiên Khôi'); put(kv[1],'Thiên Việt');
+ put(THIEN_MA(yz),'Thiên Mã');
+ // Hỏa/Linh (tuvisonkhiem): điểm khởi giờ Tý theo nhóm chi năm; dương nam/âm nữ: Hỏa thuận, Linh nghịch; ngược lại đảo
+ const HL={2:[1,3],6:[1,3],10:[1,3], 8:[2,10],0:[2,10],4:[2,10], 5:[3,10],9:[3,10],1:[3,10], 11:[9,10],3:[9,10],7:[9,10]}[yz];
+ const hlFwd=((yc%2===0)&&gender==='m')||((yc%2===1)&&gender==='f');
+ put(HL[0]+(hlFwd?hour:-hour),'Hỏa Tinh'); put(HL[1]+(hlFwd?-hour:hour),'Linh Tinh');
+ const tr=TRIET(yc), tu=tuanOf(yc,yz);
+ const where=n=>P.find(p=>p.chinh.includes(n)||p.phu.includes(n));
+ TU_HOA[yc].forEach((n,i)=>{const p=where(n);if(p)p.hoa[n]=['Lộc','Quyền','Khoa','Kỵ'][i]});
+ const yangYear=yc%2===0, fwd=(yangYear&&gender==='m')||(!yangYear&&gender==='f');
+ // đại vận: cung Mệnh bắt đầu ở tuổi = số cục
+ const daiVan=P.map(p=>{const k=fwd?mod(p.z-menh,12):mod(menh-p.z,12);return {z:p.z,from:cuc+10*k,to:cuc+10*k+9}});
+ // tiểu hạn: tuổi 1 ở cung theo nhóm chi năm; nam thuận, nữ nghịch
+ const thStart={2:4,6:4,10:4, 8:10,0:10,4:10, 5:7,9:7,1:7, 11:1,3:1,7:1}[yz];
+ const tieuHan=age=>mod(gender==='m'?thStart+(age-1):thStart-(age-1),12);
+ return {menh,than,cuc,cucHanh,tv,tp,P,daiVan,tieuHan,fwd,yc,yz,triet:tr,tuan:tu,m};
+}
+
+/* ===== LỊCH NGÀY + SAO HẠN (nguồn: /research/battu_saohan_lich.md, tra 04/11/2026) ===== */
+const STAR12=['Thanh Long','Minh Đường','Thiên Hình','Chu Tước','Kim Quỹ','Kim Đường','Bạch Hổ','Ngọc Đường','Thiên Lao','Huyền Vũ','Tư Mệnh','Câu Trận'];
+const HD12=[1,1,0,0,1,1,0,1,0,0,1,0];
+const GIO_HD=['110100101100','001101001011','110011010010','101100110100','001011001101','010010110011'];
+function thanNgay(lm,dz){return (dz-((lm-1)%6)*2+12)%12}            // theo tháng âm (ngaydep)
+function goodHours(dz){const s=GIO_HD[dz%6],r=[];for(let i=0;i<12;i++)if(s[i]==='1')r.push(i);return r}
+const TRUC=['Kiến','Trừ','Mãn','Bình','Định','Chấp','Phá','Nguy','Thành','Thâu','Khai','Bế'];
+/* việc → [nên, kỵ] theo trực */
+const TRUC_VIEC={ky:[['Định','Thành','Chấp','Thâu','Khai'],['Phá','Nguy','Trừ','Bế']],
+ dongtho:[['Thành','Khai','Định'],['Kiến','Phá','Nguy','Bế']],
+ nhaptrach:[['Thành','Định','Khai','Mãn'],['Phá','Chấp','Nguy']],
+ cuoi:[['Định','Thành','Khai','Chấp'],['Phá','Trừ','Bình','Nguy','Bế']]};
+const TU28=['Giác','Cang','Đê','Phòng','Tâm','Vĩ','Cơ','Đẩu','Ngưu','Nữ','Hư','Nguy','Thất','Bích','Khuê','Lâu','Vị','Mão','Tất','Chủy','Sâm','Tỉnh','Quỷ','Liễu','Tinh','Trương','Dực','Chẩn'];
+const TU28_TOT=['Giác','Phòng','Vĩ','Cơ','Đẩu','Thất','Bích','Lâu','Vị','Tất','Sâm','Tỉnh','Dực','Chẩn']; // Khuê: nửa tốt
+const TAM_NUONG=[3,7,13,18,22,27], NGUYET_KY=[5,14,23];
+const DUONG_CONG=[[1,13],[2,12],[3,9],[4,7],[5,5],[6,3],[7,8],[7,29],[8,27],[9,25],[10,23],[11,21],[12,19]];
+const SAT_CHU=[5,0,7,3,8,10,11,1,6,9,2,4];                        // chi ngày Sát Chủ theo tháng âm 1..12
+const THO_TU=[[2,10],[8,4],[7,11],[3,5],[4,0],[2,6],[1,1],[9,7],[0,2],[4,8],[7,3],[7,9]]; // [can,chi] theo tháng âm — 1 nguồn, KEN DUYỆT
+/* thông tin 1 ngày dương */
+function dayInfo(y,m,d){const l=solar2lunar(d,m,y), jd=l.jd, dc=(jd+9)%10, dz=(jd+1)%12;
+ const L=sunDeg(jdFromDate(d,m,y)-0.5+(12-7)/24);                   // trưa giờ VN
+ const mz=mod(INT(mod(L-315,360)/30)+2,12);                          // chi tháng theo tiết
+ const lyc=yCan(l.y), lmc=mod((lyc%5)*2+2+(l.m-1),10), lmz=mod(l.m+1,12); // can chi tháng âm (lịch Việt)
+ const th=thanNgay(l.m,dz), truc=TRUC[mod(dz-mz,12)], tu=TU28[mod(jd+11,28)];
+ const ky=[];if(TAM_NUONG.includes(l.d))ky.push('Tam Nương');if(NGUYET_KY.includes(l.d))ky.push('Nguyệt Kỵ');
+ if(DUONG_CONG.some(([a,b])=>a===l.m&&b===l.d))ky.push('Dương Công Kỵ');
+ if(SAT_CHU[l.m-1]===dz)ky.push('Sát Chủ');const tt=THO_TU[l.m-1];if(tt[0]===dc&&tt[1]===dz)ky.push('Thọ Tử');
+ return {y,m,d,l,jd,dc,dz,lyc,lmc,lmz,tietZ:mz,than:STAR12[th],hd:HD12[th]===1,truc,tu,tuTot:TU28_TOT.includes(tu)?1:(tu==='Khuê'?0:-1),ky,hours:goodHours(dz),wd:new Date(Date.UTC(y,m-1,d)).getUTCDay()};}
+/* chấm 1 việc: 'good' | 'mid' | 'no' */
+function rateViec(info,viec,pz){const [nen,kyT]=TRUC_VIEC[viec];
+ if(info.ky.length||kyT.includes(info.truc)||(pz!=null&&isXung(pz,info.dz)))return 'no';
+ let s=0;if(info.hd)s++;if(nen.includes(info.truc))s++;if(info.tuTot===1)s++;
+ return s>=2?'good':'mid'}
+
+/* sao chiếu mệnh & hạn — tuổi âm a = năm xem − năm sinh âm + 1 */
+const SAO9_NAM=['La Hầu','Thổ Tú','Thủy Diệu','Thái Bạch','Thái Dương','Vân Hán','Kế Đô','Thái Âm','Mộc Đức'];
+const SAO9_NU=['Kế Đô','Vân Hán','Mộc Đức','Thái Âm','Thổ Tú','La Hầu','Thái Dương','Thái Bạch','Thủy Diệu'];
+const HAN8_NAM=['Diêm Vương','Huỳnh Tuyền','Tam Kheo','Ngũ Mộ','Thiên Tinh','Toán Tận','Thiên La','Địa Võng'];
+const HAN8_NU=['Thiên La','Toán Tận','Thiên Tinh','Ngũ Mộ','Tam Kheo','Huỳnh Tuyền','Diêm Vương','Địa Võng'];
+function saoHan(lunarBirthYear,viewYear,g){const a=viewYear-lunarBirthYear+1;
+ const sao=(g==='m'?SAO9_NAM:SAO9_NU)[mod(a-10,9)];const k=mod(a-INT(a/10),8);const han=(g==='m'?HAN8_NAM:HAN8_NU)[k];return {a,sao,han}}
+/* tính chất & cúng (dân gian) */
+const SAO_INFO={'La Hầu':{t:'xau',day:8,hr:'21–23h',dir:'Bắc',den:9,mau:'Vàng'},'Kế Đô':{t:'xau',day:18,hr:'13–15h',dir:'Tây',den:21,mau:'Vàng'},
+ 'Thái Bạch':{t:'xau',day:15,hr:'19–21h',dir:'Tây',den:8,mau:'Trắng'},'Vân Hán':{t:'trungxau',day:29,hr:'11–13h',dir:'Nam',den:15,mau:'Đỏ'},
+ 'Thổ Tú':{t:'trung',day:19,hr:'21–23h',dir:'Tây',den:5,mau:'Vàng'},'Thủy Diệu':{t:'trungtot',day:21,hr:'21–23h',dir:'Bắc',den:7,mau:'Đen'},
+ 'Thái Dương':{t:'tot',day:27,hr:'21–23h (có nơi 11–13h)',dir:'Đông',den:12,mau:'Đỏ/Vàng'},'Thái Âm':{t:'tot',day:26,hr:'19–21h',dir:'Tây',den:7,mau:'Vàng'},
+ 'Mộc Đức':{t:'tot',day:25,hr:'19–21h',dir:'Đông',den:20,mau:'Xanh'}};
+/* ===== FS CORE END ===== */
+
+
+/* ===== T200 — năm dọn vào: CHÉP NGUYÊN luật T41 qua bản chép trong /home/claude/tools/t409/index.html. Sửa ở T41 thì sửa ở đây. ===== */
+/* --- chép từ T41 (giữ y luật) --- */
+function chiIdx(y){return ((y+8)%12+12)%12}
+const KL_BAD={1:'than',3:'the',6:'tu',8:'luc'};
+const HO_NAME=['','Nhất Cát','Nhì Nghi','Tam Địa Sát','Tứ Tấn Tài','Ngũ Thọ Tử','Lục Hoang Ốc'];
+const HO_BAD=[3,5,6];
+// chi của người → 3 chi của năm Tam Tai (Tý=0 … Hợi=11)
+const TT_GROUPS=[[[8,0,4],[2,3,4]],[[2,6,10],[8,9,10]],[[11,3,7],[5,6,7]],[[5,9,1],[11,0,1]]];
+function tamTaiYears(chi){for(const [g,t] of TT_GROUPS) if(g.includes(chi)) return t; return []}
+function hoCung(t){const a=Math.floor(t/10),b=t%10;return ((a+b-1)%6+6)%6+1}
+function evalYear(ly,Y){
+  const t=Y-ly+1; if(t<1) return null;
+  const kl=KL_BAD[t%9]||null, ho=hoCung(t), hoBad=HO_BAD.includes(ho), tt=tamTaiYears(chiIdx(ly)).includes(chiIdx(Y));
+  const n=(kl?1:0)+(hoBad?1:0)+(tt?1:0);
+  return {Y,t,kl,ho,hoBad,tt,n,v:n===0?'ok':(n===1?'mid':'no')};
+}
+/* --- hết phần chép T41 --- */
+
+/* ===== T200 — Hóa giải nhà: dữ liệu (sửa ở đây) =====
+   Catalog 39 lỗi + cách xử lý: /home/claude/research/hoa_giai.json (tra 04/11/2026). Câu chữ rút gọn, giữ ý.
+   Mỗi cách: [tier 1–4, kind logic|pt|dg, mã giá COST, cờ, vi, en]. Cờ: p = cần permit · e = thay đổi bên ngoài (HOA) · r = tháo ra được (người thuê làm được).
+   GIÁ: /home/claude/research/hoa_giai_bayarea.md. nat:1 = giá toàn quốc → nhân BA_LO..BA_HI cho Bay Area.
+     KEN DUYỆT: hệ số 1.2–1.5 là ước tính, không có nguồn. Mục không có nat là giá lẻ / giá thợ San Jose / ước tính (ghi ở src).
+*/
+const BA_LO=1.2, BA_HI=1.5;
+const COST={
+ free:{lo:0,hi:0},
+ pot:{lo:30,hi:150,src:'giá lẻ chậu cây lớn, ước tính'},
+ screen:{lo:60,hi:250,src:'giá lẻ bình phong / kệ đứng, ước tính'},
+ rug:{lo:30,hi:150,src:'giá lẻ thảm, ước tính'},
+ console:{lo:80,hi:300,src:'giá lẻ console / băng ghế, ước tính'},
+ film:{lo:20,hi:80,src:'film dán kính tự làm, ước tính'},
+ co:{lo:25,hi:60,src:'máy báo CO giá lẻ, ước tính'},
+ purifier:{lo:100,hi:300,src:'máy lọc không khí giá lẻ, ước tính'},
+ fountain:{lo:50,hi:300,src:'hòn non bộ / đài nước cắm điện, ước tính'},
+ item:{lo:20,hi:100,src:'đồ phong thủy giá lẻ, ước tính'},
+ hinge:{lo:20,hi:200,src:'bản lề tự đóng + ~1 giờ handyman San Jose $75–$185/giờ'},
+ handy:{lo:150,hi:500,src:'1–3 giờ handyman San Jose, ước tính'},
+ curtain:{lo:140,hi:400,nat:1,src:'https://www.angi.com/articles/blinds-or-curtains.htm'},
+ mirror:{lo:158,hi:486,nat:1,src:'https://www.angi.com/articles/mirror-installation-cost.htm'},
+ hedge:{lo:200,hi:900,nat:1,src:'https://www.angi.com/articles/how-much-hedges-cost.htm (20 ft)'},
+ light:{lo:50,hi:500,nat:1,src:'https://www.fixr.com/costs/outdoor-lighting (mỗi đèn)'},
+ pocket:{lo:1216,hi:1863,nat:1,src:'https://www.homewyse.com/services/cost_to_install_pocket_door.html'},
+ soffit:{lo:480,hi:960,src:'ước tính $40–$80/ft cho xà ~12 ft (khung: homewyse cost_to_frame_soffit)'},
+ gas:{lo:375,hi:1436,nat:1,src:'homewyse cost_to_move_gas_line; angi move gas line (chưa gồm permit)'},
+ toilet:{lo:1000,hi:3500,nat:1,src:'https://homegrail.com/how-much-does-it-cost-to-move-a-toilet/'},
+ consult:{lo:400,hi:1500,nat:1,src:'https://angi.com/articles/how-much-hiring-feng-shui-consultant-cost.htm'},
+ quote:null
+};
+/* nhóm checklist */
+const GROUPS=[['cua','Cửa','Doors'],['trong','Trong nhà','Inside'],['ngoai','Ngoài nhà / lô đất','Outside / lot']];
+/* mục "khó sửa" (bên ngoài, cấu trúc) — dùng cho câu kết "Có vài điểm khó" */
+const HARD=['N01','N06','N07','N11','N12'];
+const R=(t,k,c,f,vi,en)=>({t,k,c,f,vi,en});
+/* [id, nhóm, mức 1 nhẹ | 2 vừa, link, bất đồng, tên vi, tên en, hình vi, hình en, vì sao vi, vì sao en, cách…] */
+const CAT=[
+['N01','ngoai',2,'T42','', 'Đường đâm thẳng vào nhà','Road runs straight at the house (T-junction)',
+ 'Đứng ở cửa nhìn ra, con đường chạy thẳng vô nhà.','Stand at the door: a street runs straight at you.',
+ 'Xe, đèn xe, gió dồn thẳng vô cửa. Cái này có lý do thật.','Cars, headlights and wind aim right at the door. This one has a real-world reason.',
+ [R(1,'pt','free','r','Đi cửa hông hoặc garage nhiều hơn. Cửa chính đóng khi không dùng.','Use the side or garage door more. Keep the front door closed when not in use.'),
+  R(2,'logic','pot','er','Chậu cây lớn, bụi cây giữa đường và cửa. Rèm dày cửa sổ mặt đường.','Big planters or shrubs between street and door. Heavy curtains on street-facing windows.'),
+  R(3,'logic','hedge','e','Hàng rào thấp, bồn hoa, lối đi cong vô cửa (San Jose: rào sân trước tối đa 3 ft).','Low fence, planter beds, a curved walk to the door (San Jose: front-yard fence max 3 ft).'),
+  R(4,'pt','quote','pe','Dời cửa chính sang hông, hoặc đổi hướng lối vào (remodel).','Move the front door to the side or turn the entry (remodel).'),
+  R(2,'dg','item','e','Gương bát quái lồi treo NGOÀI, trên cửa, chĩa ra đường. Chỉ khi bị đâm thẳng thật.','Convex bagua mirror OUTSIDE above the door, facing the street. Only for a true T-junction.')]],
+['N02','ngoai',1,'T42','culdesac','Nhà cuối cul-de-sac (đường cụt)','House at the end of a cul-de-sac',
+ 'Nhà nằm cuối đường cụt, chỗ xe quay đầu.','The house sits where cars turn around.',
+ 'Nhà ở đầu cuối nhận hết luồng xe chạy vô rồi quay ra.','The end lot takes all the traffic that drives in and turns.',
+ [R(1,'logic','free','','Coi đường có chĩa thẳng cửa không. Không chĩa thì bỏ qua.','Check if the street points right at your door. If not, skip it.'),
+  R(2,'logic','pot','er','Cây, bụi chắn tầm nhìn từ đầu đường tới cửa.','Plants that block the view from the street to the door.'),
+  R(3,'logic','quote','e','Lối đi vô cong, lệch. Đường dốc về phía nhà thì lo thoát nước.','A curved, offset walkway. If the street slopes toward you, handle drainage.'),
+  R(4,'pt','quote','pe','Dời cửa chính sang hông.','Move the front door to the side.')]],
+['N03','ngoai',2,'T70','', 'Nhà thấp hơn mặt đường / nằm dưới dốc','House sits below the street / downhill',
+ 'Từ đường đi xuống mới tới cửa.','You walk down from the street to the door.',
+ 'Nước mưa đổ dồn vô nhà. Thật nhất là chuyện thoát nước, ẩm mốc.','Rain runs toward the house. The real issue is drainage and damp.',
+ [R(1,'logic','free','','Hỏi inspector về grading, drainage, dấu nước ở crawl space, garage.','Ask the inspector about grading, drainage, water marks in the crawl space and garage.'),
+  R(2,'logic','light','e','Đèn sáng lối vào, lối đi khô, sạch.','Bright entry light, a dry and clean walkway.'),
+  R(3,'logic','quote','pe','French drain, mương thoát nước, sump pump.','French drain, drainage channel, sump pump.'),
+  R(4,'logic','quote','pe','Regrade sân, tường chắn (retaining wall).','Regrade the yard, add a retaining wall.'),
+  R(2,'dg','item','er','Tượng, linh vật ở cửa (tỳ hưu, quả cầu).','A statue or charm at the door (tỳ hưu, a ball).')]],
+['N04','ngoai',1,'T42','', 'Góc nhọn nhà đối diện chĩa vào cửa','A sharp corner across the street points at the door',
+ 'Góc tường, góc mái nhà bên kia chĩa thẳng vô cửa.','A neighbor’s wall or roof corner aims at your door.',
+ 'Cạnh nhọn chĩa vô cửa, dân gian gọi tiêm sát. Gần và thẳng mới đáng lo.','A sharp edge aims at the door. It matters only when close and straight on.',
+ [R(1,'logic','free','','Coi góc đó có gần và chĩa đúng cửa chính không. Xa hoặc lệch thì nhẹ.','Check if it is close and aimed right at the front door. Far or off-angle is minor.'),
+  R(2,'logic','pot','r','Chậu cây lớn, rèm, film mờ cửa sổ chắn tầm nhìn.','Big planter, curtains or frosted window film to block the view.'),
+  R(3,'logic','hedge','e','Hedge hoặc hàng rào che góc nhọn.','A hedge or fence that hides the corner.'),
+  R(2,'dg','item','e','Gương bát quái treo NGOÀI, chĩa đúng góc nhọn.','Bagua mirror OUTSIDE, aimed at the corner.')]],
+['N05','ngoai',2,'T42','', 'Cột điện / cây lớn ngay trước cửa','Utility pole or big tree right in front of the door',
+ 'Ra khỏi cửa là đụng cột điện hay gốc cây to.','Step out the door and a pole or big trunk is right there.',
+ 'Vật chắn ngay miệng cửa. Cây lớn thì rễ có thể phá móng, ống nước.','Something blocks the doorway. Big tree roots can hit the foundation and pipes.',
+ [R(1,'logic','free','','Đo khoảng cách. Xa hoặc lệch cửa thì nhẹ.','Measure the distance. Far or off to the side is minor.'),
+  R(2,'logic','pot','er','Chậu cây, bụi cây giữa cửa và cột để che.','Planters or shrubs between the door and the pole.'),
+  R(3,'logic','quote','pe','Tỉa cây. Cây đường (street tree) phải xin city.','Trim the tree. A street tree needs a city permit.'),
+  R(4,'logic','quote','pe','Đốn cây trong đất mình (protected tree cần permit) hoặc dời lối vào.','Remove your own tree (protected trees need a permit) or move the entry.'),
+  R(2,'dg','item','e','Gương bát quái, sư tử đồng, thạch anh ở cửa.','Bagua mirror, brass lions or crystals at the door.')]],
+['N06','ngoai',2,'T42','', 'Gần dây / trạm điện cao thế','Near high-voltage lines or a substation',
+ 'Thấy trụ điện cao thế hoặc trạm điện gần nhà.','You can see big power towers or a substation nearby.',
+ 'Lo điện từ trường, tiếng ù, khó bán lại. Không có cách sửa thật.','Worry about EMF, humming and resale. There is no real fix.',
+ [R(1,'logic','free','','Đo khoảng cách, nghe tiếng ù. Tính luôn chuyện bán lại sau này.','Measure the distance, listen for hum. Think about resale.'),
+  R(1,'logic','free','r','Phòng ngủ đặt phía xa đường dây.','Put bedrooms on the far side from the lines.'),
+  R(4,'logic','quote','','Không sửa được. Đây là chuyện giá và có mua hay không.','Cannot be fixed. It is about price and whether to buy.')]],
+['N07','ngoai',2,'T42','', 'Gần nghĩa trang / nhà tang lễ / bệnh viện','Near a cemetery, funeral home or hospital',
+ 'Từ cửa sổ thấy nghĩa trang, hoặc xe cứu thương chạy ngang hoài.','You see a cemetery from a window, or ambulances pass often.',
+ 'Dân gian nói âm khí nặng. Thực tế: ồn, tâm lý, khó bán lại.','Folk belief says heavy yin energy. In practice: noise, mood, resale.',
+ [R(1,'logic','free','r','Phòng ít dùng (kho, giặt) quay về phía đó. Phòng ngủ, bếp ở phía kia.','Put rarely used rooms (storage, laundry) on that side; bedrooms and kitchen on the other.'),
+  R(1,'pt','free','r','Mở cửa đón nắng, đèn sáng, sinh hoạt nhiều.','Let sun in, keep lights on, keep the house lively.'),
+  R(2,'logic','curtain','r','Rèm che cửa sổ nhìn thẳng ra.','Curtains on windows that face it.'),
+  R(3,'logic','hedge','e','Cây cao hoặc hàng rào kín chắn tầm nhìn.','Tall trees or a solid fence to block the view.'),
+  R(2,'dg','item','e','Gương bát quái, kỳ lân, tỳ hưu.','Bagua mirror, qilin or tỳ hưu statues.')]],
+['N08','ngoai',1,'T42','khuyet','Lô đất tam giác / méo','Triangle or odd-shaped lot',
+ 'Lô đất không vuông, có một góc nhọn.','The lot is not square; one corner is sharp.',
+ 'Đất méo bị coi là khó tụ khí. Lô Mỹ hơi méo thường không đáng kể.','Odd lots are said to hold energy poorly. Slightly odd US lots usually do not matter.',
+ [R(1,'logic','free','','Đo phần khuyết. Dưới 1/3 cạnh thì bỏ qua.','Measure the missing part. Under 1/3 of the side, skip it.'),
+  R(2,'pt','pot','e','Trồng cây, bồn hoa ở góc nhọn cho phần dùng vuông lại.','Plants and beds in the sharp corner to square off the used area.'),
+  R(3,'pt','quote','pe','Patio, deck, hàng rào làm góc đất thành khối vuông.','Patio, deck or fence to square the corner.')]],
+['N09','ngoai',1,'T42','', 'Sau nhà trống, không có chỗ dựa','Nothing behind the house (slope, road or open space)',
+ 'Sau lưng nhà là dốc xuống, đường hoặc khoảng trống.','Behind the house is a drop, a road or open land.',
+ 'Phong thủy muốn có “núi tựa lưng”. Ở tract home thường nhẹ.','Feng shui wants “a mountain at your back”. In tract homes it is usually minor.',
+ [R(1,'logic','free','r','Giường, bàn làm việc, sofa kê lưng sát tường đặc.','Back the bed, desk and sofa against solid walls.'),
+  R(2,'pt','hedge','e','Hàng cây cao, hedge dọc ranh sau.','Tall plants or a hedge along the back line.'),
+  R(3,'pt','quote','e','Hàng rào gỗ cao phía sau (San Jose tối đa 7 ft).','A tall wood fence in back (San Jose max 7 ft).')]],
+['N10','ngoai',1,'T42','', 'Nhà đối diện cao, đè trước mặt','A much taller building right in front',
+ 'Nhà bên kia to, cao, che gần hết trời.','The house across is big and tall and blocks the sky.',
+ 'Chủ yếu là thiếu sáng và cảm giác bị ép.','Mostly less light and a boxed-in feeling.',
+ [R(1,'logic','free','r','Mở đèn sáng phòng phía trước.','Keep the front rooms well lit.'),
+  R(2,'logic','curtain','r','Rèm mỏng, cây che tầm nhìn trực diện.','Sheer curtains or plants to soften the view.')]],
+['N11','ngoai',2,'T42','', 'Gần freeway / cầu / đường sắt','Near a freeway, overpass or rail line',
+ 'Nghe xe chạy liên tục, thấy cầu hay đường ray gần nhà.','Constant traffic noise; a bridge or tracks close by.',
+ 'Ồn, bụi, xe nhanh. Thật nhất là chuyện ồn và bụi PM2.5.','Noise, dust, fast traffic. The real issue is noise and PM2.5.',
+ [R(1,'logic','free','r','Phòng ngủ phía xa freeway. Ban đêm đóng cửa sổ mặt đường.','Bedrooms on the far side. Close street-side windows at night.'),
+  R(2,'logic','purifier','r','Rèm dày, máy lọc không khí.','Heavy curtains and an air purifier.'),
+  R(3,'logic','quote','','Cửa sổ kính 2 lớp, cách âm (đổi khung cửa thì cần permit).','Dual-pane windows, soundproofing (changing the frame needs a permit).'),
+  R(4,'logic','quote','pe','Tường cách âm, hàng rào đặc cao.','A sound wall or tall solid fence.')]],
+['N12','ngoai',2,'T42','', 'Nhà ở ngã tư / đường cong quay lưng vào nhà','Corner lot or a road curving away from the house',
+ 'Đường cong mà phần lưng cong chĩa vô nhà, hoặc nhà ở góc ngã tư.','The outside of a curve points at the house, or a busy corner lot.',
+ 'Đường cong ôm nhà là tốt. Cong quay lưng vô nhà bị coi là xấu.','A road hugging the house is good. The outside of a curve aiming at it is not.',
+ [R(2,'logic','pot','e','Cây, bụi chắn phía đường cong chĩa vô.','Plants on the side the curve points at.'),
+  R(3,'logic','hedge','e','Hàng rào, bồn hoa, đá cảnh.','Fence, planter beds, landscape rocks.'),
+  R(2,'dg','fountain','e','Đặt nước, hòn non bộ trước nhà.','A water feature or rock fountain in front.')]],
+['N13','ngoai',1,'T42','', 'Xe chạy / đậu chĩa thẳng cửa chính','Driveway or parked car points at the front door',
+ 'Đầu xe đậu hay lối xe chạy chĩa ngay cửa chính.','The car nose or driveway points right at the front door.',
+ 'Xe lao thẳng về cửa bị coi là sát khí. Ít thầy nhắc.','A car aimed at the door is seen as harsh energy. Few masters mention it.',
+ [R(1,'pt','free','r','Đậu xe lệch, đầu xe không chĩa vô cửa chính.','Park off-center so the car does not aim at the door.'),
+  R(2,'logic','pot','er','Chậu cây hay vách thấp làm vùng đệm.','Planters or a low screen as a buffer.'),
+  R(4,'pt','quote','pe','Dời cửa chính sang bên.','Move the front door to the side.')]],
+['D01','cua',2,'T42','', 'Cửa trước thẳng cửa sau (xuyên tâm)','Front door lines up with the back door',
+ 'Mở cửa chính nhìn xuyên thấy cửa sau / cửa kính sau.','Open the front door and you see straight out the back.',
+ 'Dân gian: tiền vô cửa trước, ra cửa sau. Gần như thầy nào cũng nhắc.','Folk saying: money comes in the front and runs out the back. Almost every school mentions it.',
+ [R(1,'logic','free','r','Dời kệ sách cao, console hay tủ vô giữa đường thẳng 2 cửa. Bàn thấp không đủ.','Move a tall bookcase, console or cabinet into the line between the doors. A low table is not enough.'),
+  R(2,'logic','pot','r','Cây cao cách cửa vài bước, thảm đổi họa tiết, rèm cửa sau khi không dùng.','A tall plant a few steps in, a patterned rug, a curtain on the back door when not in use.'),
+  R(2,'pt','screen','r','Bình phong ngay sau cửa chính.','A folding screen just inside the front door.'),
+  R(3,'logic','quote','p','Vách ngăn bán phần hoặc kệ âm tường tạo foyer.','A half wall or built-in shelf to make a foyer.'),
+  R(4,'pt','quote','pe','Đóng bớt cửa kính trượt sau, hoặc dời cửa sau.','Close off part of the back slider or move the back door.')]],
+['D02','cua',2,'T42','', '3 cửa thẳng hàng','Three doors in a row',
+ 'Cửa chính, cửa phòng, cửa sổ hoặc cửa sau nằm trên 1 đường.','Front door, a room door and a window or back door all line up.',
+ 'Khí chạy thẳng như mũi tên. Càng nhiều cửa càng nặng.','Energy shoots through like an arrow. More doors, stronger effect.',
+ [R(1,'logic','free','r','Đóng cửa phòng ở giữa khi không dùng.','Keep the middle room door closed.'),
+  R(2,'logic','screen','r','Cây cao, rèm, bình phong bẻ đường thẳng.','Tall plant, curtain or screen to break the line.'),
+  R(3,'pt','pocket','p','Bỏ cửa thừa, đổi cửa phòng thành cửa trượt hoặc lệch chỗ.','Remove an extra door, or change a room door to a pocket door or new spot.')]],
+['D03','cua',2,'T42','', 'Cửa chính đối cầu thang','Front door faces the stairs',
+ 'Mở cửa ra là thấy cầu thang ngay trước mặt.','Open the door and the staircase is right in front of you.',
+ 'Nặng khi cầu thang đi xuống ngay cửa, trong khoảng 4 m. Lệch hay xa thì nhẹ.','Strongest when stairs come down right at the door within about 13 ft. Off-angle or far is minor.',
+ [R(1,'logic','free','r','Kê console hay kệ có sẵn ở chân cầu thang làm điểm dừng. Thảm lối vô dừng trước cầu thang.','Put an existing console or shelf at the foot of the stairs as a stop point. End the entry rug before the stairs.'),
+  R(2,'logic','screen','r','Bình phong, kệ cao giữa cửa và chân cầu thang, hoặc cây lớn ở chân cầu thang.','A screen or tall shelf between door and stairs, or a big plant at the bottom step.'),
+  R(3,'logic','quote','p','Vách ngăn bán phần tạo foyer.','A half wall to make a foyer.'),
+  R(4,'pt','quote','p','Khi remodel, xoay 1–2 bậc đầu vuông góc với cửa.','When remodeling, turn the first 1–2 steps sideways.'),
+  R(2,'dg','item','r','Gương bát quái lõm trước cửa để “giữ khí”.','A concave bagua mirror by the door to “hold” energy.')]],
+['D04','cua',2,'T42','', 'Cửa chính / cửa phòng đối cửa WC','Front or bedroom door faces a bathroom door',
+ 'Mở cửa là thấy ngay cửa phòng tắm.','You open the door and see the bathroom door.',
+ 'Mùi và hơi ẩm đi thẳng ra. Lý do vệ sinh, thầy nào cũng đồng ý.','Smell and moisture flow straight out. A hygiene reason everyone agrees on.',
+ [R(1,'logic','free','r','Đóng cửa WC, đậy nắp bồn cầu.','Keep the bathroom door closed and the lid down.'),
+  R(2,'logic','hinge','','Bản lề tự đóng, quạt hút, rèm.','Self-closing hinge, exhaust fan, a curtain.'),
+  R(3,'logic','handy','','Đổi chiều mở cửa WC.','Reverse the bathroom door swing.'),
+  R(3,'logic','pocket','p','Đổi sang cửa trượt / pocket door.','Switch to a pocket door.'),
+  R(4,'logic','quote','p','Dời cửa WC sang vách khác.','Move the bathroom door to another wall.')]],
+['D05','cua',1,'T42','', 'Gương đối diện cửa chính','Mirror facing the front door',
+ 'Vô cửa là thấy mình trong gương.','You walk in and see yourself in a mirror.',
+ 'Dân gian: gương đẩy khí tốt ra ngoài. Gương ở vách bên hông thì được.','Folk belief: the mirror pushes good energy back out. A mirror on a side wall is fine.',
+ [R(1,'pt','free','r','Dời gương sang vách bên hông lối vô.','Move the mirror to a side wall of the entry.'),
+  R(1,'pt','free','r','Không có chỗ thì tháo hoặc che gương.','No other spot? Take it down or cover it.'),
+  R(2,'pt','mirror','','Gương gắn tường: nhờ thợ tháo và gắn chỗ khác.','Wall-mounted mirror: have a handyman move it.')]],
+['D06','cua',1,'T42','', 'Cửa phòng đối cửa phòng','Bedroom doors face each other',
+ 'Hai cửa phòng ngay đối diện nhau trong hành lang.','Two room doors face each other across the hall.',
+ 'Dân gian nói dễ cãi nhau. Thực tế: thiếu riêng tư, ồn. Nhiều thầy coi nhẹ.','Folk belief says more arguments. In practice: less privacy, noise. Many masters call it minor.',
+ [R(1,'logic','free','r','Đóng cửa phòng.','Keep the doors closed.'),
+  R(2,'logic','rug','r','Rèm cửa, thảm giữa hành lang.','A door curtain or a runner in the hall.'),
+  R(3,'logic','handy','','Đổi chiều mở cửa hoặc làm cửa trượt.','Reverse a door swing or use a sliding door.')]],
+['D07','cua',1,'T42','', 'Cửa phòng ngủ đối cửa chính','Bedroom door faces the front door',
+ 'Đứng ở cửa chính nhìn thẳng vô phòng ngủ.','From the front door you see straight into a bedroom.',
+ 'Phòng ngủ cần yên mà mở thẳng ra chỗ đi lại nhiều nhất.','A bedroom needs quiet but opens to the busiest path.',
+ [R(1,'logic','free','r','Đóng cửa phòng ngủ.','Keep the bedroom door closed.'),
+  R(1,'logic','free','r','Đổi phòng đó làm phòng làm việc, ngủ phòng khác.','Use that room as an office and sleep in another.'),
+  R(2,'logic','screen','r','Bình phong hay cây ở lối vô.','A screen or plant in the entry.')]],
+['D08','cua',1,'T42','', 'Mở cửa chính là đụng tường','Front door opens onto a wall',
+ 'Vô cửa là gặp bức tường sát mặt.','You walk in and face a wall right away.',
+ 'Vô nhà thấy chật, khí bị nghẹt.','The entry feels cramped and blocked.',
+ [R(1,'logic','free','r','Treo tranh phong cảnh sáng màu, mở đèn sáng ở tường đó.','Hang a bright landscape picture and light that wall.'),
+  R(2,'logic','console','r','Console nhỏ, cây thấp.','A small console and a low plant.')]],
+['T01','trong',2,'T42','', 'WC ở giữa nhà','Bathroom in the center of the house',
+ 'Phòng tắm nằm ngay tâm căn nhà.','The bathroom sits in the middle of the floor plan.',
+ 'Tâm nhà là “tim” nhà. Cách sửa thật duy nhất là dời WC; còn lại là giữ sạch khô.','The center is the “heart” of the house. The only true fix is moving it; otherwise keep it clean and dry.',
+ [R(1,'logic','free','r','Đóng cửa, đậy nắp, giữ sạch khô mỗi ngày.','Door closed, lid down, clean and dry every day.'),
+  R(2,'logic','pot','r','Đèn sáng, cây nhỏ.','Bright light, a small plant.'),
+  R(3,'logic','handy','','Nâng cấp quạt hút, bản lề tự đóng (đi dây điện mới thì có thể cần permit).','Better exhaust fan, self-closing hinge (new wiring may need a permit).'),
+  R(4,'pt','toilet','p','Dời WC khi remodel.','Move the bathroom during a remodel.')]],
+['T02','trong',1,'T42','', 'Bếp đối diện / chung vách WC','Stove faces or shares a wall with a toilet',
+ 'Đứng nấu nhìn thẳng cửa WC, hoặc bếp và bồn cầu tựa cùng 1 vách.','From the stove you see the bathroom door, or they share a wall.',
+ 'Thủy khắc Hỏa. Thực tế: vệ sinh đồ ăn.','Water clashes with Fire. In practice: food hygiene.',
+ [R(1,'logic','free','r','Đóng cửa WC khi nấu.','Close the bathroom door while cooking.'),
+  R(2,'logic','hinge','','Máy hút mùi tốt, bản lề tự đóng cửa WC.','A good range hood, a self-closing bathroom door.'),
+  R(3,'logic','quote','','Đảo bếp, quầy hoặc bình phong giữa bếp và cửa WC.','An island, counter or screen between stove and bathroom door.'),
+  R(4,'logic','gas','p','Dời bếp hoặc WC khi remodel.','Move the stove or bathroom in a remodel.')]],
+['T03','trong',1,'T42','', 'Bếp nhìn thẳng ra cửa chính','Stove can be seen from the front door',
+ 'Vô cửa là thấy ngay cái bếp.','You walk in and see the stove.',
+ 'Dân gian: tài lộc vô là bị đốt. Không cần bít kín bếp.','Folk belief: wealth walks in and gets burned. No need to wall off the kitchen.',
+ [R(2,'logic','screen','r','Bình phong, kệ, mành tre giữa cửa và bếp.','A screen, shelf or bamboo blind between door and stove.'),
+  R(3,'logic','quote','p','Quầy bar hoặc vách kính mờ bán phần.','A bar counter or half frosted-glass wall.'),
+  R(4,'pt','gas','p','Xoay hoặc dời bếp vuông góc với cửa.','Turn or move the stove off the door line.'),
+  R(2,'dg','item','r','Treo hồ lô, chuông gió ở cửa.','Hang a gourd or wind chime at the door.')]],
+['T04','trong',1,'T42','', 'Bếp kẹp giữa bồn rửa và tủ lạnh','Stove squeezed between sink and fridge',
+ 'Bếp nằm sát bồn rửa một bên, tủ lạnh một bên.','The stove sits tight between the sink and the fridge.',
+ 'Nước kẹp lửa. Bếp Mỹ gần như căn nào cũng vậy, đa phần coi nhẹ.','Water squeezes Fire. Most US kitchens look like this; usually minor.',
+ [R(1,'pt','free','r','Chừa ít nhất 60 cm (2 ft) mặt bếp trống giữa bếp và bồn rửa, tủ lạnh nếu được.','Keep about 2 ft of open counter between stove and sink or fridge if you can.'),
+  R(2,'dg','item','r','Thớt gỗ, cây nhỏ, đồ xanh lá ở giữa (Mộc nối Thủy–Hỏa).','Wood board, small plant or green items between them (Wood links Water and Fire).'),
+  R(3,'pt','gas','p','Remodel thì đổi chỗ bồn rửa hay bếp cho xa ra.','In a remodel, space the sink and stove apart.')]],
+['T05','trong',1,'T42','', 'Bếp dưới xà / dưới cửa sổ / bếp đảo','Stove under a beam, under a window, or on an island',
+ 'Có xà trên đầu người nấu, cửa sổ sau bếp, hoặc bếp nằm trên island.','A beam over the cook, a window behind the stove, or a cooktop on the island.',
+ 'Bếp thiếu chỗ tựa. Bếp island ở Mỹ rất phổ biến, nhiều thầy coi nhẹ.','The stove has no backing. Islands are common in the US; many masters call it minor.',
+ [R(2,'logic','curtain','r','Rèm, mành cửa sổ sau bếp.','A blind on the window behind the stove.'),
+  R(3,'pt','soffit','','Ốp xà, trần giả; quầy cao phía sau bếp đảo.','Box the beam, drop the ceiling; a raised bar behind the island.'),
+  R(4,'pt','gas','p','Dời bếp sát tường.','Move the stove to a wall.'),
+  R(2,'dg','item','','Treo hồ lô, tiền xu dưới xà.','Hang a gourd or coins under the beam.')]],
+['T06','trong',2,'T42','', 'Xà ngang đè giường / bàn / sofa','Beam over the bed, desk or sofa',
+ 'Nằm ngửa nhìn lên thấy xà ngang ngay trên người.','Lying in bed you see a beam right above you.',
+ 'Khối nặng trên đầu làm ngủ không yên. Treo đồ dưới xà còn làm xà nổi hơn.','A heavy beam overhead disturbs sleep. Hanging things under it makes it stand out more.',
+ [R(1,'logic','free','r','Xoay giường, bàn để không nằm ngay dưới xà.','Move the bed or desk so it is not under the beam.'),
+  R(2,'logic','quote','r','Giường có khung 4 cột hoặc màn tạo “trần trong”.','A canopy or four-poster bed to make an inner ceiling.'),
+  R(3,'logic','soffit','','Ốp xà, đóng trần giả (soffit).','Box in the beam or add a soffit.'),
+  R(2,'dg','item','','Treo sáo trúc, hồ lô dưới xà.','Hang bamboo flutes or a gourd under the beam.')]],
+['T07','trong',1,'T42','', 'Giường đối cửa phòng (chân ra cửa)','Bed with feet pointing at the door',
+ 'Nằm xuống, chân chĩa thẳng ra cửa phòng.','Lying down, your feet point straight at the door.',
+ 'Chuyện “thế quan tài” bị thổi phồng. Lo thật là ngủ không yên.','The “coffin position” fear is overblown. The real issue is restless sleep.',
+ [R(1,'logic','free','r','Kê giường chéo cửa: thấy cửa mà không thẳng hàng.','Place the bed so you see the door but are not in line with it.'),
+  R(1,'logic','free','r','Không được thì xoay 90° cho chân hướng tường bên.','If not, turn it 90° so your feet face a side wall.'),
+  R(2,'logic','console','r','Băng ghế, rương cuối giường, footboard cao.','A bench or chest at the foot, or a tall footboard.'),
+  R(1,'logic','free','r','Đóng cửa phòng ban đêm.','Close the door at night.')]],
+['T08','trong',1,'T42','', 'Gương chiếu thẳng vào giường','Mirror reflects the bed',
+ 'Nằm trên giường thấy mình trong gương hay cửa tủ gương.','From the bed you see yourself in a mirror or mirrored closet.',
+ 'Một trong số ít điều có gốc cổ điển. Thực tế: ban đêm thấy bóng dễ giật mình.','One of the few points with classical roots. In practice: reflections startle you at night.',
+ [R(1,'pt','free','r','Dời gương sang chỗ không chiếu giường.','Move the mirror so it does not face the bed.'),
+  R(2,'pt','film','r','Che gương ban đêm hoặc dán film mờ cửa tủ gương.','Cover it at night or put frosted film on the closet mirror.'),
+  R(3,'pt','quote','','Thay cửa tủ gương bằng cửa gỗ.','Replace mirrored closet doors with solid ones.')]],
+['T09','trong',2,'T42','', 'Giường dưới WC tầng trên / đầu giường chung vách WC','Bed under an upstairs toilet or against a bathroom wall',
+ 'Đầu giường tựa vách phòng tắm, hoặc trên lầu là bồn cầu.','The headboard shares a wall with a bathroom, or a toilet is right above.',
+ 'Tiếng xả nước, ống nước, ẩm. Thầy Việt và Tây đều nhắc.','Flushing noise, pipes, damp. Both Vietnamese and Western sources list it.',
+ [R(1,'logic','free','r','Dời giường khỏi chỗ ngay dưới bồn cầu hay vách WC.','Move the bed off that spot or wall.'),
+  R(1,'logic','free','r','Đổi phòng ngủ chính sang phòng khác.','Use another room as the main bedroom.'),
+  R(2,'logic','console','r','Đầu giường dày, kệ sách đệm vách.','A thick headboard or bookcase against the wall.'),
+  R(3,'logic','handy','','Cách âm ống nước.','Soundproof the pipes.')]],
+['T10','trong',1,'T42','', 'Đầu giường dưới cửa sổ','Headboard under a window',
+ 'Đầu giường kê ngay dưới cửa sổ, không có tường tựa.','The bed head sits under a window with no wall behind.',
+ 'Gió lùa, ánh sáng, tiếng ồn. Lý do môi trường là chính.','Drafts, light and noise. Mostly practical reasons.',
+ [R(1,'logic','free','r','Kê đầu giường vô tường đặc.','Put the headboard against a solid wall.'),
+  R(2,'logic','curtain','r','Đầu giường cao dày, rèm dày đóng ban đêm.','A tall headboard and heavy curtains at night.'),
+  R(3,'logic','quote','','Kính 2 lớp, chèn khe gió.','Dual-pane glass and weatherstripping.')]],
+['T11','trong',2,'T70','', 'Phòng ngủ trên garage','Bedroom over the garage',
+ 'Phòng ngủ nằm ngay trên chỗ đậu xe.','A bedroom sits right above where the car parks.',
+ 'Không có trong sách cổ, nhưng chuyện khói xe CO, hóa chất là thật.','Not in the classics, but car exhaust (CO) and chemicals are real.',
+ [R(1,'logic','co','r','Gắn máy báo CO trong phòng. Nên có.','Put a CO alarm in the room. Do this one.'),
+  R(1,'logic','free','r','Giường dời khỏi chỗ ngay trên xe. Dời sơn, xăng, thuốc khỏi garage.','Move the bed off the parking spot. Move paint, gas and chemicals out of the garage.'),
+  R(1,'logic','free','r','Dùng làm phòng làm việc, trẻ em ngủ phòng khác.','Use it as an office; kids sleep elsewhere.'),
+  R(3,'logic','quote','','Bịt kín, cách nhiệt sàn giữa garage và phòng.','Seal and insulate the floor between garage and room.'),
+  R(2,'dg','item','r','Đá, tinh thể, đồng xu dưới thảm.','Stones, crystals or coins under the rug.')]],
+['T12','trong',1,'T42','', 'Cầu thang xoắn / cầu thang ngay giữa nhà','Spiral stairs or stairs in the center',
+ 'Cầu thang nằm ngay tâm nhà hoặc xoắn ốc.','The staircase is in the middle of the house or spirals.',
+ 'Tâm nhà nên yên. Ít gặp ở tract home.','The center should be calm. Rare in tract homes.',
+ [R(2,'pt','pot','r','Đèn sáng, cây lớn ở chân cầu thang.','Good light and a big plant at the bottom.'),
+  R(3,'pt','quote','p','Làm lan can kín bớt.','Close in the railing.'),
+  R(4,'pt','quote','p','Dời cầu thang khi remodel.','Move the stairs in a remodel.')]],
+['T13','trong',1,'T42','', 'Trần xéo trên giường','Sloped ceiling over the bed',
+ 'Trần phòng ngủ thấp một bên, ngay trên giường.','The ceiling slopes down over the bed.',
+ 'Trần thấp một phía đè người ngủ.','The low side feels like it presses down.',
+ [R(1,'logic','free','r','Kê giường phía trần cao.','Put the bed under the high side.'),
+  R(2,'logic','light','','Đèn hắt trần, sơn trần màu sáng.','Uplighting and a light ceiling color.'),
+  R(3,'logic','quote','','Làm trần giả phẳng một phần.','Add a flat ceiling section.')]],
+['T14','trong',1,'T42','', 'Góc tường / cột chĩa vào giường, chỗ ngồi','Wall corner or column points at the bed or seat',
+ 'Cạnh tường nhô ra chĩa ngay chỗ nằm hay chỗ ngồi.','A wall corner sticks out toward where you sleep or sit.',
+ 'Cạnh nhọn chĩa vào người.','A sharp edge points at you.',
+ [R(1,'logic','free','r','Xoay ghế, giường khỏi hướng góc nhọn.','Turn the chair or bed away from the corner.'),
+  R(2,'logic','pot','r','Cây lớn hoặc kệ che góc.','A big plant or shelf in front of the corner.'),
+  R(3,'logic','handy','','Bo tròn góc, ốp cột.','Round off the corner or wrap the column.')]],
+['T15','trong',2,'T42','', 'Bàn thờ đối WC / đối bếp / dưới WC tầng trên','Altar faces a bathroom or stove, or sits under a toilet',
+ 'Bàn thờ nhìn thẳng cửa WC, cửa bếp, hoặc trên lầu là WC.','The altar faces a bathroom or stove, or a toilet is upstairs above it.',
+ 'Bàn thờ cần trang nghiêm, yên. Đây là quan niệm Việt; nguồn Việt đều khuyên dời.','An altar needs a calm, respectful spot. A Vietnamese practice; Vietnamese sources all say move it.',
+ [R(1,'pt','free','r','Dời bàn thờ sang vách đặc, không cùng trục WC, bếp, không dưới cầu thang hay WC.','Move it to a solid wall, off the bathroom and stove line, not under stairs or a toilet.'),
+  R(2,'pt','screen','r','Bình phong hay rèm trước bàn thờ nếu đối cửa chính trống quá.','A screen or curtain if it faces a wide-open front door.'),
+  R(2,'logic','hinge','','Bản lề tự đóng cửa WC, giữ sạch.','Self-closing bathroom door, keep it clean.')]],
+['T16','trong',1,'T42','', 'Phòng ngủ quá nhiều cửa sổ','Bedroom with too many windows',
+ 'Phòng ngủ có cửa kính lớn hay 3–4 cửa sổ.','The bedroom has big glass walls or 3–4 windows.',
+ 'Khó ngủ, nóng lạnh, thiếu riêng tư.','Harder sleep, hot and cold, less privacy.',
+ [R(2,'logic','curtain','r','Rèm cản sáng 2 lớp.','Double-layer blackout curtains.'),
+  R(1,'logic','free','r','Kê đầu giường vô tường đặc.','Put the headboard on a solid wall.')]],
+['T17','trong',1,'T42','khuyet','Nhà khuyết góc (chữ L, chữ U)','L- or U-shaped house (missing corner)',
+ 'Nhìn sơ đồ, căn nhà bị hụt một góc.','On the floor plan, one corner of the box is missing.',
+ 'Mỗi góc gắn với 1 người trong nhà. Khuyết nhỏ thì không đáng kể.','Each corner is tied to a family member. A small missing piece does not matter.',
+ [R(1,'logic','free','','Đo từ TÂM nhà bằng la bàn. Khuyết dưới 1/3 cạnh thì bỏ qua.','Measure from the CENTER of the house with a compass. Under 1/3 of the side, skip it.'),
+  R(1,'pt','free','r','Dời sinh hoạt chính sang phần còn lại hoặc khu khác.','Move main activities to the rest of that zone or another area.'),
+  R(2,'pt','light','e','Đèn chiếu góc khuyết ngoài sân, cây, bồn hoa định hình góc.','Light the missing corner outside; plants or beds to mark it.'),
+  R(3,'pt','quote','pe','Patio, deck hay pergola lấp góc.','A patio, deck or pergola to fill the corner.'),
+  R(4,'pt','quote','pe','Xây thêm (addition) lấp góc.','Build an addition.'),
+  R(2,'dg','item','r','Tủ cao, thạch anh, ngũ đế tiền ở góc khuyết.','Tall cabinet, crystals or five-emperor coins in that corner.')]],
+['T18','trong',1,'T42','', 'WC tầng trên nằm ngay trên cửa chính','Upstairs bathroom right above the front door',
+ 'Phòng tắm lầu 2 nằm ngay trên cửa vô.','The upstairs bathroom sits right over the entry.',
+ 'Bị coi là ô uế đè lên “miệng khí”. Ít nguồn Việt nói riêng.','Seen as unclean over the “mouth” of the house. Few Vietnamese sources mention it.',
+ [R(1,'logic','free','r','Giữ WC sạch khô, thông gió.','Keep that bathroom clean, dry and ventilated.'),
+  R(4,'pt','toilet','p','Dời WC khi remodel.','Move it in a remodel.')]]
+];
+
+/* ===== T200 — Hóa giải nhà: luật tự phát hiện (sửa ở đây) =====
+   Nguồn: /home/claude/research/hoa_giai.json (B Bát trạch, C Huyền Không, D năm xấu, E ngộ nhận), tra 04/11/2026.
+   1. Bát trạch: hướng cửa (8 hướng) so với quái chủ nhà (quaiOf, starAt). Xấu: tm, nq → "Nên lo trước"; ls, hh → "Làm được thì tốt".
+   2. Phi tinh: periodOf(năm dọn vào), natalChart(vận, sơn tọa). Cung cửa = cung hướng. Hướng tinh 2/5/3/7 hoặc cặp 2-5, 5-2, 2-3, 3-2, 6-7, 7-6 → mục; 9/1/8 → điểm cộng.
+      Thượng sơn hạ thủy → mục riêng. sonEdge < 3° → nhắc đo lại (T208).
+   3. Sao năm: yearShas(năm nay) và năm sau. Ngũ Hoàng / Nhị Hắc ở hướng cửa hoặc phía định sửa → mục. Thái Tuế / Tuế Phá (theo sơn) / Tam Sát (theo hướng) ở cửa → nhắc.
+   4. Năm dọn vào: evalYear (chép T41 qua T205). Lập trường: mua nhà có sẵn nhiều nguồn cho là không cần xét như xây; không khuyên hoãn mua.
+   KEN DUYỆT: RPA investigation contingency mặc định 17 ngày (nguồn phụ sebfrey.com; form C.A.R. phải đăng nhập mới coi được).
+   KEN DUYỆT: không bao giờ khuyên đổi tên trên title/deed vì phong thủy (vay, thuế, Prop 13).
+*/
+const UPDATED='04/11/2026';
+const DECL=12.7; /* độ lệch từ San Jose (giống T201/T208). Hướng từ = hướng thật − DECL */
+const KL_VI={than:'Kim Lâu Thân',the:'Kim Lâu Thê',tu:'Kim Lâu Tử',luc:'Kim Lâu Lục Súc'};
+const DIR_EN={N:'North',NE:'Northeast',E:'East',SE:'Southeast',S:'South',SW:'Southwest',W:'West',NW:'Northwest',C:'Center'};
+const fmt=(s,o)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>o&&o[k]!=null?o[k]:m);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+const BAD_PAIRS=['2-5','5-2','2-3','3-2','6-7','7-6'];
+const HK_COMMON={ /* cách vật phẩm phổ biến theo hướng tinh — dân gian, tranh cãi */
+ 5:['Đồ kim loại, chuông gió 6 ống, hồ lô đồng; tránh màu đỏ ở cửa.','Metal items, a 6-rod wind chime or brass gourd; avoid red at the door.'],
+ 2:['Giống sao 5: đồ kim loại, hồ lô đồng.','Same as star 5: metal items, a brass gourd.'],
+ 3:['Màu đỏ, đèn ấm ở cửa; tránh đặt nước; đừng dùng chuông kim loại.','Red accents, warm light at the door; no water; skip metal chimes.'],
+ 7:['Màu xanh dương, đen, xám, nước tĩnh; nhiều thầy khuyên đừng dùng màu đỏ.','Blue, black or gray, still water; many masters say no red.']};
+
+const I18N={
+ vi:{title:'Hóa giải nhà: làm gì trước, tốn bao nhiêu',sub:'Nhập tuổi, hướng nhà, tick những gì thấy ở căn nhà. Ra kế hoạch xếp theo ưu tiên, từ cách miễn phí tới cách tốn tiền, giá ước tính Bay Area. Tham khảo.',
+  ex:'<b>Ví dụ</b> — sửa lại theo nhà của bạn.',ex_clear:'Xóa ví dụ, làm từ đầu',
+  s1:'Bước 1 · Ai ở, nhà hướng gì',s1s:'Không bắt buộc, nhưng có thì tool tự coi thêm Bát trạch, phi tinh và năm.',
+  l_b1:'Ngày sinh chủ nhà',l_b1s:'(người trụ cột)',l_g:'Giới tính',g_m:'Nam',g_f:'Nữ',l_two:'+ Thêm người thứ 2 (vợ/chồng)',l_two_off:'Bỏ người thứ 2',l_b2:'Ngày sinh người thứ 2',
+  ly:'Năm âm <b>{y} {cc}</b> · quái {q} ({g}).',lyB:'Sinh trước Tết ({t}) nên tính năm âm <b>{y} {cc}</b> · quái {q} ({g}).',ly_out:'Tool tính cho ngày sinh 1930–2030.',ly_none:'Chưa nhập ngày sinh: bỏ qua phần Bát trạch và năm dọn vào.',
+  gE:'Đông tứ mệnh',gW:'Tây tứ mệnh',
+  l_face:'Hướng nhà',l_face_s:'(đứng trong cửa chính nhìn ra)',m_deg:'Số độ',m_dir:'8 hướng',src_mag:'La bàn',src_true:'Bản đồ',
+  src_mag_h:'Số đọc từ la bàn hay app điện thoại.',src_true_h:'Số lấy từ Google Maps (Bắc thật). Tool trừ {d}° ra hướng la bàn: <b>{m}°</b>.',
+  measure:'Đo bằng điện thoại',face_none:'Chưa có hướng: bỏ qua phần tự coi hướng, checklist vẫn chạy.',
+  face_txt:'Hướng <b>{f}</b> ({fd}), tọa <b>{s}</b> ({sd}).',
+  l_my:'Năm dọn vào',l_role:'Bạn đang',r_buy:'Coi để mua',r_live:'Đã mua, đang ở',r_sell:'Đang bán',r_rent:'Đang thuê',
+  l_hoa:'Có HOA không?',hoa_y:'Có',hoa_n:'Không',l_rep:'Năm nay định sửa phía nào?',l_rep_s:'(không bắt buộc)',rep_none:'Không sửa',
+  s2:'Bước 2 · Tick những gì bạn thấy',s2s:'Bấm vào nhóm để mở. Thấy gì tick nấy, kết quả hiện liền bên dưới.',picked:'Đã tick:',picked_none:'Chưa tick mục nào.',reset:'Bỏ tick hết',
+  gcount:'{n} đã tick',
+  r_k:'Việc nên làm',r_unit:'việc',v_ok:'Căn này hóa giải được.',v_ok0:'Chưa thấy điểm nào cần lo. Căn này ổn.',v_hard:'Có vài điểm khó, cân nhắc.',
+  v_ok_s:'Phần lớn là dời đồ hay sửa nhỏ. Làm từ trên xuống.',v_hard_s:'Có điểm bên ngoài hay cấu trúc không sửa hẳn được. Tính vào giá và hỏi thầy, inspector trước khi quyết.',
+  p1:'Nên lo trước',p2:'Làm được thì tốt',p3:'Nhẹ, tùy mình',
+  tot_cheap:'Làm cách rẻ nhất mỗi việc',tot_full:'Làm kỹ (sửa nhỏ, có thợ)',tot_q:'+ {n} việc cần thợ báo giá',tot_rent:'Chỉ tính cách tháo ra được (người thuê).',
+  cost_note:'Giá là <b>ước tính Bay Area</b>. Giá toàn quốc nhân 1.2–1.5 cho Bay Area. Gọi 2–3 thợ báo giá trước khi làm.',
+  auto_h:'Tool tự coi (không cần tick)',plus_h:'Điểm cộng',
+  plan_h:'Kế hoạch hóa giải',plan_none:'Chưa có việc gì. Tick vài mục ở Bước 2 hoặc nhập tuổi, hướng nhà.',done:'Đã làm',prog:'<span>Đã làm <b>{d}/{n}</b> việc.</span>',
+  more:'Coi chi tiết',dis_k:'Thầy nói khác nhau:',
+  tier:{1:'Miễn phí',2:'Dưới $100',3:'Thợ $',4:'Sửa lớn $$$'},tier2b:'Dưới $500',tier2c:'Vài trăm $',
+  kind:{logic:'hợp lý về bố trí',pt:'theo phong thủy',dg:'dân gian, có thầy không dùng'},
+  free:'$0',quote:'thợ báo giá',ba:'ước tính Bay Area',permit:'Cần permit',hoa_tag:'Cần HOA duyệt',rent_tag:'Người thuê: hỏi chủ nhà',
+  legend:'Ký hiệu: <b>hợp lý về bố trí</b> = có lý do thực tế, đa số đồng ý · <b>theo phong thủy</b> = quy ước nhiều trường phái dùng · <b>dân gian, có thầy không dùng</b> = vật phẩm, nhiều thầy cổ điển cho là không có trong sách.',
+  bt_n:'Cửa chính hướng {star} với tuổi chủ nhà',bt_w:'Nhà hướng {dir}, chủ nhà quái {q}. Hướng {dir} là {star}, một hướng xấu. Không phải bỏ nhà: kê giường, bàn, bếp theo 4 hướng tốt của chủ là <b>{good}</b>. Giường, bếp, bàn tốt hết thì cửa xấu chỉ là lỗi nhỏ.',
+  bt_couple:'Hai người khác nhóm Đông/Tây: cửa theo người trụ cột; phòng ngủ, bàn làm việc của người kia theo hướng tốt của họ ({good2}).',
+  bt_r:[['Đầu giường quay về 1 trong 4 hướng tốt. Được chọn phòng thì phòng ngủ chủ ở hướng tốt.','free',1,'logic','r'],
+        ['Bàn làm việc ngồi quay mặt về hướng tốt (Sinh Khí cho tiền, Phục Vị cho học).','free',1,'logic','r'],
+        ['Có cửa hông hay garage ở hướng tốt thì đi cửa đó hằng ngày.','free',1,'pt','r'],
+        ['Thảm chùi chân, cây ở cửa theo màu hợp mệnh.','rug',2,'dg','r'],
+        ['Bếp “tọa hung hướng cát”: bếp ở góc xấu, người nấu quay về hướng tốt. Đổi bếp dễ hơn đổi cửa.','gas',3,'pt','p'],
+        ['Xoay góc cánh cửa hay bậc tam cấp, lối đi vô vài độ cho lệch về hướng tốt.','quote',3,'pt','pe'],
+        ['Dời cửa chính, hoặc remodel cho phòng ngủ chủ sang hướng tốt.','quote',4,'pt','pe']],
+  bt_dis:'Bếp gas, bếp điện bây giờ có thầy nói không cần “tọa hung” nữa; cách lấy hướng bếp cũng mỗi người một kiểu.',
+  bt_plus:'Cửa chính hướng {dir} là <b>{star}</b>, hướng tốt của chủ nhà.',
+  hk_n:'Sao {f} ({fn}) ở cửa chính · vận {p}',hk_w:'Bàn sao vận {p}: cung cửa có sao sơn {m}, sao hướng {f}{pair}. Sao này không hợp với cửa chính trong vận này.',hk_pair:' (cặp {m}-{f})',
+  hk_r1:'Khu cửa chính giữ gọn, đừng đặt bếp hay đồ lửa sát cửa. Có cửa hông, garage thì đi nhiều hơn.',hk_r2:'Đừng đập phá, sửa lớn ngay khu cửa khi không cần.',hk_r4:'Muốn chắc thì nhờ thầy coi trạch vận tại nhà.',
+  hk_dis:'Vật phẩm (chuông gió, hồ lô, muối) có thầy dùng, có thầy nói không có trong sách cổ; cách cổ điển là để yên khu đó.',
+  hk_dis7:'Sao 7: có thầy dùng màu đỏ (Hỏa), có thầy dùng xanh, đen (Thủy) và cấm đỏ.',hk_dis2:'Sao 2 ở vận 9 nhiều thầy coi đã bớt xấu.',
+  hk_plus:'Sao hướng <b>{f} ({fn})</b> ở cửa chính, tốt trong vận {p}. Giữ cửa sáng, thông thoáng, dùng cửa này thường.',
+  ts_n:'Bàn sao “thượng sơn hạ thủy” (vận {p})',ts_w:'Sao vượng bị đảo: sao sơn ra trước, sao hướng ra sau. Khó hơn chút, sửa bằng cách bố trí.',
+  ts_r:[['Phòng ngủ, bàn thờ đặt phía trước nhà (chỗ sao sơn vượng); phía sau thoáng, có cửa sau dùng thường.','free',1,'pt','r'],
+        ['Coi bàn sao chi tiết từng phòng ở T201 trước khi kê đồ.','free',1,'logic','r'],
+        ['Nhờ thầy coi tại nhà nếu định remodel.','consult',3,'pt','']],
+  edge:'Hướng {deg}° nằm sát ranh 2 sơn (cách {x}°). Đo lại 3 chỗ bằng T208 rồi lấy trung bình, vì lệch vài độ là ra bàn sao khác.',
+  ys_n:'Năm {y} cửa chính gặp {star}',ys_nr:'Năm {y} phía {dir} gặp {star}, mà bạn định sửa phía đó',
+  ys_w:'Năm {y} (tính từ Lập Xuân, khoảng 4/2) sao {star} bay tới hướng {dir}. Theo phong thủy, năm đó để yên phía này.',
+  ys_r1:'Năm {y} đừng đập phá, đào đất, sửa lớn phía {dir}. Thay cửa, làm hiên thì để năm khác.',
+  ys_r2:'Việc nhỏ (sơn, thay đèn) nhiều nhà vẫn làm. Muốn kỹ thì chọn ngày khởi công.',
+  ys_r3:'Treo đồ kim loại, chuông gió 6 ống ở khu đó.',
+  ys_dis:'Vật phẩm kim loại là cách thương mại; thầy cổ điển chỉ khuyên đừng động thổ khu đó.',
+  sh_n:'Năm {y}: {list} ở hướng cửa',sh_w:'Đây là mấy sao xấu của năm. Chỉ cần nhớ: năm đó đừng đào đất, sửa lớn phía trước nhà.',
+  sh_r:'Có sửa lớn phía trước thì để năm khác, hoặc chọn ngày khởi công.',tt:'Thái Tuế',tp:'Tuế Phá',tsat:'Tam Sát',
+  yr_n:'Năm dọn vào {y} chủ nhà phạm {list}',yr_w:'Tuổi mụ {t}. Đây là hạn “làm nhà”. Nhiều người cho rằng mua nhà có sẵn không cần xét như xây. Muốn yên tâm thì có cách nhẹ, không cần hoãn mua.',
+  yr_p2:'Người thứ 2 không phạm năm {y}: có thể đứng ra làm lễ nhập trạch.',
+  yr_r:[['Chọn ngày giờ tốt để dọn vào (nhập trạch). Ngày close do lender và escrow quyết, nên chỉ cần chọn ngày dọn.','free',1,'pt','r'],
+        ['Mượn tuổi: người không phạm năm đó (thường là nam trong gia đình) đứng ra làm lễ. Chỉ là nghi lễ, không đổi tên trên title hay deed.','free',1,'pt','r'],
+        ['Lễ nhập trạch đơn giản: dọn sạch, chủ nhà vào trước cầm bát hương.','free',1,'pt','r'],
+        ['Lễ giải hạn, động thổ: chủ yếu khi xây hay sửa lớn, không phải khi mua nhà có sẵn.','item',2,'dg','r']],
+  yr_dis:'Kim Lâu, Hoang Ốc khi mua nhà có sẵn: có nguồn bảo cần xét, nhiều nguồn chỉ xét khi xây. Có học giả nói không có cơ sở.',
+  yr_title:'Đừng đổi tên trên title/deed vì phong thủy. Đổi tên ảnh hưởng tiền vay, thuế, Prop 13. Hỏi lender, CPA trước.',
+  dis:{culdesac:'Có thầy coi nhà cuối cul-de-sac là lỗi nặng; Master Sean Chan coi phần lớn là tốt (yên, ít xe), chỉ lo khi đường chĩa thẳng cửa.',
+       khuyet:'Có thầy nói “khuyết góc” không có trong sách cổ; có thầy chỉ coi là nặng khi khuyết hơn 1/3 cạnh hoặc có sát khí bên ngoài.'},
+  dis_obj:'Vật phẩm (gương, chuông gió, hồ lô, tỳ hưu): có thầy dùng, có thầy nói không có trong sách cổ. Tool để chúng cuối danh sách.',
+  role_h:'Theo vai trò của bạn',
+  role:{buy:'<b>Đang coi để mua.</b> Dùng thời gian investigation contingency (thường là 17 ngày theo RPA, coi lại hợp đồng của bạn) để nhờ thầy coi và hỏi giá sửa. Đừng xin seller credit vì phong thủy; thương lượng bằng kết quả inspection, hoặc tính chi phí hóa giải vào giá offer. Móng, mái, nước, cháy rừng quan trọng hơn phong thủy.',
+        live:'<b>Đã mua, đang ở.</b> Làm từ trên xuống, việc miễn phí trước. Tick “Đã làm” để theo dõi. Việc cần permit thì làm có giấy, sau này bán nhà đỡ rắc rối.',
+        sell:'<b>Đang bán.</b> Staging trung tính: dẹp gương đối cửa, đặt thảm hay cây chắn cầu thang đối cửa, đèn sáng lối vào, cửa chính sạch đẹp. Người mua hỏi gì thì nói thật. Theo Civil Code 1710.2, chuyện có người mất trong nhà hơn 3 năm trước không bắt buộc khai, nhưng người mua hỏi thẳng thì không được nói sai.',
+        rent:'<b>Đang thuê.</b> Chỉ làm cách tháo ra được: rèm, thảm, cây, bình phong đứng, đồ để bàn. Sơn, khoan tường, đổi cửa phải có chủ nhà đồng ý, không thì có thể bị trừ tiền cọc. Đồ tôn giáo treo trên cửa chính được luật bảo vệ (Civil Code 1940.45), tổng cộng tối đa 36×12 inch, không chắn cửa.'},
+  rent_note:'Người thuê: chỉ làm cách tháo ra được. Cách có nhãn “Người thuê: hỏi chủ nhà” cần chủ nhà đồng ý.',
+  hoa_note:'Có HOA: đổi gì bên ngoài (cửa, sơn, hàng rào, cây trước nhà) thì coi CC&Rs và xin ARC duyệt trước (Civil Code 4760, 4765).',
+  myth_h:'Nhiều người hiểu sai',
+  myths:[['Mua đồ phong thủy đắt tiền (tỳ hưu, thạch anh, ngũ đế tiền) để “hút tài lộc”.','Hóa giải thật là bố trí, hướng, thời gian. Vài trăm đô cho rèm, kệ, đèn thường đáng hơn một món đồ “khai quang”.'],
+         ['Treo gương bát quái lồi trong nhà, hoặc treo nhiều cái cho chắc.','Gương lồi không treo trong nhà, không chĩa vô nhà hàng xóm. Nhà không bị đâm thẳng thì khỏi treo.'],
+         ['Bỏ một căn nhà tốt vì 1 lỗi nhỏ (gương, cửa đối cửa, bếp kẹp tủ lạnh).','Phần lớn lỗi trong nhà sửa bằng dời đồ hay vài trăm đô. Lỗi khó thật là bên ngoài: đường đâm, cao thế, nghĩa trang sát.']],
+  ns_h:'Bước tiếp theo',ns1:'Đo hướng cho chắc: 3 chỗ, lấy trung bình.',ns1l:'Tool T208 · La bàn điện thoại',ns2:'Coi bàn sao từng phòng: phòng nào ngủ, phòng nào làm việc.',ns2l:'Tool T201 · Bàn sao phi tinh',
+  ns3:'Định sửa? Coi năm nay hướng nào nên để yên.',ns3l:'Tool T202 · Sao năm sửa nhà',ns4:'Chọn ngày làm, ngày dọn vào.',ns4l:'Tool T206 · Lịch vạn niên',
+  ns5:'Đang đi coi nhà khác? Mang checklist theo.',ns5l:'Tool T42 · Checklist phong thủy khi coi nhà',ns6:'Vấn đề thật trước: inspection nào nên làm.',ns6l:'Tool T70 · Nên làm inspection gì',
+  b_email:'Gửi kế hoạch qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi kế hoạch này về email',f_sub:'Ken gửi lại bản kế hoạch, kèm tên thợ nếu cần. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Hóa giải nhà',ft_vid:'Video Kiến Thức Địa Ốc',
+  ft_est:'Chỉ để tham khảo. Phong thủy không phải khoa học; móng, mái, nước, cháy rừng quan trọng hơn. Giá là ước tính Bay Area, không phải báo giá. Luật (permit, HOA, thuê nhà, khai báo) chỉ tóm tắt, hỏi city và luật sư khi cần.',
+  ft_src:'Nguồn:',src_date:'(tra 04/11/2026)',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  dirs:DIR8_VI,
+  sms:'Chào Ken, tôi vừa làm kế hoạch hóa giải nhà trên tools.kenlamrealty.com ({n} việc). Việc đầu: {top}. Cho tôi hỏi thêm.',
+  subj:'Kế hoạch hóa giải nhà — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nNhà: {face}\nChủ nhà: {who}\nVai trò: {role}\n\n5 việc đầu (cách rẻ nhất):\n{top5}\n\nTổng cách rẻ nhất: {cheap}\nLàm kỹ: {full}\n\nGửi từ tool T200 tools.kenlamrealty.com (tham khảo, giá ước tính Bay Area)'},
+ en:{title:'House remedies: what to fix first, and the cost',sub:'Enter your birth date and facing direction, then tick what you see in the house. Get a plan by priority, from free fixes to paid ones, with Bay Area cost estimates. For reference.',
+  ex:'<b>Example</b> — change it to match your home.',ex_clear:'Clear example, start fresh',
+  s1:'Step 1 · Who lives here, which way it faces',s1s:'Optional, but it lets the tool also check Bát trạch, flying stars and the move-in year.',
+  l_b1:'Head of household birth date',l_b1s:'(main earner)',l_g:'Gender',g_m:'Male',g_f:'Female',l_two:'+ Add a second person (spouse)',l_two_off:'Remove second person',l_b2:'Second person birth date',
+  ly:'Lunar year <b>{y} {cc}</b> · trigram {q} ({g}).',lyB:'Born before Tết ({t}), so the lunar year is <b>{y} {cc}</b> · trigram {q} ({g}).',ly_out:'This tool covers birth dates 1930–2030.',ly_none:'No birth date: Bát trạch and move-in year checks are skipped.',
+  gE:'East group',gW:'West group',
+  l_face:'Facing direction',l_face_s:'(stand inside the front door, look out)',m_deg:'Degrees',m_dir:'8 directions',src_mag:'Compass',src_true:'Map',
+  src_mag_h:'Reading from a compass or phone app.',src_true_h:'Number from Google Maps (true north). The tool subtracts {d}° to get the compass reading: <b>{m}°</b>.',
+  measure:'Measure with your phone',face_none:'No direction yet: the direction checks are skipped. The checklist still works.',
+  face_txt:'Faces <b>{f}</b> ({fd}), sits <b>{s}</b> ({sd}).',
+  l_my:'Move-in year',l_role:'You are',r_buy:'Looking to buy',r_live:'Bought, living here',r_sell:'Selling',r_rent:'Renting',
+  l_hoa:'Is there an HOA?',hoa_y:'Yes',hoa_n:'No',l_rep:'Remodeling a side this year?',l_rep_s:'(optional)',rep_none:'No remodel',
+  s2:'Step 2 · Tick what you see',s2s:'Tap a group to open it. Tick what applies; the plan updates right below.',picked:'Ticked:',picked_none:'Nothing ticked yet.',reset:'Untick all',
+  gcount:'{n} ticked',
+  r_k:'Things to do',r_unit:'items',v_ok:'This house can be fixed.',v_ok0:'Nothing to worry about so far. This house looks fine.',v_hard:'A few hard points. Think it over.',
+  v_ok_s:'Mostly moving furniture or small fixes. Work from the top down.',v_hard_s:'Some outside or structural points cannot be fully fixed. Price them in and ask a practitioner and an inspector before you decide.',
+  p1:'Do first',p2:'Good to do',p3:'Minor, your call',
+  tot_cheap:'Cheapest fix for each item',tot_full:'Thorough (small repairs, hired help)',tot_q:'+ {n} items need a contractor quote',tot_rent:'Counting removable fixes only (renter).',
+  cost_note:'Costs are <b>Bay Area estimates</b>. National figures are multiplied by 1.2–1.5 for the Bay Area. Get 2–3 quotes before you start.',
+  auto_h:'Checked for you (no ticking needed)',plus_h:'Good points',
+  plan_h:'Remedy plan',plan_none:'Nothing yet. Tick a few items in Step 2, or enter a birth date and facing.',done:'Done',prog:'<span>Done <b>{d}/{n}</b>.</span>',
+  more:'See details',dis_k:'Masters disagree:',
+  tier:{1:'Free',2:'Under $100',3:'Handyman $',4:'Remodel $$$'},tier2b:'Under $500',tier2c:'A few hundred $',
+  kind:{logic:'sensible layout',pt:'feng shui rule',dg:'folk cure, some masters skip it'},
+  free:'$0',quote:'get a quote',ba:'Bay Area estimate',permit:'Needs permit',hoa_tag:'Needs HOA approval',rent_tag:'Renter: ask landlord',
+  legend:'Tags: <b>sensible layout</b> = a practical reason most agree on · <b>feng shui rule</b> = a convention many schools use · <b>folk cure, some masters skip it</b> = objects that many classical masters say are not in the books.',
+  bt_n:'Front door faces your {star} direction',bt_w:'The house faces {dir}; the head of household is trigram {q}. {dir} is {star}, an unlucky direction. No need to walk away: set the bed, desk and stove toward the 4 good directions, <b>{good}</b>. If those are good, a bad door counts as a small issue.',
+  bt_couple:'You two are in different East/West groups: the door follows the main earner; the other person’s bed side and desk follow their good directions ({good2}).',
+  bt_r:[['Bed headboard toward one of the 4 good directions. If you can pick, put the main bedroom in a good direction.','free',1,'logic','r'],
+        ['Sit at your desk facing a good direction (Sinh Khí for money, Phục Vị for study).','free',1,'logic','r'],
+        ['If a side or garage door faces a good direction, use it every day.','free',1,'pt','r'],
+        ['Door mat and plants at the door in your element’s colors.','rug',2,'dg','r'],
+        ['Stove “sits bad, faces good”: stove in a bad corner, the cook faces a good direction. Moving a stove is easier than moving a door.','gas',3,'pt','p'],
+        ['Angle the door leaf, front steps or walkway a few degrees toward a good direction.','quote',3,'pt','pe'],
+        ['Move the front door, or remodel so the main bedroom sits in a good direction.','quote',4,'pt','pe']],
+  bt_dis:'With modern gas and electric stoves some masters drop the “sits bad” rule, and they measure stove direction in different ways.',
+  bt_plus:'The front door faces {dir}, your <b>{star}</b> direction, a good one.',
+  hk_n:'Star {f} ({fn}) at the front door · Period {p}',hk_w:'Period {p} chart: the door palace has mountain star {m} and water star {f}{pair}. This star does not suit a front door in this period.',hk_pair:' (pair {m}-{f})',
+  hk_r1:'Keep the entry tidy; no stove or open flame by the door. If you have a side or garage door, use it more.',hk_r2:'Avoid demolition or big work right at the entry unless needed.',hk_r4:'For certainty, have a practitioner read the house on site.',
+  hk_dis:'Objects (chimes, gourds, salt water) are used by some masters; others say they are not in the classics, which just say leave that area quiet.',
+  hk_dis7:'Star 7: some use red (Fire), others use blue or black (Water) and say no red.',hk_dis2:'In Period 9 many masters see star 2 as less harmful.',
+  hk_plus:'Water star <b>{f} ({fn})</b> at the front door, good in Period {p}. Keep the door bright and open, and use it often.',
+  ts_n:'“Thượng sơn hạ thủy” chart (Period {p})',ts_w:'The prosperous stars are reversed: mountain star in front, water star in back. A bit harder; layout can work around it.',
+  ts_r:[['Bedrooms and altar toward the front (where the mountain star is strong); keep the back open, with a back door you use.','free',1,'pt','r'],
+        ['Check the room-by-room chart in T201 before placing furniture.','free',1,'logic','r'],
+        ['Have a practitioner read it on site if you plan to remodel.','consult',3,'pt','']],
+  edge:'{deg}° is close to the line between two mountains ({x}° away). Measure again in 3 spots with T208 and average them; a few degrees can change the chart.',
+  ys_n:'{y}: front door meets {star}',ys_nr:'{y}: {star} sits in the {dir}, the side you plan to remodel',
+  ys_w:'In {y} (counted from Lập Xuân, about Feb 4) {star} moves to the {dir}. Feng shui says leave that side alone that year.',
+  ys_r1:'In {y}, no demolition, digging or big work on the {dir} side. Save door replacement or a new porch for another year.',
+  ys_r2:'Small jobs (paint, a new light) many families still do. To be careful, pick a start day.',
+  ys_r3:'Hang metal objects or a 6-rod wind chime there.',
+  ys_dis:'Metal objects are a commercial cure; classical masters only say do not break ground there.',
+  sh_n:'{y}: {list} at the door direction',sh_w:'These are the year’s unlucky stars. Just remember: that year, no digging or big work at the front.',
+  sh_r:'Put big front work off to another year, or pick a start day.',tt:'Thái Tuế',tp:'Tuế Phá',tsat:'Tam Sát',
+  yr_n:'Move-in year {y}: head of household hits {list}',yr_w:'Lunar age {t}. These are “house-building” limits. Many people say buying an existing home does not need the same check as building. If your family wants peace of mind there are light options; no need to delay buying.',
+  yr_p2:'The second person is clear in {y}: they can lead the move-in ceremony.',
+  yr_r:[['Pick a good day and hour to move in (nhập trạch). The lender and escrow set the close date, so you only pick the move-in day.','free',1,'pt','r'],
+        ['Borrow an age (mượn tuổi): someone clear that year, usually a man in the family, leads the ceremony. It is only a ritual. Do not change names on title or deed.','free',1,'pt','r'],
+        ['A simple move-in ceremony: clean first, the owner walks in first holding the incense bowl.','free',1,'pt','r'],
+        ['A giải hạn or ground-breaking ceremony: mainly for building or big remodels, not for buying an existing home.','item',2,'dg','r']],
+  yr_dis:'Kim Lâu and Hoang Ốc for an existing home: some sources say check them, many only apply them to building. Some scholars say there is no basis.',
+  yr_title:'Do not change names on title or deed for feng shui. It affects your loan, taxes and Prop 13. Ask your lender and CPA first.',
+  dis:{culdesac:'Some masters see the end of a cul-de-sac as serious; Master Sean Chan sees it as mostly good (quiet, little traffic), a concern only when the road points straight at the door.',
+       khuyet:'Some masters say “missing corners” are not in the classics; others only call it serious when more than 1/3 of the side is missing or harsh energy points at it.'},
+  dis_obj:'Objects (mirrors, chimes, gourds, tỳ hưu): some masters use them, others say they are not in the classics. The tool lists them last.',
+  role_h:'For your situation',
+  role:{buy:'<b>Looking to buy.</b> Use the investigation contingency (often 17 days in the RPA; check your contract) to bring in a practitioner and price the fixes. Do not ask the seller for a credit over feng shui; negotiate on inspection findings or build the remedy cost into your offer. Foundation, roof, water and wildfire matter more than feng shui.',
+        live:'<b>Bought, living here.</b> Work top-down, free fixes first. Tick “Done” to track. Do permit jobs with a permit so a future sale goes smoothly.',
+        sell:'<b>Selling.</b> Stage neutrally: remove a mirror facing the door, put a rug or plant between the door and stairs, light the entry, clean up the front door. Answer buyer questions truthfully. Under Civil Code 1710.2 a death in the home more than 3 years ago need not be disclosed, but if a buyer asks directly you cannot misstate it.',
+        rent:'<b>Renting.</b> Only removable fixes: curtains, rugs, plants, freestanding screens, tabletop items. Paint, drilling or door changes need the landlord’s OK, or they can come out of your deposit. Religious items on the front door are protected by law (Civil Code 1940.45), up to 36×12 inches combined and not blocking the door.'},
+  rent_note:'Renter: removable fixes only. Fixes tagged “Renter: ask landlord” need the landlord’s OK.',
+  hoa_note:'HOA: any outside change (door, paint, fence, front plants) needs a CC&R check and ARC approval first (Civil Code 4760, 4765).',
+  myth_h:'Common mistakes',
+  myths:[['Buying pricey feng shui objects (tỳ hưu, crystals, five-emperor coins) to “attract wealth”.','Real remedies are layout, direction and timing. A few hundred dollars on curtains, shelves and lighting usually beats a “blessed” object.'],
+         ['Hanging a convex bagua mirror inside, or several just in case.','Convex mirrors never go inside or at a neighbor. If no road points at the house, you do not need one.'],
+         ['Walking away from a good house over one small issue (a mirror, doors facing, stove by the fridge).','Most inside issues are fixed by moving furniture or a few hundred dollars. The hard ones are outside: a road aimed at you, power lines, a cemetery next door.']],
+  ns_h:'Next steps',ns1:'Measure the direction properly: 3 spots, take the average.',ns1l:'Tool T208 · Phone compass',ns2:'See the room-by-room star chart: where to sleep, where to work.',ns2l:'Tool T201 · Flying Star chart',
+  ns3:'Remodeling? See which side to leave alone this year.',ns3l:'Tool T202 · Yearly stars for remodeling',ns4:'Pick a day for the work and the move-in.',ns4l:'Tool T206 · Lunar calendar & good days',
+  ns5:'Touring other homes? Bring the checklist.',ns5l:'Tool T42 · Feng shui home-tour checklist',ns6:'Real problems first: which inspections to get.',ns6l:'Tool T70 · Which inspections to get',
+  b_email:'Email me the plan',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this plan to yourself',f_sub:'Ken can send the plan back with contractor names if you need them. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'House remedies',ft_vid:'Real estate video',
+  ft_est:'For reference only. Feng shui is not science; foundation, roof, water and wildfire matter more. Costs are Bay Area estimates, not quotes. Laws (permits, HOA, renting, disclosure) are summaries; ask the city or an attorney when it matters.',
+  ft_src:'Sources:',src_date:'(checked 04/11/2026)',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  dirs:DIR_EN,
+  sms:'Hi Ken, I made a house remedy plan on tools.kenlamrealty.com ({n} items). First item: {top}. I have a question.',
+  subj:'House remedy plan — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nHouse: {face}\nHead of household: {who}\nRole: {role}\n\nTop 5 (cheapest fix):\n{top5}\n\nCheapest total: {cheap}\nThorough: {full}\n\nSent from tool T200 tools.kenlamrealty.com (for reference, Bay Area estimates)'}
+};
+
+if(typeof document!=='undefined'){
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,'0');
+const NOW=new Date(), CUR_Y=NOW.getFullYear();
+const SKEY='kl_t200_state', DKEY='kl_t200_done';
+const EXAMPLE={b1:'1980-06-15',g1:'m',two:false,b2:'',g2:'f',mode:'deg',deg:'180',dir:'S',src:'mag',my:'2026',role:'buy',hoa:'n',rep:'',ticks:['D01','T07'],ex:true};
+const BLANK={b1:'',g1:'m',two:false,b2:'',g2:'f',mode:'deg',deg:'',dir:'',src:'mag',my:String(CUR_Y),role:'buy',hoa:'n',rep:'',ticks:[],ex:false};
+let st=null, done={}, open={cua:true,trong:false,ngoai:false}, last={};
+function load(){
+  try{const s=JSON.parse(localStorage.getItem(SKEY)||'null'); if(s&&typeof s==='object') st=Object.assign({},BLANK,s);}catch(e){}
+  try{const d=JSON.parse(localStorage.getItem(DKEY)||'null'); if(d&&typeof d==='object') done=d;}catch(e){}
+  let q=null; try{q=new URLSearchParams(location.search);}catch(e){}
+  const qd=q?parseFloat(q.get('deg')):NaN, qy=q?parseInt(q.get('year'),10):NaN;
+  if(isFinite(qd)){ if(!st||st.ex) st=Object.assign({},BLANK); st.mode='deg'; st.deg=String(+mod(qd,360).toFixed(1)); st.src='mag'; st.ex=false; }
+  if(!st) st=JSON.parse(JSON.stringify(EXAMPLE));
+  if(qy>=1930&&qy<=2043) st.my=String(qy);
+}
+function save(){ try{localStorage.setItem(SKEY,JSON.stringify(st));}catch(e){} }
+function saveDone(){ try{localStorage.setItem(DKEY,JSON.stringify(done));}catch(e){} }
+
+const D=()=>I18N[lang];
+const dirName=k=>D().dirs[k]||k;
+const pick=(o,k)=>lang==='vi'?o[k+'vi']:o[k+'en'];
+function readPerson(v,g){ if(!/^\d{4}-\d{2}-\d{2}$/.test(v||'')) return null; const [y,m,d]=v.split('-').map(Number); const ly=lunarYearOf(y,m,d); if(ly==null||ly<1930||ly>2030) return {bad:true};
+  const q=quaiOf(ly,g); return {ly,y,before:ly<y,tet:tetOf(y),q,g}; }
+function faceDeg(){ if(st.mode==='dir'){ const i=DIR8.indexOf(st.dir); return i<0?null:i*45; }
+  const raw=parseFloat(st.deg); if(!isFinite(raw)) return null; const r=mod(raw,360); return +(st.src==='true'?mod(r-DECL,360):r).toFixed(1); }
+
+/* ---- giá ---- */
+const r10=x=>x>=1000?Math.round(x/50)*50:Math.round(x/10)*10;
+function costOf(code){ const c=COST[code]; if(c===null||c===undefined) return null; if(c.nat) return {lo:r10(c.lo*BA_LO),hi:r10(c.hi*BA_HI)}; return {lo:c.lo,hi:c.hi}; }
+const money=n=>'$'+Math.round(n).toLocaleString('en-US');
+function costTxt(code){ const d=D(), c=costOf(code); if(!c) return d.quote; if(c.hi===0) return d.free; return money(c.lo)+'–'+money(c.hi); }
+function tierLabel(r){ const d=D(); if(r.t===2){const c=costOf(r.c); if(c&&c.hi>500) return d.tier2c; if(c&&c.hi>100) return d.tier2b;} return d.tier[r.t]; }
+
+/* ---- thu thập mục kế hoạch ---- */
+function catRem(rs){ return rs.map(r=>({t:r.t,k:r.k,c:r.c,f:r.f,txt:lang==='vi'?r.vi:r.en})); }
+function arrRem(a,o){ return a.map(x=>({txt:fmt(x[0],o||{}),c:x[1],t:x[2],k:x[3],f:x[4]})); }
+function build(){
+  const d=D(), items=[], plus=[], notes=[];
+  const p1=readPerson(st.b1,st.g1), p2=st.two?readPerson(st.b2,st.g2):null;
+  const fd=faceDeg(); let fi=null,face=null,chart=null,per=null;
+  const my=Math.min(2043,Math.max(1930,parseInt(st.my,10)||CUR_Y));
+  if(fd!=null){ fi=sonOfDeg(fd); face=sonInfo(fi).dir; per=periodOf(my); chart=natalChart(per,mod(fi+12,24)); }
+  /* 1. Bát trạch */
+  if(p1&&!p1.bad&&face){ const s=starAt(p1.q,face), good=goodDirs(p1.q).map(x=>dirName(x)+' ('+BT_VI[starAt(p1.q,x)]+')').join(', ');
+    if(['tm','nq','ls','hh'].includes(s)){ let w=fmt(d.bt_w,{dir:dirName(face),q:QUAI[p1.q].vi,star:BT_VI[s],good});
+      if(p2&&!p2.bad&&QUAI[p2.q].g!==QUAI[p1.q].g) w+=' '+fmt(d.bt_couple,{good2:goodDirs(p2.q).map(dirName).join(', ')});
+      items.push({id:'BT',pr:(s==='tm'||s==='nq')?1:2,name:fmt(d.bt_n,{star:BT_VI[s]}),why:w,rem:arrRem(d.bt_r),dis:[d.bt_dis],link:'/t40/',ll:'T40',hard:s==='tm'}); }
+    else plus.push(fmt(d.bt_plus,{dir:dirName(face),star:BT_VI[s]})); }
+  /* 2. Phi tinh */
+  if(chart){ const fp=sonInfo(fi).pal, f=chart.F[fp], m=chart.M[fp], pair=m+'-'+f, dlink='/t413/?deg='+fd+'&year='+my;
+    if([2,5,3,7].includes(f)||BAD_PAIRS.includes(pair)){ const key=[5,2,3,7].includes(f)?f:([5,2,3,7].includes(m)?m:7);
+      const dis=[d.hk_dis]; if(f===7||m===7) dis.push(d.hk_dis7); if(f===2||m===2) dis.push(d.hk_dis2);
+      items.push({id:'HK',pr:2,name:fmt(d.hk_n,{f,fn:STAR9[f],p:per}),why:fmt(d.hk_w,{p:per,m,f,pair:BAD_PAIRS.includes(pair)?fmt(d.hk_pair,{m,f}):''}),
+        rem:[{txt:d.hk_r1,c:'free',t:1,k:'pt',f:'r'},{txt:d.hk_r2,c:'free',t:1,k:'pt',f:''},{txt:(HK_COMMON[key]||HK_COMMON[7])[lang==='vi'?0:1],c:'item',t:2,k:'dg',f:'r'},{txt:d.hk_r4,c:'consult',t:3,k:'pt',f:''}],
+        dis,link:dlink,ll:'T201'}); }
+    else if([9,1,8].includes(f)) plus.push(fmt(d.hk_plus,{f,fn:STAR9[f],p:per}));
+    if(chart.type==='tshh') items.push({id:'TS',pr:2,name:fmt(d.ts_n,{p:per}),why:d.ts_w,rem:arrRem(d.ts_r),dis:[],link:dlink,ll:'T201'});
+    if(st.mode==='deg'){ const e=sonEdge(fd); if(e<3) notes.push(fmt(d.edge,{deg:fd,x:e.toFixed(1)})); } }
+  /* 3. Sao năm */
+  if(face||st.rep){ [CUR_Y,CUR_Y+1].forEach(Y=>{ const ys=yearShas(Y);
+    [['nguHoang',5],['nhiHac',2]].forEach(([k,n])=>{ const at=ys[k]; const star=STAR9[n];
+      const onDoor=face&&at===face, onRep=st.rep&&at===st.rep&&at!==face;
+      if(onDoor||onRep){ const dir=dirName(at);
+        items.push({id:'YS'+Y+n+(onRep?'r':''),pr:(n===5&&(Y===CUR_Y||onRep))?1:2,name:fmt(onDoor?d.ys_n:d.ys_nr,{y:Y,star,dir}),why:fmt(d.ys_w,{y:Y,star,dir}),
+          rem:[{txt:fmt(d.ys_r1,{y:Y,dir}),c:'free',t:1,k:'pt',f:'r'},{txt:d.ys_r2,c:'free',t:1,k:'pt',f:'r'},{txt:d.ys_r3,c:'item',t:2,k:'dg',f:'r'}],
+          dis:[d.ys_dis],link:'/t412/',ll:'T202',ys:n===5}); } });
+    if(fi!=null){ const l=[]; if(fi===ys.thaiTue) l.push(d.tt); if(fi===ys.tuePha) l.push(d.tp); if(ys.tamSat===face) l.push(d.tsat);
+      if(l.length) items.push({id:'SH'+Y,pr:3,name:fmt(d.sh_n,{y:Y,list:l.join(', ')}),why:d.sh_w,rem:[{txt:d.sh_r,c:'free',t:1,k:'pt',f:'r'}],dis:[],link:'/t412/',ll:'T202'}); } }); }
+  /* 4. Năm dọn vào */
+  let yr=null;
+  if(p1&&!p1.bad){ yr=evalYear(p1.ly,my); if(yr&&yr.n>0){ const l=[]; if(yr.kl) l.push(KL_VI[yr.kl]); if(yr.hoBad) l.push(HO_NAME[yr.ho]); if(yr.tt) l.push('Tam Tai');
+      let w=fmt(d.yr_w,{t:yr.t}); if(p2&&!p2.bad){const y2=evalYear(p2.ly,my); if(y2&&y2.n===0) w+=' '+fmt(d.yr_p2,{y:my});}
+      items.push({id:'YR',pr:yr.n>=2?2:3,name:fmt(d.yr_n,{y:my,list:l.join(', ')}),why:w,rem:arrRem(d.yr_r),dis:[d.yr_dis],warn:d.yr_title,link:'/t41/',ll:'T41',extra:[['/t409/','T205'],['/t43/','T43'],['/t408/','T206']]}); } }
+  /* 5. Checklist */
+  CAT.forEach(c=>{ if(!st.ticks.includes(c[0])) return; const rem=catRem(c[11]);
+    /* mức vừa → Nên lo trước; mức nhẹ có cách miễn phí → Nhẹ, tùy mình; còn lại → Làm được thì tốt */
+    const freeFix=rem.some(r=>r.t===1&&r.k!=='dg');
+    const pr=c[2]===2?1:(freeFix?3:2);
+    items.push({id:c[0],pr,name:lang==='vi'?c[5]:c[6],why:lang==='vi'?c[9]:c[10],rem,dis:c[4]?[d.dis[c[4]]]:[],link:'/'+c[3].toLowerCase()+'/',ll:c[3],cat:true}); });
+  items.forEach(it=>it.rem.sort((a,b)=>(a.k==='dg')-(b.k==='dg')||a.t-b.t));
+  items.sort((a,b)=>a.pr-b.pr);
+  return {items,plus,notes,p1,p2,fd,fi,face,chart,per,my,yr};
+}
+
+/* tổng chi phí */
+function totals(items){ const rent=st.role==='rent'; let cl=0,ch=0,fl=0,fh=0,q=0;
+  items.forEach(it=>{ const ok=it.rem.filter(r=>r.k!=='dg'&&(!rent||r.f.includes('r'))); if(!ok.length) return;
+    const known=ok.map(r=>({r,c:costOf(r.c)})).filter(x=>x.c);
+    if(known.length){ const m=known.reduce((a,b)=>b.c.hi<a.c.hi?b:a); cl+=m.c.lo; ch+=m.c.hi; }
+    const up=ok.filter(r=>r.t<=3), top=up.length?Math.max(...up.map(r=>r.t)):0;
+    if(top){ const tk=up.filter(r=>r.t===top).map(r=>costOf(r.c)).filter(Boolean);
+      if(tk.length){ fl+=Math.min(...tk.map(c=>c.lo)); fh+=Math.max(...tk.map(c=>c.hi)); } else { q++; const k2=up.map(r=>costOf(r.c)).filter(Boolean); if(k2.length){fl+=Math.min(...k2.map(c=>c.lo)); fh+=Math.max(...k2.map(c=>c.hi));} } } });
+  return {cl,ch,fl,fh,q}; }
+const rng=(a,b)=>b===0?'$0':money(a)+'–'+money(b);
+
+function remHTML(r){ const d=D(), rent=st.role==='rent', ext=r.f.includes('e'), perm=r.f.includes('p'), rem=r.f.includes('r');
+  let tags='<span class="tag k-'+r.k+'">'+d.kind[r.k]+'</span>';
+  if(perm) tags+='<a class="tag t-p" href="/t92/">'+d.permit+'</a>';
+  if(ext&&st.hoa==='y') tags+='<span class="tag t-h">'+d.hoa_tag+'</span>';
+  if(rent&&!rem) tags+='<span class="tag t-r">'+d.rent_tag+'</span>';
+  const c=costOf(r.c);
+  return '<li class="rm'+(rent&&!rem?' dim':'')+'"><div class="rh"><span class="tier t'+r.t+'">'+tierLabel(r)+'</span><span class="cost">'+costTxt(r.c)+(c&&c.hi>0?' <small>'+d.ba+'</small>':'')+'</span></div>'+
+    '<div class="rt">'+esc(r.txt)+'</div><div class="tags">'+tags+'</div></li>'; }
+function itemHTML(it){ const d=D(), isDone=!!done[it.id];
+  return '<article class="pi'+(isDone?' isdone':'')+'" data-id="'+it.id+'"><div class="ph"><h3>'+esc(it.name)+'</h3>'+
+    '<label class="dn"><input type="checkbox" data-done="'+it.id+'"'+(isDone?' checked':'')+'> '+d.done+'</label></div>'+
+    '<p class="why">'+it.why+'</p>'+(it.warn?'<div class="note">'+it.warn+'</div>':'')+
+    '<ol class="rms">'+it.rem.map(remHTML).join('')+'</ol>'+
+    (it.dis.length?'<p class="dis"><b>'+d.dis_k+'</b> '+it.dis.map(esc).join(' ')+'</p>':'')+
+    '<p class="more">'+d.more+': <a href="'+it.link+'">'+it.ll+'</a>'+(it.extra?it.extra.map(x=>' · <a href="'+x[0]+'">'+x[1]+'</a>').join(''):'')+' →</p></article>'; }
+
+function renderChecklist(){ const d=D();
+  $('chk').innerHTML=GROUPS.map(([g,vi,en])=>{ const its=CAT.filter(c=>c[1]===g), n=its.filter(c=>st.ticks.includes(c[0])).length;
+    return '<details class="grp" data-g="'+g+'"'+(open[g]?' open':'')+'><summary><span>'+(lang==='vi'?vi:en)+'</span><span class="chip'+(n?' mid':'')+'">'+fmt(d.gcount,{n})+'</span></summary><div class="opts">'+
+      its.map(c=>'<label class="opt"><input type="checkbox" data-tick="'+c[0]+'"'+(st.ticks.includes(c[0])?' checked':'')+'><span><b>'+esc(lang==='vi'?c[5]:c[6])+'</b><small>'+esc(lang==='vi'?c[7]:c[8])+'</small></span></label>').join('')+'</div></details>'; }).join('');
+  const t=st.ticks.map(id=>CAT.find(c=>c[0]===id)).filter(Boolean);
+  $('picked').innerHTML='<span class="pk">'+d.picked+'</span> '+(t.length?t.map(c=>'<button type="button" class="pchip" data-untick="'+c[0]+'">'+esc(lang==='vi'?c[5]:c[6])+' <span aria-hidden="true">×</span></button>').join(''):'<span class="hint">'+d.picked_none+'</span>');
+}
+
+function setPressed(ids,on){ ids.forEach(([id,v])=>{const el=$(id); if(el) el.setAttribute('aria-pressed',String(v===on));}); }
+function syncInputs(){
+  $('b1').value=st.b1; $('b2').value=st.b2; $('deg').value=st.deg; $('dir').value=st.dir; $('my').value=st.my; $('rep').value=st.rep;
+  setPressed([['g1m','m'],['g1f','f']],st.g1); setPressed([['g2m','m'],['g2f','f']],st.g2);
+  setPressed([['mDeg','deg'],['mDir','dir']],st.mode); setPressed([['sMag','mag'],['sTrue','true']],st.src);
+  setPressed([['rBuy','buy'],['rLive','live'],['rSell','sell'],['rRent','rent']],st.role); setPressed([['hY','y'],['hN','n']],st.hoa);
+  $('p2box').classList.toggle('hide',!st.two); $('twoBtn').textContent=st.two?D().l_two_off:D().l_two;
+  $('degBox').classList.toggle('hide',st.mode!=='deg'); $('dirBox').classList.toggle('hide',st.mode!=='dir');
+  $('exBan').classList.toggle('hide',!st.ex);
+}
+function fillSelects(){ const d=D(); const dv=$('dir').value||st.dir, rv=$('rep').value||st.rep;
+  $('dir').innerHTML='<option value="">—</option>'+DIR8.map(k=>'<option value="'+k+'">'+dirName(k)+' ('+k+')</option>').join('');
+  $('rep').innerHTML='<option value="">'+d.rep_none+'</option>'+DIR8.map(k=>'<option value="'+k+'">'+dirName(k)+'</option>').join('');
+  $('dir').value=dv; $('rep').value=rv; }
+
+function personHint(p){ const d=D(); if(!p) return ''; if(p.bad) return d.ly_out; const g=QUAI[p.q].g==='E'?d.gE:d.gW;
+  return p.before?fmt(d.lyB,{t:pad(p.tet.d)+'/'+pad(p.tet.m)+'/'+p.tet.y,y:p.ly,cc:canChiY(p.ly),q:QUAI[p.q].vi,g}):fmt(d.ly,{y:p.ly,cc:canChiY(p.ly),q:QUAI[p.q].vi,g}); }
+
+function calc(){
+  const d=D(), R=build(), it=R.items;
+  $('h1hint').innerHTML=R.p1?personHint(R.p1):d.ly_none; $('h2hint').innerHTML=st.two?personHint(R.p2):'';
+  $('srcHint').innerHTML=st.src==='true'&&R.fd!=null?fmt(d.src_true_h,{d:DECL,m:R.fd}):d.src_mag_h;
+  if(R.fi!=null){ const fs=sonInfo(R.fi), ss=sonInfo(mod(R.fi+12,24)); $('faceHint').innerHTML=fmt(d.face_txt,{f:fs.name,fd:dirName(fs.dir),s:ss.name,sd:dirName(ss.dir)}); }
+  else $('faceHint').innerHTML=d.face_none;
+  $('measure').href=R.fd!=null?'/t406/':'/t406/';
+  // thẻ tổng
+  const hard=it.filter(x=>x.cat&&HARD.includes(x.id)).length, hardOther=(st.ticks.includes('D01')?1:0)+(R.yr&&R.yr.n>=2?1:0)+(it.some(x=>x.hard)?1:0);
+  const isHard=hard>=2||(hard>=1&&hardOther>=1);
+  $('rN').textContent=it.length; $('rUnit').textContent=d.r_unit;
+  $('verdict').textContent=it.length?(isHard?d.v_hard:d.v_ok):d.v_ok0; $('verdict').className='verdict '+(isHard?'no':'ok');
+  $('verdictS').textContent=it.length?(isHard?d.v_hard_s:d.v_ok_s):'';
+  const c=[1,2,3].map(p=>it.filter(x=>x.pr===p).length);
+  $('tiers').innerHTML=[1,2,3].map((p,i)=>'<div class="tc p'+p+'"><span class="n">'+c[i]+'</span><span class="l">'+d['p'+p]+'</span></div>').join('');
+  const T=totals(it);
+  $('tot').innerHTML='<div class="line"><span class="n">'+d.tot_cheap+'</span><span class="a">'+rng(T.cl,T.ch)+'</span></div>'+
+    '<div class="line"><span class="n">'+d.tot_full+'</span><span class="a">'+rng(T.fl,T.fh)+'</span></div>'+
+    (T.q?'<div class="line"><span class="n">'+fmt(d.tot_q,{n:T.q})+'</span><span class="a"></span></div>':'')+
+    (st.role==='rent'?'<p class="hint">'+d.tot_rent+'</p>':'');
+  // tự phát hiện
+  $('auto').innerHTML=(R.plus.length?'<p class="grp-h">'+d.plus_h+'</p>'+R.plus.map(x=>'<p class="plus">'+x+'</p>').join(''):'')+R.notes.map(x=>'<div class="note">'+x+' <a href="/t406/">T208 →</a></div>').join('');
+  $('autoBox').classList.toggle('hide',!R.plus.length&&!R.notes.length);
+  // kế hoạch
+  let h=''; [1,2,3].forEach(p=>{const g=it.filter(x=>x.pr===p); if(g.length) h+='<h3 class="grp-h">'+d['p'+p]+' · '+g.length+'</h3>'+g.map(itemHTML).join('');});
+  $('plan').innerHTML=h||'<p class="hint" style="font-size:14px">'+d.plan_none+'</p>';
+  const nd=it.filter(x=>done[x.id]).length; $('prog').innerHTML=it.length?fmt(d.prog,{d:nd,n:it.length}):'';
+  $('rentNote').classList.toggle('hide',st.role!=='rent'); $('hoaNote').classList.toggle('hide',st.hoa!=='y');
+  $('objNote').classList.toggle('hide',!it.some(x=>x.rem.some(r=>r.k==='dg')));
+  $('roleTxt').innerHTML=d.role[st.role];
+  // email / sms
+  const cheap1=x=>{const ok=x.rem.filter(r=>r.k!=='dg'&&(st.role!=='rent'||r.f.includes('r'))); const r=ok[0]||x.rem[0]; return r?r.txt+' ('+costTxt(r.c)+')':'';};
+  const faceT=R.fi!=null?sonInfo(R.fi).name+' / '+dirName(R.face)+' '+R.fd+'°':'—';
+  const roleT={buy:d.r_buy,live:d.r_live,sell:d.r_sell,rent:d.r_rent}[st.role];
+  last={face:faceT,who:R.p1&&!R.p1.bad?R.p1.ly+' '+canChiY(R.p1.ly)+' · '+QUAI[R.p1.q].vi:'—',role:roleT,
+    top5:it.length?it.slice(0,5).map((x,i)=>(i+1)+'. '+x.name.replace(/<[^>]+>/g,'')+' — '+cheap1(x)).join('\n'):d.plan_none,cheap:rng(T.cl,T.ch),full:rng(T.fl,T.fh)+(T.q?' '+fmt(d.tot_q,{n:T.q}):'')};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fmt(d.sms,{n:it.length,top:it.length?it[0].name:'—'}));
+}
+function applyLang(){ const d=D();
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  $('myths').innerHTML=d.myths.map(m=>'<p class="myth"><b>'+esc(m[0])+'</b> '+esc(m[1])+'</p>').join('');
+  fillSelects(); syncInputs(); renderChecklist(); calc(); }
+function edit(fn){ fn(); st.ex=false; save(); syncInputs(); calc(); }
+
+load(); st.ticks.forEach(id=>{const c=CAT.find(x=>x[0]===id); if(c) open[c[1]]=true;});
+$('b1').addEventListener('input',e=>edit(()=>st.b1=e.target.value));
+$('b2').addEventListener('input',e=>edit(()=>st.b2=e.target.value));
+$('deg').addEventListener('input',e=>edit(()=>st.deg=e.target.value));
+$('dir').addEventListener('change',e=>edit(()=>st.dir=e.target.value));
+$('my').addEventListener('input',e=>edit(()=>st.my=e.target.value));
+$('rep').addEventListener('change',e=>edit(()=>st.rep=e.target.value));
+[['g1m','g1','m'],['g1f','g1','f'],['g2m','g2','m'],['g2f','g2','f'],['mDeg','mode','deg'],['mDir','mode','dir'],['sMag','src','mag'],['sTrue','src','true'],
+ ['rBuy','role','buy'],['rLive','role','live'],['rSell','role','sell'],['rRent','role','rent'],['hY','hoa','y'],['hN','hoa','n']].forEach(([id,k,v])=>{
+  $(id).onclick=()=>edit(()=>{ if(k==='mode'&&v==='dir'&&!st.dir){const f=faceDeg(); if(f!=null) st.dir=DIR8[Math.round(f/45)%8];} st[k]=v; }); });
+$('twoBtn').onclick=()=>edit(()=>st.two=!st.two);
+$('exClear').onclick=()=>{ st=JSON.parse(JSON.stringify(BLANK)); done={}; saveDone(); save(); syncInputs(); renderChecklist(); calc(); };
+$('resetTicks').onclick=()=>{ st.ticks=[]; save(); renderChecklist(); calc(); };
+$('chk').addEventListener('change',e=>{ const id=e.target.getAttribute('data-tick'); if(!id) return;
+  st.ticks=e.target.checked?st.ticks.concat(id).filter((x,i,a)=>a.indexOf(x)===i):st.ticks.filter(x=>x!==id); save(); renderChecklist(); calc(); });
+$('chk').addEventListener('toggle',e=>{ const g=e.target.getAttribute&&e.target.getAttribute('data-g'); if(g) open[g]=e.target.open; },true);
+$('picked').addEventListener('click',e=>{ const b=e.target.closest('[data-untick]'); if(!b) return; const id=b.getAttribute('data-untick'); st.ticks=st.ticks.filter(x=>x!==id); save(); renderChecklist(); calc(); });
+$('plan').addEventListener('change',e=>{ const id=e.target.getAttribute('data-done'); if(!id) return; if(e.target.checked) done[id]=1; else delete done[id]; saveDone();
+  const a=e.target.closest('.pi'); if(a) a.classList.toggle('isdone',e.target.checked); const it=build().items, nd=it.filter(x=>done[x.id]).length; $('prog').innerHTML=fmt(D().prog,{d:nd,n:it.length}); });
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=D(), n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+}
+
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'\u2190 All tools':'\u2190 T\u1ea5t c\u1ea3 tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

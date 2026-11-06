@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lá Số Tử Vi Nhà Đất · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line>*{min-width:0}
+.line .a{white-space:normal;text-align:right;min-width:0;overflow-wrap:anywhere}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+
+/* ===== Thêm cho T42 / T43 / T44 (không đổi class cũ) ===== */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;-webkit-appearance:none;appearance:none;cursor:pointer}
+.ctl .chev{color:var(--muted);font-size:12px;pointer-events:none}
+.ctl input[type=date]{font-size:18px;min-height:48px}
+.ctl input[type=text]{font-size:18px}
+.hint{font-size:12px;color:var(--muted);margin:0;line-height:1.45}
+.hint b{color:var(--fg);font-weight:500}
+.total .of{font-size:14px;color:var(--muted);margin-top:6px}
+.chip{font-size:12px;line-height:1.3;padding:3px 9px;border-radius:999px;border:1px solid var(--line);white-space:nowrap;flex:none;color:var(--muted)}
+.chip.ok{color:var(--ok);border-color:var(--ok)}
+.chip.mid{color:var(--brass);border-color:var(--brass)}
+.chip.no{color:var(--warn);border-color:var(--warn)}
+.grp-h{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);margin:6px 0 0;font-weight:500}
+.myth{font-size:14px;line-height:1.5;border-left:2px solid var(--brass);padding:2px 0 2px 12px;margin:0}
+.myth b{font-weight:500}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:12px}
+.next h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0;line-height:1.15}
+.steps{margin:0;padding:0;list-style:none;display:grid;gap:12px;counter-reset:st}
+.steps li{display:grid;grid-template-columns:26px minmax(0,1fr);gap:10px;font-size:15px;line-height:1.45;counter-increment:st}
+.steps li::before{content:counter(st);font-family:var(--display);font-size:22px;line-height:1;color:var(--brass)}
+.steps small{display:block;color:var(--muted);font-size:13px;margin-top:3px}
+.steps a{color:var(--brass);text-decoration:none}
+.dline{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.dline .n{color:var(--muted);min-width:0}
+.dline .n b{color:var(--fg);font-weight:500}
+.dline .a{font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+.tips{margin:0;padding-left:18px;font-size:14px;line-height:1.5;display:grid;gap:8px;color:var(--fg)}
+.tips li::marker{color:var(--brass)}
+.tips small{display:block;color:var(--muted);font-size:13px}
+.linkbtn{justify-self:start;border:1px solid var(--line);background:transparent;color:var(--brass);font:inherit;font-size:14px;padding:7px 13px;border-radius:999px;cursor:pointer}
+.linkbtn:hover{border-color:var(--brass)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0;line-height:1.15}
+.prog{display:grid;gap:6px;font-size:13px;color:var(--muted)}
+.prog b{color:var(--fg);font-weight:500}
+.gcal{color:var(--brass);text-decoration:none;white-space:nowrap;font-size:13px}
+.gcal:hover{text-decoration:underline}
+footer .src{line-height:1.6}
+.hide{display:none!important}
+.result > *,.inputs > *,.wrap > *,.panel > *{min-width:0}
+
+/* ===== Riêng T203 ===== */
+.tvp{padding:14px 10px}
+.tv{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}
+.tv .c{border:1px solid var(--line);border-radius:8px;padding:5px 4px 4px;min-height:132px;font-size:10.5px;line-height:1.25;display:flex;flex-direction:column;gap:2px;background:var(--panel);min-width:0;overflow-wrap:anywhere}
+.tv .c.key{border:2px solid var(--brass);padding:4px 3px 3px;background:var(--brass-soft)}
+.tv .c .cn{font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--brass);font-weight:600}
+.tv .c .cn i{font-style:normal;color:var(--fg);font-weight:500;text-transform:none;letter-spacing:0}
+.tv .c .cc{color:var(--muted);font-size:10px}
+.tv .c .ch{font-weight:600;font-size:11.5px;color:var(--fg)}
+.tv .c .ch em{font-style:normal;font-weight:500;font-size:9.5px;color:var(--ok);border:1px solid currentColor;border-radius:4px;padding:0 3px;margin-left:2px;white-space:nowrap}
+.tv .c .ch em.ky{color:var(--warn)}
+.tv .c .vc{color:var(--muted);font-style:italic;font-size:10.5px}
+.tv .c .ph{color:var(--muted);font-size:10px}
+.tv .c .ft{margin-top:auto;display:flex;justify-content:space-between;gap:2px;flex-wrap:wrap;color:var(--muted);font-size:9.5px;font-variant-numeric:tabular-nums}
+.tv .c .ft b{color:var(--fg);font-weight:500}
+.tv .c.dv .ft .dvr{color:var(--fg);font-weight:600;text-decoration:underline;text-decoration-color:var(--brass);text-underline-offset:2px}
+.tv .c .th{color:#FFFDF8;background:var(--brass);border-radius:4px;padding:0 3px}
+.tv .c .tt{color:var(--warn);font-size:9.5px}
+.tv .mid{grid-column:2/4;grid-row:2/4;border:1px solid var(--line);border-radius:8px;padding:10px 8px;display:grid;align-content:center;justify-items:center;gap:4px;text-align:center;font-size:12px;color:var(--muted);background:var(--bg)}
+.tv .mid .big{font-family:var(--display);font-size:22px;line-height:1.1;color:var(--fg)}
+.tv .mid b{color:var(--fg);font-weight:500}
+.read{display:grid;gap:10px}
+.rd{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:6px;font-size:14px;line-height:1.5}
+.rd h3{font-family:var(--display);font-weight:400;font-size:22px;margin:0;line-height:1.15}
+.rd h3 small{font-family:var(--body);font-size:13px;color:var(--muted)}
+.rd .st b{font-weight:600}
+.rd .st small{display:block;color:var(--muted);font-size:13px}
+.yrs{display:grid;border-top:1px solid var(--line)}
+
+</style>
+<meta name="description" content="Nhập ngày giờ sinh. Ra lá số Tử Vi 12 cung, đọc nhanh cung Điền Trạch (nhà đất) và Tài Bạch (tiền bạc), đại vận và tiểu hạn 5 năm tới. Tham khảo.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t411/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Lá Số Tử Vi Nhà Đất · Ken Lam Tools">
+<meta property="og:description" content="Nhập ngày giờ sinh. Ra lá số Tử Vi 12 cung, đọc nhanh cung Điền Trạch (nhà đất) và Tài Bạch (tiền bạc), đại vận và tiểu hạn 5 năm tới. Tham khảo.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t411/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Tử Vi chart: home and money</h1>
+    <p class="sub" data-i="sub">Enter birth date and hour. See your 12-palace chart, a quick read of Điền Trạch (home) and Tài Bạch (money), and which years to watch.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="row2">
+      <div class="field">
+        <label for="b1"><span data-i="l_b1">Birth date (solar)</span></label>
+        <div class="ctl"><input id="b1" type="date" min="1930-01-30" max="2030-12-31" value="1980-06-15"></div>
+      </div>
+      <div class="field">
+        <label for="hr"><span data-i="l_hr">Birth hour</span> <small data-i="l_hr_s">(required)</small></label>
+        <div class="ctl"><select id="hr"></select><span class="chev">▾</span></div>
+      </div>
+    </div>
+    <p class="hint" id="lunHint"></p>
+    <div class="row2">
+      <div class="field">
+        <label><span data-i="l_g">Gender</span></label>
+        <div class="seg" role="group">
+          <button type="button" id="gm" aria-pressed="true" data-i="g_m">Male</button>
+          <button type="button" id="gf" aria-pressed="false" data-i="g_f">Female</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="yv"><span data-i="l_yv">Year to check</span></label>
+        <div class="ctl"><select id="yv"></select><span class="chev">▾</span></div>
+      </div>
+    </div>
+    <p class="hint" data-i="hr_hint">Don’t know the hour? Tử Vi needs it. Ask family, or use T41 / T204, which only need the birth year.</p>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_k">Your Mệnh palace (self)</div>
+      <div class="v" id="rMenh">—</div>
+      <div class="of" id="rOf"></div>
+    </div>
+    <div class="lines" id="rLines"></div>
+    <div class="note" data-i="ref_note">For reference. Tử Vi is a traditional reading, not a forecast. Use it to plan, not to decide a price.</div>
+  </section>
+
+  <section class="panel tvp" aria-label="Chart">
+    <h2 data-i="ch_h">12-palace chart</h2>
+    <p class="hint" data-i="ch_hint">Gold border = Điền Trạch (home) and Tài Bạch (money). Bold = main stars. Bottom of each box: đại vận start age; gold tag = tiểu hạn of the year you picked.</p>
+    <div class="tv" id="tv"></div>
+  </section>
+
+  <section class="panel" aria-label="Quick read">
+    <h2 data-i="rd_h">Quick read: home and money</h2>
+    <div class="read" id="read"></div>
+    <p class="myth"><b data-i="myth_k">Common mistake:</b> <span data-i="myth">“Điền Trạch looks weak, so I’ll never own a home.” Not true. It talks about style and timing, like buying later or buying with family. Income, credit and down payment decide far more.</span></p>
+  </section>
+
+  <section class="panel" aria-label="Years">
+    <h2 data-i="yr_h">Next 5 years</h2>
+    <p class="hint" data-i="yr_hint">Tiểu hạn moves one palace a year. When it lands on Điền Trạch or Tài Bạch, that year is worth watching for home and money moves.</p>
+    <div class="yrs" id="yrs"></div>
+    <div class="note" id="yrNote"></div>
+  </section>
+
+  <section class="panel" aria-label="Method">
+    <h2 data-i="how_h">How this chart is set</h2>
+    <ul class="tips">
+      <li data-i="how1">Lunar date from your solar birth date, Vietnamese calendar (UTC+7). Use the clock time where you were born.</li>
+      <li data-i="how2">Mệnh and Thân from lunar month and hour. Cục from the can chi of the Mệnh palace. Tử Vi and Thiên Phủ from cục and lunar day, then the other 12 main stars.</li>
+      <li data-i="how3">Tứ hóa (Lộc, Quyền, Khoa, Kỵ) uses the common Vietnamese table. Schools differ for Canh years (Khoa/Kỵ on Thái Âm or Thiên Đồng) and Nhâm years (Khoa on Tả Phù or Thiên Phủ).</li>
+      <li data-i="how4">Leap month: day 1–15 counts as that month, day 16+ counts as the next month. Schools differ. For reference.</li>
+      <li data-i="how5">Born 11 PM–midnight: many practitioners count the next day. This tool uses the date you enter.</li>
+    </ul>
+  </section>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="ns_h">Next steps</h2>
+    <ol class="steps">
+      <li><span><span data-i="ns1">Check which years fit your age to buy (Kim Lâu, Hoang Ốc, Tam Tai).</span><small><a href="/t41/" data-i="ns1l">Tool T41 · Best year to buy</a></small></span></li>
+      <li><span><span data-i="ns2">See this year’s stars and limits for your age.</span><small><a href="/t405/" data-i="ns2l">Tool T209 · Yearly stars</a></small></span></li>
+      <li><span><span data-i="ns3">Then the real number: how much home you can afford.</span><small><a href="/t02/" data-i="ns3l">Tool T02 · How much home can I buy</a></small></span></li>
+          <li><span><span data-i="ns200">Make a remedy plan for the house: what to fix first and what it costs.</span><small><a href="/t404/" id="ns200a" data-i="ns200l">Make a remedy plan for the house · Tool T200</a></small></span></li>
+    </ol>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this chart to yourself</h2>
+    <p data-i="f_sub">Ken can match this with real numbers: budget, loan, timing. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#tu-vi-nha-dat" target="_blank" rel="noopener" data-i="ft_lib">Tử Vi and buying a home</a> · <a href="https://kenlamrealty.com/library#video-phong-thuy" target="_blank" rel="noopener" data-i="ft_vid">Real estate video</a></span>
+    <span data-i="ft_est">For reference only. Common Vietnamese Tử Vi method: 14 main stars and key minor stars. Schools differ on some stars. Not advice on price, loans or timing the market.</span>
+    <span class="src"><span data-i="ft_src">Sources:</span>
+      <a href="https://www.informatik.uni-leipzig.de/~duc/amlich/calrules.html" target="_blank" rel="noopener" data-i="s1">Hồ Ngọc Đức lunar algorithm</a> ·
+      <a href="https://tuvisonkhiem.vn/thu-vien/thuat-ngu/an-than-menh-la-gi/" target="_blank" rel="noopener">Tử Vi Sơn Khiêm · an Mệnh Thân</a> ·
+      <a href="https://tuvisonkhiem.vn/thu-vien/thuat-ngu/cach-an-sao-tu-vi-la-gi/" target="_blank" rel="noopener">an sao Tử Vi</a> ·
+      <a href="https://tuvisonkhiem.vn/thu-vien/thuat-ngu/cung-dien-trach-la-gi/" target="_blank" rel="noopener">cung Điền Trạch</a> ·
+      <a href="https://lichngaytot.com/tu-vi/cac-buoc-lap-la-so-tu-vi-304-217457.html" target="_blank" rel="noopener">Lịch Ngày Tốt · lập lá số</a> ·
+      <a href="https://tuvi.cohoc.net/tu-hoc-tu-vi-dau-so-bai-8-an-chom-sao-thien-phu-nid-24069.html" target="_blank" rel="noopener">Cổ Học · Thiên Phủ</a> ·
+      <a href="https://horos.vn/blog/post/tu-hoa-la-gi-hoa-loc-hoa-quyen-hoa-khoa-hoa-ky-trong-tu-vi-dau-so" target="_blank" rel="noopener">Horos · Tứ hóa</a> ·
+      <a href="https://hoc.kabala.vn/y-nghia-cua-14-chinh-tinh-nhap-12-cung/" target="_blank" rel="noopener">Kabala · 14 chính tinh</a>
+      <span data-i="src_date">(checked 04/11/2026)</span></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== FS CORE BEGIN (build từ /home/claude/fs, 04/11/2026) ===== */
+const TET={1930:130,1931:217,1932:206,1933:126,1934:214,1935:203,1936:124,1937:211,1938:131,1939:219,
+1940:208,1941:127,1942:215,1943:205,1944:125,1945:213,1946:202,1947:122,1948:210,1949:129,
+1950:217,1951:206,1952:127,1953:214,1954:203,1955:124,1956:212,1957:131,1958:218,1959:208,
+1960:128,1961:215,1962:205,1963:125,1964:213,1965:201,1966:121,1967:209,1968:129,1969:216,
+1970:206,1971:127,1972:215,1973:203,1974:123,1975:211,1976:131,1977:218,1978:207,1979:128,
+1980:216,1981:205,1982:125,1983:213,1984:202,1985:121,1986:209,1987:129,1988:217,1989:206,
+1990:127,1991:215,1992:204,1993:123,1994:210,1995:131,1996:219,1997:207,1998:128,1999:216,
+2000:205,2001:124,2002:212,2003:201,2004:122,2005:209,2006:129,2007:217,2008:207,2009:126,
+2010:214,2011:203,2012:123,2013:210,2014:131,2015:219,2016:208,2017:128,2018:216,2019:205,
+2020:125,2021:212,2022:201,2023:122,2024:210,2025:129,2026:217,2027:206,2028:126,2029:213,
+2030:202,2031:123,2032:211,2033:131};
+const TZ=7; // giờ Việt Nam
+function INT(d){return Math.floor(d)}
+function jdFromDate(dd,mm,yy){const a=INT((14-mm)/12),y=yy+4800-a,m=mm+12*a-3;let jd=dd+INT((153*m+2)/5)+365*y+INT(y/4)-INT(y/100)+INT(y/400)-32045;if(jd<2299161)jd=dd+INT((153*m+2)/5)+365*y+INT(y/4)-32083;return jd}
+function jdToDate(jd){let a,b,c;if(jd>2299160){a=jd+32044;b=INT((4*a+3)/146097);c=a-INT((b*146097)/4)}else{b=0;c=jd+32082}const d=INT((4*c+3)/1461),e=c-INT((1461*d)/4),m=INT((5*e+2)/153);return [e-INT((153*m+2)/5)+1,m+3-12*INT(m/10),b*100+d-4800+INT(m/10)]}
+function newMoon(k){const T=k/1236.85,T2=T*T,T3=T2*T,dr=Math.PI/180;let Jd1=2415020.75933+29.53058868*k+0.0001178*T2-0.000000155*T3;Jd1+=0.00033*Math.sin((166.56+132.87*T-0.009173*T2)*dr);const M=359.2242+29.10535608*k-0.0000333*T2-0.00000347*T3,Mpr=306.0253+385.81691806*k+0.0107306*T2+0.00001236*T3,F=21.2964+390.67050646*k-0.0016528*T2-0.00000239*T3;let C1=(0.1734-0.000393*T)*Math.sin(M*dr)+0.0021*Math.sin(2*dr*M);C1=C1-0.4068*Math.sin(Mpr*dr)+0.0161*Math.sin(dr*2*Mpr);C1=C1-0.0004*Math.sin(dr*3*Mpr);C1=C1+0.0104*Math.sin(dr*2*F)-0.0051*Math.sin(dr*(M+Mpr));C1=C1-0.0074*Math.sin(dr*(M-Mpr))+0.0004*Math.sin(dr*(2*F+M));C1=C1-0.0004*Math.sin(dr*(2*F-M))-0.0006*Math.sin(dr*(2*F+Mpr));C1=C1+0.0010*Math.sin(dr*(2*F-Mpr))+0.0005*Math.sin(dr*(2*Mpr+M));const deltat=T<-11?0.001+0.000839*T+0.0002261*T2-0.00000845*T3-0.000000081*T*T3:-0.000278+0.000265*T+0.000262*T2;return Jd1+C1-deltat}
+function sunLong(jdn){const T=(jdn-2451545.0)/36525,T2=T*T,dr=Math.PI/180,M=357.52910+35999.05030*T-0.0001559*T2-0.00000048*T*T2,L0=280.46645+36000.76983*T+0.0003032*T2;let DL=(1.914600-0.004817*T-0.000014*T2)*Math.sin(dr*M);DL+=(0.019993-0.000101*T)*Math.sin(dr*2*M)+0.000290*Math.sin(dr*3*M);let L=(L0+DL)*dr;L=L-Math.PI*2*INT(L/(Math.PI*2));return L}
+function getNewMoonDay(k){return INT(newMoon(k)+0.5+TZ/24)}
+function getSunLongitude(d){return INT(sunLong(d-0.5-TZ/24)/Math.PI*6)}
+function getLunarMonth11(yy){const off=jdFromDate(31,12,yy)-2415021,k=INT(off/29.530588853);let nm=getNewMoonDay(k);if(getSunLongitude(nm)>=9)nm=getNewMoonDay(k-1);return nm}
+function getLeapMonthOffset(a11){const k=INT((a11-2415021.076998695)/29.530588853+0.5);let last,i=1,arc=getSunLongitude(getNewMoonDay(k+i));do{last=arc;i++;arc=getSunLongitude(getNewMoonDay(k+i))}while(arc!=last&&i<14);return i-1}
+/* trả {d,m,y,leap,jd} */
+function solar2lunar(dd,mm,yy){const dayNumber=jdFromDate(dd,mm,yy),k=INT((dayNumber-2415021.076998695)/29.530588853);let monthStart=getNewMoonDay(k+1);if(monthStart>dayNumber)monthStart=getNewMoonDay(k);let a11=getLunarMonth11(yy),b11=a11,lunarYear;if(a11>=monthStart){lunarYear=yy;a11=getLunarMonth11(yy-1)}else{lunarYear=yy+1;b11=getLunarMonth11(yy+1)}const lunarDay=dayNumber-monthStart+1,diff=INT((monthStart-a11)/29);let lunarLeap=0,lunarMonth=diff+11;if(b11-a11>365){const leapMonthDiff=getLeapMonthOffset(a11);if(diff>=leapMonthDiff){lunarMonth=diff+10;if(diff==leapMonthDiff)lunarLeap=1}}if(lunarMonth>12)lunarMonth-=12;if(lunarMonth>=11&&diff<4)lunarYear-=1;return {d:lunarDay,m:lunarMonth,y:lunarYear,leap:lunarLeap,jd:dayNumber}}
+
+
+/* ===== FS CORE — phong thủy / tử vi cho bộ T201–T209 (Ken Lam Realty) =====
+   Một file, chép y chang vào mỗi tool. Sửa luật ở đây rồi build lại.
+   Lịch âm: thuật toán Hồ Ngọc Đức, UTC+7 (giống T40–T44).
+*/
+const CAN=['Giáp','Ất','Bính','Đinh','Mậu','Kỷ','Canh','Tân','Nhâm','Quý'];
+const CHI=['Tý','Sửu','Dần','Mão','Thìn','Tỵ','Ngọ','Mùi','Thân','Dậu','Tuất','Hợi'];
+const CHI_EN=['Rat','Ox','Tiger','Cat','Dragon','Snake','Horse','Goat','Monkey','Rooster','Dog','Pig'];
+const HANH=['kim','moc','thuy','hoa','tho'];
+const HANH_VI={kim:'Kim',moc:'Mộc',thuy:'Thủy',hoa:'Hỏa',tho:'Thổ'};
+const HANH_EN={kim:'Metal',moc:'Wood',thuy:'Water',hoa:'Fire',tho:'Earth'};
+const CAN_HANH=['moc','moc','hoa','hoa','tho','tho','kim','kim','thuy','thuy'];
+const CHI_HANH=['thuy','tho','moc','moc','tho','hoa','hoa','tho','kim','kim','tho','thuy'];
+const SINH={moc:'hoa',hoa:'tho',tho:'kim',kim:'thuy',thuy:'moc'};   // A sinh B
+const KHAC={moc:'tho',tho:'thuy',thuy:'hoa',hoa:'kim',kim:'moc'};   // A khắc B
+const NAP_AM=['Hải Trung Kim','Lư Trung Hỏa','Đại Lâm Mộc','Lộ Bàng Thổ','Kiếm Phong Kim','Sơn Đầu Hỏa','Giản Hạ Thủy','Thành Đầu Thổ','Bạch Lạp Kim','Dương Liễu Mộc',
+ 'Tuyền Trung Thủy','Ốc Thượng Thổ','Tích Lịch Hỏa','Tùng Bách Mộc','Trường Lưu Thủy','Sa Trung Kim','Sơn Hạ Hỏa','Bình Địa Mộc','Bích Thượng Thổ','Kim Bạch Kim',
+ 'Phú Đăng Hỏa','Thiên Hà Thủy','Đại Dịch Thổ','Thoa Xuyến Kim','Tang Đố Mộc','Đại Khê Thủy','Sa Trung Thổ','Thiên Thượng Hỏa','Thạch Lựu Mộc','Đại Hải Thủy'];
+const NAP_HANH=n=>({Kim:'kim',Mộc:'moc',Thủy:'thuy',Hỏa:'hoa',Thổ:'tho'})[n.split(' ').pop()];
+const mod=(a,n)=>((a%n)+n)%n;
+/* chỉ số 60 hoa giáp của (can,chi): 0 = Giáp Tý */
+function jiazi(c,z){for(let i=0;i<60;i++)if(i%10===c&&i%12===z)return i;return -1}
+function napAmCC(c,z){return NAP_AM[Math.floor(jiazi(c,z)/2)]}
+function yCan(y){return mod(y-4,10)} function yChi(y){return mod(y-4,12)}
+function canChiY(y){return CAN[yCan(y)]+' '+CHI[yChi(y)]}
+function napAmY(y){return napAmCC(yCan(y),yChi(y))}
+function tetOf(y){const v=TET[y];return v?{y,m:Math.floor(v/100),d:v%100}:null}
+function lunarYearOf(y,m,d){const t=tetOf(y);if(!t)return null;return (m*100+d)<(t.m*100+t.d)?y-1:y}
+
+/* ---- Âm → dương (Hồ Ngọc Đức) ---- */
+function lunar2solar(lD,lM,lY,leap){let a11,b11;if(lM<11){a11=getLunarMonth11(lY-1);b11=getLunarMonth11(lY)}else{a11=getLunarMonth11(lY);b11=getLunarMonth11(lY+1)}
+ const k=INT(0.5+(a11-2415021.076998695)/29.530588853);let off=lM-11;if(off<0)off+=12;
+ if(b11-a11>365){const lo=getLeapMonthOffset(a11);let lm=lo-2;if(lm<0)lm+=12;if(leap&&lM!=lm)return null;if(leap||off>=lo)off+=1}
+ const ms=getNewMoonDay(k+off);return jdToDate(ms+lD-1)}
+/* tháng âm nào trong năm âm lY là tháng nhuận (0 nếu không) */
+function leapMonthOf(lY){const a11=getLunarMonth11(lY-1),b11=getLunarMonth11(lY);if(b11-a11<=365)return 0;let lm=getLeapMonthOffset(a11)-2;if(lm<=0)lm+=12;return lm}
+
+/* ---- Tiết khí: kinh độ mặt trời chính xác theo thời điểm (độ) ---- */
+function sunDeg(jdUT){/* + aberration & nutation (Meeus) để tiết khí lệch < vài phút; lịch âm vẫn dùng sunLong gốc */const T=(jdUT+69/86400-2451545)/36525,Om=(125.04-1934.136*T)*Math.PI/180;return mod(sunLong(jdUT+69/86400)*180/Math.PI-0.00569-0.00478*Math.sin(Om),360)}
+/* JD (UT, có phần lẻ) lúc mặt trời đạt kinh độ deg, gần thời điểm jdGuess */
+function termJD(deg,jdGuess){let lo=jdGuess-20,hi=jdGuess+20;
+ const f=j=>{let x=mod(sunDeg(j)-deg+180,360)-180;return x};
+ for(let i=0;i<60;i++){const m=(lo+hi)/2;if(f(m)<0)lo=m;else hi=m}return (lo+hi)/2}
+const TIET=['Lập Xuân','Kinh Trập','Thanh Minh','Lập Hạ','Mang Chủng','Tiểu Thử','Lập Thu','Bạch Lộ','Hàn Lộ','Lập Đông','Đại Tuyết','Tiểu Hàn']; // bắt đầu tháng Dần..Sửu
+const KHI=['Vũ Thủy','Xuân Phân','Cốc Vũ','Tiểu Mãn','Hạ Chí','Đại Thử','Xử Thử','Thu Phân','Sương Giáng','Tiểu Tuyết','Đông Chí','Đại Hàn'];
+/* 24 tiết khí của năm dương y: [{name,deg,jd}] theo thứ tự thời gian từ Tiểu Hàn (285°) */
+function solarTerms(y){const out=[];const names=['Tiểu Hàn','Đại Hàn','Lập Xuân','Vũ Thủy','Kinh Trập','Xuân Phân','Thanh Minh','Cốc Vũ','Lập Hạ','Tiểu Mãn','Mang Chủng','Hạ Chí','Tiểu Thử','Đại Thử','Lập Thu','Xử Thử','Bạch Lộ','Thu Phân','Hàn Lộ','Sương Giáng','Lập Đông','Tiểu Tuyết','Đại Tuyết','Đông Chí'];
+ const j0=jdFromDate(6,1,y)-0.5;for(let i=0;i<24;i++){const deg=mod(285+15*i,360);const jd=termJD(deg,j0+i*15.22);out.push({name:names[i],deg,jd,jet:i%2===0})}return out}
+/* JD UT (phần lẻ) của một giờ đồng hồ địa phương, tz = giờ lệch UTC */
+function jdUT(y,m,d,h,mi,tz){return jdFromDate(d,m,y)-0.5+(h+(mi||0)/60-tz)/24}
+/* Ngày dương (theo giờ tz) từ JD UT */
+function dateFromJD(j,tz){const t=j+0.5+tz/24;const day=INT(t);const fr=t-day;const [d,m,y]=jdToDate(day);const mins=Math.round(fr*1440);return {y,m,d,h:INT(mins/60),mi:mins%60}}
+
+/* ---- Tứ trụ ----
+   Trụ năm đổi ở Lập Xuân (315°). Trụ tháng đổi ở mỗi tiết (315°+30k). Trụ ngày theo JD: can=(jd+9)%10, chi=(jd+1)%12.
+   Giờ Tý 23:00–00:59. HOUR23_NEXT=true: 23:00–23:59 tính sang ngày hôm sau (cách phổ biến). */
+let HOUR23_NEXT=true;
+function fourPillars(y,m,d,h,mi,tz){
+ const j=jdUT(y,m,d,h,mi,tz), L=sunDeg(j);
+ const mIdx=INT(mod(L-315,360)/30);                 // 0 = tháng Dần
+ // năm theo Lập Xuân: nếu trước Lập Xuân của năm dương y thì năm y-1
+ const lx=termJD(315,jdFromDate(4,2,y));
+ const Y=j<lx?y-1:y;
+ const yc=yCan(Y), yz=yChi(Y);
+ const mz=mod(mIdx+2,12), mc=mod(((yc%5)*2+2)+mIdx,10);
+ let jd=jdFromDate(d,m,y); if(h===23&&HOUR23_NEXT) jd+=1;
+ const dc=(jd+9)%10, dz=(jd+1)%12;
+ const hz=INT((h+1)/2)%12, hc=mod((dc%5)*2+hz,10);
+ // nếu 23h tính sang hôm sau thì can giờ theo ngày mới (đã cộng jd) — đúng Ngũ Thử Độn
+ return {y:[yc,yz],m:[mc,mz],d:[dc,dz],h:[hc,hz],L,Y,mIdx};
+}
+const ccStr=p=>CAN[p[0]]+' '+CHI[p[1]];
+/* Tàng can: [chính, phụ, dư] — chỉ số CAN */
+const TANG=[[9],[5,9,7],[0,2,4],[1],[4,1,9],[2,4,6],[3,5],[5,3,1],[6,8,4],[7],[4,7,3],[8,0]];
+/* đếm ngũ hành (cách giản lược, theo research): mỗi thiên can 1 điểm; mỗi địa chi 1 điểm chia cho tàng can
+   (1 can: 100%; 2 can: 70/30; 3 can: 60/30/10). Chi tháng (lệnh tháng) nhân 2. */
+const TANG_W={1:[1],2:[0.7,0.3],3:[0.6,0.3,0.1]};
+function countHanh(fp,monthX){const c={kim:0,moc:0,thuy:0,hoa:0,tho:0};const mx=monthX==null?2:monthX;
+ ['y','m','d','h'].forEach(k=>{const [cn,zh]=fp[k];c[CAN_HANH[cn]]+=1;const w=TANG_W[TANG[zh].length],f=k==='m'?mx:1;TANG[zh].forEach((t,i)=>{c[CAN_HANH[t]]+=w[i]*f})});
+ Object.keys(c).forEach(k=>c[k]=+c[k].toFixed(2));return c}
+/* Nhật chủ mạnh/yếu (phù ức giản lược): phe ta = hành nhật chủ + hành sinh nhật chủ; > 50% tổng điểm → thân vượng */
+function dayMaster(fp){const dm=CAN_HANH[fp.d[0]];const c=countHanh(fp);
+ const mom=Object.keys(SINH).find(k=>SINH[k]===dm);
+ const total=Object.values(c).reduce((a,b)=>a+b,0), self=c[dm]+c[mom], other=total-self;
+ const strong=self/total>0.5;
+ const kid=SINH[dm], boss=Object.keys(KHAC).find(k=>KHAC[k]===dm), wealth=KHAC[dm];
+ // thân vượng: dụng Tài, Thực Thương, Quan; thân nhược: dụng Ấn rồi Tỷ
+ const useful=strong?[wealth,kid,boss]:[mom,dm];
+ const avoid=strong?[mom,dm]:[boss,wealth];
+ return {dm,c,self:+self.toFixed(1),other:+other.toFixed(1),pct:Math.round(self/total*100),strong,useful,avoid,mom,kid,boss,wealth,lenh:CHI_HANH[fp.m[1]]};
+}
+
+/* ---- 24 sơn ---- Nhâm 337.5–352.5 ... theo chiều kim đồng hồ. pal = số Lạc Thư, yy = +1 dương / -1 âm (Huyền Không) */
+const SON=['Nhâm','Tý','Quý','Sửu','Cấn','Dần','Giáp','Mão','Ất','Thìn','Tốn','Tỵ','Bính','Ngọ','Đinh','Mùi','Khôn','Thân','Canh','Dậu','Tân','Tuất','Càn','Hợi'];
+const SON_EN=['Ren','Zi','Gui','Chou','Gen','Yin','Jia','Mao','Yi','Chen','Xun','Si','Bing','Wu','Ding','Wei','Kun','Shen','Geng','You','Xin','Xu','Qian','Hai'];
+const PAL_OF_DIR=[1,8,3,4,9,2,7,6];                     // N,NE,E,SE,S,SW,W,NW → Lạc Thư
+const DIR8=['N','NE','E','SE','S','SW','W','NW'];
+const DIR8_VI={N:'Bắc',NE:'Đông Bắc',E:'Đông',SE:'Đông Nam',S:'Nam',SW:'Tây Nam',W:'Tây',NW:'Tây Bắc',C:'Giữa nhà'};
+const DIR_OF_PAL={1:'N',8:'NE',3:'E',4:'SE',9:'S',2:'SW',7:'W',6:'NW',5:'C'};
+/* âm dương theo vị trí trong cung (1 Địa, 2 Thiên, 3 Nhân): cung 1,3,7,9: + - - ; cung 2,4,6,8: - + + */
+function sonYY(pal,pos){const a=[1,3,7,9].includes(pal)?[1,-1,-1]:[-1,1,1];return a[pos]}
+function sonOfDeg(deg){deg=mod(deg,360);const i=mod(INT((deg+22.5)/15),24);return i} // i: index SON, Nhâm bắt đầu ở 337.5
+function sonInfo(i){const d=INT(i/3); /* Nhâm,Tý,Quý = 0 (N) */return {i,name:SON[i],en:SON_EN[i],dir:DIR8[d],pal:PAL_OF_DIR[d],pos:i%3,center:mod(i*15-15,360),yy:sonYY(PAL_OF_DIR[d],i%3)}}
+/* khoảng cách tới ranh giới sơn (độ) — <3 thì cảnh báo kiêm hướng */
+function sonEdge(deg){deg=mod(deg,360);const x=mod(deg+22.5,15);return Math.min(x,15-x)}
+
+/* ---- Huyền Không phi tinh ----
+   Bay thuận: cung có số Lạc Thư k nhận n+(k-5). Bay nghịch: n-(k-5). Kết quả 1..9. */
+const n9=x=>mod(x-1,9)+1;
+function fly(center,fwd){const g={};for(let k=1;k<=9;k++)g[k]=n9(fwd?center+(k-5):center-(k-5));return g}
+/* vận theo năm (dương lịch, tính từ Lập Xuân): vận 1 bắt đầu 1864 */
+function periodOf(y){return mod(INT((y-1864)/20),9)+1}
+function natalChart(period,sitSon){const sit=sonInfo(sitSon), fac=sonInfo(mod(sitSon+12,24));
+ const P=fly(period,true);
+ const mk=(info)=>{const x=P[info.pal];let yy;if(x===5)yy=info.yy;else yy=sonYY(x,info.pos);return {x,fwd:yy>0,g:fly(x,yy>0)}};
+ const M=mk(sit), F=mk(fac);
+ const sp=sit.pal, fp=fac.pal;
+ let type='other';
+ if(M.g[sp]===period&&F.g[fp]===period)type='vsvh';
+ else if(M.g[fp]===period&&F.g[sp]===period)type='tshh';
+ else if(M.g[fp]===period&&F.g[fp]===period)type='stdh';
+ else if(M.g[sp]===period&&F.g[sp]===period)type='stdt';
+ // phục ngâm / phản ngâm: sao 5 nhập trung (sơn hoặc hướng)
+ const fu=[],fan=[];[['m',M],['f',F]].forEach(([k,s])=>{if(s.x===5){(s.fwd?fu:fan).push(k)}});
+ return {period,sit,fac,P,M:M.g,F:F.g,Mfwd:M.fwd,Ffwd:F.fwd,type,fu,fan};
+}
+/* sao năm: 2026 = 1 Bạch nhập trung; mỗi năm lùi 1. Năm tính từ Lập Xuân. */
+function yearStar(y){return n9(1-(y-2026))}
+/* sao tháng: tháng Dần của năm Tý/Ngọ/Mão/Dậu = 8, Thìn/Tuất/Sửu/Mùi = 5, Dần/Thân/Tỵ/Hợi = 2; mỗi tháng lùi 1 */
+function monthStar(y,mIdx){const z=yChi(y);const s=[0,6,3,9].includes(z)?8:([4,10,1,7].includes(z)?5:2);return n9(s-mIdx)}
+const STAR9=[null,'Nhất Bạch','Nhị Hắc','Tam Bích','Tứ Lục','Ngũ Hoàng','Lục Bạch','Thất Xích','Bát Bạch','Cửu Tử'];
+/* hung thần năm: Thái Tuế = chi năm; Tuế Phá đối diện; Tam Sát theo tam hợp (phương đối diện vượng phương) */
+const CHI_DEG=z=>mod(z*30,360);   // Tý 0°, Sửu 30°…
+const CHI_SON=z=>[1,3,5,7,9,11,13,15,17,19,21,23][z];
+function yearShas(y){const z=yChi(y);
+ const tamSat={0:'S',4:'S',8:'S', 2:'N',6:'N',10:'N', 5:'E',9:'E',1:'E', 11:'W',3:'W',7:'W'}[z];
+ const ys=yearStar(y),g=fly(ys,true);
+ const at=n=>DIR_OF_PAL[+Object.keys(g).find(k=>g[k]===n)];
+ return {z,thaiTue:CHI_SON(z),tuePha:CHI_SON(mod(z+6,12)),tamSat,nguHoang:at(5),nhiHac:at(2),center:ys,g};
+}
+
+/* ---- Bát trạch (giống T40) ---- */
+const QUAI_BY_NUM={1:'Kham',2:'Khon',3:'Chan',4:'Ton',6:'Can',7:'Doai',8:'Cang',9:'Ly'};
+const QUAI={Kham:{vi:'Khảm',el:'thuy',g:'E'},Ly:{vi:'Ly',el:'hoa',g:'E'},Chan:{vi:'Chấn',el:'moc',g:'E'},Ton:{vi:'Tốn',el:'moc',g:'E'},
+ Can:{vi:'Càn',el:'kim',g:'W'},Khon:{vi:'Khôn',el:'tho',g:'W'},Cang:{vi:'Cấn',el:'tho',g:'W'},Doai:{vi:'Đoài',el:'kim',g:'W'}};
+const BT_STARS=['sk','ty','dn','pv','hh','ls','nq','tm'];
+const BT_VI={sk:'Sinh Khí',ty:'Thiên Y',dn:'Diên Niên',pv:'Phục Vị',hh:'Họa Hại',ls:'Lục Sát',nq:'Ngũ Quỷ',tm:'Tuyệt Mệnh'};
+const BT={Kham:['SE','E','S','N','W','NW','NE','SW'],Ly:['E','SE','N','S','NE','SW','W','NW'],Chan:['S','N','SE','E','SW','NE','NW','W'],Ton:['N','S','E','SE','NW','W','SW','NE'],
+ Can:['W','NE','SW','NW','SE','N','E','S'],Khon:['NE','W','NW','SW','E','S','SE','N'],Cang:['SW','NW','W','NE','S','E','N','SE'],Doai:['NW','SW','NE','W','N','SE','S','E']};
+function quaiNum(y,g){let q=g==='m'?(11-(y%9))%9:((y%9)+4)%9;if(q===0)q=9;if(q===5)q=g==='m'?2:8;return q}
+function quaiOf(y,g){return QUAI_BY_NUM[quaiNum(y,g)]}
+function goodDirs(q){return BT[q].slice(0,4)}
+function starAt(q,dir){return BT_STARS[BT[q].indexOf(dir)]}
+/* quái của nhà theo hướng TỌA (8 hướng) */
+const HOUSE_QUAI_BY_SIT={N:'Kham',S:'Ly',E:'Chan',SE:'Ton',NW:'Can',SW:'Khon',NE:'Cang',W:'Doai'};
+
+/* ---- tuổi / hợp xung ---- */
+const isTamHop=(a,b)=>a!==b&&a%4===b%4;
+const isLucHop=(a,b)=>(a+b)%12===1;
+const isXung=(a,b)=>mod(a-b,12)===6;
+const isHai=(a,b)=>(a+b)%12===7;                 // lục hại: Tý-Mùi, Sửu-Ngọ, Dần-Tỵ, Mão-Thìn, Thân-Hợi, Dậu-Tuất
+const isHinh=(a,b)=>{const T=[[2,5,8],[1,10,7],[0,3]];return a!==b&&T.some(g=>g.includes(a)&&g.includes(b))};
+const canHop=(a,b)=>mod(a-b,10)===5;              // Giáp-Kỷ, Ất-Canh...
+const canXung=(a,b)=>[[0,6],[1,7],[2,8],[3,9]].some(([x,y])=>(a===x&&b===y)||(a===y&&b===x)); // Giáp-Canh, Ất-Tân, Bính-Nhâm, Đinh-Quý
+function hanhRel(a,b){ // quan hệ hành a với b nhìn từ a
+ if(a===b)return 'same';if(SINH[a]===b)return 'asinhb';if(SINH[b]===a)return 'bsinha';if(KHAC[a]===b)return 'akhacb';return 'bkhaca'}
+
+/* ===== TỬ VI ĐẨU SỐ — an sao cơ bản (14 chính tinh + phụ tinh chính) =====
+   Vị trí cung tính theo chi: 0 = Tý … 11 = Hợi. Lưới 4x4: Tỵ Ngọ Mùi Thân / Thìn . . Dậu / Mão . . Tuất / Dần Sửu Tý Hợi.
+   Nguồn & đối chiếu: xem ghi chú trong tool T203.
+*/
+const CUNG12=['Mệnh','Phụ Mẫu','Phúc Đức','Điền Trạch','Quan Lộc','Nô Bộc','Thiên Di','Tật Ách','Tài Bạch','Tử Tức','Phu Thê','Huynh Đệ'];
+const CUC={thuy:2,moc:3,kim:4,tho:5,hoa:6};
+const CUC_VI={2:'Thủy nhị cục',3:'Mộc tam cục',4:'Kim tứ cục',5:'Thổ ngũ cục',6:'Hỏa lục cục'};
+const CHINH=['Tử Vi','Thiên Cơ','Thái Dương','Vũ Khúc','Thiên Đồng','Liêm Trinh','Thiên Phủ','Thái Âm','Tham Lang','Cự Môn','Thiên Tướng','Thiên Lương','Thất Sát','Phá Quân'];
+/* Tứ hóa theo can năm: [Lộc, Quyền, Khoa, Kỵ] — KEN DUYỆT nếu thầy theo phái khác (Canh, Mậu, Nhâm hay khác nhau) */
+/* Canh: Khoa Thái Âm, Kỵ Thiên Đồng (horos.vn); phái Trình Minh Đức đảo lại. Nhâm Khoa: Tả Phù (đa số). KEN DUYỆT */
+let TU_HOA={0:['Liêm Trinh','Phá Quân','Vũ Khúc','Thái Dương'],1:['Thiên Cơ','Thiên Lương','Tử Vi','Thái Âm'],2:['Thiên Đồng','Thiên Cơ','Văn Xương','Liêm Trinh'],
+ 3:['Thái Âm','Thiên Đồng','Thiên Cơ','Cự Môn'],4:['Tham Lang','Thái Âm','Hữu Bật','Thiên Cơ'],5:['Vũ Khúc','Tham Lang','Thiên Lương','Văn Khúc'],
+ 6:['Thái Dương','Vũ Khúc','Thái Âm','Thiên Đồng'],7:['Cự Môn','Thái Dương','Văn Khúc','Văn Xương'],8:['Thiên Lương','Tử Vi','Tả Phù','Vũ Khúc'],9:['Phá Quân','Cự Môn','Thái Âm','Tham Lang']};
+const LOC_TON=[2,3,5,6,5,6,8,9,11,0];                        // theo can năm
+let KHOI_VIET={0:[1,7],4:[1,7],1:[0,8],5:[0,8],2:[11,9],3:[11,9],6:[6,2],7:[6,2],8:[3,5],9:[3,5]}; // [Khôi, Việt]
+const THIEN_MA=z=>({2:8,6:8,10:8, 8:2,0:2,4:2, 5:11,9:11,1:11, 11:5,3:5,7:5})[z];
+const TRIET=c=>[[8,9],[6,7],[4,5],[2,3],[0,1]][c%5];        // Giáp/Kỷ: Thân Dậu …
+function tuanOf(c,z){const start=mod(z-c,12);return [mod(start+10,12),mod(start+11,12)]} // 2 chi không vong của tuần năm sinh
+/* an Tử Vi: q = số nhỏ nhất để q*cục ≥ ngày; r = q*cục − ngày; từ Dần đi thuận q−1 cung, r chẵn thì đi thuận r, r lẻ thì nghịch r */
+function tuViPos(cuc,day){let q=Math.ceil(day/cuc);const r=q*cuc-day;const base=2+q-1;return mod(r%2===0?base+r:base-r,12)}
+/* lunar: {d,m,y(năm âm), leap}; hour: chi 0..11; gender 'm'|'f'. Tháng nhuận: ngày ≤15 tính tháng đó, >15 tính tháng sau (KEN DUYỆT) */
+function tuviChart(lunar,hour,gender){
+ let m=lunar.m; if(lunar.leap&&lunar.d>15) m=m%12+1;
+ const yc=yCan(lunar.y), yz=yChi(lunar.y);
+ const menh=mod(2+(m-1)-hour,12), than=mod(2+(m-1)+hour,12);
+ const canDan=(yc%5)*2+2; const canOf=z=>mod(canDan+mod(z-2,12),10);
+ const cucHanh=NAP_HANH(napAmCC(canOf(menh),menh)); const cuc=CUC[cucHanh];
+ const P=Array.from({length:12},(_,z)=>({z,can:canOf(z),cung:CUNG12[mod(z-menh,12)],chinh:[],phu:[],hoa:{}}));
+ const put=(z,name,main)=>{P[mod(z,12)][main?'chinh':'phu'].push(name)};
+ const tv=tuViPos(cuc,lunar.d), tp=mod(4-tv,12);
+ [[0,'Tử Vi'],[-1,'Thiên Cơ'],[-3,'Thái Dương'],[-4,'Vũ Khúc'],[-5,'Thiên Đồng'],[-8,'Liêm Trinh']].forEach(([o,n])=>put(tv+o,n,1));
+ [[0,'Thiên Phủ'],[1,'Thái Âm'],[2,'Tham Lang'],[3,'Cự Môn'],[4,'Thiên Tướng'],[5,'Thiên Lương'],[6,'Thất Sát'],[10,'Phá Quân']].forEach(([o,n])=>put(tp+o,n,1));
+ const lt=LOC_TON[yc]; put(lt,'Lộc Tồn'); put(lt+1,'Kình Dương'); put(lt-1,'Đà La');
+ put(4+(m-1),'Tả Phù'); put(10-(m-1),'Hữu Bật');
+ put(10-hour,'Văn Xương'); put(4+hour,'Văn Khúc');
+ put(11+hour,'Địa Kiếp'); put(11-hour,'Địa Không');
+ const kv=KHOI_VIET[yc]; put(kv[0],'Thiên Khôi'); put(kv[1],'Thiên Việt');
+ put(THIEN_MA(yz),'Thiên Mã');
+ // Hỏa/Linh (tuvisonkhiem): điểm khởi giờ Tý theo nhóm chi năm; dương nam/âm nữ: Hỏa thuận, Linh nghịch; ngược lại đảo
+ const HL={2:[1,3],6:[1,3],10:[1,3], 8:[2,10],0:[2,10],4:[2,10], 5:[3,10],9:[3,10],1:[3,10], 11:[9,10],3:[9,10],7:[9,10]}[yz];
+ const hlFwd=((yc%2===0)&&gender==='m')||((yc%2===1)&&gender==='f');
+ put(HL[0]+(hlFwd?hour:-hour),'Hỏa Tinh'); put(HL[1]+(hlFwd?-hour:hour),'Linh Tinh');
+ const tr=TRIET(yc), tu=tuanOf(yc,yz);
+ const where=n=>P.find(p=>p.chinh.includes(n)||p.phu.includes(n));
+ TU_HOA[yc].forEach((n,i)=>{const p=where(n);if(p)p.hoa[n]=['Lộc','Quyền','Khoa','Kỵ'][i]});
+ const yangYear=yc%2===0, fwd=(yangYear&&gender==='m')||(!yangYear&&gender==='f');
+ // đại vận: cung Mệnh bắt đầu ở tuổi = số cục
+ const daiVan=P.map(p=>{const k=fwd?mod(p.z-menh,12):mod(menh-p.z,12);return {z:p.z,from:cuc+10*k,to:cuc+10*k+9}});
+ // tiểu hạn: tuổi 1 ở cung theo nhóm chi năm; nam thuận, nữ nghịch
+ const thStart={2:4,6:4,10:4, 8:10,0:10,4:10, 5:7,9:7,1:7, 11:1,3:1,7:1}[yz];
+ const tieuHan=age=>mod(gender==='m'?thStart+(age-1):thStart-(age-1),12);
+ return {menh,than,cuc,cucHanh,tv,tp,P,daiVan,tieuHan,fwd,yc,yz,triet:tr,tuan:tu,m};
+}
+
+/* ===== LỊCH NGÀY + SAO HẠN (nguồn: /research/battu_saohan_lich.md, tra 04/11/2026) ===== */
+const STAR12=['Thanh Long','Minh Đường','Thiên Hình','Chu Tước','Kim Quỹ','Kim Đường','Bạch Hổ','Ngọc Đường','Thiên Lao','Huyền Vũ','Tư Mệnh','Câu Trận'];
+const HD12=[1,1,0,0,1,1,0,1,0,0,1,0];
+const GIO_HD=['110100101100','001101001011','110011010010','101100110100','001011001101','010010110011'];
+function thanNgay(lm,dz){return (dz-((lm-1)%6)*2+12)%12}            // theo tháng âm (ngaydep)
+function goodHours(dz){const s=GIO_HD[dz%6],r=[];for(let i=0;i<12;i++)if(s[i]==='1')r.push(i);return r}
+const TRUC=['Kiến','Trừ','Mãn','Bình','Định','Chấp','Phá','Nguy','Thành','Thâu','Khai','Bế'];
+/* việc → [nên, kỵ] theo trực */
+const TRUC_VIEC={ky:[['Định','Thành','Chấp','Thâu','Khai'],['Phá','Nguy','Trừ','Bế']],
+ dongtho:[['Thành','Khai','Định'],['Kiến','Phá','Nguy','Bế']],
+ nhaptrach:[['Thành','Định','Khai','Mãn'],['Phá','Chấp','Nguy']],
+ cuoi:[['Định','Thành','Khai','Chấp'],['Phá','Trừ','Bình','Nguy','Bế']]};
+const TU28=['Giác','Cang','Đê','Phòng','Tâm','Vĩ','Cơ','Đẩu','Ngưu','Nữ','Hư','Nguy','Thất','Bích','Khuê','Lâu','Vị','Mão','Tất','Chủy','Sâm','Tỉnh','Quỷ','Liễu','Tinh','Trương','Dực','Chẩn'];
+const TU28_TOT=['Giác','Phòng','Vĩ','Cơ','Đẩu','Thất','Bích','Lâu','Vị','Tất','Sâm','Tỉnh','Dực','Chẩn']; // Khuê: nửa tốt
+const TAM_NUONG=[3,7,13,18,22,27], NGUYET_KY=[5,14,23];
+const DUONG_CONG=[[1,13],[2,12],[3,9],[4,7],[5,5],[6,3],[7,8],[7,29],[8,27],[9,25],[10,23],[11,21],[12,19]];
+const SAT_CHU=[5,0,7,3,8,10,11,1,6,9,2,4];                        // chi ngày Sát Chủ theo tháng âm 1..12
+const THO_TU=[[2,10],[8,4],[7,11],[3,5],[4,0],[2,6],[1,1],[9,7],[0,2],[4,8],[7,3],[7,9]]; // [can,chi] theo tháng âm — 1 nguồn, KEN DUYỆT
+/* thông tin 1 ngày dương */
+function dayInfo(y,m,d){const l=solar2lunar(d,m,y), jd=l.jd, dc=(jd+9)%10, dz=(jd+1)%12;
+ const L=sunDeg(jdFromDate(d,m,y)-0.5+(12-7)/24);                   // trưa giờ VN
+ const mz=mod(INT(mod(L-315,360)/30)+2,12);                          // chi tháng theo tiết
+ const lyc=yCan(l.y), lmc=mod((lyc%5)*2+2+(l.m-1),10), lmz=mod(l.m+1,12); // can chi tháng âm (lịch Việt)
+ const th=thanNgay(l.m,dz), truc=TRUC[mod(dz-mz,12)], tu=TU28[mod(jd+11,28)];
+ const ky=[];if(TAM_NUONG.includes(l.d))ky.push('Tam Nương');if(NGUYET_KY.includes(l.d))ky.push('Nguyệt Kỵ');
+ if(DUONG_CONG.some(([a,b])=>a===l.m&&b===l.d))ky.push('Dương Công Kỵ');
+ if(SAT_CHU[l.m-1]===dz)ky.push('Sát Chủ');const tt=THO_TU[l.m-1];if(tt[0]===dc&&tt[1]===dz)ky.push('Thọ Tử');
+ return {y,m,d,l,jd,dc,dz,lyc,lmc,lmz,tietZ:mz,than:STAR12[th],hd:HD12[th]===1,truc,tu,tuTot:TU28_TOT.includes(tu)?1:(tu==='Khuê'?0:-1),ky,hours:goodHours(dz),wd:new Date(Date.UTC(y,m-1,d)).getUTCDay()};}
+/* chấm 1 việc: 'good' | 'mid' | 'no' */
+function rateViec(info,viec,pz){const [nen,kyT]=TRUC_VIEC[viec];
+ if(info.ky.length||kyT.includes(info.truc)||(pz!=null&&isXung(pz,info.dz)))return 'no';
+ let s=0;if(info.hd)s++;if(nen.includes(info.truc))s++;if(info.tuTot===1)s++;
+ return s>=2?'good':'mid'}
+
+/* sao chiếu mệnh & hạn — tuổi âm a = năm xem − năm sinh âm + 1 */
+const SAO9_NAM=['La Hầu','Thổ Tú','Thủy Diệu','Thái Bạch','Thái Dương','Vân Hán','Kế Đô','Thái Âm','Mộc Đức'];
+const SAO9_NU=['Kế Đô','Vân Hán','Mộc Đức','Thái Âm','Thổ Tú','La Hầu','Thái Dương','Thái Bạch','Thủy Diệu'];
+const HAN8_NAM=['Diêm Vương','Huỳnh Tuyền','Tam Kheo','Ngũ Mộ','Thiên Tinh','Toán Tận','Thiên La','Địa Võng'];
+const HAN8_NU=['Thiên La','Toán Tận','Thiên Tinh','Ngũ Mộ','Tam Kheo','Huỳnh Tuyền','Diêm Vương','Địa Võng'];
+function saoHan(lunarBirthYear,viewYear,g){const a=viewYear-lunarBirthYear+1;
+ const sao=(g==='m'?SAO9_NAM:SAO9_NU)[mod(a-10,9)];const k=mod(a-INT(a/10),8);const han=(g==='m'?HAN8_NAM:HAN8_NU)[k];return {a,sao,han}}
+/* tính chất & cúng (dân gian) */
+const SAO_INFO={'La Hầu':{t:'xau',day:8,hr:'21–23h',dir:'Bắc',den:9,mau:'Vàng'},'Kế Đô':{t:'xau',day:18,hr:'13–15h',dir:'Tây',den:21,mau:'Vàng'},
+ 'Thái Bạch':{t:'xau',day:15,hr:'19–21h',dir:'Tây',den:8,mau:'Trắng'},'Vân Hán':{t:'trungxau',day:29,hr:'11–13h',dir:'Nam',den:15,mau:'Đỏ'},
+ 'Thổ Tú':{t:'trung',day:19,hr:'21–23h',dir:'Tây',den:5,mau:'Vàng'},'Thủy Diệu':{t:'trungtot',day:21,hr:'21–23h',dir:'Bắc',den:7,mau:'Đen'},
+ 'Thái Dương':{t:'tot',day:27,hr:'21–23h (có nơi 11–13h)',dir:'Đông',den:12,mau:'Đỏ/Vàng'},'Thái Âm':{t:'tot',day:26,hr:'19–21h',dir:'Tây',den:7,mau:'Vàng'},
+ 'Mộc Đức':{t:'tot',day:25,hr:'19–21h',dir:'Đông',den:20,mau:'Xanh'}};
+/* ===== FS CORE END ===== */
+
+
+
+/* ===== T203 — Lá số Tử Vi: nhà đất & tiền bạc =====
+   Luật an sao: fs-core tuviChart (đối chiếu /home/claude/research/tuvi.md, 2 lá số test khớp:
+     Nam 15/06/1980 giờ Thìn → 3/5 Canh Thân, Mệnh Dần Tham Lang, Thổ ngũ cục, Điền Trạch Tỵ Thiên Lương, Tài Bạch Tuất Phá Quân;
+     Nữ 20/03/1975 giờ Tý → 8/2 Ất Mão, Điền Trạch Ngọ vô chính diệu).
+   Nghĩa sao: tự viết lại từ tuvisonkhiem.vn (cung Điền Trạch) + hoc.kabala.vn (14 chính tinh nhập 12 cung). Tham khảo.
+   Sáng/tối: chỉ dùng cho Thái Dương, Thái Âm (2 bảng miếu hãm khớp ở mọi ô Hãm). H = tối, còn lại = sáng.
+   KEN DUYỆT: Tứ hóa Canh/Nhâm, luật tháng nhuận (trong fs-core). */
+const UPDATED='04/11/2026';
+const YV_MIN=2026, YV_MAX=2035;
+const BRIGHT={'Thái Dương':'HVVVVMMĐHHHH'.split(''),'Thái Âm':'ĐĐHHHHHĐĐMMM'.split('')}; // Tý..Hợi
+const isDark=(n,z)=>BRIGHT[n]&&BRIGHT[n][z]==='H';
+const CUNG_EN={'Mệnh':'self','Phụ Mẫu':'parents','Phúc Đức':'fortune','Điền Trạch':'home & land','Quan Lộc':'career','Nô Bộc':'friends, staff','Thiên Di':'travel, outside','Tật Ách':'health','Tài Bạch':'money','Tử Tức':'children','Phu Thê':'spouse','Huynh Đệ':'siblings'};
+const DIEN_MEAN={vi:{
+ 'Tử Vi':'Có nhà, thích nhà cao, khu sang. Thường có cả nhà tự mua lẫn của để lại.',
+ 'Thiên Cơ':'Hay dọn nhà, sửa nhà, đổi chỗ ở.',
+ 'Thái Dương':['Sáng: có của ông bà, mua thêm được.','Tối: tự gây dựng từ đầu.'],
+ 'Vũ Khúc':'Hợp đầu tư, mua bán, cho thuê nhà đất.',
+ 'Thiên Đồng':'Nhà êm ấm. Của tích từ từ, có thể được hưởng thừa kế.',
+ 'Liêm Trinh':'Nhà tự làm ra. Hay vướng giấy tờ, pháp lý, nên coi kỹ title.',
+ 'Thiên Phủ':'Kho của: giữ nhà đất tốt, thích nhà rộng.',
+ 'Thái Âm':['Sao chủ nhà đất. Sáng: nhiều nhà, nhà ấm.','Sao chủ nhà đất. Tối: ít của để lại, tự lo là chính.'],
+ 'Tham Lang':'Khó giữ của ông bà. Tự tạo, càng về sau càng khá.',
+ 'Cự Môn':'Dễ có chuyện ranh đất, giấy tờ, chia của trong nhà. Làm gì cũng nên ghi rõ trên giấy.',
+ 'Thiên Tướng':'Nhà ổn định, gọn đẹp. Nhà tự làm bền hơn nhà thừa kế.',
+ 'Thiên Lương':'Giữ được nhà cũ, chỗ ở yên, có cây xanh. Mua bán chậm.',
+ 'Thất Sát':'Khó giữ của gia đình. Tự tay xây, hay đổi chỗ.',
+ 'Phá Quân':'Ít của tổ, hoặc nhà cũ xuống cấp. Mất trước được sau, mua bán nhanh.'},
+en:{
+ 'Tử Vi':'Likely to own. Likes tall homes, nice areas. Often both a home you buy and one passed down.',
+ 'Thiên Cơ':'Moves, remodels and changes homes often.',
+ 'Thái Dương':['Bright: family property, and you can add more.','Dim: you build from scratch.'],
+ 'Vũ Khúc':'Good fit for investing, buying, selling and renting out property.',
+ 'Thiên Đồng':'Calm, warm home. Builds slowly; may inherit.',
+ 'Liêm Trinh':'Home you earn yourself. Paperwork and legal snags show up; read the title carefully.',
+ 'Thiên Phủ':'The “storehouse”: holds property well, likes a big home.',
+ 'Thái Âm':['Main star for property. Bright: several homes, a warm home.','Main star for property. Dim: little passed down; you lead the way.'],
+ 'Tham Lang':'Hard to keep family property. You build it; better later in life.',
+ 'Cự Môn':'Boundary, paperwork or family split issues can come up. Put things in writing.',
+ 'Thiên Tướng':'Stable, tidy home. A home you buy lasts better than one you inherit.',
+ 'Thiên Lương':'Keeps the old home, quiet place, trees. Slow to buy or sell.',
+ 'Thất Sát':'Hard to keep family property. Builds with own hands, moves often.',
+ 'Phá Quân':'Little family property, or an older home that needs work. Lose first, gain later; quick deals.'}};
+const TAI_MEAN={vi:{
+ 'Tử Vi':'Giữ tiền giỏi, kiếm nhiều xài cũng nhiều.',
+ 'Thiên Cơ':'Kiếm bằng đầu óc, tay nghề. Tiền ra vào nhanh.',
+ 'Thái Dương':['Sáng: tiền từ việc công, việc có tiếng, khá mạnh.','Tối: tiền đến chậm hơn, phải bền.'],
+ 'Vũ Khúc':'Sao tài chính chính. Thu nhập tốt, vững.',
+ 'Thiên Đồng':'Tiền đến dễ, nhưng xài cho hưởng thụ.',
+ 'Liêm Trinh':'Nhiều nguồn thu, dễ tranh chấp, tiền hao.',
+ 'Thiên Phủ':'Thu nhập ổn định, giữ được tiền.',
+ 'Thái Âm':['Sáng: tích lũy dần.','Tối: khó giữ tiền, nên có kế hoạch để dành.'],
+ 'Tham Lang':'Ham kiếm, tiền vào ra nhanh.',
+ 'Cự Môn':'Kiếm bằng miệng (bán hàng, tư vấn). Hay có thị phi.',
+ 'Thiên Tướng':'Có quý nhân giúp. Có thể có 2 nguồn thu.',
+ 'Thiên Lương':'Hay dựa người lớn. Không giỏi quản tiền.',
+ 'Thất Sát':'Hợp làm ăn tiền mặt. Tiền đến nhanh đi nhanh.',
+ 'Phá Quân':'Không hợp đầu cơ. Tiền qua tay nhanh.'},
+en:{
+ 'Tử Vi':'Good at holding money; earns a lot, spends a lot.',
+ 'Thiên Cơ':'Earns with skill and brains. Money moves fast.',
+ 'Thái Dương':['Bright: income from public or well-known work, fairly strong.','Dim: money comes slower; stay steady.'],
+ 'Vũ Khúc':'The main money star. Good, steady income.',
+ 'Thiên Đồng':'Money comes easily, often spent on enjoying life.',
+ 'Liêm Trinh':'Several income sources; disputes and leaks possible.',
+ 'Thiên Phủ':'Stable income; keeps money.',
+ 'Thái Âm':['Bright: saves little by little.','Dim: hard to hold cash; set a savings plan.'],
+ 'Tham Lang':'Driven to earn; money in and out fast.',
+ 'Cự Môn':'Earns by talking (sales, advising). Gossip follows.',
+ 'Thiên Tướng':'Helpful people show up. Maybe two income sources.',
+ 'Thiên Lương':'Leans on elders. Not a natural money manager.',
+ 'Thất Sát':'Fits cash businesses. Money comes and goes fast.',
+ 'Phá Quân':'Not for speculation. Money passes through quickly.'}};
+const FLAG={vi:{'Lộc Tồn':'giữ của, tích lũy chậm mà chắc.','Lộc':'thêm lộc, dễ có nguồn thu hay cơ hội.','Kỵ':'dễ vướng giấy tờ, trục trặc nhỏ. Làm gì cũng coi kỹ hợp đồng.','Không':'tiền ra vào bất ngờ. Cẩn thận đầu tư nóng.','Triệt':'gặp Triệt: việc hay chậm, trễ lúc đầu.','Tuần':'gặp Tuần: việc hay chậm, khá dần về sau.'},
+ en:{'Lộc Tồn':'holds wealth; saves slow but sure.','Lộc':'extra luck; new income or chances.','Kỵ':'paperwork snags and small hiccups. Read every contract.','Không':'money in and out by surprise. Careful with hot investments.','Triệt':'Triệt here: things start slow or late.','Tuần':'Tuần here: slow at first, better later.'}};
+const VCD={vi:'<b>Vô chính diệu</b> (không có chính tinh). Mượn sao cung đối diện để xem. Có Thái Dương, Thái Âm sáng chiếu vào, hoặc gặp Tuần, Triệt thì về sau vẫn có nhà đất. Không có mấy điều đó thì chỗ ở hay đổi, tự lo, có nhà muộn hơn người khác. Muộn không phải là không.',
+ en:'<b>Vô chính diệu</b> (no main star). Read the stars of the opposite palace. With a bright Thái Dương or Thái Âm shining in, or Tuần / Triệt, property still comes later. Without those, you may move more, build on your own, and buy later than others. Later is not never.'};
+const GRID_POS={5:[1,1],6:[1,2],7:[1,3],8:[1,4],4:[2,1],9:[2,4],3:[3,1],10:[3,4],2:[4,1],1:[4,2],0:[4,3],11:[4,4]}; // chi → [row,col]
+
+const I18N={
+ vi:{title:'Lá số Tử Vi: nhà đất & tiền bạc',sub:'Nhập ngày và giờ sinh. Ra lá số 12 cung, đọc nhanh cung Điền Trạch (nhà đất), Tài Bạch (tiền bạc), và năm nào nên để ý.',
+  l_b1:'Ngày sinh (dương lịch)',l_hr:'Giờ sinh',l_hr_s:'(bắt buộc)',l_g:'Giới tính',g_m:'Nam',g_f:'Nữ',l_yv:'Năm muốn xem',
+  hr_hint:'Không nhớ giờ? Tử Vi cần giờ sinh. Hỏi lại gia đình, hoặc xài T41 / T204, chỉ cần năm sinh.',
+  lun:'Âm lịch: <b>{d}/{m}{L} năm {cc}</b> · {yy}.',leap:' nhuận',leapNote:' Sinh tháng nhuận: ngày 1–15 tính tháng {m}, từ 16 tính tháng {m2} (tham khảo).',
+  yyM:'dương nam',yyF:'dương nữ',yyMa:'âm nam',yyFa:'âm nữ',out:'Tool tính cho ngày sinh từ 30/01/1930 tới 31/12/2030.',
+  r_k:'Cung Mệnh của bạn',vcd:'vô chính diệu',l_lun:'Ngày âm',l_mt:'Mệnh / Thân',l_cuc:'Cục',l_dv:'Đại vận năm {y}',l_th:'Tiểu hạn năm {y}',
+  dv:'{c} ({a1}–{a2} tuổi)',dvPre:'Chưa vào đại vận đầu (bắt đầu {a} tuổi)',notAge:'Chưa tới tuổi xem hạn',age:'{a} tuổi âm',than:'Thân',thanSame:'Mệnh, Thân cùng cung',
+  ref_note:'Tham khảo. Tử Vi là cách xem truyền thống, không phải dự báo. Dùng để lên kế hoạch, đừng dùng để quyết giá.',
+  ch_h:'Lá số 12 cung',ch_hint:'Viền vàng = Điền Trạch (nhà đất) và Tài Bạch (tiền). Chữ đậm = chính tinh. Dưới mỗi ô: tuổi bắt đầu đại vận; tag vàng = tiểu hạn năm đang xem.',
+  mid1:'Năm',mid2:'Cục',mid3:'Mệnh',midNote:'Tham khảo',
+  rd_h:'Đọc nhanh: nhà đất & tiền bạc',dt:'Điền Trạch',tb:'Tài Bạch',dtG:'nhà đất',tbG:'tiền bạc',at:'cung {c}',borrow:'Sao cung đối diện ({c}): {s}.',bright:'sáng',dark:'tối',noStar:'không có',
+  myth_k:'Nhiều người hiểu sai:',myth:'“Điền Trạch xấu là cả đời không có nhà.” Không phải. Cung này nói về kiểu có nhà và lúc nào, như mua muộn hơn hay mua chung với gia đình. Thu nhập, credit và tiền down quyết định nhiều hơn.',
+  yr_h:'5 năm tới',yr_hint:'Tiểu hạn đi mỗi năm 1 cung. Năm nào rơi vào Điền Trạch hay Tài Bạch thì năm đó nên để ý chuyện nhà đất, tiền bạc.',
+  yr_hit:'Nên để ý nhà đất',yr_hit2:'Nên để ý tiền bạc',yr_none:'Bình thường',yrNoteHit:'Năm {ys}: tiểu hạn chạm cung nhà đất hoặc tiền bạc. Nên để ý là coi kỹ, chuẩn bị sớm. Không có nghĩa là năm đó mua chắc lời hay chắc lỗ.',yrNoteNone:'5 năm này tiểu hạn không chạm Điền Trạch hay Tài Bạch. Cứ theo kế hoạch tài chính mà làm.',
+  how_h:'Cách lập lá số',
+  how1:'Ngày âm đổi từ ngày dương, theo lịch Việt Nam (UTC+7). Giờ sinh lấy giờ đồng hồ nơi sinh.',
+  how2:'Mệnh, Thân theo tháng âm và giờ sinh. Cục theo can chi cung Mệnh. Tử Vi, Thiên Phủ theo cục và ngày âm, rồi an 12 chính tinh còn lại.',
+  how3:'Tứ hóa (Lộc, Quyền, Khoa, Kỵ) theo bảng thông dụng ở Việt Nam. Các phái khác nhau ở năm Canh (Khoa/Kỵ ở Thái Âm hay Thiên Đồng) và năm Nhâm (Khoa ở Tả Phù hay Thiên Phủ).',
+  how4:'Tháng nhuận: ngày 1–15 tính như tháng đó, từ 16 tính tháng sau. Các phái tính khác nhau. Tham khảo.',
+  how5:'Sinh 23h–24h: nhiều thầy tính sang ngày hôm sau. Tool lấy đúng ngày bạn nhập.',
+  ns_h:'Bước tiếp theo',ns1:'Coi năm nào hợp tuổi để mua (Kim Lâu, Hoang Ốc, Tam Tai).',ns1l:'Tool T41 · Năm nào nên mua nhà',
+  ns2:'Coi sao hạn năm nay của tuổi mình.',ns2l:'Tool T209 · Sao hạn hàng năm',ns3:'Rồi tới con số thật: mua được nhà giá bao nhiêu.',ns3l:'Tool T02 · Mua được nhà bao nhiêu',ns200:'Lên kế hoạch hóa giải cho căn nhà: làm gì trước, tốn bao nhiêu.',ns200l:'Lên kế hoạch hóa giải cho căn nhà · Tool T200',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi lá số này về email',f_sub:'Ken có thể ráp với con số thật: ngân sách, loan, thời điểm. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
+  f_ok:'Đã mở email. Bấm Send là xong.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_lib:'Tử Vi và chuyện mua nhà',ft_vid:'Video Kiến Thức Địa Ốc',
+  ft_est:'Chỉ để tham khảo. Cách lập lá số Tử Vi phổ biến ở Việt Nam: 14 chính tinh và các phụ tinh chính. Vài sao các phái an khác nhau. Không phải lời khuyên về giá, loan hay canh thị trường.',
+  ft_src:'Nguồn:',s1:'Thuật toán lịch âm Hồ Ngọc Đức',src_date:'(tra 04/11/2026)',ft_upd:'Cập nhật',ft_all:'Tất cả tools',lang:'English',
+  sms:'Chào Ken, tôi vừa coi lá số Tử Vi trên tools.kenlamrealty.com. Mệnh {menh}, Điền Trạch {dt}, Tài Bạch {tb}. Cho tôi hỏi thêm về mua nhà.',
+  subj:'Lá số Tử Vi nhà đất — {n}',
+  body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\nSinh: {born}\nÂm lịch: {lun}\nMệnh: {menh} · {cuc}\nĐiền Trạch: {dt}\nTài Bạch: {tb}\nĐại vận {yv}: {dv}\nTiểu hạn 5 năm: {yrs}\n\nGửi từ tool T203 tools.kenlamrealty.com (tham khảo)'},
+ en:{title:'Tử Vi chart: home and money',sub:'Enter birth date and hour. See your 12-palace chart, a quick read of Điền Trạch (home) and Tài Bạch (money), and which years to watch.',
+  l_b1:'Birth date (solar)',l_hr:'Birth hour',l_hr_s:'(required)',l_g:'Gender',g_m:'Male',g_f:'Female',l_yv:'Year to check',
+  hr_hint:'Don’t know the hour? Tử Vi needs it. Ask family, or use T41 / T204, which only need the birth year.',
+  lun:'Lunar date: <b>{d}/{m}{L}, {cc} year</b> · {yy}.',leap:' (leap)',leapNote:' Leap month: day 1–15 counts as month {m}, day 16+ as month {m2} (for reference).',
+  yyM:'yang male',yyF:'yang female',yyMa:'yin male',yyFa:'yin female',out:'This tool covers birth dates from Jan 30, 1930 to Dec 31, 2030.',
+  r_k:'Your Mệnh palace (self)',vcd:'no main star',l_lun:'Lunar birth date',l_mt:'Mệnh / Thân',l_cuc:'Cục (element frame)',l_dv:'Đại vận in {y} (10-year cycle)',l_th:'Tiểu hạn in {y} (yearly)',
+  dv:'{c} (age {a1}–{a2})',dvPre:'Before the first đại vận (starts at age {a})',notAge:'Not yet of age',age:'lunar age {a}',than:'Thân',thanSame:'Mệnh and Thân in the same palace',
+  ref_note:'For reference. Tử Vi is a traditional reading, not a forecast. Use it to plan, not to decide a price.',
+  ch_h:'12-palace chart',ch_hint:'Gold border = Điền Trạch (home) and Tài Bạch (money). Bold = main stars. Bottom of each box: đại vận start age; gold tag = tiểu hạn of the year you picked.',
+  mid1:'Year',mid2:'Cục',mid3:'Mệnh',midNote:'For reference',
+  rd_h:'Quick read: home and money',dt:'Điền Trạch',tb:'Tài Bạch',dtG:'home & land',tbG:'money',at:'palace {c}',borrow:'Opposite palace stars ({c}): {s}.',bright:'bright',dark:'dim',noStar:'none',
+  myth_k:'Common mistake:',myth:'“Điền Trạch looks weak, so I’ll never own a home.” Not true. It talks about style and timing, like buying later or buying with family. Income, credit and down payment decide far more.',
+  yr_h:'Next 5 years',yr_hint:'Tiểu hạn moves one palace a year. When it lands on Điền Trạch or Tài Bạch, that year is worth watching for home and money moves.',
+  yr_hit:'Watch home moves',yr_hit2:'Watch money moves',yr_none:'Ordinary',yrNoteHit:'{ys}: tiểu hạn touches the home or money palace. “Watch” means look closer and prepare early. It does not mean a sure gain or loss.',yrNoteNone:'In these 5 years tiểu hạn does not touch Điền Trạch or Tài Bạch. Follow your financial plan.',
+  how_h:'How this chart is set',
+  how1:'Lunar date from your solar birth date, Vietnamese calendar (UTC+7). Use the clock time where you were born.',
+  how2:'Mệnh and Thân from lunar month and hour. Cục from the can chi of the Mệnh palace. Tử Vi and Thiên Phủ from cục and lunar day, then the other 12 main stars.',
+  how3:'Tứ hóa (Lộc, Quyền, Khoa, Kỵ) uses the common Vietnamese table. Schools differ for Canh years (Khoa/Kỵ on Thái Âm or Thiên Đồng) and Nhâm years (Khoa on Tả Phù or Thiên Phủ).',
+  how4:'Leap month: day 1–15 counts as that month, day 16+ counts as the next month. Schools differ. For reference.',
+  how5:'Born 11 PM–midnight: many practitioners count the next day. This tool uses the date you enter.',
+  ns_h:'Next steps',ns1:'Check which years fit your age to buy (Kim Lâu, Hoang Ốc, Tam Tai).',ns1l:'Tool T41 · Best year to buy',
+  ns2:'See this year’s stars and limits for your age.',ns2l:'Tool T209 · Yearly stars',ns3:'Then the real number: how much home you can afford.',ns3l:'Tool T02 · How much home can I buy',ns200:'Make a remedy plan for the house: what to fix first and what it costs.',ns200l:'Make a remedy plan for the house · Tool T200',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this chart to yourself',f_sub:'Ken can match this with real numbers: budget, loan, timing. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
+  f_ok:"Email opened. Hit Send and you're done.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_lib:'Tử Vi and buying a home',ft_vid:'Real estate video',
+  ft_est:'For reference only. Common Vietnamese Tử Vi method: 14 main stars and key minor stars. Schools differ on some stars. Not advice on price, loans or timing the market.',
+  ft_src:'Sources:',s1:'Hồ Ngọc Đức lunar algorithm',src_date:'(checked 04/11/2026)',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I checked my Tử Vi chart on tools.kenlamrealty.com. Mệnh {menh}, Điền Trạch {dt}, Tài Bạch {tb}. I have a question about buying.',
+  subj:'Tử Vi home chart — {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nBorn: {born}\nLunar: {lun}\nMệnh: {menh} · {cuc}\nĐiền Trạch: {dt}\nTài Bạch: {tb}\nĐại vận {yv}: {dv}\nTiểu hạn next 5 years: {yrs}\n\nSent from tool T203 tools.kenlamrealty.com (for reference)'}
+};
+
+if(typeof document!=='undefined'){
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,'0');
+let g1='m', last={};
+const fmt=(s,o)=>s.replace(/\{(\w+)\}/g,(m,k)=>o[k]!=null?o[k]:m);
+function hrTxt(i){const s=(2*i+23)%24,e=(2*i+1)%24; if(lang==='vi') return CHI[i]+' ('+s+'–'+e+'h)'; const f=h=>{const a=h%12===0?12:h%12;return a+(h<12?' AM':' PM')}; return CHI[i]+' ('+f(s)+'–'+f(e)+')'}
+function fillSel(){const vh=$('hr').value, vy=$('yv').value;
+  $('hr').innerHTML=CHI.map((c,i)=>'<option value="'+i+'">'+hrTxt(i)+'</option>').join(''); $('hr').value=vh||'4';
+  let h=''; for(let y=YV_MIN;y<=YV_MAX;y++) h+='<option value="'+y+'">'+y+' · '+canChiY(y)+'</option>'; $('yv').innerHTML=h; $('yv').value=vy||String(YV_MIN);}
+function readB(){const v=$('b1').value; if(!/^\d{4}-\d{2}-\d{2}$/.test(v)) return null; const [y,m,d]=v.split('-').map(Number);
+  if(v<'1930-01-30'||v>'2030-12-31') return null; return {y,m,d}}
+function starTxt(p,n){const h=p.hoa[n]; return '<span class="ch">'+n+(h?'<em'+(h==='Kỵ'?' class="ky"':'')+'>'+h+'</em>':'')+'</span>'}
+function meanOf(T,n,z){const v=T[lang][n]; if(Array.isArray(v)) return v[isDark(n,z)?1:0]; return v}
+function palRead(c,key){
+  const d=I18N[lang], idx=key==='dt'?3:8, z=mod(c.menh+idx,12), p=c.P[z], T=key==='dt'?DIEN_MEAN:TAI_MEAN;
+  let h='<div class="rd"><h3>'+d[key]+' <small>· '+d[key+'G']+' · '+fmt(d.at,{c:CAN[p.can]+' '+CHI[z]})+'</small></h3>';
+  if(p.chinh.length){ p.chinh.forEach(n=>{const br=BRIGHT[n]?' ('+(isDark(n,z)?d.dark:d.bright)+')':'', hh=p.hoa[n]?' · Hóa '+p.hoa[n]:'';
+      h+='<div class="st"><b>'+n+br+hh+'</b><small>'+meanOf(T,n,z)+'</small></div>';}); }
+  else { const o=c.P[mod(z+6,12)]; h+='<div class="st">'+VCD[lang]+'</div><div class="st"><small>'+fmt(d.borrow,{c:o.cung+' · '+CHI[o.z],s:o.chinh.length?o.chinh.join(', '):d.noStar})+'</small></div>'; }
+  const fl=[]; const F=FLAG[lang];
+  if(p.phu.includes('Lộc Tồn')) fl.push('<b>Lộc Tồn</b>: '+F['Lộc Tồn']);
+  Object.entries(p.hoa).forEach(([n,hv])=>{ if(hv==='Lộc') fl.push('<b>Hóa Lộc</b> ('+n+'): '+F['Lộc']); if(hv==='Kỵ') fl.push('<b>Hóa Kỵ</b> ('+n+'): '+F['Kỵ']); });
+  const kk=p.phu.filter(n=>n==='Địa Không'||n==='Địa Kiếp'); if(kk.length) fl.push('<b>'+kk.join(', ')+'</b>: '+F['Không']);
+  if(c.triet.includes(z)) fl.push(F['Triệt']); if(c.tuan.includes(z)) fl.push(F['Tuần']);
+  if(fl.length) h+='<ul class="tips">'+fl.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
+  return {html:h+'</div>',sum:CHI[z]+' · '+(p.chinh.length?p.chinh.map(n=>n+(p.hoa[n]?' Hóa '+p.hoa[n]:'')).join(', '):d.vcd)};
+}
+function calc(){
+  const d=I18N[lang], b=readB();
+  if(!b){$('lunHint').innerHTML=d.out;$('rMenh').textContent='—';$('rOf').textContent='';$('rLines').innerHTML='';$('tv').innerHTML='';$('read').innerHTML='';$('yrs').innerHTML='';$('yrNote').textContent='';return;}
+  const l=solar2lunar(b.d,b.m,b.y), hour=+$('hr').value, yv=+$('yv').value, c=tuviChart(l,hour,g1);
+  const yang=yCan(l.y)%2===0, yy=g1==='m'?(yang?d.yyM:d.yyMa):(yang?d.yyF:d.yyFa);
+  $('lunHint').innerHTML=fmt(d.lun,{d:l.d,m:l.m,L:l.leap?d.leap:'',cc:canChiY(l.y),yy})+(l.leap?fmt(d.leapNote,{m:l.m,m2:l.m%12+1}):'');
+  const mp=c.P[c.menh], menhTxt=CHI[c.menh]+(mp.chinh.length?' · '+mp.chinh.join(', '):'');
+  $('rMenh').innerHTML=CHI[c.menh]+' <small>'+(mp.chinh.length?mp.chinh.join(', '):d.vcd)+'</small>';
+  $('rOf').textContent=napAmCC(mp.can,c.menh)+' · '+CUC_VI[c.cuc];
+  const age=yv-l.y+1, ok=age>=1, dv=ok?c.daiVan.find(x=>age>=x.from&&age<=x.to):null, thz=ok?c.tieuHan(age):-1;
+  const dvTxt=!ok?d.notAge:(dv?fmt(d.dv,{c:c.P[dv.z].cung+' · '+CHI[dv.z],a1:dv.from,a2:dv.to}):fmt(d.dvPre,{a:c.cuc}));
+  const L=(n,a)=>'<div class="line"><span class="n">'+n+'</span><span class="a">'+a+'</span></div>';
+  $('rLines').innerHTML=L(d.l_lun,l.d+'/'+l.m+(l.leap?d.leap:'')+' · '+canChiY(l.y))+
+    L(d.l_mt,CHI[c.menh]+' / '+CHI[c.than]+(c.menh===c.than?' ('+d.thanSame+')':' ('+c.P[c.than].cung+')'))+
+    L(d.l_cuc,CUC_VI[c.cuc])+L(fmt(d.l_dv,{y:yv}),dvTxt)+L(fmt(d.l_th,{y:yv}),ok?c.P[thz].cung+' · '+CHI[thz]+' · '+fmt(d.age,{a:age}):d.notAge);
+  // lưới 4x4
+  const dtz=mod(c.menh+3,12), tbz=mod(c.menh+8,12);
+  let g='';
+  for(let z=0;z<12;z++){const p=c.P[z],[r,col]=GRID_POS[z], dvc=c.daiVan[z], isDv=dv&&dv.z===z;
+    const cname=p.cung+(z===c.than?' <i>('+d.than+')</i>':'');
+    const tt=[]; if(c.triet.includes(z)) tt.push('Triệt'); if(c.tuan.includes(z)) tt.push('Tuần');
+    g+='<div class="c'+((z===dtz||z===tbz)?' key':'')+(isDv?' dv':'')+'" style="grid-row:'+r+';grid-column:'+col+'" title="'+p.cung+' · '+CUNG_EN[p.cung]+'">'+
+      '<span class="cn">'+cname+'</span><span class="cc">'+CAN[p.can]+' '+CHI[z]+(lang==='en'?' · '+CUNG_EN[p.cung]:'')+'</span>'+
+      (p.chinh.length?p.chinh.map(n=>starTxt(p,n)).join(''):'<span class="vc">'+d.vcd+'</span>')+
+      (p.phu.length?'<span class="ph">'+p.phu.map(n=>p.hoa[n]?n+' ('+p.hoa[n]+')':n).join(', ')+'</span>':'')+
+      (tt.length?'<span class="tt">'+tt.join(' · ')+'</span>':'')+
+      '<span class="ft"><span class="dvr">'+dvc.from+'</span>'+(z===thz?'<span class="th">'+yv+'</span>':'')+'</span></div>';}
+  g+='<div class="mid"><span class="big">'+canChiY(l.y)+'</span><span>'+yy+'</span><span>'+d.l_lun+': <b>'+l.d+'/'+l.m+(l.leap?d.leap:'')+'</b></span><span>'+hrTxt(hour)+'</span><span><b>'+CUC_VI[c.cuc]+'</b></span><span>'+d.mid3+': <b>'+napAmCC(mp.can,c.menh)+'</b></span><span>'+d.midNote+'</span></div>';
+  $('tv').innerHTML=g;
+  // đọc nhanh
+  const rdt=palRead(c,'dt'), rtb=palRead(c,'tb'); $('read').innerHTML=rdt.html+rtb.html;
+  // 5 năm
+  let yh='', hits=[]; const ys=[];
+  for(let Y=yv;Y<yv+5;Y++){const a=Y-l.y+1;
+    if(a<1){ys.push(Y+': '+d.notAge); yh+='<div class="dline"><span class="n"><b>'+Y+' · '+canChiY(Y)+'</b></span><span class="a"><span class="chip">'+d.notAge+'</span></span></div>'; continue;}
+    const z=c.tieuHan(a), hd=z===dtz, ht=z===tbz;
+    if(hd||ht) hits.push(Y); ys.push(Y+': '+c.P[z].cung);
+    yh+='<div class="dline"><span class="n"><b>'+Y+' · '+canChiY(Y)+'</b><br>'+c.P[z].cung+' · '+CHI[z]+' · '+fmt(d.age,{a})+'</span><span class="a"><span class="chip '+(hd||ht?'mid':'')+'">'+(hd?d.yr_hit:(ht?d.yr_hit2:d.yr_none))+'</span></span></div>';}
+  $('yrs').innerHTML=yh; $('yrNote').textContent=hits.length?fmt(d.yrNoteHit,{ys:hits.join(', ')}):d.yrNoteNone;
+  last={born:pad(b.d)+'/'+pad(b.m)+'/'+b.y+' · '+hrTxt(hour)+' · '+(g1==='m'?d.g_m:d.g_f),lun:l.d+'/'+l.m+(l.leap?d.leap:'')+' '+canChiY(l.y),menh:menhTxt,cuc:CUC_VI[c.cuc],dt:rdt.sum,tb:rtb.sum,yv,dv:dvTxt,yrs:ys.join('; ')};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(fmt(d.sms,last));
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; fillSel(); calc();
+}
+$('b1').addEventListener('input',calc); $('hr').addEventListener('change',calc); $('yv').addEventListener('change',calc);
+$('gm').onclick=()=>{g1='m';$('gm').setAttribute('aria-pressed','true');$('gf').setAttribute('aria-pressed','false');calc()};
+$('gf').onclick=()=>{g1='f';$('gf').setAttribute('aria-pressed','true');$('gm').setAttribute('aria-pressed','false');calc()};
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com. Trong FUB bật Lead Email Parsing và forward địa chỉ này vào parser;
+     hoặc thay bằng fetch() tới FUB form/webhook khi có endpoint. */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+}
+
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'\u2190 All tools':'\u2190 T\u1ea5t c\u1ea3 tools';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
