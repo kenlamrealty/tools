@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nguồn tiền down: lender sẽ hỏi gì · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Đánh dấu nguồn tiền down: lương, gift, tiền mặt, tiền từ Việt Nam, tiền hụi, 401(k). Xem lender đòi giấy gì và việc nên làm trước khi chuyển tiền.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t343/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:title" content="Nguồn tiền down: lender sẽ hỏi gì · Ken Lam Tools">
+<meta property="og:description" content="Đánh dấu nguồn tiền down: lương, gift, tiền mặt, tiền từ Việt Nam, tiền hụi, 401(k). Xem lender đòi giấy gì và việc nên làm trước khi chuyển tiền.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t343/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T144 additions */
+.hide{display:none!important}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.sec-k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:0}
+.chip{display:inline-block;font-size:12px;font-weight:500;line-height:1.2;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.g{color:var(--ok);border-color:var(--ok)}
+.chip.y{color:var(--brass);border-color:var(--brass)}
+.chip.r{color:var(--warn);border-color:var(--warn);background:var(--brass-soft)}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.total .v.redc{color:var(--warn)}
+.grp{display:grid;gap:0;border-top:1px solid var(--line)}
+.grp h3{font-family:var(--display);font-weight:400;font-size:22px;margin:14px 0 4px}
+.q{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;padding:10px 0;border-bottom:1px solid var(--line);align-items:start}
+.q input{accent-color:var(--brass);width:18px;height:18px;margin:3px 0 0}
+.qt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;text-align:left;padding:0;cursor:pointer;line-height:1.4}
+.qt::after{content:" +";color:var(--brass)}
+.qt[aria-expanded="true"]::after{content:" \2212"}
+.q.done .qt{color:var(--muted)}
+.why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.45;display:grid;gap:4px}
+.why b{color:var(--warn);font-weight:500}
+.prog{display:grid;gap:6px}
+.prog .k{font-size:13px;color:var(--muted)}
+.prog .k b{color:var(--fg);font-weight:500}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.smallbtn{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;cursor:pointer;justify-self:start}
+
+/* new-tool shared additions */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;padding:12px 4px}
+.ctl textarea{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;padding:10px 4px;resize:vertical;min-height:60px}
+.seg.wrap3{flex-wrap:wrap}
+.seg.wrap3 button{min-width:33%}
+.status{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin-top:4px}
+.status.ok{color:var(--ok)} .status.warn{color:var(--warn)} .status.mid{color:var(--brass)}
+.panel h3{font-family:var(--display);font-weight:400;font-size:21px;margin:6px 0 0}
+.panel p{margin:0;font-size:15px}
+.acc{border-top:1px solid var(--line)}
+.acc details{border-bottom:1px solid var(--line)}
+.acc summary{cursor:pointer;padding:12px 0;font-size:15px;font-weight:500;list-style:none;display:flex;justify-content:space-between;gap:10px}
+.acc summary::-webkit-details-marker{display:none}
+.acc summary::after{content:'+';color:var(--brass);font-size:18px;line-height:1}
+.acc details[open] summary::after{content:'\2212'}
+.acc .body{padding:0 0 14px;font-size:14px;color:var(--muted);display:grid;gap:6px;line-height:1.5}
+.acc .body b{color:var(--fg);font-weight:500}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th,.tbl td{padding:8px 6px 8px 0;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.tbl thead th{font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.tbl td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.chk{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line);font-size:15px;cursor:pointer}
+.chk input{accent-color:var(--brass);width:18px;height:18px;margin:3px 0 0;flex:none}
+.out{display:grid;gap:10px}
+.card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:6px;background:var(--bg)}
+.card h4{margin:0;font-size:15px;font-weight:600}
+.card p,.card li{font-size:14px;color:var(--muted);margin:0}
+.card ul{margin:0;padding-left:18px;display:grid;gap:4px}
+.card.r{border-color:var(--warn)} .card.y{border-color:var(--brass)} .card.g{border-color:var(--ok)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← Tất cả công cụ</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools · T343</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title">Tiền down từ đâu ra? Lender sẽ hỏi</h1>
+    <p class="sub" data-i="sub">Đủ tiền vẫn bị hỏi nguồn. Đánh dấu những nguồn anh chị định dùng để thấy lender thường đòi giấy gì, và việc nên làm trước khi chuyển tiền. Tiền gia đình cho, tiền từ Việt Nam, tiền hụi: nói với lender trước, đừng để tới tuần cuối.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="inc"><span data-i="l_inc">Thu nhập hằng tháng lender dùng để duyệt (trước thuế)</span></label>
+      <div class="ctl"><span class="pre">$</span><input id="inc" type="number" inputmode="numeric" min="0" step="1" placeholder="0"><span class="post" data-i="per_mo">/tháng</span></div>
+      <p class="hint" data-i="h_inc">Không bắt buộc. Nhập để biết khoản gửi vào bao nhiêu thì bị coi là “large deposit” theo quy định của Fannie Mae cho loan conventional.</p>
+    </div>
+    <div class="note hide" id="ldNote"></div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="k_src">Tiền của anh chị từ những nguồn nào?</h2>
+    <p class="hint" data-i="k_hint">Đánh dấu tất cả nguồn định dùng cho down, closing costs và dự trữ. Lưu trên máy này.</p>
+    <div id="srcs">
+      <label class="chk"><input type="checkbox" data-s="save"><span data-i="s_save">Lương để dành, nằm trong ngân hàng lâu rồi</span></label>
+      <label class="chk"><input type="checkbox" data-s="big"><span data-i="s_big">Khoản gửi vào lớn gần đây</span></label>
+      <label class="chk"><input type="checkbox" data-s="cash"><span data-i="s_cash">Tiền mặt cất ở nhà</span></label>
+      <label class="chk"><input type="checkbox" data-s="gift"><span data-i="s_gift">Người thân cho tiền (gift)</span></label>
+      <label class="chk"><input type="checkbox" data-s="abroad"><span data-i="s_abroad">Tiền chuyển từ Việt Nam hoặc nước ngoài</span></label>
+      <label class="chk"><input type="checkbox" data-s="hui"><span data-i="s_hui">Tiền hụi</span></label>
+      <label class="chk"><input type="checkbox" data-s="asset"><span data-i="s_asset">Bán xe hoặc tài sản khác</span></label>
+      <label class="chk"><input type="checkbox" data-s="home"><span data-i="s_home">Tiền bán căn nhà hiện tại</span></label>
+      <label class="chk"><input type="checkbox" data-s="k401"><span data-i="s_k401">401(k) hoặc IRA</span></label>
+      <label class="chk"><input type="checkbox" data-s="stock"><span data-i="s_stock">Cổ phiếu, quỹ, crypto</span></label>
+      <label class="chk"><input type="checkbox" data-s="loan"><span data-i="s_loan">Tiền mượn người quen</span></label>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_k">Giấy tờ và việc cần làm</div>
+      <div class="status" id="status"></div>
+    </div>
+    <div class="out" id="out"></div>
+    <div class="btnrow"><button type="button" class="smallbtn" id="copyQ" data-i="copyq">Copy danh sách giấy tờ</button></div>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Gửi kết quả qua email</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Hỏi Ken</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Gửi danh sách giấy tờ về email</h2>
+    <p data-i="f_sub">Ken giới thiệu lender quen làm hồ sơ có tiền gia đình và tiền từ nước ngoài. Không spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Tên</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (không bắt buộc)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Đã mở email. Bấm Send là xong. Nếu email không mở, copy số dưới đây và nhắn cho Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Hoặc text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Bước tiếp theo</h2>
+    <ol>
+      <li data-i="ns1">Gửi danh sách này cho lender trước khi xin pre-approval, hỏi: “Nguồn nào của tôi được tính, cần giấy gì?”</li>
+      <li data-i="ns2">Từ giờ tới ngày close: không chuyển tiền qua lại giữa các tài khoản nếu không cần, không gửi tiền mặt vào mà không báo lender, không mở thẻ hay vay mới.</li>
+      <li data-i="ns3">Cộng tất cả nguồn với bốn khoản tiền cần có lúc close: <a href="/t340/">T340</a>. Giấy tờ pre-approval theo nghề: <a href="/t34/">T34</a>.</li>
+      <li data-i="ns4">Gift lớn, tiền từ nước ngoài, rút 401(k) hay IRA: hỏi CPA về thuế trước khi chuyển. Gift tax: <a href="/t324/">T324</a>.</li>
+    </ol>
+  </section>
+  <p class="myth" data-i="myth"><b>Nhiều người hiểu sai:</b> “Chia nhỏ tiền mặt ra gửi dưới $10,000 cho khỏi bị hỏi.” Ngân hàng báo cáo giao dịch tiền mặt trên $10,000, và luật liên bang coi việc cố tình chia nhỏ để né báo cáo là phạm tội, dù tiền sạch. Lender cũng vẫn thấy các khoản gửi đó trên sao kê.</p>
+
+  <footer>
+    <span><span data-i="ft_src">Nguồn:</span> <a href="https://selling-guide.fanniemae.com/sel/b3-4.2-02/depository-accounts" target="_blank" rel="noopener">Fannie Mae B3-4.2-02 (large deposits)</a> · <a href="https://selling-guide.fanniemae.com/sel/b3-4.3-20/anticipated-savings-and-cash-hand" target="_blank" rel="noopener">B3-4.3-20 (cash on hand)</a> · <a href="https://selling-guide.fanniemae.com/sel/b3-4.3-04/personal-gifts" target="_blank" rel="noopener">B3-4.3-04 (gifts)</a> · <a href="https://selling-guide.fanniemae.com/sel/b3-4.2-05/foreign-assets" target="_blank" rel="noopener">B3-4.2-05 (foreign assets)</a> · <a href="https://www.irs.gov/node/71191" target="_blank" rel="noopener">IRS gift tax FAQ ($19,000 for 2026)</a> · <a href="https://www.irs.gov/node/6195" target="_blank" rel="noopener">IRS foreign gifts (Form 3520, $100,000)</a> · <a href="https://www.irs.gov/taxtopics/tc557" target="_blank" rel="noopener">IRS Topic 557 (IRA $10,000)</a> · <a href="https://www.fincen.gov/sites/default/files/shared/CTRPamphlet.pdf" target="_blank" rel="noopener">FinCEN CTR notice (over $10,000; structuring)</a> <span data-i="ft_chk">(kiểm ngày 12/11/2026)</span></span>
+    <span data-i="ft_est">Thông tin chung, không phải tư vấn loan, thuế hay pháp lý. Mỗi lender và loại loan có quy định riêng. Thuế: hỏi CPA.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · BRG Realty Corp · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 12/11/2026 · <a href="/cong-cu/" data-i="ft_all">Tất cả công cụ</a></span>
+  </footer>
+</div>
+
+<script>
+const CODE="T343";
+const I18N={vi:{"b_email": "Gửi kết quả qua email", "b_sms": "Hỏi Ken", "f_name": "Tên", "f_phone": "Phone (không bắt buộc)", "f_send": "Gửi", "f_ok": "Đã mở email. Bấm Send là xong. Nếu email không mở, copy số dưới đây và nhắn cho Ken.", "f_or": "Hoặc text:", "f_copy": "Copy", "ns_t": "Bước tiếp theo", "ft_src": "Nguồn:", "ft_chk": "(kiểm ngày 12/11/2026)", "ft_upd": "Cập nhật", "ft_all": "Tất cả công cụ", "lang": "English", "copied": "Đã copy", "body": "Tên: {n}\nEmail: {e}\nPhone: {ph}\n\n{s}\n\nGửi từ tool {code} tools.kenlamrealty.com", "title_short": "Nguồn tiền down: lender sẽ hỏi gì", "title": "Tiền down từ đâu ra? Lender sẽ hỏi", "sub": "Đủ tiền vẫn bị hỏi nguồn. Đánh dấu những nguồn anh chị định dùng để thấy lender thường đòi giấy gì, và việc nên làm trước khi chuyển tiền. Tiền gia đình cho, tiền từ Việt Nam, tiền hụi: nói với lender trước, đừng để tới tuần cuối.", "l_inc": "Thu nhập hằng tháng lender dùng để duyệt (trước thuế)", "h_inc": "Không bắt buộc. Nhập để biết khoản gửi vào bao nhiêu thì bị coi là “large deposit” theo quy định của Fannie Mae cho loan conventional.", "per_mo": "/tháng", "ld": "Khoản gửi vào trên <b>{x}</b> (hơn 50% thu nhập tháng) là large deposit: lender sẽ đòi giải thích và giấy tờ nguồn. Loại loan khác có quy định riêng, hỏi lender.", "k_src": "Tiền của anh chị từ những nguồn nào?", "k_hint": "Đánh dấu tất cả nguồn định dùng cho down, closing costs và dự trữ. Lưu trên máy này.", "r_k": "Giấy tờ và việc cần làm", "r_none": "Chưa chọn nguồn nào", "r_n": "{n} nguồn · {r} cần làm ngay", "docs": "Lender thường đòi:", "todo": "Nên làm:", "copyq": "Copy danh sách giấy tờ", "ns1": "Gửi danh sách này cho lender trước khi xin pre-approval, hỏi: “Nguồn nào của tôi được tính, cần giấy gì?”", "ns2": "Từ giờ tới ngày close: không chuyển tiền qua lại giữa các tài khoản nếu không cần, không gửi tiền mặt vào mà không báo lender, không mở thẻ hay vay mới.", "ns3": "Cộng tất cả nguồn với bốn khoản tiền cần có lúc close: <a href=\"/t340/\">T340</a>. Giấy tờ pre-approval theo nghề: <a href=\"/t34/\">T34</a>.", "ns4": "Gift lớn, tiền từ nước ngoài, rút 401(k) hay IRA: hỏi CPA về thuế trước khi chuyển. Gift tax: <a href=\"/t324/\">T324</a>.", "myth": "<b>Nhiều người hiểu sai:</b> “Chia nhỏ tiền mặt ra gửi dưới $10,000 cho khỏi bị hỏi.” Ngân hàng báo cáo giao dịch tiền mặt trên $10,000, và luật liên bang coi việc cố tình chia nhỏ để né báo cáo là phạm tội, dù tiền sạch. Lender cũng vẫn thấy các khoản gửi đó trên sao kê.", "f_title": "Gửi danh sách giấy tờ về email", "f_sub": "Ken giới thiệu lender quen làm hồ sơ có tiền gia đình và tiền từ nước ngoài. Không spam.", "ft_est": "Thông tin chung, không phải tư vấn loan, thuế hay pháp lý. Mỗi lender và loại loan có quy định riêng. Thuế: hỏi CPA.", "subj": "Nguồn tiền down: {n}", "sms": "Chào Ken, tôi định dùng tiền từ: {s}. Ken giới thiệu lender giúp được không?", "sum_h": "NGUỒN TIỀN VÀ GIẤY TỜ", "s_save": "Lương để dành, nằm trong ngân hàng lâu rồi", "d_save": "Sao kê ngân hàng gần nhất, thường 2 tháng, đủ mọi trang kể cả trang trắng.", "t_save": "Giữ nguyên trong tài khoản. Đây là loại tiền dễ nhất.", "s_big": "Khoản gửi vào lớn gần đây", "d_big": "Thư giải thích có ký tên, cộng giấy chứng minh nguồn: hóa đơn bán xe, sao kê tài khoản gửi đi, giấy bán tài sản.", "t_big": "Không giải thích được thì lender có thể trừ khoản đó khỏi số tiền được công nhận. Gom giấy tờ ngay.", "s_cash": "Tiền mặt cất ở nhà", "d_cash": "Với loan conventional của Fannie Mae, tiền mặt cất ở nhà nói chung không được tính cho down và closing costs, trừ chương trình HomeReady. Loại loan khác có quy định riêng.", "t_cash": "Nói với lender TRƯỚC khi gửi vào ngân hàng. Không chia nhỏ để né báo cáo. Có thể phải gửi sớm nhiều tháng trước khi mua.", "s_gift": "Người thân cho tiền (gift)", "d_gift": "Gift letter: tên, địa chỉ, số phone, quan hệ của người cho, số tiền, và câu ghi rõ không phải trả lại. Cộng giấy chứng minh chuyển tiền: check và phiếu gửi, hoặc wire, hoặc tiền chuyển thẳng vào escrow. Với Fannie Mae, người cho là người nhà (huyết thống, hôn nhân, con nuôi, giám hộ), hôn phu hôn thê, domestic partner, hoặc người có quan hệ thân như gia đình lâu năm. Gift không dùng được cho nhà đầu tư.", "t_gift": "Tiền mượn thì không được ghi là gift: đó là gian lận vay. Người cho trên $19,000 một người nhận trong năm 2026 thì người cho có thể phải nộp Form 709, thường chưa phải đóng thuế. Hỏi CPA.", "s_abroad": "Tiền chuyển từ Việt Nam hoặc nước ngoài", "d_abroad": "Tiền phải đổi ra đô và nằm trong ngân hàng ở Mỹ, được kiểm trước ngày close. Giấy tờ tiếng nước ngoài phải có bản dịch tiếng Anh đầy đủ. Có thể bị hỏi sao kê tài khoản gửi đi và giấy chuyển tiền.", "t_abroad": "Chuyển sớm, chuyển một lần nếu được, giữ hết giấy tờ. Nhận gift từ người nước ngoài tổng trên $100,000 trong năm thì người nhận khai Form 3520 với IRS (khai báo, thường không phải thuế). Hỏi CPA.", "s_hui": "Tiền hụi", "d_hui": "Lender không có mục riêng cho tiền hụi. Thường được xem như tiền mặt hoặc large deposit: phải chứng minh nguồn bằng giấy tờ.", "t_hui": "Hỏi lender trước khi hốt hụi. Nhận bằng check hoặc chuyển khoản tốt hơn tiền mặt. Ghi lại sổ hụi, tên người làm chủ hụi, các kỳ đóng.", "s_asset": "Bán xe hoặc tài sản khác", "d_asset": "Giấy chứng minh anh chị là chủ tài sản, giấy bán, và sao kê cho thấy tiền vào tài khoản.", "t_asset": "Bán bằng check hoặc chuyển khoản, đừng nhận tiền mặt.", "s_home": "Tiền bán căn nhà hiện tại", "d_home": "Closing statement của căn đang bán. Chưa bán xong thì lender cần biết trước, có thể phải đợi close xong mới close căn mới.", "t_home": "Bàn với agent về contingency bán nhà và thời gian hai bên.", "s_k401": "401(k) hoặc IRA", "d_k401": "Sao kê tài khoản. Rút ra hay vay thì cần giấy xác nhận rút hoặc giấy vay.", "t_k401": "Rút ra có thể bị thuế thu nhập và phạt. IRA cho người mua nhà lần đầu rút tới $10,000 không bị thuế phạt 10%. Vay 401(k) thì hỏi lender khoản trả tính ra sao. Hỏi CPA trước.", "s_stock": "Cổ phiếu, quỹ, crypto", "d_stock": "Sao kê tài khoản. Định dùng cho down thì thường phải bán và có giấy chứng minh tiền đã vào ngân hàng.", "t_stock": "Bán sớm vài tuần, tính trước thuế lời. Giá lên xuống có thể làm hụt số định dùng.", "s_loan": "Tiền mượn người quen", "d_loan": "Tiền mượn là nợ: phải khai với lender và có thể tính vào DTI. Có loại vay có thế chấp tài sản được chấp nhận, có loại không.", "t_loan": "Không bao giờ ghi tiền mượn là gift. Hỏi lender trước khi mượn."},
+en:{"b_email": "Email me the result", "b_sms": "Ask Ken", "f_name": "Name", "f_phone": "Phone (optional)", "f_send": "Send", "f_ok": "Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.", "f_or": "Or text:", "f_copy": "Copy", "ns_t": "Next steps", "ft_src": "Sources:", "ft_chk": "(checked 11/12/2026)", "ft_upd": "Updated", "ft_all": "All tools", "lang": "Tiếng Việt", "copied": "Copied", "body": "Name: {n}\nEmail: {e}\nPhone: {ph}\n\n{s}\n\nSent from tool {code} tools.kenlamrealty.com", "title_short": "Down payment sources: what the lender will ask", "title": "Where is your down payment from? The lender will ask", "sub": "Having the money is not enough; the lender will ask where it came from. Tick the sources you plan to use to see the paperwork lenders usually ask for and what to do before you move money. Family gifts, money from abroad, hụi savings: tell the lender early, not in the last week.", "l_inc": "Monthly income the lender uses to qualify you (gross)", "h_inc": "Optional. Enter it to see what counts as a “large deposit” under Fannie Mae rules for conventional loans.", "per_mo": "/mo", "ld": "Any single deposit over <b>{x}</b> (more than 50% of monthly income) is a large deposit: expect to explain it with paperwork. Other loan types have their own rules; ask your lender.", "k_src": "Where is your money coming from?", "k_hint": "Tick every source you plan to use for down payment, closing costs and reserves. Saved on this device.", "r_k": "Paperwork and to-dos", "r_none": "No sources selected", "r_n": "{n} sources · {r} need action now", "docs": "Lenders usually ask for:", "todo": "Do this:", "copyq": "Copy paperwork list", "ns1": "Send this list to your lender before pre-approval and ask: “Which of my sources count, and what paperwork do you need?”", "ns2": "From now to closing: avoid shuffling money between accounts, do not deposit cash without telling your lender, do not open new credit.", "ns3": "Add your sources up against the four amounts you need: <a href=\"/t340/\">T340</a>. Pre-approval paperwork by job type: <a href=\"/t34/\">T34</a>.", "ns4": "Large gifts, money from abroad, 401(k) or IRA withdrawals: ask a CPA about taxes before moving money. Gift tax: <a href=\"/t324/\">T324</a>.", "myth": "<b>Many people get this wrong:</b> “Split cash into deposits under $10,000 so no one asks.” Banks report cash transactions over $10,000, and federal law makes breaking them up to avoid the report a crime, even when the money is legitimate. The lender still sees every deposit on your statements.", "f_title": "Email this paperwork list to yourself", "f_sub": "Ken can refer lenders experienced with family gifts and foreign funds. No spam.", "ft_est": "General information, not loan, tax or legal advice. Each lender and loan type has its own rules. For taxes, ask a CPA.", "subj": "Down payment sources: {n}", "sms": "Hi Ken, my funds come from: {s}. Can you refer a lender?", "sum_h": "FUND SOURCES AND PAPERWORK", "s_save": "Savings already in the bank for months", "d_save": "Recent bank statements, usually 2 months, every page including blank ones.", "t_save": "Leave it where it is. This is the easiest money to document.", "s_big": "A recent large deposit", "d_big": "A signed letter of explanation plus proof of the source: bill of sale, statement from the sending account, sale documents.", "t_big": "If it cannot be sourced, the lender may leave it out of your counted funds. Gather paper now.", "s_cash": "Cash kept at home", "d_cash": "For Fannie Mae conventional loans, cash on hand is generally not an acceptable source for down payment or closing costs, except under HomeReady. Other loan types have their own rules.", "t_cash": "Talk to the lender BEFORE depositing it. Never split deposits to avoid reporting. You may need to deposit it months ahead.", "s_gift": "A gift from family", "d_gift": "A gift letter: donor name, address, phone, relationship, amount, and a statement that no repayment is expected. Plus proof of transfer: check and deposit slip, wire, or funds sent straight to escrow. Under Fannie Mae, donors include relatives by blood, marriage, adoption or guardianship, a fiancé(e), a domestic partner, or someone with a long family-like relationship. Gifts are not allowed on investment property.", "t_gift": "Borrowed money cannot be called a gift; that is mortgage fraud. A donor giving more than $19,000 to one person in 2026 may need to file Form 709, usually with no tax due. Ask a CPA.", "s_abroad": "Money from Vietnam or abroad", "d_abroad": "The funds must be converted to dollars and held in a U.S. institution, verified before closing. Foreign documents need complete English translations. Expect to show the sending account and the transfer record.", "t_abroad": "Move it early, in one transfer if possible, and keep every record. Gifts from a foreign person totaling over $100,000 in a year must be reported by the recipient on IRS Form 3520 (a report, usually not a tax). Ask a CPA.", "s_hui": "Hụi (rotating savings group) payout", "d_hui": "Lenders have no category for hụi. It is usually treated like cash or a large deposit: the source must be documented.", "t_hui": "Ask your lender before you collect. A check or transfer is better than cash. Keep the hụi ledger, the organizer’s name and your payment history.", "s_asset": "Sale of a car or other asset", "d_asset": "Proof you owned the item, the bill of sale, and the statement showing the deposit.", "t_asset": "Get paid by check or transfer, not cash.", "s_home": "Proceeds from selling your current home", "d_home": "The closing statement from the sale. If it has not closed, the lender needs to know; your purchase may have to wait for that sale.", "t_home": "Talk with your agent about a sale contingency and timing.", "s_k401": "401(k) or IRA", "d_k401": "Account statements, plus withdrawal or loan papers if you take money out.", "t_k401": "Withdrawals can carry income tax and penalties. First-time buyers may take up to $10,000 from an IRA without the 10% additional tax. For a 401(k) loan, ask how the payment is counted. Talk to a CPA first.", "s_stock": "Stocks, funds, crypto", "d_stock": "Account statements. If used for the down payment, you usually sell and show the proceeds landing in your bank.", "t_stock": "Sell a few weeks early and plan for capital gains tax. Price swings can leave you short.", "s_loan": "Money borrowed from someone", "d_loan": "Borrowed money is debt: it must be disclosed and may count in your DTI. Some secured borrowing is acceptable; unsecured personal loans often are not.", "t_loan": "Never label a loan as a gift. Ask your lender before you borrow."}};
+
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−$':'$')+Math.round(Math.abs(n)).toLocaleString('en-US');
+const fill=(s,v)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>v&&v[k]!=null?v[k]:m);
+const T=(k,o)=>{const d=I18N[lang]; return fill(d[k]!=null?d[k]:k,o||{});};
+const val=id=>{const el=$(id); if(!el) return null; const s=String(el.value).replace(/,/g,'').trim(); if(s==='') return null; const v=parseFloat(s); return isFinite(v)?v:null;};
+const strip=s=>String(s).replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ');
+function load(k,def){ try{ const v=JSON.parse(localStorage.getItem(k)||'null'); return v==null?def:v; }catch(e){ return def; } }
+function keep(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+let SUM='', SHORT='';
+function setSms(){ $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(T('sms',{s:SHORT})); }
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  document.querySelectorAll('[data-ph]').forEach(el=>{const k=el.getAttribute('data-ph'); if(d[k]!=null) el.setAttribute('placeholder',d[k]);});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; render();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const v={n:$('fname').value.trim()||'—',e:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—',s:SUM,code:CODE};
+  /* LEAD -> FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(T('subj',v))+'&body='+encodeURIComponent(T('body',v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+async function copyText(t,btn,key){ try{ await navigator.clipboard.writeText(t); const o=btn.textContent; btn.textContent=T('copied'); setTimeout(()=>{btn.textContent=T(key)},1500);}catch(e){} }
+
+
+/* Đã kiểm 12/11/2026:
+   Fannie B3-4.2-02 (12/14/2022): large deposit = 1 khoản > 50% tổng thu nhập tháng (purchase); sao kê thường 2 tháng.
+   B3-4.3-20: cash-on-hand không được tính cho down/closing, trừ HomeReady.
+   B3-4.3-04 (02/04/2026): donor, nội dung gift letter, chứng minh chuyển, không cho investment property.
+   B3-4.2-05 (05/04/2022): tiền nước ngoài đổi ra USD, ở tổ chức tài chính Mỹ, kiểm trước close, dịch tiếng Anh.
+   IRS: annual exclusion $19,000/người nhận năm 2026; Form 3520 khi gift từ người nước ngoài > $100,000/năm;
+   IRA first home tới $10,000 không bị 10% additional tax. FinCEN: CTR > $10,000; structuring là tội.
+   Hụi: không có quy định riêng của Fannie, viết chung chung. */
+const SR=[["save", false], ["big", true], ["cash", true], ["gift", true], ["abroad", true], ["hui", true], ["asset", false], ["home", false], ["k401", false], ["stock", false], ["loan", true]];
+const KEY='kl_t343_v1';
+let st=load(KEY,{s:{},inc:''});
+if(st.inc) $('inc').value=st.inc;
+document.querySelectorAll('#srcs input').forEach(cb=>{ cb.checked=!!st.s[cb.dataset.s]; cb.addEventListener('change',()=>{ if(cb.checked) st.s[cb.dataset.s]=1; else delete st.s[cb.dataset.s]; keep(KEY,st); render(); }); });
+$('inc').addEventListener('input',()=>{ st.inc=$('inc').value; keep(KEY,st); render(); });
+function render(){
+  const inc=val('inc');
+  const ld=$('ldNote'); if(inc&&inc>0){ ld.innerHTML=T('ld',{x:fmt(inc*0.5)}); ld.classList.remove('hide'); } else ld.classList.add('hide');
+  const on=SR.filter(s=>st.s[s[0]]); on.sort((a,b)=>(b[1]?1:0)-(a[1]?1:0));
+  const urg=on.filter(s=>s[1]).length;
+  const el=$('status');
+  if(!on.length){ el.textContent=T('r_none'); el.className='status'; }
+  else { el.textContent=T('r_n',{n:on.length,r:urg}); el.className='status '+(urg?'warn':'ok'); }
+  $('out').innerHTML=on.map(s=>`<div class="card ${s[1]?'r':'g'}"><h4>${T('s_'+s[0])}</h4><p><b>${T('docs')}</b> ${T('d_'+s[0])}</p><p><b>${T('todo')}</b> ${T('t_'+s[0])}</p></div>`).join('');
+  SHORT=on.length?on.map(s=>strip(T('s_'+s[0]))).join('; '):T('r_none');
+  SUM=T('sum_h')+(inc?'\nLarge deposit > '+fmt(inc*0.5):'')+'\n'+(on.length?on.map(s=>'- '+strip(T('s_'+s[0]))+'\n  '+strip(T('docs'))+' '+strip(T('d_'+s[0]))+'\n  '+strip(T('todo'))+' '+strip(T('t_'+s[0]))).join('\n'):T('r_none'));
+  setSms();
+}
+$('copyQ').onclick=()=>copyText(SUM,$('copyQ'),'copyq');
+
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'\u2190 All tools':'\u2190 T\u1ea5t c\u1ea3 c\u00f4ng c\u1ee5';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

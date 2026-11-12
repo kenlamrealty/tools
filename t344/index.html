@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mua chung nhà với người thân · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Cha mẹ và con, anh chị em hay hai người chưa cưới mua chung: so cách đứng tên, phần góp không đều, và 10 điều nên ghi thành thỏa thuận.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t344/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:title" content="Mua chung nhà với người thân · Ken Lam Tools">
+<meta property="og:description" content="Cha mẹ và con, anh chị em hay hai người chưa cưới mua chung: so cách đứng tên, phần góp không đều, và 10 điều nên ghi thành thỏa thuận.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t344/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T144 additions */
+.hide{display:none!important}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.sec-k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:0}
+.chip{display:inline-block;font-size:12px;font-weight:500;line-height:1.2;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.g{color:var(--ok);border-color:var(--ok)}
+.chip.y{color:var(--brass);border-color:var(--brass)}
+.chip.r{color:var(--warn);border-color:var(--warn);background:var(--brass-soft)}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.total .v.redc{color:var(--warn)}
+.grp{display:grid;gap:0;border-top:1px solid var(--line)}
+.grp h3{font-family:var(--display);font-weight:400;font-size:22px;margin:14px 0 4px}
+.q{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;padding:10px 0;border-bottom:1px solid var(--line);align-items:start}
+.q input{accent-color:var(--brass);width:18px;height:18px;margin:3px 0 0}
+.qt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;text-align:left;padding:0;cursor:pointer;line-height:1.4}
+.qt::after{content:" +";color:var(--brass)}
+.qt[aria-expanded="true"]::after{content:" \2212"}
+.q.done .qt{color:var(--muted)}
+.why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.45;display:grid;gap:4px}
+.why b{color:var(--warn);font-weight:500}
+.prog{display:grid;gap:6px}
+.prog .k{font-size:13px;color:var(--muted)}
+.prog .k b{color:var(--fg);font-weight:500}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.smallbtn{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;cursor:pointer;justify-self:start}
+
+/* new-tool shared additions */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;padding:12px 4px}
+.ctl textarea{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;padding:10px 4px;resize:vertical;min-height:60px}
+.seg.wrap3{flex-wrap:wrap}
+.seg.wrap3 button{min-width:33%}
+.status{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin-top:4px}
+.status.ok{color:var(--ok)} .status.warn{color:var(--warn)} .status.mid{color:var(--brass)}
+.panel h3{font-family:var(--display);font-weight:400;font-size:21px;margin:6px 0 0}
+.panel p{margin:0;font-size:15px}
+.acc{border-top:1px solid var(--line)}
+.acc details{border-bottom:1px solid var(--line)}
+.acc summary{cursor:pointer;padding:12px 0;font-size:15px;font-weight:500;list-style:none;display:flex;justify-content:space-between;gap:10px}
+.acc summary::-webkit-details-marker{display:none}
+.acc summary::after{content:'+';color:var(--brass);font-size:18px;line-height:1}
+.acc details[open] summary::after{content:'\2212'}
+.acc .body{padding:0 0 14px;font-size:14px;color:var(--muted);display:grid;gap:6px;line-height:1.5}
+.acc .body b{color:var(--fg);font-weight:500}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th,.tbl td{padding:8px 6px 8px 0;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.tbl thead th{font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.tbl td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.chk{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line);font-size:15px;cursor:pointer}
+.chk input{accent-color:var(--brass);width:18px;height:18px;margin:3px 0 0;flex:none}
+.out{display:grid;gap:10px}
+.card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:6px;background:var(--bg)}
+.card h4{margin:0;font-size:15px;font-weight:600}
+.card p,.card li{font-size:14px;color:var(--muted);margin:0}
+.card ul{margin:0;padding-left:18px;display:grid;gap:4px}
+.card.r{border-color:var(--warn)} .card.y{border-color:var(--brass)} .card.g{border-color:var(--ok)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← Tất cả công cụ</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools · T344</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title">Mua chung nhà: đứng tên sao, thỏa thuận gì?</h1>
+    <p class="sub" data-i="sub">Cha mẹ góp tiền với con, hai anh em chung một căn, hai người chưa cưới mua chung. Nhập ai góp bao nhiêu để thấy các cách đứng tên hợp với hoàn cảnh, chỗ dễ vướng, và những điều nên viết thành giấy trước khi ký offer.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <span class="fl" data-i="l_rel">Quan hệ giữa những người mua</span>
+      <div class="seg wrap3" role="group" id="rel">
+        <button type="button" data-v="sp" aria-pressed="false" data-i="rel_sp">Vợ chồng</button>
+        <button type="button" data-v="pc" aria-pressed="true" data-i="rel_pc">Cha mẹ và con</button>
+        <button type="button" data-v="sib" aria-pressed="false" data-i="rel_sib">Anh chị em, người thân</button>
+        <button type="button" data-v="pt" aria-pressed="false" data-i="rel_pt">Chưa cưới, bạn</button>
+      </div>
+    </div>
+    <p class="sec-k" data-i="k_ppl">Ai góp bao nhiêu tiền down</p>
+      <div class="row2" style="grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) auto;align-items:center">
+        <div class="ctl"><input id="n0" type="text" maxlength="40" data-ph="ph_name" placeholder="Tên 1" aria-label="Name 1"></div>
+        <div class="ctl"><span class="pre">$</span><input id="m0" type="number" inputmode="numeric" min="0" step="1" placeholder="0" aria-label="Amount 1"></div>
+        <label class="chk" style="border:0;padding:0;font-size:13px"><input type="checkbox" id="l0"><span data-i="l_live">ở</span></label>
+      </div>
+      <div class="row2" style="grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) auto;align-items:center">
+        <div class="ctl"><input id="n1" type="text" maxlength="40" data-ph="ph_name" placeholder="Tên 2" aria-label="Name 2"></div>
+        <div class="ctl"><span class="pre">$</span><input id="m1" type="number" inputmode="numeric" min="0" step="1" placeholder="0" aria-label="Amount 2"></div>
+        <label class="chk" style="border:0;padding:0;font-size:13px"><input type="checkbox" id="l1"><span data-i="l_live">ở</span></label>
+      </div>
+      <div class="row2" style="grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) auto;align-items:center">
+        <div class="ctl"><input id="n2" type="text" maxlength="40" data-ph="ph_name" placeholder="Tên 3" aria-label="Name 3"></div>
+        <div class="ctl"><span class="pre">$</span><input id="m2" type="number" inputmode="numeric" min="0" step="1" placeholder="0" aria-label="Amount 3"></div>
+        <label class="chk" style="border:0;padding:0;font-size:13px"><input type="checkbox" id="l2"><span data-i="l_live">ở</span></label>
+      </div>
+      <div class="row2" style="grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) auto;align-items:center">
+        <div class="ctl"><input id="n3" type="text" maxlength="40" data-ph="ph_name" placeholder="Tên 4" aria-label="Name 4"></div>
+        <div class="ctl"><span class="pre">$</span><input id="m3" type="number" inputmode="numeric" min="0" step="1" placeholder="0" aria-label="Amount 4"></div>
+        <label class="chk" style="border:0;padding:0;font-size:13px"><input type="checkbox" id="l3"><span data-i="l_live">ở</span></label>
+      </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_k">Phần góp</div>
+      <div class="status" id="status"></div>
+    </div>
+    <div class="lines" id="lines"></div>
+    <div class="note hide" id="wJt" data-i="w_jt">Góp không đều mà đứng tên joint tenancy: luật California coi joint tenancy là mỗi người sở hữu phần bằng nhau. Người góp ít có thể được xem là nhận phần chênh lệch. Muốn phần theo số tiền góp thì cân nhắc tenants in common có ghi rõ tỷ lệ, và hỏi luật sư.</div>
+    <div class="note hide" id="wGift"></div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="k_opt">Các cách đứng tên hay gặp</h2>
+    <p class="hint" data-i="o_hint">Chọn cách đứng tên là việc pháp lý và thuế. Bảng dưới để anh chị hỏi đúng câu, không thay luật sư hay CPA.</p>
+    <div class="out">
+      <div class="card" id="oc_cp"><h4><span data-i="o_cp">Community property</span> <span class="chip" id="ot_cp"></span></h4><p data-i="o_cp_b">Tài sản chung của vợ chồng. Khi một người mất, theo luật thuế liên bang, cả căn thường được tính lại giá vốn theo giá lúc mất (cả hai nửa), nên bán sau đó ít thuế lời hơn. Phần của người mất đi theo di chúc hoặc trust.</p></div>
+      <div class="card" id="oc_cps"><h4><span data-i="o_cps">Community property with right of survivorship</span> <span class="chip" id="ot_cps"></span></h4><p data-i="o_cps_b">Như trên, cộng thêm: người còn lại nhận cả căn mà không qua probate. Phải ghi rõ trên deed và cả hai ký hoặc ký tắt chấp nhận. Một người có thể chấm dứt quyền này khi còn sống.</p></div>
+      <div class="card" id="oc_jt"><h4><span data-i="o_jt">Joint tenancy</span> <span class="chip" id="ot_jt"></span></h4><p data-i="o_jt_b">Mỗi người sở hữu phần bằng nhau. Một người mất, người còn lại nhận phần đó, không theo di chúc. Một người có thể tự cắt joint tenancy. Giữa người không phải vợ chồng, giá vốn thường chỉ được tính lại cho phần của người mất. Hỏi CPA.</p></div>
+      <div class="card" id="oc_tic"><h4><span data-i="o_tic">Tenants in common</span> <span class="chip" id="ot_tic"></span></h4><p data-i="o_tic_b">Mỗi người có phần riêng, có thể không bằng nhau (ví dụ 70/30) nếu ghi rõ trên deed. Một người mất, phần của họ đi theo di chúc hoặc trust của họ, không tự về người còn lại. Không có trust thì phần đó có thể phải qua probate.</p></div>
+      <div class="card" id="oc_tr"><h4><span data-i="o_tr">Đứng tên qua trust</span> <span class="chip" id="ot_tr"></span></h4><p data-i="o_tr_b">Mỗi người hoặc cả nhóm để phần của mình vào living trust để tránh probate. Lender phải đồng ý. Xem <a href="/t121/">T121</a> và hỏi luật sư soạn trust.</p></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="k_ag">Thỏa thuận mua chung nên ghi</h2>
+    <p class="hint" data-i="ag_hint">Đánh dấu điều đã thống nhất. Viết thành giấy, mỗi người giữ một bản, nhờ luật sư xem. Lưu trên máy này.</p>
+    <div class="prog"><div class="k"><b id="progN">0/10</b> <span data-i="ag_prog">đã thống nhất</span></div><div class="bar" aria-hidden="true"><i class="b1" id="progBar" style="width:0%"></i></div></div>
+    <div id="ag">
+      <label class="chk"><input type="checkbox" data-a="0"><span data-i="ag0">Mỗi người góp bao nhiêu tiền down và closing costs, và phần sở hữu là bao nhiêu phần trăm</span></label>
+      <label class="chk"><input type="checkbox" data-a="1"><span data-i="ag1">Ai trả bao nhiêu mỗi tháng: tiền loan, thuế nhà, bảo hiểm, HOA</span></label>
+      <label class="chk"><input type="checkbox" data-a="2"><span data-i="ag2">Một người không trả phần mình thì sao</span></label>
+      <label class="chk"><input type="checkbox" data-a="3"><span data-i="ag3">Ai ở trong nhà; người không ở có được nhận tiền thuê không</span></label>
+      <label class="chk"><input type="checkbox" data-a="4"><span data-i="ag4">Sửa lớn (mái, máy lạnh) ai quyết, ai trả, có cộng vào phần sở hữu không</span></label>
+      <label class="chk"><input type="checkbox" data-a="5"><span data-i="ag5">Khi nào bán, cần bao nhiêu người đồng ý</span></label>
+      <label class="chk"><input type="checkbox" data-a="6"><span data-i="ag6">Một người muốn ra: người còn lại mua lại phần, định giá bằng appraisal hay cách khác, có bao nhiêu thời gian</span></label>
+      <label class="chk"><input type="checkbox" data-a="7"><span data-i="ag7">Một người mất, ly hôn hoặc kết hôn thì phần của họ đi đâu</span></label>
+      <label class="chk"><input type="checkbox" data-a="8"><span data-i="ag8">Tranh chấp thì giải quyết thế nào (hòa giải trước khi ra tòa)</span></label>
+      <label class="chk"><input type="checkbox" data-a="9"><span data-i="ag9">Ai được khấu trừ tiền lãi và thuế nhà trên thuế thu nhập (hỏi CPA)</span></label>
+    </div>
+    <div class="btnrow"><button type="button" class="smallbtn" id="copyQ" data-i="copyq">Copy điều chưa thống nhất</button> <button type="button" class="smallbtn" id="resetQ" data-i="resetq">Xóa dấu</button></div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="k_watch">Ba chỗ hay vướng</h2>
+    <p class="myth" data-i="wa1"><b>Tên trên loan và tên trên title là hai chuyện.</b> Ai ký giấy nợ thường chịu trách nhiệm cả khoản vay, không chỉ phần mình. Người đứng loan mà không ở nhà: có loại loan cho phép, có loại không. Hỏi lender trước.</p>
+    <p class="myth" data-i="wa2"><b>Không thỏa thuận được thì tòa có thể chia.</b> Ở California, một người đồng sở hữu có thể kiện partition để tòa chia hoặc bán căn nhà. Thỏa thuận viết sẵn giúp tránh chuyện này.</p>
+    <p class="myth" data-i="wa3"><b>Thêm hoặc bớt tên sau này có thể đổi thuế nhà.</b> Chuyển phần sở hữu có thể làm county định giá lại phần đó; có trường hợp được miễn. Hỏi Assessor hoặc CPA trước khi ký deed mới. Cha mẹ cho con: <a href="/t322/">T322</a>.</p>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Gửi kết quả qua email</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Hỏi Ken</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Gửi kết quả này về email</h2>
+    <p data-i="f_sub">Ken giới thiệu luật sư và lender quen làm hồ sơ mua chung. Không spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Tên</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (không bắt buộc)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Đã mở email. Bấm Send là xong. Nếu email không mở, copy số dưới đây và nhắn cho Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Hoặc text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Bước tiếp theo</h2>
+    <ol>
+      <li data-i="ns1">Ngồi lại cùng nhau trả lời 10 điểm ở trên trước khi đi coi nhà, không phải sau khi offer được nhận.</li>
+      <li data-i="ns2">Gặp lender cùng lúc tất cả người sẽ đứng loan. Hỏi loại loan nào cho phép người không ở, và DTI tính chung ra sao.</li>
+      <li data-i="ns3">Báo escrow cách đứng tên trước ngày ký giấy. Deed ghi sao thì ra vậy, sửa sau tốn tiền và có thể đụng thuế.</li>
+      <li data-i="ns4">Tiền cha mẹ cho để mua: xem <a href="/t343/">T343</a> về gift letter. Thuế khi sang tên: <a href="/t320/">T320</a>.</li>
+    </ol>
+  </section>
+  <p class="myth" data-i="myth"><b>Nhiều người hiểu sai:</b> “Người nhà với nhau, cần gì giấy tờ.” Chính vì là người nhà mới cần. Lúc mua ai cũng vui. Lúc một người muốn bán, cưới vợ hay mất việc, tờ giấy viết từ đầu giữ được cả căn nhà lẫn tình thân.</p>
+
+  <footer>
+    <span><span data-i="ft_src">Nguồn:</span> <a href="https://california.public.law/codes/civil_code_section_682.1" target="_blank" rel="noopener">Civil Code §682.1 (community property with survivorship)</a> · <a href="https://california.public.law/codes/civil_code_section_683" target="_blank" rel="noopener">§683 (joint tenancy, equal shares)</a> · <a href="https://law.counselstack.com/statute/ca/CIV/685." target="_blank" rel="noopener">§685 (interest in common)</a> · <a href="https://california.public.law/codes/code_of_civil_procedure_section_872.210" target="_blank" rel="noopener">CCP §872.210 (partition)</a> · <a href="https://www.govinfo.gov/link/uscode/26/1014" target="_blank" rel="noopener">26 USC §1014(b)(6) (community property basis)</a> · <a href="https://www.irs.gov/publications/p551" target="_blank" rel="noopener">IRS Pub. 551</a> · <a href="https://www.irs.gov/node/71191" target="_blank" rel="noopener">IRS gift tax FAQ ($19,000 for 2026)</a> <span data-i="ft_chk">(kiểm ngày 12/11/2026)</span></span>
+    <span data-i="ft_est">Thông tin chung, không phải tư vấn pháp lý hay thuế. Cách đứng tên ảnh hưởng thừa kế, thuế và quyền của từng người: hỏi luật sư và CPA trước khi quyết.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · BRG Realty Corp · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 12/11/2026 · <a href="/cong-cu/" data-i="ft_all">Tất cả công cụ</a></span>
+  </footer>
+</div>
+
+<script>
+const CODE="T344";
+const I18N={vi:{"b_email": "Gửi kết quả qua email", "b_sms": "Hỏi Ken", "f_name": "Tên", "f_phone": "Phone (không bắt buộc)", "f_send": "Gửi", "f_ok": "Đã mở email. Bấm Send là xong. Nếu email không mở, copy số dưới đây và nhắn cho Ken.", "f_or": "Hoặc text:", "f_copy": "Copy", "ns_t": "Bước tiếp theo", "ft_src": "Nguồn:", "ft_chk": "(kiểm ngày 12/11/2026)", "ft_upd": "Cập nhật", "ft_all": "Tất cả công cụ", "lang": "English", "copied": "Đã copy", "body": "Tên: {n}\nEmail: {e}\nPhone: {ph}\n\n{s}\n\nGửi từ tool {code} tools.kenlamrealty.com", "title_short": "Mua chung nhà với người thân", "title": "Mua chung nhà: đứng tên sao, thỏa thuận gì?", "sub": "Cha mẹ góp tiền với con, hai anh em chung một căn, hai người chưa cưới mua chung. Nhập ai góp bao nhiêu để thấy các cách đứng tên hợp với hoàn cảnh, chỗ dễ vướng, và những điều nên viết thành giấy trước khi ký offer.", "l_rel": "Quan hệ giữa những người mua", "rel_sp": "Vợ chồng", "rel_pc": "Cha mẹ và con", "rel_sib": "Anh chị em, người thân", "rel_pt": "Chưa cưới, bạn", "k_ppl": "Ai góp bao nhiêu tiền down", "ph_name": "Tên", "l_live": "ở", "r_k": "Phần góp", "r_none": "Nhập ít nhất hai người", "r_eq": "Góp bằng nhau", "r_uneq": "Góp không đều", "pct": "{p}% tổng tiền góp", "w_jt": "Góp không đều mà đứng tên joint tenancy: luật California coi joint tenancy là mỗi người sở hữu phần bằng nhau. Người góp ít có thể được xem là nhận phần chênh lệch. Muốn phần theo số tiền góp thì cân nhắc tenants in common có ghi rõ tỷ lệ, và hỏi luật sư.", "w_gift": "Nếu đứng tên chia đều, phần chênh lệch của {nm} khoảng {x}. Năm 2026, cho một người trên $19,000 thì người cho có thể phải nộp Form 709 (thường chưa phải đóng thuế). Hỏi CPA.", "k_opt": "Các cách đứng tên hay gặp", "o_hint": "Chọn cách đứng tên là việc pháp lý và thuế. Bảng dưới để anh chị hỏi đúng câu, không thay luật sư hay CPA.", "fit": "Hợp với hoàn cảnh này", "nofit": "Chỉ dành cho vợ chồng", "o_cp": "Community property", "o_cp_b": "Tài sản chung của vợ chồng. Khi một người mất, theo luật thuế liên bang, cả căn thường được tính lại giá vốn theo giá lúc mất (cả hai nửa), nên bán sau đó ít thuế lời hơn. Phần của người mất đi theo di chúc hoặc trust.", "o_cps": "Community property with right of survivorship", "o_cps_b": "Như trên, cộng thêm: người còn lại nhận cả căn mà không qua probate. Phải ghi rõ trên deed và cả hai ký hoặc ký tắt chấp nhận. Một người có thể chấm dứt quyền này khi còn sống.", "o_jt": "Joint tenancy", "o_jt_b": "Mỗi người sở hữu phần bằng nhau. Một người mất, người còn lại nhận phần đó, không theo di chúc. Một người có thể tự cắt joint tenancy. Giữa người không phải vợ chồng, giá vốn thường chỉ được tính lại cho phần của người mất. Hỏi CPA.", "o_tic": "Tenants in common", "o_tic_b": "Mỗi người có phần riêng, có thể không bằng nhau (ví dụ 70/30) nếu ghi rõ trên deed. Một người mất, phần của họ đi theo di chúc hoặc trust của họ, không tự về người còn lại. Không có trust thì phần đó có thể phải qua probate.", "o_tr": "Đứng tên qua trust", "o_tr_b": "Mỗi người hoặc cả nhóm để phần của mình vào living trust để tránh probate. Lender phải đồng ý. Xem <a href=\"/t121/\">T121</a> và hỏi luật sư soạn trust.", "k_ag": "Thỏa thuận mua chung nên ghi", "ag_hint": "Đánh dấu điều đã thống nhất. Viết thành giấy, mỗi người giữ một bản, nhờ luật sư xem. Lưu trên máy này.", "ag_prog": "đã thống nhất", "copyq": "Copy điều chưa thống nhất", "resetq": "Xóa dấu", "ag0": "Mỗi người góp bao nhiêu tiền down và closing costs, và phần sở hữu là bao nhiêu phần trăm", "ag1": "Ai trả bao nhiêu mỗi tháng: tiền loan, thuế nhà, bảo hiểm, HOA", "ag2": "Một người không trả phần mình thì sao", "ag3": "Ai ở trong nhà; người không ở có được nhận tiền thuê không", "ag4": "Sửa lớn (mái, máy lạnh) ai quyết, ai trả, có cộng vào phần sở hữu không", "ag5": "Khi nào bán, cần bao nhiêu người đồng ý", "ag6": "Một người muốn ra: người còn lại mua lại phần, định giá bằng appraisal hay cách khác, có bao nhiêu thời gian", "ag7": "Một người mất, ly hôn hoặc kết hôn thì phần của họ đi đâu", "ag8": "Tranh chấp thì giải quyết thế nào (hòa giải trước khi ra tòa)", "ag9": "Ai được khấu trừ tiền lãi và thuế nhà trên thuế thu nhập (hỏi CPA)", "k_watch": "Ba chỗ hay vướng", "wa1": "<b>Tên trên loan và tên trên title là hai chuyện.</b> Ai ký giấy nợ thường chịu trách nhiệm cả khoản vay, không chỉ phần mình. Người đứng loan mà không ở nhà: có loại loan cho phép, có loại không. Hỏi lender trước.", "wa2": "<b>Không thỏa thuận được thì tòa có thể chia.</b> Ở California, một người đồng sở hữu có thể kiện partition để tòa chia hoặc bán căn nhà. Thỏa thuận viết sẵn giúp tránh chuyện này.", "wa3": "<b>Thêm hoặc bớt tên sau này có thể đổi thuế nhà.</b> Chuyển phần sở hữu có thể làm county định giá lại phần đó; có trường hợp được miễn. Hỏi Assessor hoặc CPA trước khi ký deed mới. Cha mẹ cho con: <a href=\"/t322/\">T322</a>.", "ns1": "Ngồi lại cùng nhau trả lời 10 điểm ở trên trước khi đi coi nhà, không phải sau khi offer được nhận.", "ns2": "Gặp lender cùng lúc tất cả người sẽ đứng loan. Hỏi loại loan nào cho phép người không ở, và DTI tính chung ra sao.", "ns3": "Báo escrow cách đứng tên trước ngày ký giấy. Deed ghi sao thì ra vậy, sửa sau tốn tiền và có thể đụng thuế.", "ns4": "Tiền cha mẹ cho để mua: xem <a href=\"/t343/\">T343</a> về gift letter. Thuế khi sang tên: <a href=\"/t320/\">T320</a>.", "myth": "<b>Nhiều người hiểu sai:</b> “Người nhà với nhau, cần gì giấy tờ.” Chính vì là người nhà mới cần. Lúc mua ai cũng vui. Lúc một người muốn bán, cưới vợ hay mất việc, tờ giấy viết từ đầu giữ được cả căn nhà lẫn tình thân.", "f_title": "Gửi kết quả này về email", "f_sub": "Ken giới thiệu luật sư và lender quen làm hồ sơ mua chung. Không spam.", "ft_est": "Thông tin chung, không phải tư vấn pháp lý hay thuế. Cách đứng tên ảnh hưởng thừa kế, thuế và quyền của từng người: hỏi luật sư và CPA trước khi quyết.", "subj": "Mua chung nhà: {n}", "sms": "Chào Ken, tôi định mua chung nhà: {s}. Ken tư vấn giúp được không?", "sum_h": "MUA CHUNG NHÀ", "sh": "{r}, {n} người, {e}", "open_h": "Điều chưa thống nhất:"},
+en:{"b_email": "Email me the result", "b_sms": "Ask Ken", "f_name": "Name", "f_phone": "Phone (optional)", "f_send": "Send", "f_ok": "Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.", "f_or": "Or text:", "f_copy": "Copy", "ns_t": "Next steps", "ft_src": "Sources:", "ft_chk": "(checked 11/12/2026)", "ft_upd": "Updated", "ft_all": "All tools", "lang": "Tiếng Việt", "copied": "Copied", "body": "Name: {n}\nEmail: {e}\nPhone: {ph}\n\n{s}\n\nSent from tool {code} tools.kenlamrealty.com", "title_short": "Buying a home with family or a partner", "title": "Buying together: how to hold title, what to agree on", "sub": "Parents chipping in, two siblings sharing a home, an unmarried couple buying together. Enter who puts in what to see the title options that fit, where people get stuck, and what to put in writing before you sign an offer.", "l_rel": "How the buyers are related", "rel_sp": "Married", "rel_pc": "Parent and child", "rel_sib": "Siblings, relatives", "rel_pt": "Unmarried, friends", "k_ppl": "Who puts in how much", "ph_name": "Name", "l_live": "lives there", "r_k": "Contributions", "r_none": "Enter at least two people", "r_eq": "Equal contributions", "r_uneq": "Unequal contributions", "pct": "{p}% of the total", "w_jt": "Unequal money with joint tenancy: California treats joint tenants as owning equal shares. The person who put in less may be treated as receiving the difference. To own by contribution, consider tenants in common with stated shares, and ask an attorney.", "w_gift": "If title is split equally, {nm} receives about {x} more than they paid. In 2026, giving one person more than $19,000 may require the giver to file Form 709 (usually no tax due). Ask a CPA.", "k_opt": "Common ways to hold title", "o_hint": "Choosing title is a legal and tax decision. Use this to ask the right questions; it does not replace an attorney or CPA.", "fit": "Fits this situation", "nofit": "Married couples only", "o_cp": "Community property", "o_cp_b": "Owned together as spouses. When one spouse dies, federal tax law generally resets the basis of the whole property (both halves) to its value at death, which can cut capital gains tax on a later sale. The deceased spouse’s half passes by will or trust.", "o_cps": "Community property with right of survivorship", "o_cps_b": "As above, plus the survivor takes the whole home without probate. The deed must say so expressly and both spouses must accept it in writing on the deed. Either spouse can end the survivorship while alive.", "o_jt": "Joint tenancy", "o_jt_b": "Each owner holds an equal share. When one dies, the others take that share, regardless of a will. One owner can sever the joint tenancy alone. Between non-spouses, the basis reset generally applies only to the deceased owner’s part. Ask a CPA.", "o_tic": "Tenants in common", "o_tic_b": "Each owner has a separate share, which can be unequal (say 70/30) if the deed states it. When one dies, that share passes under their own will or trust, not automatically to the others. Without a trust, it may go through probate.", "o_tr": "Through a trust", "o_tr_b": "Each owner, or the group, holds their share in a living trust to avoid probate. The lender must approve. See <a href=\"/t121/\">T121</a> and ask an estate attorney.", "k_ag": "What your co-ownership agreement should cover", "ag_hint": "Tick each point you have agreed on. Put it in writing, one copy each, and have an attorney review it. Saved on this device.", "ag_prog": "agreed", "copyq": "Copy open points", "resetq": "Clear ticks", "ag0": "How much each person paid toward down payment and closing costs, and each ownership percentage", "ag1": "Who pays what each month: mortgage, property tax, insurance, HOA", "ag2": "What happens if someone stops paying their part", "ag3": "Who lives there, and whether the non-occupant is paid rent", "ag4": "Big repairs (roof, HVAC): who decides, who pays, does it change ownership shares", "ag5": "When to sell, and how many must agree", "ag6": "If one wants out: buyout right, how to value the share (appraisal or other), and the timeline", "ag7": "What happens to a share if an owner dies, divorces or marries", "ag8": "How disputes are resolved (mediation before court)", "ag9": "Who deducts mortgage interest and property tax on income taxes (ask a CPA)", "k_watch": "Three common traps", "wa1": "<b>Being on the loan and being on title are different.</b> Anyone who signs the note is usually liable for the whole loan, not just their share. A co-borrower who will not live there is allowed on some loan types, not others. Ask your lender first.", "wa2": "<b>If you cannot agree, a court can divide it.</b> In California a co-owner can file a partition action asking the court to divide or sell the property. A written agreement helps avoid that.", "wa3": "<b>Adding or removing names later can change property tax.</b> Transferring a share may trigger reassessment of that share; some transfers are excluded. Ask the Assessor or a CPA before signing a new deed. Parent to child: <a href=\"/t322/\">T322</a>.", "ns1": "Sit down together and settle the 10 points above before you tour homes, not after your offer is accepted.", "ns2": "Meet the lender with everyone who will be on the loan. Ask which loans allow a non-occupant co-borrower and how combined DTI works.", "ns3": "Tell escrow how you will hold title before signing day. The deed records what you tell them; changing it later costs money and may have tax effects.", "ns4": "Money from parents: see <a href=\"/t343/\">T343</a> for the gift letter. Taxes on transfers: <a href=\"/t320/\">T320</a>.", "myth": "<b>Many people get this wrong:</b> “We’re family, we don’t need paperwork.” That is exactly why you do. Everyone is happy at purchase. When one wants to sell, marries, or loses a job, the agreement written at the start protects both the house and the relationship.", "f_title": "Email this to yourself", "f_sub": "Ken can refer attorneys and lenders who handle co-buying. No spam.", "ft_est": "General information, not legal or tax advice. How you hold title affects inheritance, taxes and each person’s rights. Ask an attorney and a CPA before you decide.", "subj": "Buying together: {n}", "sms": "Hi Ken, we plan to buy together: {s}. Can you help?", "sum_h": "BUYING TOGETHER", "sh": "{r}, {n} people, {e}", "open_h": "Open points:"}};
+
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−$':'$')+Math.round(Math.abs(n)).toLocaleString('en-US');
+const fill=(s,v)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>v&&v[k]!=null?v[k]:m);
+const T=(k,o)=>{const d=I18N[lang]; return fill(d[k]!=null?d[k]:k,o||{});};
+const val=id=>{const el=$(id); if(!el) return null; const s=String(el.value).replace(/,/g,'').trim(); if(s==='') return null; const v=parseFloat(s); return isFinite(v)?v:null;};
+const strip=s=>String(s).replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ');
+function load(k,def){ try{ const v=JSON.parse(localStorage.getItem(k)||'null'); return v==null?def:v; }catch(e){ return def; } }
+function keep(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+let SUM='', SHORT='';
+function setSms(){ $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(T('sms',{s:SHORT})); }
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  document.querySelectorAll('[data-ph]').forEach(el=>{const k=el.getAttribute('data-ph'); if(d[k]!=null) el.setAttribute('placeholder',d[k]);});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; render();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const v={n:$('fname').value.trim()||'—',e:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—',s:SUM,code:CODE};
+  /* LEAD -> FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(T('subj',v))+'&body='+encodeURIComponent(T('body',v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+async function copyText(t,btn,key){ try{ await navigator.clipboard.writeText(t); const o=btn.textContent; btn.textContent=T('copied'); setTimeout(()=>{btn.textContent=T(key)},1500);}catch(e){} }
+
+
+/* Đã kiểm 12/11/2026: Civ 682.1 (CP with ROS: ghi rõ trên deed, chấp nhận bằng văn bản, chấm dứt được);
+   Civ 683 (joint interest = equal shares); Civ 685 (interest in common); CCP 872.210 (partition, không áp cho CP vợ chồng);
+   26 USC 1014(b)(6) + IRS Pub 551 (community property: cả hai nửa lấy FMV lúc mất);
+   IRS: annual exclusion $19,000/người nhận 2026. Joint tenancy giữa non-spouse: chỉ phần người mất được step-up (viết "thường", hỏi CPA). */
+const KEY='kl_t344_v1';
+let st=load(KEY,{rel:'pc',p:[{},{},{},{}],ag:{}});
+function bindPeople(){
+  for(let i=0;i<4;i++){ const p=st.p[i]||{}; if(p.n) $('n'+i).value=p.n; if(p.m) $('m'+i).value=p.m; $('l'+i).checked=!!p.l;
+    ['n','m'].forEach(k=>$(k+i).addEventListener('input',()=>{ st.p[i]=st.p[i]||{}; st.p[i][k]=$(k+i).value; keep(KEY,st); render(); }));
+    $('l'+i).addEventListener('change',()=>{ st.p[i]=st.p[i]||{}; st.p[i].l=$('l'+i).checked; keep(KEY,st); render(); }); }
+}
+bindPeople();
+function setRel(v){ st.rel=v; document.querySelectorAll('#rel button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v?'true':'false')); }
+setRel(st.rel||'pc');
+$('rel').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; setRel(b.dataset.v); keep(KEY,st); render(); });
+document.querySelectorAll('#ag input').forEach(cb=>{ cb.checked=!!st.ag[cb.dataset.a]; cb.addEventListener('change',()=>{ if(cb.checked) st.ag[cb.dataset.a]=1; else delete st.ag[cb.dataset.a]; keep(KEY,st); render(); }); });
+function shares(ps){
+  const L=ps.filter(p=>p.m>0); const tot=L.reduce((a,p)=>a+p.m,0);
+  if(L.length<2||tot<=0) return null;
+  const eq=tot/L.length;
+  const out=L.map(p=>({n:p.n,m:p.m,l:p.l,pct:p.m/tot*100,diff:eq-p.m}));
+  const equal=out.every(o=>Math.abs(o.diff)<1);
+  return {out,tot,equal};
+}
+window.__shares=shares;
+function render(){
+  const ps=[0,1,2,3].map(i=>({n:$('n'+i).value.trim()||(T('ph_name')+' '+(i+1)),m:val('m'+i)||0,l:$('l'+i).checked}));
+  const s=shares(ps), el=$('status');
+  if(!s){ el.textContent=T('r_none'); el.className='status'; $('lines').innerHTML=''; $('wJt').classList.add('hide'); $('wGift').classList.add('hide'); }
+  else {
+    el.textContent=s.equal?T('r_eq'):T('r_uneq'); el.className='status '+(s.equal?'ok':'mid');
+    $('lines').innerHTML=s.out.map(o=>`<div class="line"><span class="n"><b>${o.n.replace(/[<>&]/g,'')}</b><small>${T('pct',{p:o.pct.toFixed(1)})}</small></span><span class="a">${fmt(o.m)}</span></div>`).join('');
+    $('wJt').classList.toggle('hide',s.equal);
+    const g=s.out.filter(o=>o.diff>19000).sort((a,b)=>b.diff-a.diff)[0];
+    const w=$('wGift'); if(g&&st.rel!=='sp'){ w.innerHTML=T('w_gift',{nm:g.n.replace(/[<>&]/g,''),x:fmt(g.diff)}); w.classList.remove('hide'); } else w.classList.add('hide');
+  }
+  const sp=st.rel==='sp';
+  ['cp','cps'].forEach(k=>{ $('ot_'+k).textContent=sp?T('fit'):T('nofit'); $('ot_'+k).className='chip '+(sp?'g':''); $('oc_'+k).style.opacity=sp?1:.55; });
+  const fitJT=(!s||s.equal);
+  $('ot_jt').textContent=fitJT?T('fit'):''; $('ot_jt').className='chip '+(fitJT?'g':'hide');
+  $('ot_tic').textContent=(!sp)?T('fit'):''; $('ot_tic').className='chip '+(!sp?'g':'hide');
+  $('ot_tr').textContent=T('fit'); $('ot_tr').className='chip g';
+  const done=Object.keys(st.ag).length; $('progN').textContent=done+'/10'; $('progBar').style.width=(done*10)+'%';
+  const open=[...Array(10).keys()].filter(i=>!st.ag[i]).map(i=>'- '+strip(T('ag'+i)));
+  const relT=strip(T('rel_'+st.rel));
+  SHORT=T('sh',{r:relT,n:s?s.out.length:0,e:s?(s.equal?T('r_eq'):T('r_uneq')):'—'});
+  SUM=T('sum_h')+'\n'+relT+'\n'+(s?s.out.map(o=>'- '+o.n+': '+fmt(o.m)+' ('+o.pct.toFixed(1)+'%)'+(o.l?', '+strip(T('l_live')):'')).join('\n'):'')+'\n\n'+T('open_h')+'\n'+(open.join('\n')||'—');
+  setSms();
+}
+$('copyQ').onclick=()=>{ const open=[...Array(10).keys()].filter(i=>!st.ag[i]).map(i=>'- '+strip(T('ag'+i))).join('\n'); copyText(open,$('copyQ'),'copyq'); };
+$('resetQ').onclick=()=>{ st.ag={}; keep(KEY,st); document.querySelectorAll('#ag input').forEach(cb=>cb.checked=false); render(); };
+
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'\u2190 All tools':'\u2190 T\u1ea5t c\u1ea3 c\u00f4ng c\u1ee5';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Có phải khai không: phép thử ba câu · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<meta name="description" content="Người bán phân vân một chuyện có phải khai không: trả lời ba câu, xem gợi ý và các trường hợp hay hỏi theo luật California.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t342/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:title" content="Có phải khai không: phép thử ba câu · Ken Lam Tools">
+<meta property="og:description" content="Người bán phân vân một chuyện có phải khai không: trả lời ba câu, xem gợi ý và các trường hợp hay hỏi theo luật California.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t342/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+/* T144 additions */
+.hide{display:none!important}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:14px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin:0}
+.fl{font-size:13px;font-weight:500;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.sec-k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:0}
+.chip{display:inline-block;font-size:12px;font-weight:500;line-height:1.2;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.g{color:var(--ok);border-color:var(--ok)}
+.chip.y{color:var(--brass);border-color:var(--brass)}
+.chip.r{color:var(--warn);border-color:var(--warn);background:var(--brass-soft)}
+.line .n small{display:block;font-size:12px;color:var(--muted)}
+.total .v.redc{color:var(--warn)}
+.grp{display:grid;gap:0;border-top:1px solid var(--line)}
+.grp h3{font-family:var(--display);font-weight:400;font-size:22px;margin:14px 0 4px}
+.q{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;padding:10px 0;border-bottom:1px solid var(--line);align-items:start}
+.q input{accent-color:var(--brass);width:18px;height:18px;margin:3px 0 0}
+.qt{border:0;background:transparent;color:var(--fg);font:inherit;font-size:15px;text-align:left;padding:0;cursor:pointer;line-height:1.4}
+.qt::after{content:" +";color:var(--brass)}
+.qt[aria-expanded="true"]::after{content:" \2212"}
+.q.done .qt{color:var(--muted)}
+.why{grid-column:2;font-size:13px;color:var(--muted);line-height:1.45;display:grid;gap:4px}
+.why b{color:var(--warn);font-weight:500}
+.prog{display:grid;gap:6px}
+.prog .k{font-size:13px;color:var(--muted)}
+.prog .k b{color:var(--fg);font-weight:500}
+.steps ol{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.steps a,.myth a,.note a{color:var(--brass)}
+.myth{font-size:14px;margin:0;border-left:2px solid var(--brass);padding:2px 0 2px 12px}
+.myth b{font-weight:500}
+.smallbtn{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;cursor:pointer;justify-self:start}
+
+/* new-tool shared additions */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;padding:12px 4px}
+.ctl textarea{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:16px;padding:10px 4px;resize:vertical;min-height:60px}
+.seg.wrap3{flex-wrap:wrap}
+.seg.wrap3 button{min-width:33%}
+.status{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15;margin-top:4px}
+.status.ok{color:var(--ok)} .status.warn{color:var(--warn)} .status.mid{color:var(--brass)}
+.panel h3{font-family:var(--display);font-weight:400;font-size:21px;margin:6px 0 0}
+.panel p{margin:0;font-size:15px}
+.acc{border-top:1px solid var(--line)}
+.acc details{border-bottom:1px solid var(--line)}
+.acc summary{cursor:pointer;padding:12px 0;font-size:15px;font-weight:500;list-style:none;display:flex;justify-content:space-between;gap:10px}
+.acc summary::-webkit-details-marker{display:none}
+.acc summary::after{content:'+';color:var(--brass);font-size:18px;line-height:1}
+.acc details[open] summary::after{content:'\2212'}
+.acc .body{padding:0 0 14px;font-size:14px;color:var(--muted);display:grid;gap:6px;line-height:1.5}
+.acc .body b{color:var(--fg);font-weight:500}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th,.tbl td{padding:8px 6px 8px 0;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.tbl thead th{font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.tbl td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.chk{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line);font-size:15px;cursor:pointer}
+.chk input{accent-color:var(--brass);width:18px;height:18px;margin:3px 0 0;flex:none}
+.out{display:grid;gap:10px}
+.card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:6px;background:var(--bg)}
+.card h4{margin:0;font-size:15px;font-weight:600}
+.card p,.card li{font-size:14px;color:var(--muted);margin:0}
+.card ul{margin:0;padding-left:18px;display:grid;gap:4px}
+.card.r{border-color:var(--warn)} .card.y{border-color:var(--brass)} .card.g{border-color:var(--ok)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+</style>
+
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← Tất cả công cụ</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools · T342</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">English</button>
+    </div>
+    <h1 data-i="title">Chuyện này có phải khai không?</h1>
+    <p class="sub" data-i="sub">Bán nhà ở California, người bán phải khai những gì mình biết về căn nhà. Khi phân vân một chuyện cụ thể, trả lời ba câu: có biết không, có quan trọng không, người mua có dễ tự thấy không. Tool gợi ý hướng xử lý và gom thành danh sách để đưa agent.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label for="item"><span data-i="l_item">Chuyện anh chị đang phân vân</span></label>
+      <div class="ctl"><input id="item" type="text" maxlength="160" data-ph="ph_item" placeholder="Ví dụ: mái từng dột năm 2023, đã sửa"></div>
+    </div>
+    <div class="field"><span class="fl" data-i="q1">1. Anh chị có biết chuyện này không?</span><div class="seg" role="group" id="a1"><button type="button" data-v="q1a" aria-pressed="false" data-i="q1a">Biết</button><button type="button" data-v="q1b" aria-pressed="false" data-i="q1b">Nghi, chưa chắc</button><button type="button" data-v="q1c" aria-pressed="false" data-i="q1c">Không biết</button></div></div>
+    <div class="field"><span class="fl" data-i="q2">2. Nó có thể làm người mua trả giá khác, hoặc đổi ý không mua?</span><div class="seg" role="group" id="a2"><button type="button" data-v="q2a" aria-pressed="false" data-i="q2a">Có</button><button type="button" data-v="q2b" aria-pressed="false" data-i="q2b">Có thể</button><button type="button" data-v="q2c" aria-pressed="false" data-i="q2c">Không</button></div></div>
+    <div class="field"><span class="fl" data-i="q3">3. Người mua đi coi nhà có dễ tự thấy không?</span><div class="seg" role="group" id="a3"><button type="button" data-v="q3a" aria-pressed="false" data-i="q3a">Dễ thấy</button><button type="button" data-v="q3b" aria-pressed="false" data-i="q3b">Khó thấy</button><button type="button" data-v="q3c" aria-pressed="false" data-i="q3c">Không chắc</button></div></div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_k">Gợi ý</div>
+      <div class="status" id="status"></div>
+    </div>
+    <p id="why" style="margin:0;font-size:15px"></p>
+    <button type="button" class="btn" id="addBtn" data-i="add">Thêm vào danh sách khai</button>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="k_list">Danh sách của anh chị</h2>
+    <div class="out" id="list"></div>
+    <div class="btnrow"><button type="button" class="smallbtn" id="copyQ" data-i="copyq">Copy danh sách gửi agent</button> <button type="button" class="smallbtn" id="resetQ" data-i="resetq">Xóa danh sách</button></div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i="k_cases">Những trường hợp hay hỏi</h2>
+    <div class="acc">
+      <details><summary data-i="c0t">Có người mất trong nhà</summary><div class="body" data-i="c0b">Luật California: người bán và agent không phải khai cái chết xảy ra hơn 3 năm trước ngày có offer. Trong vòng 3 năm thì nên khai. Người mua hỏi thẳng thì không được nói dối, dù đã quá 3 năm.</div></details>
+      <details><summary data-i="c1t">Người ở trước có HIV</summary><div class="body" data-i="c1b">Luật California không coi đây là điều phải khai, và không được nêu ra.</div></details>
+      <details><summary data-i="c2t">Mua về sửa rồi bán lại trong 18 tháng</summary><div class="body" data-i="c2b">Offer được nhận từ 1/7/2024 trở đi, người bán nhà single-family nhận offer trong vòng 18 tháng sau khi đứng tên phải khai các việc thợ mình thuê đã làm (thêm phòng, đổi kết cấu, sửa chữa), kèm tên thợ cho hợp đồng trên mức luật quy định, và copy permit nếu có.</div></details>
+      <details><summary data-i="c3t">Phần xây hoặc sửa không có permit</summary><div class="body" data-i="c3b">Biết thì khai. Không quảng cáo phần không permit là phòng ngủ hay diện tích ở. Xem <a href="/t283/">T283</a> và <a href="/t287/">T287</a>.</div></details>
+      <details><summary data-i="c4t">Đã sửa xong rồi</summary><div class="body" data-i="c4b">Vẫn nên ghi: chuyện gì, ngày sửa, ai sửa, kèm hóa đơn và bảo hành. Một lần sửa có giấy tờ làm người mua yên tâm hơn là im lặng.</div></details>
+      <details><summary data-i="c5t">Bán as-is</summary><div class="body" data-i="c5b">As-is nghĩa là không sửa, không có nghĩa là khỏi khai. Luật California nói từ bỏ nghĩa vụ TDS là vô hiệu.</div></details>
+      <details><summary data-i="c6t">Chuyện về hàng xóm</summary><div class="body" data-i="c6b">Tiếng ồn, tranh chấp ranh đất, chó sủa cả đêm: form disclosure hỏi cả chuyện quanh căn nhà. Có câu hỏi trúng thì trả lời đúng. Không bao giờ nhắc chủng tộc, tôn giáo, nguồn gốc hay đặc điểm được bảo vệ của hàng xóm: đó không phải tình trạng căn nhà và vi phạm Fair Housing.</div></details>
+      <details><summary data-i="c7t">Giao disclosures trễ</summary><div class="body" data-i="c7b">TDS hoặc bản sửa quan trọng giao sau khi người mua đã ký offer thì người mua được hủy trong 3 ngày nếu giao tận tay, 5 ngày nếu gửi thư hoặc gửi điện tử. Giao sớm là cách tránh rủi ro này.</div></details>
+    </div>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Gửi kết quả qua email</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Hỏi Ken</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Gửi danh sách này về email</h2>
+    <p data-i="f_sub">Ken đọc danh sách và chỉ chỗ nên viết rõ hơn. Không spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Tên</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (không bắt buộc)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Gửi</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Đã mở email. Bấm Send là xong. Nếu email không mở, copy số dưới đây và nhắn cho Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Hoặc text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <section class="panel steps">
+    <h2 data-i="ns_t">Bước tiếp theo</h2>
+    <ol>
+      <li data-i="ns1">Viết nháp từng mục theo bốn ý: chuyện gì, khi nào, đã làm gì, có giấy tờ gì. Đưa agent đọc trước khi ký.</li>
+      <li data-i="ns2">Gom hóa đơn sửa chữa, permit, bảo hành, report cũ. Người mua tin giấy tờ hơn lời nói.</li>
+      <li data-i="ns3">Chuyện pháp lý khó (kiện tụng, tranh chấp ranh đất, chuyện có thể ảnh hưởng quyền sở hữu): hỏi luật sư nhà đất trước khi ghi.</li>
+      <li data-i="ns4">Xem các giấy người bán phải đưa cho căn nhà của anh chị: <a href="/t28/">T28</a>. Form TDS từng đoạn: <a href="/t530/">T530</a>.</li>
+    </ol>
+  </section>
+  <p class="myth" data-i="myth"><b>Nhiều người hiểu sai:</b> “Khai càng ít càng dễ bán.” Ngược lại. Chuyện được khai trước thì người mua tính vào giá. Chuyện người mua tự phát hiện trong escrow thì thành lý do đòi giảm giá, hoặc bỏ đi.</p>
+
+  <footer>
+    <span><span data-i="ft_src">Nguồn:</span> <a href="https://california.public.law/codes/civil_code_section_1102" target="_blank" rel="noopener">Civil Code §1102 (TDS; waiver void)</a> · <a href="https://california.public.law/codes/civil_code_section_1102.3" target="_blank" rel="noopener">§1102.3 (late delivery, 3 or 5 days)</a> · <a href="https://california.public.law/codes/civil_code_section_1102.6h" target="_blank" rel="noopener">§1102.6h (flips within 18 months)</a> · <a href="https://law.justia.com/codes/california/code-civ/division-3/part-3/section-1710-2/" target="_blank" rel="noopener">§1710.2 (death, 3 years; HIV)</a> · <a href="https://california.public.law/codes/civil_code_section_2079" target="_blank" rel="noopener">§2079 (agent visual inspection)</a> · <a href="https://california.public.law/codes/ca_civ_code_section_2079.5" target="_blank" rel="noopener">§2079.5 (buyer’s duty of care)</a> <span data-i="ft_chk">(kiểm ngày 12/11/2026)</span></span>
+    <span data-i="ft_est">Thông tin chung, không phải tư vấn pháp lý. Mỗi căn nhà một khác. Chuyện khó quyết: hỏi luật sư nhà đất.</span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · BRG Realty Corp · <a href="tel:4086662825">408-666-2825</a> · <a href="mailto:ken@kenlamrealty.com">ken@kenlamrealty.com</a> · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Cập nhật</span>: 12/11/2026 · <a href="/cong-cu/" data-i="ft_all">Tất cả công cụ</a></span>
+  </footer>
+</div>
+
+<script>
+const CODE="T342";
+const I18N={vi:{"b_email": "Gửi kết quả qua email", "b_sms": "Hỏi Ken", "f_name": "Tên", "f_phone": "Phone (không bắt buộc)", "f_send": "Gửi", "f_ok": "Đã mở email. Bấm Send là xong. Nếu email không mở, copy số dưới đây và nhắn cho Ken.", "f_or": "Hoặc text:", "f_copy": "Copy", "ns_t": "Bước tiếp theo", "ft_src": "Nguồn:", "ft_chk": "(kiểm ngày 12/11/2026)", "ft_upd": "Cập nhật", "ft_all": "Tất cả công cụ", "lang": "English", "copied": "Đã copy", "body": "Tên: {n}\nEmail: {e}\nPhone: {ph}\n\n{s}\n\nGửi từ tool {code} tools.kenlamrealty.com", "title_short": "Có phải khai không: phép thử ba câu", "title": "Chuyện này có phải khai không?", "sub": "Bán nhà ở California, người bán phải khai những gì mình biết về căn nhà. Khi phân vân một chuyện cụ thể, trả lời ba câu: có biết không, có quan trọng không, người mua có dễ tự thấy không. Tool gợi ý hướng xử lý và gom thành danh sách để đưa agent.", "l_item": "Chuyện anh chị đang phân vân", "ph_item": "Ví dụ: mái từng dột năm 2023, đã sửa", "q1": "1. Anh chị có biết chuyện này không?", "q1a": "Biết", "q1b": "Nghi, chưa chắc", "q1c": "Không biết", "q2": "2. Nó có thể làm người mua trả giá khác, hoặc đổi ý không mua?", "q2a": "Có", "q2b": "Có thể", "q2c": "Không", "q3": "3. Người mua đi coi nhà có dễ tự thấy không?", "q3a": "Dễ thấy", "q3b": "Khó thấy", "q3c": "Không chắc", "r_k": "Gợi ý", "v_must": "Khai", "v_should": "Vẫn nên khai", "v_partial": "Khai đúng những gì anh chị biết", "v_unknown": "Không khai được điều mình không biết", "v_minor": "Thường không cần ghi riêng", "w_must": "Anh chị biết, chuyện có thể ảnh hưởng quyết định mua, và người mua khó tự thấy. Đây đúng là loại chuyện phải ghi vào disclosures. Ghi rõ: chuyện gì, khi nào, đã làm gì, ai làm, có giấy tờ không.", "w_should": "Người mua có thể tự thấy, nhưng disclosure hỏi điều anh chị biết, không hỏi điều người mua có thấy hay không. Ghi ra tốn một dòng. Bị kiện sau khi close tốn nhiều hơn rất nhiều.", "w_partial": "Ghi đúng mức anh chị biết, không hơn không kém. Ví dụ: “Có thấy vết nước trên trần phòng ngủ năm 2024, không rõ nguyên nhân.” Đừng đoán nguyên nhân thay cho thợ. Có thể đề nghị người mua cho thợ kiểm.", "w_unknown": "Luật không bắt khai điều ngoài hiểu biết của người bán. Nhưng đừng cố tình tránh để khỏi biết: thấy dấu hiệu thì ghi dấu hiệu. Agent của anh chị cũng phải tự đi xem những chỗ dễ vào trong nhà và ghi điều thấy được.", "w_minor": "Chuyện không ảnh hưởng giá hay quyết định mua thường không cần ghi riêng. Nhưng nếu form disclosure có câu hỏi trúng chuyện này, trả lời đúng sự thật. Phân vân giữa “có thể” và “không” thì chọn khai.", "add": "Thêm vào danh sách khai", "k_list": "Danh sách của anh chị", "l_empty": "Chưa có mục nào. Lưu trên máy này, không gửi đi đâu.", "copyq": "Copy danh sách gửi agent", "resetq": "Xóa danh sách", "del": "Xóa", "noitem": "(chưa ghi tên chuyện)", "k_cases": "Những trường hợp hay hỏi", "c0t": "Có người mất trong nhà", "c0b": "Luật California: người bán và agent không phải khai cái chết xảy ra hơn 3 năm trước ngày có offer. Trong vòng 3 năm thì nên khai. Người mua hỏi thẳng thì không được nói dối, dù đã quá 3 năm.", "c1t": "Người ở trước có HIV", "c1b": "Luật California không coi đây là điều phải khai, và không được nêu ra.", "c2t": "Mua về sửa rồi bán lại trong 18 tháng", "c2b": "Offer được nhận từ 1/7/2024 trở đi, người bán nhà single-family nhận offer trong vòng 18 tháng sau khi đứng tên phải khai các việc thợ mình thuê đã làm (thêm phòng, đổi kết cấu, sửa chữa), kèm tên thợ cho hợp đồng trên mức luật quy định, và copy permit nếu có.", "c3t": "Phần xây hoặc sửa không có permit", "c3b": "Biết thì khai. Không quảng cáo phần không permit là phòng ngủ hay diện tích ở. Xem <a href=\"/t283/\">T283</a> và <a href=\"/t287/\">T287</a>.", "c4t": "Đã sửa xong rồi", "c4b": "Vẫn nên ghi: chuyện gì, ngày sửa, ai sửa, kèm hóa đơn và bảo hành. Một lần sửa có giấy tờ làm người mua yên tâm hơn là im lặng.", "c5t": "Bán as-is", "c5b": "As-is nghĩa là không sửa, không có nghĩa là khỏi khai. Luật California nói từ bỏ nghĩa vụ TDS là vô hiệu.", "c6t": "Chuyện về hàng xóm", "c6b": "Tiếng ồn, tranh chấp ranh đất, chó sủa cả đêm: form disclosure hỏi cả chuyện quanh căn nhà. Có câu hỏi trúng thì trả lời đúng. Không bao giờ nhắc chủng tộc, tôn giáo, nguồn gốc hay đặc điểm được bảo vệ của hàng xóm: đó không phải tình trạng căn nhà và vi phạm Fair Housing.", "c7t": "Giao disclosures trễ", "c7b": "TDS hoặc bản sửa quan trọng giao sau khi người mua đã ký offer thì người mua được hủy trong 3 ngày nếu giao tận tay, 5 ngày nếu gửi thư hoặc gửi điện tử. Giao sớm là cách tránh rủi ro này.", "ns1": "Viết nháp từng mục theo bốn ý: chuyện gì, khi nào, đã làm gì, có giấy tờ gì. Đưa agent đọc trước khi ký.", "ns2": "Gom hóa đơn sửa chữa, permit, bảo hành, report cũ. Người mua tin giấy tờ hơn lời nói.", "ns3": "Chuyện pháp lý khó (kiện tụng, tranh chấp ranh đất, chuyện có thể ảnh hưởng quyền sở hữu): hỏi luật sư nhà đất trước khi ghi.", "ns4": "Xem các giấy người bán phải đưa cho căn nhà của anh chị: <a href=\"/t28/\">T28</a>. Form TDS từng đoạn: <a href=\"/t530/\">T530</a>.", "myth": "<b>Nhiều người hiểu sai:</b> “Khai càng ít càng dễ bán.” Ngược lại. Chuyện được khai trước thì người mua tính vào giá. Chuyện người mua tự phát hiện trong escrow thì thành lý do đòi giảm giá, hoặc bỏ đi.", "f_title": "Gửi danh sách này về email", "f_sub": "Ken đọc danh sách và chỉ chỗ nên viết rõ hơn. Không spam.", "ft_est": "Thông tin chung, không phải tư vấn pháp lý. Mỗi căn nhà một khác. Chuyện khó quyết: hỏi luật sư nhà đất.", "subj": "Danh sách cần khai: {n}", "sms": "Chào Ken, tôi đang chuẩn bị disclosures: {s}. Ken xem giúp được không?", "sum_h": "DANH SÁCH CẦN KHAI", "sh_n": "{n} mục trong danh sách"},
+en:{"b_email": "Email me the result", "b_sms": "Ask Ken", "f_name": "Name", "f_phone": "Phone (optional)", "f_send": "Send", "f_ok": "Email opened. Hit Send and you're done. If it didn't open, copy the number below and text Ken.", "f_or": "Or text:", "f_copy": "Copy", "ns_t": "Next steps", "ft_src": "Sources:", "ft_chk": "(checked 11/12/2026)", "ft_upd": "Updated", "ft_all": "All tools", "lang": "Tiếng Việt", "copied": "Copied", "body": "Name: {n}\nEmail: {e}\nPhone: {ph}\n\n{s}\n\nSent from tool {code} tools.kenlamrealty.com", "title_short": "Do I have to disclose it? The three-question test", "title": "Do I have to disclose this?", "sub": "California sellers must disclose what they know about the home. When you are unsure about one item, answer three questions: do you know it, does it matter, could a buyer easily see it. The tool suggests how to handle it and builds a list for your agent.", "l_item": "The item you are unsure about", "ph_item": "Example: roof leaked in 2023, repaired", "q1": "1. Do you know about it?", "q1a": "Yes", "q1b": "Suspect it", "q1c": "No", "q2": "2. Could it change what a buyer pays, or whether they buy?", "q2a": "Yes", "q2b": "Maybe", "q2c": "No", "q3": "3. Would a buyer easily see it on a showing?", "q3a": "Easy to see", "q3b": "Hard to see", "q3c": "Not sure", "r_k": "Suggestion", "v_must": "Disclose it", "v_should": "Disclose it anyway", "v_partial": "Disclose what you know", "v_unknown": "You cannot disclose what you do not know", "v_minor": "Usually no separate note needed", "w_must": "You know it, it could affect a buyer’s decision, and a buyer would have trouble seeing it. This is exactly what disclosures are for. Write what happened, when, what was done, who did it, and whether there is paperwork.", "w_should": "A buyer might see it, but the forms ask what you know, not what the buyer might notice. Writing it down costs one line. A lawsuit after closing costs far more.", "w_partial": "Write exactly what you know, no more and no less. Example: “Saw a water stain on the bedroom ceiling in 2024, cause unknown.” Do not guess the cause. You can suggest the buyer have it inspected.", "w_unknown": "The law does not make you disclose what you do not know. But do not avoid finding out. If you see a sign, note the sign. Your agent also has to walk the accessible areas and report what they see.", "w_minor": "Items that would not change price or the decision usually need no separate note. But if a disclosure form asks about it directly, answer truthfully. If torn between “maybe” and “no,” disclose.", "add": "Add to my disclosure list", "k_list": "Your list", "l_empty": "Nothing yet. Saved on this device only.", "copyq": "Copy list for my agent", "resetq": "Clear list", "del": "Remove", "noitem": "(item not named)", "k_cases": "Common special cases", "c0t": "Someone died in the home", "c0b": "California law: sellers and agents need not disclose a death that happened more than 3 years before the offer. Within 3 years, disclose it. If a buyer asks directly, do not lie, even after 3 years.", "c1t": "A prior occupant had HIV", "c1b": "California law says this is not a material fact to disclose. Do not bring it up.", "c2t": "Flipping: selling within 18 months of buying", "c2b": "For offers accepted on or after 7/1/2024, a single-family seller who accepts an offer within 18 months of taking title must disclose work done by contractors they hired (additions, structural changes, repairs), with contractor names for jobs above the statutory dollar threshold, and copies of any permits.", "c3t": "Work done without a permit", "c3b": "If you know, disclose it. Do not advertise unpermitted space as a bedroom or living area. See <a href=\"/t283/\">T283</a> and <a href=\"/t287/\">T287</a>.", "c4t": "It has already been fixed", "c4b": "Still note it: what, when, who fixed it, with invoices and warranties. A documented repair reassures buyers more than silence.", "c5t": "Selling as-is", "c5b": "As-is means no repairs, not no disclosures. California law says a waiver of the TDS requirement is void.", "c6t": "Things about the neighbors", "c6b": "Noise, boundary disputes, a dog barking all night: disclosure forms ask about the surroundings too. Answer truthfully where asked. Never mention neighbors’ race, religion, national origin or other protected traits: that is not a property condition and violates fair housing law.", "c7t": "Delivering disclosures late", "c7b": "If the TDS or a material amendment arrives after the buyer signs the offer, the buyer may cancel within 3 days of hand delivery or 5 days if mailed or sent electronically. Deliver early to avoid this.", "ns1": "Draft each item with four points: what, when, what was done, what paperwork exists. Have your agent read it before you sign.", "ns2": "Gather repair invoices, permits, warranties and old reports. Buyers trust paper more than words.", "ns3": "For hard legal items (lawsuits, boundary disputes, anything touching ownership), ask a real estate attorney before you write it.", "ns4": "See which documents your home needs: <a href=\"/t28/\">T28</a>. The TDS line by line: <a href=\"/t530/\">T530</a>.", "myth": "<b>Many people get this wrong:</b> “The less I disclose, the easier it sells.” The opposite. What you disclose up front gets priced in. What the buyer finds during escrow becomes a reason to renegotiate, or walk.", "f_title": "Email this list to yourself", "f_sub": "Ken will read the list and point out what to write more clearly. No spam.", "ft_est": "General information, not legal advice. Every home is different. For hard calls, ask a real estate attorney.", "subj": "Disclosure list: {n}", "sms": "Hi Ken, I’m working on my disclosures: {s}. Can you help?", "sum_h": "DISCLOSURE LIST", "sh_n": "{n} items on my list"}};
+
+let lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'−$':'$')+Math.round(Math.abs(n)).toLocaleString('en-US');
+const fill=(s,v)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>v&&v[k]!=null?v[k]:m);
+const T=(k,o)=>{const d=I18N[lang]; return fill(d[k]!=null?d[k]:k,o||{});};
+const val=id=>{const el=$(id); if(!el) return null; const s=String(el.value).replace(/,/g,'').trim(); if(s==='') return null; const v=parseFloat(s); return isFinite(v)?v:null;};
+const strip=s=>String(s).replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ');
+function load(k,def){ try{ const v=JSON.parse(localStorage.getItem(k)||'null'); return v==null?def:v; }catch(e){ return def; } }
+function keep(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+let SUM='', SHORT='';
+function setSms(){ $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(T('sms',{s:SHORT})); }
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  document.querySelectorAll('[data-ph]').forEach(el=>{const k=el.getAttribute('data-ph'); if(d[k]!=null) el.setAttribute('placeholder',d[k]);});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; render();
+}
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+$('sendBtn').onclick=()=>{
+  const v={n:$('fname').value.trim()||'—',e:$('femail').value.trim()||'—',ph:$('fphone').value.trim()||'—',s:SUM,code:CODE};
+  /* LEAD -> FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(T('subj',v))+'&body='+encodeURIComponent(T('body',v));
+  window.__lastMailto=href;
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false;
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+async function copyText(t,btn,key){ try{ await navigator.clipboard.writeText(t); const o=btn.textContent; btn.textContent=T('copied'); setTimeout(()=>{btn.textContent=T(key)},1500);}catch(e){} }
+
+
+/* Đã kiểm 12/11/2026: Civ 1102(c) waiver void; 1102.3(c) 3 ngày giao tay / 5 ngày thư hoặc điện tử;
+   1102.6h offer từ 1/7/2024, 18 tháng; 1710.2 chết >3 năm không phải khai, HIV không khai, hỏi thẳng không được nói dối;
+   2079 agent kiểm bằng mắt; 2079.5 người mua phải tự cẩn trọng. Phép thử ba câu: Real Estate Practices (Conkey). */
+const A={a1:null,a2:null,a3:null};
+['a1','a2','a3'].forEach(g=>{ $(g).addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; A[g]=b.dataset.v;
+  $(g).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false')); render(); }); });
+function verdict(a){
+  if(!a.a1) return null;
+  if(a.a1==='q1c') return 'unknown';
+  if(!a.a2) return null;
+  if(a.a2==='q2c') return 'minor';
+  if(a.a1==='q1b') return 'partial';
+  if(!a.a3) return null;
+  return a.a3==='q3a'?'should':'must';
+}
+window.__verdict=verdict;
+const LV={must:'warn',should:'mid',partial:'mid',unknown:'',minor:'ok'};
+const KEY='kl_t342_list';
+let list=load(KEY,[]);
+function renderList(){
+  $('list').innerHTML=list.length?list.map((x,i)=>`<div class="card ${x.v==='must'?'r':x.v==='minor'?'g':'y'}"><h4>${x.t?x.t.replace(/[<>&]/g,''):T('noitem')}</h4><p>${T('v_'+x.v)}</p><button type="button" class="smallbtn" data-del="${i}">${T('del')}</button></div>`).join(''):`<p class="hint">${T('l_empty')}</p>`;
+}
+$('list').addEventListener('click',e=>{ const b=e.target.closest('[data-del]'); if(!b) return; list.splice(+b.dataset.del,1); keep(KEY,list); render(); });
+function render(){
+  const v=verdict(A), st=$('status');
+  if(!v){ st.textContent='…'; st.className='status'; $('why').textContent=''; $('addBtn').disabled=true; }
+  else { st.textContent=T('v_'+v); st.className='status '+LV[v]; $('why').textContent=T('w_'+v); $('addBtn').disabled=false; }
+  renderList();
+  SHORT=T('sh_n',{n:list.length});
+  SUM=T('sum_h')+'\n'+(list.length?list.map(x=>'- '+(x.t||T('noitem'))+': '+T('v_'+x.v)).join('\n'):'—');
+  setSms();
+}
+$('addBtn').onclick=()=>{ const v=verdict(A); if(!v) return; list.push({t:$('item').value.trim(),v}); keep(KEY,list); $('item').value='';
+  ['a1','a2','a3'].forEach(g=>{A[g]=null; $(g).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed','false'));}); render(); };
+$('copyQ').onclick=()=>copyText(SUM,$('copyQ'),'copyq');
+$('resetQ').onclick=()=>{ list=[]; keep(KEY,list); render(); };
+
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'\u2190 All tools':'\u2190 T\u1ea5t c\u1ea3 c\u00f4ng c\u1ee5';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
