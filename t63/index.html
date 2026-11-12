@@ -49,6 +49,12 @@ h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;mar
 .ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
 .ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .ctl input[type=number]{-moz-appearance:textfield}
+.ctl input::placeholder{font-size:12px;color:var(--muted);opacity:.85}
+.ctl:has(input[data-ph]){padding:0 6px}
+.ctl input[data-ph]{padding-left:4px;padding-right:4px}
+.row2 .field{align-content:space-between}
+.nod{color:var(--muted);font-style:italic}
+#oWalk{white-space:normal;text-align:right}
 .row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
 @media (max-width:380px){.row2{grid-template-columns:1fr}}
 .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
@@ -254,9 +260,15 @@ footer .src a{word-break:break-word}
   </header>
 
   <section class="inputs" aria-label="Inputs">
-    <div class="field">
-      <label for="coe"><span data-i="l_coe">Ngày close</span> <small data-i="l_coe_s">(theo escrow instructions)</small></label>
-      <div class="ctl"><input id="coe" type="date"></div>
+    <div class="row2">
+      <div class="field">
+        <label for="coe"><span data-i="l_coe">Ngày close</span> <small data-i="l_coe_s">(theo escrow instructions)</small></label>
+        <div class="ctl"><input id="coe" type="date"></div>
+      </div>
+      <div class="field">
+        <label for="walkD"><span data-i="l_walk">Final walkthrough</span> <small data-i="l_walk_s">(số ngày trước close, theo hợp đồng)</small></label>
+        <div class="ctl"><input id="walkD" type="number" inputmode="numeric" min="0" max="30" step="1" placeholder="Số ngày trong hợp đồng" data-ph="ph_days"></div>
+      </div>
     </div>
     <div class="row2">
       <div class="field">
@@ -351,32 +363,34 @@ footer .src a{word-break:break-word}
      "Business day" cho CD = mọi ngày trừ Chủ Nhật và lễ liên bang (Reg Z §1026.2(a)(6), precise definition).
      Tool bỏ luôn các ngày nghỉ bù (T6 03/07/2026, T2 05/07/2027, T6 24/12/2027) để ra ngày SỚM hơn, an toàn hơn — KEN DUYỆT.
      Tăng APR quá mức / đổi loại loan / thêm phạt trả sớm → chờ thêm 3 business days (Reg Z §1026.19(f)(2)(ii)).
-   WALK = 5: C.A.R. RPA Revised 12/24 ¶3J "5 (or __) Days prior to COE". COE = ngày grant deed record (¶25G).
+   Final walkthrough (RPA ¶3J): người dùng nhập số ngày trước COE theo hợp đồng của họ. KHÔNG có số mặc định (RPA đã sửa nhiều lần,
+     hai bên thương lượng). Ô trống → mốc walkthrough không có ngày. COE = ngày grant deed record (¶25G).
    HOX = $7,000: Homeowners' Exemption giảm $7,000 assessed value — https://www.boe.ca.gov/proptaxes/homeowners_exemption.htm (tra 03/11/2026).
    Wire fraud: https://www.consumerfinance.gov/about-us/blog/mortgage-closing-scams-how-protect-yourself-and-your-closing-funds/ + https://www.ic3.gov (tra 03/11/2026).
    Lender hoàn dư impound sau payoff trong 30 ngày: 12 CFR §1024.34(b) — KEN DUYỆT.
    FED: lễ liên bang 2026–2027 (5 U.S.C. §6103) + ngày nghỉ bù. CA_HOL: thêm lễ CA (Gov Code §6700) chỉ để cảnh báo close rơi vào lễ.
 */
-const CD_BD=3, WALK=5, HOX=7000;
+const CD_BD=3, HOX=7000;
 const FED=['2026-01-01','2026-01-19','2026-02-16','2026-05-25','2026-06-19','2026-07-03','2026-07-04','2026-09-07','2026-10-12','2026-11-11','2026-11-26','2026-12-25',
  '2027-01-01','2027-01-18','2027-02-15','2027-05-31','2027-06-19','2027-07-04','2027-07-05','2027-09-06','2027-10-11','2027-11-11','2027-11-25','2027-12-24','2027-12-25'];
 const CA_HOL=['2026-02-12','2026-02-17','2026-03-31','2026-04-24','2026-09-09','2026-09-25','2026-11-08','2027-02-06','2027-02-12','2027-03-31','2027-04-24','2027-09-09','2027-09-24','2027-10-29'];
 const UPDATED='03/11/2026';
 
 /* Mốc: số ngày so với close. */
-const STAGES=[['d10',-10],['d7',-7],['d5',-5],['d3',-3],['d1',-1],['d0',0],['after',1]];
+/* 'walk' = final walkthrough: offset lấy từ số ngày người dùng nhập (null = chưa nhập). */
+const STAGES=[['d10',-10],['d7',-7],['walk',null],['d3',-3],['d1',-1],['d0',0],['after',1]];
 /* Việc: k, st = mốc, who = b (mua) / s (bán), loan: true = chỉ khi có loan (mua) / còn mortgage (bán) */
 const ITEMS=[
  {k:'b_ins',st:'d10',who:'b'},{k:'b_util',st:'d10',who:'b'},{k:'b_limit',st:'d10',who:'b'},{k:'b_phone',st:'d10',who:'b'},
  {k:'b_credit',st:'d7',who:'b',loan:true},{k:'b_move',st:'d7',who:'b'},
- {k:'b_walk',st:'d5',who:'b'},
+ {k:'b_walk',st:'walk',who:'b'},
  {k:'b_cd',st:'d3',who:'b',loan:true},{k:'b_cdle',st:'d3',who:'b',loan:true},{k:'b_sign',st:'d3',who:'b'},
  {k:'b_wire',st:'d1',who:'b'},{k:'b_wireok',st:'d1',who:'b'},
  {k:'b_rec',st:'d0',who:'b'},{k:'b_keys',st:'d0',who:'b'},
  {k:'b_hox',st:'after',who:'b'},{k:'b_supp',st:'after',who:'b'},{k:'b_usps',st:'after',who:'b'},{k:'b_docs',st:'after',who:'b'},
  {k:'s_pack',st:'d10',who:'s'},{k:'s_util',st:'d10',who:'s'},{k:'s_phone',st:'d10',who:'s'},{k:'s_payout',st:'d10',who:'s'},
  {k:'s_keys',st:'d7',who:'s'},{k:'s_manual',st:'d7',who:'s'},{k:'s_repair',st:'d7',who:'s'},
- {k:'s_walk',st:'d5',who:'s'},
+ {k:'s_walk',st:'walk',who:'s'},
  {k:'s_sign',st:'d3',who:'s'},
  {k:'s_clean',st:'d1',who:'s'},{k:'s_leave',st:'d1',who:'s'},{k:'s_meter',st:'d1',who:'s'},
  {k:'s_rec',st:'d0',who:'s'},
@@ -390,7 +404,7 @@ const TX={
   b_phone:['Lưu số escrow do anh chị tự tra','Lấy số từ website chính thức của công ty escrow hoặc giấy tờ mở escrow nhận lúc đầu. Không dùng số trong email có hướng dẫn wire.'],
   b_credit:['Không mở thẻ, không mua xe, không đổi việc','Lender kiểm tra lại credit và việc làm ngay trước khi fund. Một khoản nợ mới có thể đẩy DTI vượt mức và làm trễ ngày close.'],
   b_move:['Đặt công ty dọn nhà','Cuối tháng và thứ Sáu thường kín lịch. Hẹn sau khi record, đừng hẹn sáng ngày close.'],
-  b_walk:['Final walkthrough','Theo thời hạn trong hợp đồng, thường vài ngày trước close. Thử vòi nước, máy lạnh, heater, thiết bị bếp, cửa garage. Sửa chữa đã thỏa thuận phải có hóa đơn.'],
+  b_walk:['Final walkthrough','Theo số ngày ghi trong hợp đồng. Thử vòi nước, máy lạnh, heater, thiết bị bếp, cửa garage. Sửa chữa đã thỏa thuận phải có hóa đơn.'],
   b_cd:['Nhận Closing Disclosure, chậm nhất {cd}','Theo luật TRID, lender phải giao CD ít nhất 3 ngày làm việc trước khi ký loan (tính cả thứ Bảy, không tính Chủ Nhật và ngày lễ liên bang). APR tăng vượt mức cho phép, đổi loại loan hoặc thêm phạt trả sớm thì phải chờ thêm 3 ngày làm việc.'],
   b_cdle:['So Closing Disclosure với Loan Estimate','So lãi suất, loại loan, phí lender và cash to close. Có chênh lệch thì hỏi loan officer ngay, đừng đợi tới lúc ký.'],
   b_sign:['Hẹn ký giấy ở escrow hoặc với mobile notary','Mang giấy tờ tùy thân có hình còn hạn (driver license, passport). Ký đúng tên như trên giấy tờ. Lender chỉ fund khi đã ký đủ.'],
@@ -426,7 +440,7 @@ const TX={
   b_phone:['Save an escrow number you looked up yourself','Use the escrow company\'s official website or your opening escrow papers. Never use a number from an email with wiring instructions.'],
   b_credit:['No new cards, no car loan, no job change','Lenders re-check credit and employment right before funding. New debt can push your DTI over the limit and delay closing.'],
   b_move:['Book movers','Month-end and Fridays fill up fast. Book for after recording, not the morning of closing.'],
-  b_walk:['Final walkthrough','Within the time your contract states, usually a few days before close. Test faucets, AC, heater, kitchen appliances and the garage door. Agreed repairs need receipts.'],
+  b_walk:['Final walkthrough','Within the number of days your contract states. Test faucets, AC, heater, kitchen appliances and the garage door. Agreed repairs need receipts.'],
   b_cd:['Receive the Closing Disclosure by {cd}','Under TRID, the lender must deliver the CD at least 3 business days before you sign the loan (Saturdays count; Sundays and federal holidays do not). A significant APR increase, a change in loan product or a new prepayment penalty restarts a 3-business-day wait.'],
   b_cdle:['Compare the Closing Disclosure with the Loan Estimate','Check the rate, loan type, lender fees and cash to close. If anything is off, ask your loan officer now, not at the signing table.'],
   b_sign:['Book the signing at escrow or with a mobile notary','Bring a valid photo ID (driver license, passport). Sign exactly as your name appears. The lender funds only after everything is signed.'],
@@ -480,7 +494,8 @@ const I18N={
   f_ok:'Ứng dụng email đã mở. Anh chị bấm Send để gửi. Nếu không thấy mở, chép số bên dưới và nhắn tin cho Ken.',f_or:'Hoặc nhắn tin:',f_copy:'Chép',
   ft_read:'Đọc thêm:',ft_lib:'Tuần cuối trước khi close',ft_vid:'Video: phòng tránh lừa đảo wire',ft_est:'Checklist tham khảo. Ngày chính xác theo hợp đồng và escrow của anh chị. Ngày nhận Closing Disclosure do lender xác nhận.',ft_src:'Nguồn:',ft_upd:'Cập nhật',ft_all:'Tất cả công cụ',
   lang:'English',wd:['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'],
-  st:{d10:'10 ngày trước',d7:'7 ngày trước',d5:'5 ngày trước',d3:'3 ngày trước',d1:'1 ngày trước',d0:'Ngày close',after:'Sau close'},
+  ph_days:'Số ngày trong hợp đồng',l_walk:'Final walkthrough',l_walk_s:'(số ngày trước close, theo hợp đồng)',nod:'Nhập số ngày theo hợp đồng để thấy ngày hết hạn',nod_s:'chưa nhập số ngày',
+  st:{d10:'10 ngày trước',d7:'7 ngày trước',walk:'Final walkthrough',d3:'3 ngày trước',d1:'1 ngày trước',d0:'Ngày close',after:'Sau close'},
   c_past:'Đã qua',c_today:'Hôm nay',c_soon:'Sắp tới · còn {n} ngày',c_left:'Còn {n} ngày',gcal:'+ Google Calendar',calT:'Checklist close: {s}',
   rB:'Mua',rS:'Bán',yes:'Có',no:'Không',
   sms:'Chào Ken, tôi đang xem checklist trước ngày close ({d}) trên tools.kenlamrealty.com. Tôi muốn hỏi thêm.',
@@ -508,7 +523,8 @@ const I18N={
   f_ok:"Your email app is open. Press Send to finish. If nothing opened, copy the number below and text Ken.",f_or:'Or text:',f_copy:'Copy',
   ft_read:'Read more:',ft_lib:'The last week before closing',ft_vid:'Video: avoiding wire fraud',ft_est:'Reference checklist. Exact dates follow your contract and escrow. Your lender confirms the Closing Disclosure date.',ft_src:'Sources:',ft_upd:'Updated',ft_all:'All tools',
   lang:'Tiếng Việt',wd:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
-  st:{d10:'10 days before',d7:'7 days before',d5:'5 days before',d3:'3 days before',d1:'1 day before',d0:'Closing day',after:'After closing'},
+  ph_days:'Days in your contract',l_walk:'Final walkthrough',l_walk_s:'(days before close, per your contract)',nod:'Enter the days from your contract to see this date',nod_s:'days not entered',
+  st:{d10:'10 days before',d7:'7 days before',walk:'Final walkthrough',d3:'3 days before',d1:'1 day before',d0:'Closing day',after:'After closing'},
   c_past:'Passed',c_today:'Today',c_soon:'Coming up · {n} days',c_left:'{n} days left',gcal:'+ Google Calendar',calT:'Closing checklist: {s}',
   rB:'Buying',rS:'Selling',yes:'Yes',no:'No',
   sms:'Hi Ken, I am using the pre-closing checklist (closing {d}) on tools.kenlamrealty.com. I have a question.',
@@ -552,7 +568,8 @@ function calc(){
   const cd=cdBy(C);
   $('cdRow').style.display=(role==='b'&&loan)?'':'none';
   $('oCd').textContent=fdate(cd);
-  $('oWalk').textContent=fdate(add(C,-WALK));
+  const wv=parseInt($('walkD').value,10), WK=isFinite(wv)&&wv>=0?wv:null;
+  $('oWalk').textContent=WK==null?s.nod:fdate(add(C,-WK));
   $('n_money').textContent=role==='b'?s.n_money_b:s.n_money_s;
   $('oMoney').textContent=fdate(prevBiz(add(C,role==='b'?-1:-3)));
   $('wkNote').classList.toggle('hide',!closedDay(C));
@@ -561,14 +578,17 @@ function calc(){
   $('wf3').innerHTML=role==='b'?s.wf_3:s.wf_3s;
   const L=items(role,loan), done=loadDone(C);
   let html='', nDone=0, txt=[];
-  STAGES.forEach(([st,off])=>{
+  const SG=STAGES.map(([st,off])=>[st,st==='walk'?(WK==null?null:-WK):off]);
+  if(WK!=null) SG.sort((a,b)=>a[1]-b[1]);
+  SG.forEach(([st,off])=>{
     const its=L.filter(it=>it.st===st); if(!its.length)return;
-    const d=add(C,off);
+    const d=off==null?null:add(C,off);
     const titles=its.map(it=>T[it.k][0].replace('{cd}',ddmmyyyy(cd)));
     const det=titles.map(t=>'• '+t).join('\n')+'\n\n'+(lang==='vi'?'Ngày chính xác theo hợp đồng của bạn.':'Exact dates follow your contract.')+' tools.kenlamrealty.com';
-    const [cc,ct]=chip(d);
-    html+='<li class="grp"><span>'+esc(s.st[st])+'</span><span class="gd">'+esc(fdate(d))+' · <span class="chip '+cc+'">'+esc(ct)+'</span> · <a class="gcal" href="'+esc(gcal(s.calT.replace('{s}',s.st[st]),d,det))+'" target="_blank" rel="noopener">'+esc(s.gcal)+'</a></span></li>';
-    txt.push('\n'+s.st[st].toUpperCase()+': '+fdate(d));
+    if(d){ const [cc,ct]=chip(d);
+      html+='<li class="grp"><span>'+esc(s.st[st])+'</span><span class="gd">'+esc(fdate(d))+' · <span class="chip '+cc+'">'+esc(ct)+'</span> · <a class="gcal" href="'+esc(gcal(s.calT.replace('{s}',s.st[st]),d,det))+'" target="_blank" rel="noopener">'+esc(s.gcal)+'</a></span></li>'; }
+    else html+='<li class="grp"><span>'+esc(s.st[st])+'</span><span class="gd nod">'+esc(s.nod)+'</span></li>';
+    txt.push('\n'+s.st[st].toUpperCase()+': '+(d?fdate(d):s.nod_s));
     its.forEach((it,i)=>{
       const isDone=!!done[it.k]; if(isDone)nDone++;
       const t=titles[i], w=T[it.k][1], op=!!openWhy[it.k];
@@ -587,11 +607,13 @@ function calc(){
 function applyLang(){
   const d=I18N[lang];
   document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  document.querySelectorAll('[data-ph]').forEach(el=>{const k=el.getAttribute('data-ph'); if(typeof d[k]==='string') el.placeholder=d[k];});
   $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
 }
 function seg(a,b,on){$(a).setAttribute('aria-pressed',on?'true':'false');$(b).setAttribute('aria-pressed',on?'false':'true');}
 (function(){let C=add(todayUTC(),30);while(closedDay(C))C=add(C,1);$('coe').value=iso(C);})();
 $('coe').addEventListener('input',calc);
+$('walkD').addEventListener('input',calc);
 $('rB').onclick=()=>{role='b';seg('rB','rS',true);calc();};
 $('rS').onclick=()=>{role='s';seg('rB','rS',false);calc();};
 $('lY').onclick=()=>{loan=true;seg('lY','lN',true);calc();};

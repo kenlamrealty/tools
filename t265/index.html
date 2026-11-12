@@ -372,7 +372,8 @@ details.more .inner{display:grid;gap:14px;padding:0 0 14px}
      gone at $150,000 (MFS living apart $12,500 / $50K–$75K — not built in). Not inflation-indexed. OBBBA did not change it.
      https://www.irs.gov/publications/p925 ; https://www.ballardspahr.com/insights/alerts-and-articles/2025/07/tax-impact-of-the-obbba-what-the-new-budget-law-means-for-housing-and-real-estate
      Real estate professional: >50% of work time + >750 hrs/yr in real property trades + material participation → no passive limit.
-     KEN DUYỆT: tool applies the same allowance to CA; CA may treat real-estate-professional losses differently — CPA.
+     California does NOT conform to §469(c)(7): model() keeps the CA side passive ($25K allowance + phase-out) for REPs.
+     FTB 3801 instructions: https://www.ftb.ca.gov/forms/2025/2025-3801-instructions.html
    Recapture: unrecaptured §1250 gain taxed at ordinary rates capped at 25%: IRS Topic 409 https://www.irs.gov/taxtopics/tc409
    Brackets copied from T222 (same sources, checked 04/11/2026):
    FED_ORD 2026 (10–37%): Rev. Proc. 2025-32 via KPMG summary
@@ -406,17 +407,23 @@ function model(i){
   const bld=Math.max(0,(i.price+i.addb)*(1-Math.min(95,Math.max(0,i.land))/100));
   const dep=bld/RULE.LIFE, m=Math.min(12,Math.max(1,Math.round(i.mon)||1));
   const y1=bld*((12-m+0.5)/12)/RULE.LIFE;
-  const allowance = i.role==='rep' ? Infinity : Math.max(0,RULE.PAL.allow-0.5*Math.max(0,i.magi-RULE.PAL.start));
-  const use=x=> x>=0 ? x : -Math.min(-x,allowance);          /* taxable rental income after passive limit */
+  /* California does not conform to IRC §469(c)(7) (FTB 3801 instructions): for CA the rental stays passive,
+     so CA always uses the §469(i) $25,000 allowance with the $100K–$150K phase-out, even for a real estate professional. */
+  const palAllow = Math.max(0,RULE.PAL.allow-0.5*Math.max(0,i.magi-RULE.PAL.start));
+  const allowance = i.role==='rep' ? Infinity : palAllow, caAllowance = palAllow;
+  const useW=(x,a)=> x>=0 ? x : -Math.min(-x,a);              /* taxable rental income after passive limit */
+  const use=x=>useW(x,allowance);
   const paper=i.cash-dep, T0=use(i.cash), T1=use(paper);
+  const T0ca=useW(i.cash,caAllowance), T1ca=useW(paper,caAllowance);
   const loss=Math.max(0,-paper), allowed=Math.min(loss,allowance), susp=loss-allowed;
+  const caAllowed=Math.min(loss,caAllowance), caSusp=loss-caAllowed;
   const O=Math.max(0,i.ti);
-  const fed=fedTax(i.st,O+T0)-fedTax(i.st,O+T1), ca=caTax(i.st,O+T0)-caTax(i.st,O+T1);
+  const fed=fedTax(i.st,O+T0)-fedTax(i.st,O+T1), ca=caTax(i.st,O+T0ca)-caTax(i.st,O+T1ca);
   const N=Math.min(40,Math.max(1,Math.round(i.yrs)||1));
   const taken=Math.min(bld, N===1?y1:y1+dep*(N-1));
   const rec=slice(TAX.FED_ORD[i.st],O,O+taken,TAX.REC_CAP), rca=caTax(i.st,O+taken)-caTax(i.st,O);
-  return {bld,dep,y1,m,allowance,paper,loss,allowed,susp,fed,ca,save:fed+ca,N,taken,rec,rca,
-    fedR:rateAt(TAX.FED_ORD[i.st],O+T1), caR:rateAt(TAX.CA[i.st],O+T1)};
+  return {bld,dep,y1,m,allowance,caAllowance,paper,loss,allowed,susp,caAllowed,caSusp,fed,ca,save:fed+ca,N,taken,rec,rca,
+    fedR:rateAt(TAX.FED_ORD[i.st],O+T1), caR:rateAt(TAX.CA[i.st],O+T1ca)};
 }
 
 const I18N={
@@ -486,7 +493,7 @@ const I18N={
   an_part:"<b>The $25,000 allowance is reduced by $1 for every $2 of MAGI over $100,000.</b> At {m} you can use {a}. The remaining {s} carries forward.",
   an_full:"<b>The full paper loss of {l} offsets your other income this year.</b> That is the source of the tax savings.",
   an_pos:"<b>Still a profit after depreciation ({p}).</b> Depreciation shelters {d} of rent from tax. The passive loss limits do not come into play.",
-  an_rep:"<b>As a real estate professional, the full loss of {l} can offset other income for federal tax.</b> The IRS often asks for an hours log, so keep one. California does not recognize this exception, so the California savings may be lower than shown.",
+  an_rep:"<b>As a real estate professional, the full loss of {l} can offset other income for federal tax.</b> The IRS often asks for an hours log, so keep one. California does not recognize this exception. For California the rental stays passive: {ca} of the loss is used this year under the $25,000 allowance at your MAGI, and {cs} carries forward. The California figure above already reflects this.",
   est_note:"Estimate only, not tax advice. Uses 2026 federal brackets and the 2025 California schedule (the latest published). California rules can differ from federal. NIIT, AMT, credits and other income are not included. Talk with a CPA before you file.",
   b_email:"Email me the result",
   b_sms:"Text Ken",
@@ -583,7 +590,7 @@ const I18N={
   an_part:"<b>Mức $25,000 giảm $1 cho mỗi $2 MAGI trên $100,000.</b> Với MAGI {m}, được trừ {a}. Phần còn lại {s} chuyển sang năm sau.",
   an_full:"<b>Toàn bộ khoản lỗ trên giấy {l} được trừ vào thu nhập khác năm nay.</b> Đây là nguồn của khoản thuế tiết kiệm.",
   an_pos:"<b>Sau khấu hao vẫn còn lời ({p}).</b> Khấu hao giúp {d} tiền thuê không bị đánh thuế. Không bị giới hạn passive loss.",
-  an_rep:"<b>Với tư cách real estate professional, toàn bộ khoản lỗ {l} được trừ vào thu nhập khác ở thuế liên bang.</b> IRS thường yêu cầu sổ ghi giờ làm việc, nên lưu giữ cẩn thận. California không công nhận ngoại lệ này, nên phần tiết kiệm thuế California có thể thấp hơn con số ở trên.",
+  an_rep:"<b>Với tư cách real estate professional, toàn bộ khoản lỗ {l} được trừ vào thu nhập khác ở thuế liên bang.</b> IRS thường yêu cầu sổ ghi giờ làm việc, nên lưu giữ cẩn thận. California không công nhận ngoại lệ này. Với thuế California, căn nhà vẫn là passive: năm nay chỉ trừ được {ca} theo mức $25,000 ở MAGI của anh chị, còn {cs} chuyển sang năm sau. Con số California ở trên đã tính theo cách này.",
   est_note:"Chỉ là ước tính, không phải tư vấn thuế. Dùng bậc thuế liên bang 2026 và bảng thuế California 2025 (bản mới nhất đã công bố). Luật California có điểm khác liên bang. Chưa tính NIIT, AMT, tín thuế (credit) và các thu nhập khác. Hỏi CPA trước khi khai thuế.",
   b_email:"Gửi kết quả qua email",
   b_sms:"Nhắn Ken",
@@ -641,7 +648,7 @@ function calc(){
   ch.className='chip '+c; ch.textContent=t;
   let note;
   if(m.loss<=0) note=fill(d.an_pos,{p:fmt(m.paper),d:fmt(m.dep)});
-  else if(role==='rep') note=fill(d.an_rep,{l:fmt(m.loss)});
+  else if(role==='rep') note=fill(d.an_rep,{l:fmt(m.loss),ca:fmt(m.caAllowed),cs:fmt(m.caSusp)});
   else if(m.allowed<=0) note=fill(d.an_none,{l:fmt(m.loss),m:fmt(i.magi)});
   else if(m.susp>0.5) note=fill(d.an_part,{m:fmt(i.magi),a:fmt(m.allowed),s:fmt(m.susp)});
   else note=fill(d.an_full,{l:fmt(m.loss)});

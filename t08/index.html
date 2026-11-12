@@ -49,6 +49,10 @@ h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;mar
 .ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
 .ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .ctl input[type=number]{-moz-appearance:textfield}
+.ctl input::placeholder{font-size:12px;color:var(--muted);opacity:.85}
+.ctl:has(input[data-ph]){padding:0 6px}
+.ctl input[data-ph]{padding-left:4px;padding-right:4px}
+#dlOut{white-space:normal;text-align:right}
 .row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
 @media (max-width:380px){.row2{grid-template-columns:1fr}}
 .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
@@ -239,9 +243,15 @@ footer .who{color:var(--fg)}
         <label class="ck"><input type="checkbox" id="cLoan" checked><span data-i="c_loan">Loan</span></label>
       </div>
     </div>
-    <div class="field">
-      <label for="dl"><span data-i="l_dl">Contingency deadline</span> <small data-i="l_dl_s">(enter the date in your contract; the prefilled date is only an example)</small></label>
-      <div class="ctl"><input id="dl" type="date"></div>
+    <div class="row2">
+      <div class="field">
+        <label for="acc"><span data-i="l_acc">Acceptance date</span></label>
+        <div class="ctl"><input id="acc" type="date"></div>
+      </div>
+      <div class="field">
+        <label for="cdays"><span data-i="l_cdays">Contingency days</span> <small data-i="l_cdays_s">(from your contract)</small></label>
+        <div class="ctl"><input id="cdays" type="number" inputmode="numeric" min="1" max="90" step="1" placeholder="Days in your contract" data-ph="ph_days"></div>
+      </div>
     </div>
     <div class="row2">
       <div class="field">
@@ -271,6 +281,7 @@ footer .who{color:var(--fg)}
     <div class="lines">
       <div class="line"><span class="n"><b data-i="n_risk">At risk today</b> <span data-i="n_risk_s">(if you back out for a reason not covered)</span></span><span class="a" id="risk">$0</span></div>
       <div class="line"><span class="n"><b data-i="n_cap">3% of price</b> <span data-i="n_cap_s">(liquidated damages cap)</span></span><span class="a" id="cap">$0</span></div>
+      <div class="line"><span class="n"><b data-i="n_dl">Contingency deadline</b></span><span class="a" id="dlOut">—</span></div>
       <div class="line"><span class="n"><b data-i="n_days">Days to deadline</b></span><span class="a" id="days">—</span></div>
     </div>
     <div class="note hide" id="overNote"></div>
@@ -331,7 +342,7 @@ footer .who{color:var(--fg)}
      trong 30 ngày sau khi nhận yêu cầu bằng văn bản → chịu số tiền + treble damages tối thiểu $100, tối đa $1,000 + phí luật sư,
      trừ khi có tranh chấp thiện chí (good-faith dispute).
    C.A.R. RPA Revised 12/24 (bản text https://media.crmls.org/mediaz/90de9532-e618-4dac-83c6-30ab4c71665d.pdf, tra 04/11/2026):
-     ¶3D(1) cọc trong 2 business days sau Acceptance (KEN DUYỆT, giống T60).  ¶3L contingency mặc định 17 Days.
+     ¶3D(1) cọc trong số business days ghi trong hợp đồng.  ¶3L contingency: số ngày do người dùng nhập theo hợp đồng của họ, không có mặc định (RPA đã sửa nhiều lần, hai bên thương lượng).
      ¶8J / ¶14B(3) buyer phải remove hoặc cancel trước hạn ¶3L.  ¶14C(1) seller chỉ được cancel SAU KHI giao Notice to Buyer to Perform (NBP);
      ¶14E NBP cho ít nhất 2 Days.  ¶14H: release cọc cần mutual signed instructions, judicial decision hoặc arbitration award.
      ¶26 Liquidated damages: chỉ khi buyer initial; nhà ≤4 unit buyer ở → giữ không quá 3% giá, dư trả lại buyer; increased deposit cần Form DID.
@@ -339,13 +350,14 @@ footer .who{color:var(--fg)}
    ¶14D quyền cancel của buyer khi seller không làm (dùng cho thẻ "seller không close") — KEN DUYỆT số đoạn.
    Phí hủy escrow: tùy escrow/title, KHÔNG ghi số — KEN DUYỆT nếu muốn thêm.
 */
-const LD_CAP=0.03, RPA_CONT_DAYS=17, RPA_EMD_BD=2, CC1057_MIN=100, CC1057_MAX=1000;
+const LD_CAP=0.03, CC1057_MIN=100, CC1057_MAX=1000;
 const UPDATED='04/11/2026';
 
 const I18N={
  en:{title:'Your deposit: when could you lose it?',sub:'Enter your offer price and the contingencies still open. See whether your deposit is at risk today and how each situation plays out.',
   l_price:'Offer price',l_dep:'Deposit (EMD)',l_dep_s:'(about 3% is common)',l_cont:'Contingencies still active (not yet removed)',c_insp:'Inspection',c_appr:'Appraisal',c_loan:'Loan',
-  l_dl:'Contingency deadline',l_dl_s:'(enter the date in your contract; the prefilled date is only an example)',l_ld:'Liquidated damages clause initialed?',l_occ:"Will you live there (1–4 units)?",yes:'Yes',no:'No',yes2:'Yes',no2:'No',
+  l_acc:'Acceptance date',l_cdays:'Contingency days',l_cdays_s:'(from your contract)',ph_days:'Days in your contract',n_dl:'Contingency deadline',nod:'Enter the days from your contract to see this date',
+  st_nodl:'<b>Currently protected</b> by: {list}. Enter the acceptance date and the contingency days from your contract to see the deadline.',l_ld:'Liquidated damages clause initialed?',l_occ:"Will you live there (1–4 units)?",yes:'Yes',no:'No',yes2:'Yes',no2:'No',
   r_total:'Your deposit',cal:'Add the deadline to Google Calendar',n_risk:'At risk today',n_risk_s:'(if you back out for a reason not covered)',n_cap:'3% of price',n_cap_s:'(liquidated damages cap)',n_days:'Days to deadline',
   days_left:'{n} days left',days_today:'Today',days_past:'{n} days past',
   st_ok:'<b>Currently protected</b> by: {list}. {n} days left. If you cancel for a reason these cover, in writing and before the deadline, the deposit is usually returned.',
@@ -389,7 +401,8 @@ const I18N={
   none:'none'},
  vi:{title:'Tiền cọc của anh chị: khi nào có thể bị mất?',sub:'Nhập giá offer và các contingency còn giữ. Công cụ cho biết hôm nay tiền cọc có đang gặp rủi ro không, và từng tình huống sẽ được xử lý ra sao.',
   l_price:'Giá offer',l_dep:'Tiền cọc (EMD)',l_dep_s:'(thường khoảng 3%)',l_cont:'Contingency còn giữ (chưa remove)',c_insp:'Inspection',c_appr:'Appraisal',c_loan:'Loan',
-  l_dl:'Hạn contingency',l_dl_s:'(nhập đúng ngày theo hợp đồng; ngày điền sẵn chỉ là ví dụ)',l_ld:'Đã initial điều khoản liquidated damages?',l_occ:'Anh chị sẽ ở căn nhà này (1–4 unit)?',yes:'Có',no:'Không',yes2:'Có',no2:'Không',
+  l_acc:'Ngày acceptance',l_cdays:'Số ngày contingency',l_cdays_s:'(theo hợp đồng)',ph_days:'Số ngày trong hợp đồng',n_dl:'Hạn contingency',nod:'Nhập số ngày theo hợp đồng để thấy ngày hết hạn',
+  st_nodl:'<b>Đang được bảo vệ</b> bởi: {list}. Nhập ngày acceptance và số ngày contingency theo hợp đồng để thấy ngày hết hạn.',l_ld:'Đã initial điều khoản liquidated damages?',l_occ:'Anh chị sẽ ở căn nhà này (1–4 unit)?',yes:'Có',no:'Không',yes2:'Có',no2:'Không',
   r_total:'Tiền cọc của anh chị',cal:'Thêm hạn chót vào Google Calendar',n_risk:'Có thể mất hôm nay',n_risk_s:'(nếu rút vì lý do không được contingency bảo vệ)',n_cap:'3% giá nhà',n_cap_s:'(mức trần liquidated damages)',n_days:'Số ngày còn lại',
   days_left:'còn {n} ngày',days_today:'Hôm nay',days_past:'quá hạn {n} ngày',
   st_ok:'<b>Đang được bảo vệ</b> bởi: {list}. Còn {n} ngày. Nếu rút vì lý do thuộc các contingency này và làm bằng văn bản trước hạn, thường anh chị lấy lại được tiền cọc.',
@@ -449,7 +462,7 @@ function assess(price,depPct,active,ldInit,ownerOcc,daysLeft){
   else { keep=null; mode=3; }
   const refundOver=(ldInit&&ownerOcc&&dep>cap)?dep-cap:0;
   const protectedNow=active.length>0;      /* chưa remove bằng giấy → vẫn còn (kể cả khi qua hạn, tới khi seller cancel sau NBP) */
-  const state=!active.length?'none':(daysLeft<0?'past':(daysLeft===0?'today':'ok'));
+  const state=!active.length?'none':(daysLeft==null?'nodl':(daysLeft<0?'past':(daysLeft===0?'today':'ok')));
   const risk=protectedNow?0:keep;          /* rủi ro với lý do contingency che */
   return {dep,cap,keep,mode,refundOver,state,risk};
 }
@@ -460,20 +473,25 @@ function calc(){
   const d=I18N[lang];
   const price=Math.max(0,parseFloat($('price').value)||0), depPct=Math.min(100,Math.max(0,parseFloat($('dep').value)||0));
   const act=[['cInsp','c_insp','insp_c'],['cAppr','c_appr','appr_c'],['cLoan','c_loan','loan_c']].filter(x=>$(x[0]).checked);
-  const today=todayYmd(), dl=$('dl').value||addDaysYmd(today,10);
-  const daysLeft=dayDiff(today,dl);
+  /* Hạn = ngày acceptance + số ngày contingency người dùng nhập theo hợp đồng (không có mặc định); rơi T7/CN thì dời sang thứ Hai. */
+  const today=todayYmd(), acc=$('acc').value, nd=Math.round(+$('cdays').value);
+  let dl='';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(acc)&&nd>0){ dl=addDaysYmd(acc,nd); for(let w=new Date(dl+'T00:00:00Z').getUTCDay();w===0||w===6;w=new Date(dl+'T00:00:00Z').getUTCDay()) dl=addDaysYmd(dl,1); }
+  const daysLeft=dl?dayDiff(today,dl):null;
   const r=assess(price,depPct,act,ld,occ,daysLeft);
   const list=act.length?act.map(x=>d[x[1]]).join(', '):d.none, covered=act.map(x=>d[x[2]]).join('; ');
   $('depAmt').textContent=fmt(r.dep); $('cap').textContent=fmt(r.cap);
-  $('days').textContent=daysLeft>0?d.days_left.replace('{n}',daysLeft):(daysLeft===0?d.days_today:d.days_past.replace('{n}',-daysLeft));
+  $('dlOut').textContent=dl?dl.split('-').reverse().join('/').replace(/^(\d+)\/(\d+)/,lang==='vi'?'$1/$2':'$2/$1'):d.nod;
+  $('days').textContent=daysLeft==null?'—':daysLeft>0?d.days_left.replace('{n}',daysLeft):(daysLeft===0?d.days_today:d.days_past.replace('{n}',-daysLeft));
   $('risk').textContent=r.risk===null?d.unknown:fmt(r.risk);
   $('risk').style.color=r.risk===0?'var(--ok)':'var(--warn)';
-  const st=$('status'); st.className='status '+(r.state==='ok'?'ok':'warn');
-  st.innerHTML=(r.state==='ok'?d.st_ok:r.state==='today'?d.st_today:r.state==='past'?d.st_past:d.st_none).replace('{list}',list).replace('{n}',daysLeft);
+  const st=$('status'); st.className='status '+(r.state==='ok'||r.state==='nodl'?'ok':'warn');
+  st.innerHTML=(r.state==='nodl'?d.st_nodl:r.state==='ok'?d.st_ok:r.state==='today'?d.st_today:r.state==='past'?d.st_past:d.st_none).replace('{list}',list).replace('{n}',daysLeft);
   $('overNote').classList.toggle('hide',!(r.refundOver>0));
   $('overNote').innerHTML=d.over.replace('{cap}',fmt(r.cap)).replace('{x}',fmt(r.refundOver));
   /* Google Calendar */
-  const ymd=dl.replace(/-/g,''), ymd2=addDaysYmd(dl,1).replace(/-/g,'');
+  $('calBtn').style.display=dl?'':'none';
+  const ymd=dl?dl.replace(/-/g,''):'', ymd2=dl?addDaysYmd(dl,1).replace(/-/g,''):'';
   $('calBtn').href='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(d.cal_t+' (T08)')+'&dates='+ymd+'/'+ymd2+'&details='+encodeURIComponent(d.cal_d.replace('{list}',list).replace('{dep}',fmt(r.dep)));
   /* thẻ tình huống */
   const now1=r.state!=='none', card=(cls,t,pill,pc,amt,amtS,p,ref)=>`<article class="sc${cls}"><div class="hd"><span class="t">${t}</span><span class="pill ${pc}">${pill}</span></div>${amt?`<div class="amt">${amt}${amtS?` <small>${amtS}</small>`:''}</div>`:''}<p>${p}</p><span class="ref">${ref}</span></article>`;
@@ -484,18 +502,19 @@ function calc(){
   h+=card('',d.k3,d.k3_t,'ok',fmt(r.dep),'',d.k3_p,d.k3_r);
   h+=card('',d.k4,d.k4_t,'mid',fmt(r.dep),'',d.k4_p.replace('{mn}',CC1057_MIN).replace('{mx}',CC1057_MAX.toLocaleString('en-US')),d.k4_r);
   $('cards').innerHTML=h;
-  last={p:fmt(price),dp:depPct,dep:fmt(r.dep),list,dl,days:$('days').textContent,ld:ld?d.yes:d.no,occ:occ?d.yes:d.no,risk:$('risk').textContent,cap:fmt(r.cap)};
-  const s=d.sms.replace('{dep}',last.dep).replace('{p}',last.p).replace('{list}',list).replace('{dl}',dl);
+  last={p:fmt(price),dp:depPct,dep:fmt(r.dep),list,dl:dl||'—',days:$('days').textContent,ld:ld?d.yes:d.no,occ:occ?d.yes:d.no,risk:$('risk').textContent,cap:fmt(r.cap)};
+  const s=d.sms.replace('{dep}',last.dep).replace('{p}',last.p).replace('{list}',list).replace('{dl}',dl||'—');
   $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(s);
 }
 function applyLang(){
   const d=I18N[lang];
   document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  document.querySelectorAll('[data-ph]').forEach(el=>{const k=el.getAttribute('data-ph'); if(d[k]!=null) el.placeholder=d[k];});
   $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
 }
 function seg(a,b,val){ $(a).setAttribute('aria-pressed',val?'true':'false'); $(b).setAttribute('aria-pressed',val?'false':'true'); }
-$('dl').value=addDaysYmd(todayYmd(),10);
-['price','dep','dl','cInsp','cAppr','cLoan'].forEach(id=>{ $(id).addEventListener('input',calc); $(id).addEventListener('change',calc); });
+$('acc').value=todayYmd();
+['price','dep','acc','cdays','cInsp','cAppr','cLoan'].forEach(id=>{ $(id).addEventListener('input',calc); $(id).addEventListener('change',calc); });
 $('ldY').onclick=()=>{ld=true;seg('ldY','ldN',true);calc();}; $('ldN').onclick=()=>{ld=false;seg('ldY','ldN',false);calc();};
 $('occY').onclick=()=>{occ=true;seg('occY','occN',true);calc();}; $('occN').onclick=()=>{occ=false;seg('occY','occN',false);calc();};
 $('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};

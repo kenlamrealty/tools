@@ -44,6 +44,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 .mine label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;color:var(--muted)}
 .mine input{font:16px var(--f-body);padding:10px;border:1px solid var(--rule);border-radius:9px;background:var(--bg);color:var(--ink);min-width:0;width:100%}
 .mine small{color:var(--muted);font-size:13px}
+.mine input::placeholder{font-size:12px;color:var(--muted)}
+.mine label{justify-content:space-between}
+.mine input[type=number]{padding:10px 8px}
+.mine .sub2{margin-top:16px;display:block;font-size:14px;font-weight:600;color:var(--ink)}
+.nod{color:var(--muted);font-style:italic}
 .stepper{display:flex;gap:6px;overflow-x:auto;padding:4px 0 10px;margin:18px 0 6px;scrollbar-width:thin}
 .chip{flex:0 0 auto;border:1px solid var(--rule);background:var(--paper);border-radius:999px;padding:6px 12px;font-size:13.5px;white-space:nowrap}
 .chip[aria-current="step"]{background:var(--accent);border-color:var(--accent);color:var(--paper);font-weight:600}
@@ -111,14 +116,22 @@ footer a{color:var(--accent)}
   </section>
 
   <section class="card mine" aria-labelledby="mine-h">
-    <h3 id="mine-h" style="margin-top:0">Điền số của anh chị (hoặc để ví dụ)</h3>
-    <small>Công cụ tự tính lại số tiền và các mốc ngày ở mọi bước. Dữ liệu không được lưu hay gửi đi.</small>
+    <h3 id="mine-h" style="margin-top:0">Điền số của anh chị</h3>
+    <small>Công cụ tự tính lại số tiền và các mốc ngày ở mọi bước. Số ngày lấy từ hợp đồng anh chị ký; ô nào để trống thì công cụ chưa tính ngày đó. Dữ liệu không được lưu hay gửi đi.</small>
     <div class="grid">
       <label for="iPrice">Giá nhà ($)<input id="iPrice" type="number" inputmode="numeric" value="1000000" step="1000" min="0"></label>
       <label for="iLoan">Vay ngân hàng (%)<input id="iLoan" type="number" inputmode="decimal" value="80" min="0" max="100"></label>
       <label for="iDep">Tiền cọc (%)<input id="iDep" type="number" inputmode="decimal" value="3" min="0" max="100" step="0.5"></label>
       <label for="iAcc">Ngày hai bên ký xong<input id="iAcc" type="date" value="2026-10-01"></label>
-      <label for="iCoe">Close sau bao nhiêu ngày<input id="iCoe" type="number" value="30" min="1" max="120"></label>
+    </div>
+    <span class="sub2">Số ngày trong hợp đồng của anh chị</span>
+    <div class="grid">
+      <label for="iCoe">Close sau bao nhiêu ngày (3B)<input id="iCoe" type="number" inputmode="numeric" min="1" max="180" step="1" placeholder="Số ngày trong hợp đồng"></label>
+      <label for="dDep">Nộp tiền cọc, ngày làm việc (3D)<input id="dDep" type="number" inputmode="numeric" min="1" max="60" step="1" placeholder="Số ngày trong hợp đồng"></label>
+      <label for="dVer">Bằng chứng tiền, pre-approval (3H)<input id="dVer" type="number" inputmode="numeric" min="1" max="60" step="1" placeholder="Số ngày trong hợp đồng"></label>
+      <label for="dSel">Seller giao giấy tờ (3N)<input id="dSel" type="number" inputmode="numeric" min="1" max="60" step="1" placeholder="Số ngày trong hợp đồng"></label>
+      <label for="dCon">Contingency (3L)<input id="dCon" type="number" inputmode="numeric" min="1" max="90" step="1" placeholder="Số ngày trong hợp đồng"></label>
+      <label for="dWalk">Final verification, trước close (3J)<input id="dWalk" type="number" inputmode="numeric" min="1" max="30" step="1" placeholder="Số ngày trong hợp đồng"></label>
     </div>
   </section>
 
@@ -180,18 +193,22 @@ function cal(d,n){var x=add(d,n),r=false;while(off(x)){x=add(x,1);r=true}return 
 function biz(d,n){var x=new Date(d),k=0;while(k<n){x=add(x,1);if(!off(x))k++}return {d:x,r:false}}
 function fd(d){return DN[d.getDay()]+", "+String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear()}
 function money(n){return "$"+Math.round(n).toLocaleString("en-US")}
+function dn(id){var v=Math.round(parseFloat(document.getElementById(id).value));return v>0?v:null}
 function num(id,def){var v=parseFloat(document.getElementById(id).value);return isNaN(v)?def:v}
 function V(){
   var p=num("iPrice",1000000),lp=Math.min(100,Math.max(0,num("iLoan",80))),dp=Math.min(100,Math.max(0,num("iDep",3)));
   var a=document.getElementById("iAcc").value.split("-"),acc=a.length===3?new Date(+a[0],+a[1]-1,+a[2]):new Date(2026,9,1);
-  var coe=Math.max(1,Math.round(num("iCoe",30)));
-  var loan=p*lp/100,dep=p*dp/100,down=p-loan,bal=down-dep, c=cal(acc,coe);
+  /* Số ngày do người dùng nhập theo hợp đồng của họ. Không có số mặc định: ô trống thì null, không tính ngày. */
+  var coe=dn("iCoe"),nDep=dn("dDep"),nVer=dn("dVer"),nSel=dn("dSel"),nCon=dn("dCon"),nWalk=dn("dWalk");
+  var loan=p*lp/100,dep=p*dp/100,down=p-loan,bal=down-dep, c=coe?cal(acc,coe):null;
   return {p:money(p),loan:money(loan),dep:money(dep),down:money(down),bal:money(bal),ld:money(Math.min(dep,p*0.03)),ld3:money(p*0.03),
     lp:lp,dp:dp,dpOk:dep<=down,cash:lp===0,acc:acc,accS:fd(acc),coeN:coe,
-    dDep:biz(acc,3),d3:cal(acc,3),d7:cal(acc,7),d17:cal(acc,17),dCoe:c,dWalk:{d:add(c.d,-5),r:false},xfer:money(p/1000*1.1)};
+    dDep:nDep?biz(acc,nDep):null,d3:nVer?cal(acc,nVer):null,d7:nSel?cal(acc,nSel):null,d17:nCon?cal(acc,nCon):null,dCoe:c,dWalk:c&&nWalk?{d:add(c.d,-nWalk),r:false}:null,xfer:money(p/1000*1.1)};
 }
 function v(x){return '<span class="v">'+x+'</span>'}
-function dl(o){return v(fd(o.d))+(o.r?' <span class="roll">Ngày gốc rơi vào cuối tuần hoặc ngày lễ nên dời sang ngày làm việc kế tiếp.</span>':'')}
+function hl(o,p){return o?(p==null?'Theo số ngày anh chị nhập: hạn ':p)+dl(o):dl(null)}
+var NOD='Nhập số ngày theo hợp đồng để thấy ngày hết hạn';
+function dl(o){if(!o)return '<span class="nod">'+NOD+'</span>';return v(fd(o.d))+(o.r?' <span class="roll">Ngày gốc rơi vào cuối tuần hoặc ngày lễ nên dời sang ngày làm việc kế tiếp.</span>':'')}
 
 var S=[
  {chip:"Bắt đầu",render:function(x){return '<div class="ref">Trước khi đọc</div><h2>Hợp đồng này là gì?</h2>'+
@@ -214,12 +231,12 @@ var S=[
   warn:T("agent","Agent")+" không phải người mua hay người bán. Đoạn 1D ghi rõ: agent không phải là “Parties” của hợp đồng."},
  {chip:"Giá & ngày close",img:"s03.jpg",ref:"Trang 1 · Dòng 3A, 3B, 3C",q:"Giá bao nhiêu? Bao giờ nhận nhà?",
   pins:function(x){return [["3A · Purchase Price","Giá mua: "+v(x.p)+". Có ô “All Cash” nếu mua cash, không vay."],
-   ["3B · Close Of Escrow","Số ngày tới ngày close: "+v(x.coeN+" ngày")+" sau "+T("acceptance","Acceptance")+". Theo ngày anh chị nhập: close "+dl(x.dCoe)],
+   ["3B · Close Of Escrow","Số ngày tới ngày close ghi trong hợp đồng, tính sau "+T("acceptance","Acceptance")+(x.coeN?": "+v(x.coeN+" ngày")+". Theo ngày anh chị nhập: close "+dl(x.dCoe):". "+dl(null))],
    ["3C · Hạn của offer","Offer có thời hạn trả lời ghi trên form. Nếu seller chưa ký chấp nhận trước hạn đó, offer tự hết hiệu lực."]];},
   life:"Ba dòng này chốt giá, ngày giao nhà và thời hạn seller phải trả lời. Hết hạn mà chưa có chữ ký của seller thì offer không còn ràng buộc.",
   warn:T("coe","Close")+" là ngày county record, không phải ngày ký giấy ở escrow. Thường ký giấy ở escrow vài ngày trước close."},
  {chip:"Tiền cọc",img:"s04.jpg",ref:"Trang 1 · Dòng 3D(1)",q:"Đặt cọc bao nhiêu? Nộp khi nào?",
-  pins:function(x){return [["3D(1) · Initial Deposit","Tiền cọc: "+v(x.dep)+" ("+x.dp+"% giá nhà). Chuyển thẳng vào "+T("escrow","escrow")+" bằng wire, trong số <b>ngày làm việc</b> ghi trên hợp đồng sau Acceptance. Ví dụ theo số ngày in trên form trong hình và ngày anh chị nhập: hạn "+dl(x.dDep)]];},
+  pins:function(x){return [["3D(1) · Initial Deposit","Tiền cọc: "+v(x.dep)+" ("+x.dp+"% giá nhà). Chuyển thẳng vào "+T("escrow","escrow")+" bằng wire, trong số <b>ngày làm việc</b> ghi trên hợp đồng sau Acceptance. "+hl(x.dDep)]];},
   extra:function(x){return '<p>Ô “___% of purchase price” chỉ để tham khảo. Form ghi rõ: con số phần trăm <b>không phải điều khoản</b>; số tiền bằng đô la mới có giá trị ràng buộc.</p>'},
   life:"Tiền cọc nằm trong escrow, không vào tay seller. Hủy đúng theo contingency thì được nhận lại. Hủy không có lý do hợp đồng cho phép thì có thể mất.",
   warn:"Trước khi wire, gọi escrow bằng số điện thoại đã có từ đầu để xác nhận số tài khoản. Email báo “đổi tài khoản” gần như chắc chắn là lừa đảo."},
@@ -241,8 +258,8 @@ var S=[
   life:"Seller credit giúp buyer giảm tiền mặt cần mang tới escrow, đổi lại seller nhận về ít hơn.",
   warn:T("credit","Seller credit")+" phải báo cho lender. Che giấu là vi phạm."},
  {chip:"Chứng minh tiền",img:"s08.jpg",ref:"Trang 2 · Dòng 3H, 3J, 3K",q:"Cần giấy tờ gì? Khi nào xem nhà lần cuối?",
-  pins:function(x){return [["3H · Verification","Bằng chứng có tiền cọc, tiền down, closing cost, và thư "+T("preapproval","pre-approval")+". Nộp kèm offer, hoặc trong thời hạn ghi trên hợp đồng. Ví dụ theo số ngày in trong hình: hạn "+dl(x.d3)],
-   ["3J · Final Verification","Xem nhà lần cuối trước close, theo số ngày ghi trên hợp đồng. Ví dụ theo form trong hình: khoảng "+v(fd(x.dWalk.d))+". Đây là "+T("walk","walk-through")+", không phải contingency."],
+  pins:function(x){return [["3H · Verification","Bằng chứng có tiền cọc, tiền down, closing cost, và thư "+T("preapproval","pre-approval")+". Nộp kèm offer, hoặc trong thời hạn ghi trên hợp đồng. "+hl(x.d3)],
+   ["3J · Final Verification","Xem nhà lần cuối trước close, theo số ngày ghi trên hợp đồng. "+hl(x.dWalk,"Theo số ngày anh chị nhập: ")+". Đây là "+T("walk","walk-through")+", không phải contingency."],
    ["3K · Assignment","Muốn chuyển hợp đồng sang trust hay LLC của buyer thì phải xin trong thời hạn ghi trên hợp đồng."]];},
   life:"Seller cần thấy buyer có đủ tiền và có lender sẵn sàng. Thiếu giấy tờ này, seller có quyền yêu cầu bổ sung và có thể hủy theo thủ tục của hợp đồng.",
   warn:"Thư pre-approval cũ hơn 30 ngày thường không được seller tin tưởng. Nên xin thư mới, ghi đúng giá offer."},
@@ -251,7 +268,7 @@ var S=[
    ["Investigation · kiểm tra nhà",T("inspection","Inspection")+", termite, mái, sewer, diện tích. Thấy vấn đề thì xin sửa (form RR) hoặc rút."],["Insurance · bảo hiểm","Không mua được bảo hiểm nhà (nhất là bảo hiểm cháy) thì có thể rút."],
    ["Seller Documents · giấy seller","Đọc "+T("disclosure","disclosure")+". Hạn theo hợp đồng, tính từ Acceptance hoặc từ ngày nhận giấy, ngày nào tới sau thì áp dụng."],["Title Report","Đọc "+T("prelim","prelim")+". Cách tính hạn tương tự."],
    ["Common Interest · HOA","Condo, townhouse: đọc tài liệu "+T("hoa","HOA")+"."],["Leased items · đồ thuê","Solar thuê, bình propane thuê: buyer có đồng ý nhận lại hợp đồng thuê không."]];},
-  extra:function(x){return '<p>Số ngày của từng contingency ghi theo hợp đồng, tính từ Acceptance. Ví dụ theo số ngày in trên form trong hình và ngày anh chị nhập: hạn '+dl(x.d17)+'</p><p>Muốn bỏ một contingency thì ký '+T("crb","CR-B")+' Quá hạn mà buyer chưa ký gì thì hợp đồng chưa tự hủy: seller phải gửi '+T("nbp","NBP")+' trước và chờ hết thời hạn trong notice.</p>'},
+  extra:function(x){return '<p>Số ngày của từng contingency ghi theo hợp đồng, tính từ Acceptance, và có thể khác nhau giữa các contingency. '+hl(x.d17)+'</p><p>Muốn bỏ một contingency thì ký '+T("crb","CR-B")+' Quá hạn mà buyer chưa ký gì thì hợp đồng chưa tự hủy: seller phải gửi '+T("nbp","NBP")+' trước và chờ hết thời hạn trong notice.</p>'},
   life:"Có 8 contingency. Mỗi lần ký CR-B là bỏ một quyền rút. Khi đã bỏ hết mà buyer không hoàn tất giao dịch, tiền cọc có thể bị mất.",
   warn:"Gửi yêu cầu sửa nhà (RR) không làm dừng thời hạn. Seller không trả lời thì thời hạn vẫn tiếp tục chạy."},
  {chip:"Nhận chìa khóa",img:"s10.jpg",ref:"Trang 2 · Dòng 3M",q:"Khi nào buyer được nhận nhà?",
@@ -261,7 +278,7 @@ var S=[
   life:"Thông thường, buyer nhận chìa khóa khi deed đã record. Nếu seller cần ở thêm, phải có form riêng ghi rõ thời hạn và trách nhiệm của hai bên.",
   warn:"Cho seller ở lại lâu, ở San Jose có thể chịu sự điều chỉnh của luật thuê nhà. Nên hỏi luật sư trước."},
  {chip:"Việc của seller",img:"s11.jpg",ref:"Trang 2 · Dòng 3N",q:"Seller phải làm gì, trong bao lâu?",
-  pins:function(x){return [["3N(1) · Giao giấy","Seller giao đủ disclosures và các báo cáo trong thời hạn ghi trên hợp đồng. Ví dụ theo form trong hình: hạn "+dl(x.d7)],
+  pins:function(x){return [["3N(1) · Giao giấy","Seller giao đủ disclosures và các báo cáo trong thời hạn ghi trên hợp đồng. "+hl(x.d7)],
    ["3N(2) · Ký giấy escrow","Hai bên ký escrow instructions trong thời hạn ghi trên hợp đồng sau khi nhận."],
    ["3N(3) · Phí giấy HOA","Seller đặt và trả phí tài liệu HOA trong thời hạn ghi trên hợp đồng."],
    ["3N(4) · An toàn","Lắp máy báo khói, máy báo khí CO và cột bình nước nóng chống động đất theo thời hạn ghi trên hợp đồng."],
@@ -298,14 +315,16 @@ var S=[
   life:"Một bên ký mới chỉ là đề nghị. Hai bên cùng ký và giao lại cho nhau mới thành hợp đồng.",
   warn:"Đoạn 28: thỏa thuận miệng không có giá trị. Mọi điều khoản phải nằm trong hợp đồng hoặc phụ lục có chữ ký của hai bên."},
  {chip:"Lịch của anh chị",render:function(x){
-  var rows=[["Ký xong, mở escrow (Day 0)",{d:x.acc}],["Pre-approval, bằng chứng tiền",x.d3],["Wire tiền cọc "+x.dep,x.dDep],["Seller giao disclosure",x.d7],["Bỏ hoặc dùng 8 contingency",x.d17],["Final walk-through (khoảng)",x.dWalk],["Close Of Escrow",x.dCoe]];
+  var rows=[["Ký xong, mở escrow (Day 0)",{d:x.acc}],["Pre-approval, bằng chứng tiền",x.d3],["Wire tiền cọc "+x.dep,x.dDep],["Seller giao disclosure",x.d7],["Bỏ hoặc dùng 8 contingency",x.d17],["Final walk-through",x.dWalk],["Close Of Escrow",x.dCoe]];
+  var miss=rows.filter(function(r){return !r[1]});rows=rows.filter(function(r){return r[1]});
   rows.sort(function(a,b){return a[1].d-b[1].d});
   var h='<div class="ref">Tóm tắt</div><h2>Lịch và tiền của anh chị</h2><div class="tbl"><table><tr><th>Ngày</th><th>Việc</th></tr>';
   rows.forEach(function(r){h+='<tr><td class="d">'+fd(r[1].d)+'</td><td>'+r[0]+(r[1].r?'<span class="roll">Dời vì rơi vào cuối tuần/ngày lễ.</span>':'')+'</td></tr>'});
+  miss.forEach(function(r){h+='<tr><td class="d"><span class="nod">Chưa nhập số ngày</span></td><td>'+r[0]+'</td></tr>'});
   h+='</table></div><div class="tbl"><table><tr><th>Tiền</th><th></th></tr><tr><td>Giá nhà</td><td class="d">'+x.p+'</td></tr><tr><td>Tiền cọc</td><td class="d">'+x.dep+'</td></tr><tr><td>Tiền vay</td><td class="d">'+x.loan+'</td></tr><tr><td>Down còn lại</td><td class="d">'+x.bal+'</td></tr><tr><td>Tối đa mất nếu bỏ ngang sai luật</td><td class="d">'+x.ld+'</td></tr></table></div>';
   h+='<h3>Checklist trước khi ký</h3><ul class="ck">';
   ["Tên người mua đúng như sẽ đứng trên giấy nhà","Đã gọi escrow bằng số có sẵn trước khi wire cọc","Ghi tất cả các ngày trên vào lịch điện thoại, kèm giờ hết hạn","Gọi bảo hiểm nhà ngay tuần đầu","Đặt inspection ngay trong những ngày đầu","Đọc đủ disclosure rồi mới ký CR-B","Đánh dấu tủ lạnh, máy giặt, camera ở 3P nếu muốn giữ","Hiểu rõ đoạn 29 và 31 trước khi ký tắt"].forEach(function(t,i){h+='<li><label for="ck'+i+'"><input type="checkbox" id="ck'+i+'"> '+t+'</label></li>'});
-  return h+'</ul><p class="legend">Lịch dùng số ngày in trên form trong hình để làm ví dụ; hạn thật theo hợp đồng anh chị ký. Ngày lễ theo lịch liên bang và California 2026–2027. Agent và escrow xác nhận hạn chót.</p>';}}
+  return h+'</ul><p class="legend">Lịch chỉ tính các mốc anh chị đã nhập số ngày theo hợp đồng. Ngày lễ theo lịch liên bang và California 2026–2027; cách tính ngày lễ theo hợp đồng. Agent và escrow xác nhận hạn chót.</p>';}}
 ];
 
 var cur=0;
@@ -329,7 +348,7 @@ function render(){
 function go(i){cur=Math.max(0,Math.min(S.length-1,i));render();hideTip();var st=document.getElementById("chips");window.scrollTo({top:st.offsetTop-8,behavior:"smooth"});try{localStorage.setItem("rpaStep",cur)}catch(e){}}
 document.getElementById("prev").onclick=function(){go(cur-1)};
 document.getElementById("next").onclick=function(){go(cur===S.length-1?0:cur+1)};
-["iPrice","iLoan","iDep","iAcc","iCoe"].forEach(function(id){document.getElementById(id).addEventListener("input",render)});
+["iPrice","iLoan","iDep","iAcc","iCoe","dDep","dVer","dSel","dCon","dWalk"].forEach(function(id){document.getElementById(id).addEventListener("input",render)});
 var tip=document.getElementById("tip");
 function hideTip(){tip.hidden=true}
 document.addEventListener("click",function(e){

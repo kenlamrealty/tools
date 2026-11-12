@@ -78,6 +78,8 @@ h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;mar
 .meta b{color:var(--fg);font-weight:500}
 .note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
 .note.hide{display:none}
+.wait-note{display:none}.result.wait .wait-note{display:block}
+.result.wait .total,.result.wait #opts,.result.wait #noteTrade,.result.wait #noteFit{display:none}
 
 .actions{display:grid;gap:10px}
 .btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
@@ -273,9 +275,14 @@ footer .who{color:var(--fg)}
         <div class="ctl"><input id="wait" type="number" inputmode="decimal" min="0" max="24" step="0.5" value="3"><span class="post" data-i="u_mo">months</span></div>
       </div>
     </div>
+    <div class="field">
+      <label for="comm"><span data-i="l_commin">Total commission</span> <small data-i="l_commin_s">(listing + buyer agent, if any)</small></label>
+      <div class="ctl"><input id="comm" type="number" inputmode="decimal" min="0" max="10" step="0.25" value="" placeholder="As negotiated"><span class="post">%</span></div>
+    </div>
   </section>
 
   <section class="result" aria-live="polite">
+    <div class="note wait-note" id="commWait" data-i="comm_wait">Enter the total commission you agreed to (enter 0 if none) to compare the three options.</div>
     <div class="total">
       <div class="k" id="bestK">Best fit</div>
       <div class="v" id="totalV"><span id="total">$0</span></div>
@@ -285,7 +292,7 @@ footer .who{color:var(--fg)}
     <div class="note" id="noteTrade"></div>
     <div class="note" id="noteFit"></div>
     <div class="note" data-i="note_ib">iBuyers do not buy in every area or every house. In the Bay Area you are more likely to get offers from local investors. Always get the offer in writing and compare the net, not the headline price.</div>
-    <div class="note" data-i="note_est">Estimates. Holding cost assumes property tax ~1.25%, insurance ~0.30% a year, $300/month utilities and interest on the payoff at ~4.5%. Commission is set at 5% total only as an example, not a standard rate; commission is always negotiable.</div>
+    <div class="note" data-i="note_est">Estimates. Holding cost assumes property tax ~1.25%, insurance ~0.30% a year, $300/month utilities and interest on the payoff at ~4.5%. Commission uses the rate you enter and applies to the two MLS options; there is no standard rate and it is always negotiable.</div>
   </section>
   <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" aria-label="Video" onerror="this.remove()"></video>
 
@@ -351,7 +358,7 @@ footer .who{color:var(--fg)}
      https://wfgtitle.com/wp-content/uploads/2024/04/WFG-California-Rate-Book-2.1.2023-Up-to-5-Mil.pdf (tra 03/11/2026)
    Escrow fee: ước tính $250 + $2.00/$1,000 — KEN DUYỆT (hỏi Michelle WFG). https://listwithclever.com/?p=10855
    NHD ~$100, SELLER_MISC (reconveyance, notary, courier, wire, demand) — ước tính KEN DUYỆT.
-   Commission mặc định 2.5% + 2.5%: chỉ là số mẫu; sau NAR settlement (hiệu lực 17/08/2024) commission bên mua thương lượng.
+   Commission: T21 để trống ô (placeholder), T26 có ô tổng commission riêng (inp.comm); sau NAR settlement (hiệu lực 17/08/2024) commission bên mua thương lượng.
 */
 const CFG={
   COUNTY_PER500:0.55,
@@ -372,7 +379,7 @@ const CFG={
    Santa Clara County: chỉ San Jose, Mountain View, Palo Alto có city tax $3.30/$1,000 (FNF rev 01/06/2026).
      Mountain View: $1.65/$500 ≤$6M; $15/$1,000 >$6M (Measure G, eff 20/12/2024)
        https://www.mountainview.gov/our-city/departments/finance-and-administrative-services/city-tax-information/real-property-transfer-conveyance-tax
-     San Jose Measure E (thêm, toàn bộ giá): >$2.3M 0.75%; >$5M 1.0%; >$10M 1.5% — ngưỡng tăng lên $2.3M từ 01/07/2025
+     San Jose Measure E (thêm, toàn bộ giá): >$2.3M 0.75%; >$5M 1.0%; >$10M 1.5% — ngưỡng $2.3M: xác nhận 12/11/2026 qua báo cáo tài chính City of San José 01–02/2026 https://www.sanjoseca.gov/home/showpublisheddocument/130486/639120119354830000
        FNF rev 01/06/2026 + Old Republic Santa Clara Homeowners Manual p.42 https://media.oldrepublictitle.com/homeowners-manual/santa-clara/files/basic-html/page42.html
        Ai trả Measure E: không có thông lệ in sẵn; mặc định seller — KEN DUYỆT.
    Fremont, Union City, Newark, Pleasanton, Livermore, Dublin, unincorporated Alameda, và các city Santa Clara còn lại: không có city tax.
@@ -440,7 +447,7 @@ function computeSell(inp){
 }
 
 /* ===== T26: 3 cách bán — tra 04/11/2026. TẤT CẢ LÀ ƯỚC TÍNH. =====
-   COMM 5% tổng (theo brief Ken; commission thương lượng được). STAGE $3,500 (NAR 2025 median $1,500; Angi San Jose $1,750–3,250) — KEN DUYỆT.
+   Commission: ô #comm để trống (placeholder "Thỏa thuận với agent"), kết quả chỉ hiện khi đã nhập; không còn số mặc định. STAGE $3,500 (NAR 2025 median $1,500; Angi San Jose $1,750–3,250) — KEN DUYỆT.
    REP_CUSH: sửa nhà hay lố 0–10% (T90 dùng 10–15%) — KEN DUYỆT.
    Thời gian (tháng): PREP sửa trước khi đăng ready 0.5 / light 1 / major 2.5 — KEN DUYỆT.
      Traditional list→close 45–75 ngày = 1.5–2.5 tháng (brief Ken). As-is MLS 30–60 ngày = 1–2 tháng — KEN DUYỆT.
@@ -459,22 +466,22 @@ function computeSell(inp){
        khảo sát 2024: 56% cap 70% ARV, 21% dùng 80% ARV − repairs). Trường hợp xấu investor đội sửa 1.2×. Buyer trả closing; seller ~$500 (reconveyance, notary) — KEN DUYỆT.
    HOLD mỗi tháng: giá × (1.25% thuế + 0.30% bảo hiểm)/12 + $300 điện nước + payoff × 4.5%/12 lãi — KEN DUYỆT (Prop 13: thuế thật có thể thấp hơn).
 */
-const C26={COMM:5, STAGE:3500, REP_CUSH:[1.0,1.1],
+const C26={STAGE:3500, REP_CUSH:[1.0,1.1],
   PREP:{ready:0.5,light:1,major:2.5}, TRAD_MO:[1.5,2.5], ASIS_MO:[1,2], CASH_MO:[0.5,0.75],
   ASIS_DISC:{ready:[0.01,0.03],light:[0.05,0.10],major:[0.15,0.25]}, ASIS_REP:[1.0,1.3],
   IB_BELOW:[0.05,0.10], IB_FEE:[0.05,0.06], IB_REP:[0.01,0.02],
   INV_ARV:[0.80,0.70], INV_REP:[1.0,1.2], INV_MISC:500,
   TAX:0.0125, INS:0.003, UTIL:300, INT:0.045};
 function closing(price,cityId){ const s=computeSell({price,payoff:0,cl:0,cb:0,cityId,credit:0,repair:0}); return s.tt+s.te; }
-/* inp={value,cond,repair,payoff,cityId,wait}. Mỗi option: lo (xấu), hi (tốt), mid. */
+/* inp={value,cond,repair,payoff,cityId,wait,comm}. Mỗi option: lo (xấu), hi (tốt), mid. */
 function compute3(inp){
-  const V=Math.max(0,inp.value||0), R=Math.max(0,inp.repair||0), P=Math.max(0,inp.payoff||0), W=Math.max(0,inp.wait||0), cond=inp.cond||'light', cid=inp.cityId;
+  const CP=Math.max(0,inp.comm||0), V=Math.max(0,inp.value||0), R=Math.max(0,inp.repair||0), P=Math.max(0,inp.payoff||0), W=Math.max(0,inp.wait||0), cond=inp.cond||'light', cid=inp.cityId;
   const hold=V*(C26.TAX+C26.INS)/12+C26.UTIL+P*C26.INT/12;
   const mid=a=>(a[0]+a[1])/2;
   /* Traditional */
   const tMo=[C26.PREP[cond]+C26.TRAD_MO[0], C26.PREP[cond]+C26.TRAD_MO[1]];
   const tRep=[R*C26.REP_CUSH[0], R*C26.REP_CUSH[1]];
-  const tComm=V*C26.COMM/100, tClose=closing(V,cid), tStage=V>0?C26.STAGE:0;
+  const tComm=V*CP/100, tClose=closing(V,cid), tStage=V>0?C26.STAGE:0;
   const tHold=[hold*tMo[0], hold*tMo[1]];
   const tHi=V-tRep[0]-tStage-tComm-tClose-tHold[0]-P, tLo=V-tRep[1]-tStage-tComm-tClose-tHold[1]-P;
   const T={id:'trad',price:V,rep:mid(tRep),stage:tStage,comm:tComm,close:tClose,hold:mid(tHold),mo:tMo,lo:tLo,hi:tHi};
@@ -482,10 +489,10 @@ function compute3(inp){
   const d=C26.ASIS_DISC[cond];
   const disc=[Math.max(V*d[0],R*C26.ASIS_REP[0]), Math.max(V*d[1],R*C26.ASIS_REP[1])];
   const aP=[Math.max(0,V-disc[0]), Math.max(0,V-disc[1])];
-  const aNet=(pr,mo)=>pr-pr*C26.COMM/100-closing(pr,cid)-hold*mo-P;
+  const aNet=(pr,mo)=>pr-pr*CP/100-closing(pr,cid)-hold*mo-P;
   const aHi=aNet(aP[0],C26.ASIS_MO[0]), aLo=aNet(aP[1],C26.ASIS_MO[1]);
   const aPm=mid(aP);
-  const A={id:'asis',price:aPm,disc:V-aPm,discPct:V>0?(V-aPm)/V*100:0,comm:aPm*C26.COMM/100,close:closing(aPm,cid),hold:hold*mid(C26.ASIS_MO),mo:C26.ASIS_MO,lo:aLo,hi:aHi};
+  const A={id:'asis',price:aPm,disc:V-aPm,discPct:V>0?(V-aPm)/V*100:0,comm:aPm*CP/100,close:closing(aPm,cid),hold:hold*mid(C26.ASIS_MO),mo:C26.ASIS_MO,lo:aLo,hi:aHi};
   /* Cash */
   let K;
   const cHold=[hold*C26.CASH_MO[0], hold*C26.CASH_MO[1]];
@@ -510,7 +517,7 @@ function compute3(inp){
   const next=others[0];
   const top=opts.reduce((a,b)=>b.mid>a.mid?b:a);
   const perMo=(T.moMid-K.moMid)>0?(T.mid-K.mid)/(T.moMid-K.moMid):0;
-  return {V,R,P,W,cond,hold,opts,T,A,K,best,next,diff:best.mid-next.mid,top,perMo};
+  return {CP,V,R,P,W,cond,hold,opts,T,A,K,best,next,diff:best.mid-next.mid,top,perMo};
 }
 /*CALC-END*/
 
@@ -521,12 +528,13 @@ const I18N={
   best_k:'Phù hợp nhất: {o}',vs_more:'Hơn <b>{d}</b> so với {o}',vs_less:'{o} thực nhận nhiều hơn {d}, nhưng cần khoảng {m} tháng',
   o_trad:'Sửa rồi bán',o_asis:'Bán as-is trên MLS',o_cash:'Bán cash / iBuyer',t_best:'Phù hợp nhất',
   rn:'Khoảng {lo} – {hi}',tm:'Khoảng {a}–{b} tháng đến ngày close',tm_cash:'Khoảng 2–3 tuần đến ngày close',tm_no:' · lâu hơn thời gian anh chị có thể chờ',
-  l_price:'Giá bán',l_off:'Giá offer',l_rep:'Tiền sửa (cộng 0–10% phát sinh)',l_stage:'Staging',l_comm:'Commission 5%',l_close:'Transfer tax, escrow, title',l_hold:'Giữ nhà {m} tháng',l_pay:'Trả nợ',
+  l_price:'Giá bán',l_off:'Giá offer',l_rep:'Tiền sửa (cộng 0–10% phát sinh)',l_stage:'Staging',l_comm:'Commission {r}%',l_close:'Transfer tax, escrow, title',l_hold:'Giữ nhà {m} tháng',l_pay:'Trả nợ',
   l_disc:'Giảm giá vì as-is (~{p}%)',l_fee:'Service charge iBuyer (5–6%)',l_ibrep:'Trừ chi phí sửa (1–2%)',l_inv:'Investor: 70–80% giá sau sửa, trừ chi phí sửa',l_invcl:'Phí nhỏ (buyer trả closing cost)',
   trade:'Đánh đổi thời gian lấy tiền: mỗi tháng chờ thêm để sửa rồi bán, anh chị thực nhận thêm khoảng {x} so với bán cash.',trade_neg:'Với các con số này, sửa rồi bán không mang lại nhiều hơn bán cash, nên chờ thêm không đáng.',
   fit_none:'Không cách nào kịp trong {w} tháng. Bán cash là nhanh nhất (2–3 tuần).',fit_ok:'',
   note_ib:'iBuyer không mua ở mọi khu vực, mọi loại nhà. Ở Bay Area, người mua cash thường là investor địa phương. Luôn yêu cầu offer bằng văn bản và so sánh số tiền thực nhận, không chỉ so giá offer.',
-  note_est:'Tất cả là ước tính. Chi phí giữ nhà gồm thuế khoảng 1.25%, bảo hiểm khoảng 0.30%/năm, điện nước $300/tháng và lãi trên payoff khoảng 4.5%. Commission tổng 5% chỉ là số ví dụ, không phải mức chuẩn; commission luôn thương lượng được.',
+  l_commin:'Tổng commission',l_commin_s:'(listing và buyer agent, nếu có)',ph_comm:'Thỏa thuận với agent',comm_wait:'Nhập tổng commission đã thỏa thuận với agent (ghi 0 nếu không có) để so sánh ba cách bán.',
+  note_est:'Tất cả là ước tính. Chi phí giữ nhà gồm thuế khoảng 1.25%, bảo hiểm khoảng 0.30%/năm, điện nước $300/tháng và lãi trên payoff khoảng 4.5%. Commission tính theo mức anh chị nhập, chỉ áp dụng cho hai cách bán qua MLS; không có mức chuẩn, luôn thương lượng được.',
   ns_h:'Bước tiếp theo',
   ns1:'Nhờ agent trong vùng ước tính hai mức giá: as-is và sau khi sửa. Khoảng chênh đó cho biết có nên sửa hay không. Đưa số vào <a href="/t21/">công cụ net proceeds</a>.',
   ns2:'Nếu bán cash: yêu cầu offer bằng văn bản, proof of funds, ghi rõ ai trả closing cost, và hỏi họ có được "assign" hợp đồng cho người khác hay không.',
@@ -547,12 +555,13 @@ const I18N={
   best_k:'Best fit: {o}',vs_more:'<b>{d}</b> more than {o}',vs_less:'{o} nets {d} more, but takes about {m} months',
   o_trad:'Fix and list',o_asis:'As-is on the MLS',o_cash:'Cash buyer / iBuyer',t_best:'Best fit',
   rn:'Range {lo} – {hi}',tm:'About {a}–{b} months to close',tm_cash:'About 2–3 weeks to close',tm_no:' · longer than you can wait',
-  l_price:'Sale price',l_off:'Offer',l_rep:'Repairs (+0–10% overrun)',l_stage:'Staging',l_comm:'Commission 5%',l_close:'Transfer tax, escrow, title',l_hold:'Holding {m} months',l_pay:'Loan payoff',
+  l_price:'Sale price',l_off:'Offer',l_rep:'Repairs (+0–10% overrun)',l_stage:'Staging',l_comm:'Commission {r}%',l_close:'Transfer tax, escrow, title',l_hold:'Holding {m} months',l_pay:'Loan payoff',
   l_disc:'As-is discount (~{p}%)',l_fee:'iBuyer service charge (5–6%)',l_ibrep:'Repair deduction (1–2%)',l_inv:'Investor: 70–80% of fixed value minus repairs',l_invcl:'Small fees (buyer pays closing)',
   trade:'Time vs money: each extra month you wait to fix and list earns about {x} more than selling for cash.',trade_neg:'With these numbers, fixing and listing does not beat cash, so waiting is not worth it.',
   fit_none:'No option closes within {w} months. Cash is fastest (2–3 weeks).',fit_ok:'',
   note_ib:'iBuyers do not buy in every area or every house. In the Bay Area you are more likely to get offers from local investors. Always get the offer in writing and compare the net, not the headline price.',
-  note_est:'Estimates. Holding cost assumes property tax ~1.25%, insurance ~0.30% a year, $300/month utilities and interest on the payoff at ~4.5%. Commission is set at 5% total only as an example, not a standard rate; commission is always negotiable.',
+  l_commin:'Total commission',l_commin_s:'(listing + buyer agent, if any)',ph_comm:'As negotiated',comm_wait:'Enter the total commission you agreed to (enter 0 if none) to compare the three options.',
+  note_est:'Estimates. Holding cost assumes property tax ~1.25%, insurance ~0.30% a year, $300/month utilities and interest on the payoff at ~4.5%. Commission uses the rate you enter and applies to the two MLS options; there is no standard rate and it is always negotiable.',
   ns_h:'Next steps',
   ns1:'Get two prices from a local agent: as-is and fixed up. That gap tells you if fixing is worth it. Plug them into <a href="/t21/">the seller net sheet</a>.',
   ns2:'If you go cash: ask for a written offer, proof of funds, who pays closing costs, and whether they can assign the contract to someone else.',
@@ -586,10 +595,10 @@ function ln(n,a,cls){ return '<div class="line'+(cls?' '+cls:'')+'"><span class=
 function card(o,R,d){
   let h='', time;
   if(o.id==='trad'){
-    h+=ln(d.l_price,fmt(o.price))+ln(d.l_rep,neg(o.rep))+ln(d.l_stage,neg(o.stage))+ln(d.l_comm,neg(o.comm))+ln(d.l_close,neg(o.close))+ln(d.l_hold.replace('{m}',mo(o.moMid)),neg(o.hold))+ln(d.l_pay,neg(R.P));
+    h+=ln(d.l_price,fmt(o.price))+ln(d.l_rep,neg(o.rep))+ln(d.l_stage,neg(o.stage))+ln(d.l_comm.replace('{r}',R.CP),neg(o.comm))+ln(d.l_close,neg(o.close))+ln(d.l_hold.replace('{m}',mo(o.moMid)),neg(o.hold))+ln(d.l_pay,neg(R.P));
     time=d.tm.replace('{a}',mo(o.mo[0])).replace('{b}',mo(o.mo[1]));
   } else if(o.id==='asis'){
-    h+=ln(d.l_disc.replace('{p}',o.discPct.toFixed(0)),neg(o.disc))+ln(d.l_price,fmt(o.price))+ln(d.l_comm,neg(o.comm))+ln(d.l_close,neg(o.close))+ln(d.l_hold.replace('{m}',mo(o.moMid)),neg(o.hold))+ln(d.l_pay,neg(R.P));
+    h+=ln(d.l_disc.replace('{p}',o.discPct.toFixed(0)),neg(o.disc))+ln(d.l_price,fmt(o.price))+ln(d.l_comm.replace('{r}',R.CP),neg(o.comm))+ln(d.l_close,neg(o.close))+ln(d.l_hold.replace('{m}',mo(o.moMid)),neg(o.hold))+ln(d.l_pay,neg(R.P));
     time=d.tm.replace('{a}',mo(o.mo[0])).replace('{b}',mo(o.mo[1]));
   } else {
     if(o.model==='ib') h+=ln(d.l_off,fmt(o.price))+ln(d.l_fee,neg(o.fee))+ln(d.l_ibrep,neg(o.rep))+ln(d.l_close,neg(o.close));
@@ -606,7 +615,9 @@ function card(o,R,d){
 }
 function calc(){
   const d=I18N[lang];
-  const R=compute3({value:num('value'),cond,repair:num('repair'),payoff:num('payoff'),cityId:$('city').value,wait:num('wait')});
+  const commSet=$('comm').value.trim()!=='';
+  document.querySelector('section.result').classList.toggle('wait',!commSet);
+  const R=compute3({value:num('value'),cond,repair:num('repair'),payoff:num('payoff'),cityId:$('city').value,wait:num('wait'),comm:num('comm')});
   $('bestK').textContent=d.best_k.replace('{o}',d['o_'+R.best.id]);
   $('total').textContent=fmt(R.best.mid); $('totalV').classList.toggle('neg',R.best.mid<0);
   $('vs').innerHTML=R.diff>=0?d.vs_more.replace('{d}',fmt(R.diff)).replace('{o}',d['o_'+R.next.id]):d.vs_less.replace('{o}',d['o_'+R.top.id]).replace('{d}',fmt(R.top.mid-R.best.mid)).replace('{m}',mo(R.top.moMid));
@@ -625,9 +636,10 @@ function calc(){
 function applyLang(){
   const d=I18N[lang];
   document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('comm').placeholder=d.ph_comm;
   $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
 }
-['value','repair','payoff','wait'].forEach(id=>$(id).addEventListener('input',calc));
+['value','repair','payoff','wait','comm'].forEach(id=>$(id).addEventListener('input',calc));
 $('city').addEventListener('change',calc);
 document.querySelectorAll('#condSeg button').forEach(b=>b.addEventListener('click',()=>{cond=b.dataset.v; document.querySelectorAll('#condSeg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); calc();}));
 $('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};

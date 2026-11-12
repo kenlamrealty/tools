@@ -78,6 +78,9 @@ h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;mar
 .meta b{color:var(--fg);font-weight:500}
 .note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
 .note.hide{display:none}
+.wait-note{display:none}.result.wait .wait-note{display:block}
+#cl::placeholder,#cb::placeholder{font-size:14px}
+.result.wait .total,.result.wait .bar,.result.wait .legend,.result.wait .lines,.result.wait .meta,.result.wait #noteNeg,.result.wait #noteCity{display:none}
 
 .actions{display:grid;gap:10px}
 .btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
@@ -221,11 +224,11 @@ footer .who{color:var(--fg)}
     <div class="row2">
       <div class="field">
         <label for="cl" data-i="l_cl">Commission listing agent</label>
-        <div class="ctl"><input id="cl" type="number" inputmode="decimal" min="0" max="10" step="0.25" value="2.5"><span class="post">%</span></div>
+        <div class="ctl"><input id="cl" type="number" inputmode="decimal" min="0" max="10" step="0.25" value="" placeholder="Thỏa thuận với agent"><span class="post">%</span></div>
       </div>
       <div class="field">
         <label for="cb" data-i="l_cb">Commission buyer agent</label>
-        <div class="ctl"><input id="cb" type="number" inputmode="decimal" min="0" max="10" step="0.25" value="2.5"><span class="post">%</span></div>
+        <div class="ctl"><input id="cb" type="number" inputmode="decimal" min="0" max="10" step="0.25" value="" placeholder="Thỏa thuận với agent"><span class="post">%</span></div>
       </div>
     </div>
     <div class="row2">
@@ -241,6 +244,7 @@ footer .who{color:var(--fg)}
   </section>
 
   <section class="result" aria-live="polite">
+    <div class="note wait-note" id="commWait" data-i="comm_wait">Nhập commission listing agent và buyer agent theo mức đã thỏa thuận (ghi 0 nếu không trả) để xem số tiền thực nhận.</div>
     <div class="total">
       <div class="k" data-i="r_total">Số tiền thực nhận (net proceeds)</div>
       <div class="v" id="totalV"><span id="total">$0</span></div>
@@ -279,7 +283,7 @@ footer .who{color:var(--fg)}
     </div>
     <div class="note" id="noteNeg" data-i="note_neg">Kết quả âm: với giá này, tiền bán không đủ trả nợ và chi phí. Anh chị sẽ phải bù tiền vào escrow, hoặc bàn với lender về short sale.</div>
     <div class="note" id="noteCity"></div>
-    <div class="note" data-i="note_nar">Commission do anh chị thương lượng với agent, không có mức cố định. Số trong ô chỉ là số mẫu, anh chị đổi theo thỏa thuận thật. Sau NAR settlement (2024), phần trả cho agent bên mua không còn đăng trên MLS. Người bán có thể trả, không trả, hoặc cho buyer một khoản credit. Ghi 0% nếu không trả.</div>
+    <div class="note" data-i="note_nar">Commission do anh chị thương lượng với agent, không có mức cố định. Hai ô để trống để anh chị nhập đúng mức đã thỏa thuận. Sau NAR settlement (2024), phần trả cho agent bên mua không còn đăng trên MLS. Người bán có thể trả, không trả, hoặc cho buyer một khoản credit. Ghi 0% nếu không trả.</div>
     <div class="note" data-i="note_gen">Chưa tính: thuế nhà chia theo ngày (proration), phí HOA docs và transfer nếu là condo (khoảng $300–800), home warranty, thuế capital gains. Ai trả khoản nào là thông lệ và thương lượng được.</div>
   </section>
   <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video hướng dẫn"></video>
@@ -324,7 +328,7 @@ footer .who{color:var(--fg)}
      https://wfgtitle.com/wp-content/uploads/2024/04/WFG-California-Rate-Book-2.1.2023-Up-to-5-Mil.pdf (tra 03/11/2026)
    Escrow fee: ước tính $250 + $2.00/$1,000 — KEN DUYỆT (hỏi Michelle WFG). https://listwithclever.com/?p=10855
    NHD ~$100, SELLER_MISC (reconveyance, notary, courier, wire, demand) — ước tính KEN DUYỆT.
-   Commission mặc định 2.5% + 2.5%: chỉ là số mẫu; sau NAR settlement (hiệu lực 17/08/2024) commission bên mua thương lượng.
+   Commission: ô để trống (placeholder "Thỏa thuận với agent"), kết quả chỉ hiện khi đã nhập cả hai ô; sau NAR settlement (hiệu lực 17/08/2024) commission bên mua thương lượng.
 */
 const CFG={
   COUNTY_PER500:0.55,
@@ -345,7 +349,7 @@ const CFG={
    Santa Clara County: chỉ San Jose, Mountain View, Palo Alto có city tax $3.30/$1,000 (FNF rev 01/06/2026).
      Mountain View: $1.65/$500 ≤$6M; $15/$1,000 >$6M (Measure G, eff 20/12/2024)
        https://www.mountainview.gov/our-city/departments/finance-and-administrative-services/city-tax-information/real-property-transfer-conveyance-tax
-     San Jose Measure E (thêm, toàn bộ giá): >$2.3M 0.75%; >$5M 1.0%; >$10M 1.5% — ngưỡng tăng lên $2.3M từ 01/07/2025
+     San Jose Measure E (thêm, toàn bộ giá): >$2.3M 0.75%; >$5M 1.0%; >$10M 1.5% — ngưỡng $2.3M: xác nhận 12/11/2026 qua báo cáo tài chính City of San José 01–02/2026 https://www.sanjoseca.gov/home/showpublisheddocument/130486/639120119354830000
        FNF rev 01/06/2026 + Old Republic Santa Clara Homeowners Manual p.42 https://media.oldrepublictitle.com/homeowners-manual/santa-clara/files/basic-html/page42.html
        Ai trả Measure E: không có thông lệ in sẵn; mặc định seller — KEN DUYỆT.
    Fremont, Union City, Newark, Pleasanton, Livermore, Dublin, unincorporated Alameda, và các city Santa Clara còn lại: không có city tax.
@@ -430,7 +434,8 @@ const I18N={
   note_brk:'Berkeley: từ khoảng $1.7M trở lên, thuế tăng từ 1.5% lên 2.5% trên toàn bộ giá. Từ 01/01/2027, Measure W thêm bậc cao hơn.',
   note_oak:'Oakland: thuế tính theo bậc, áp trên toàn bộ giá (1% / 1.5% / 1.75% / 2.5%).',
   note_mv:'Mountain View: trên $6M, thuế tăng lên $15/$1,000 (Measure G).',
-  note_nar:'Commission do anh chị thương lượng với agent, không có mức cố định. Số trong ô chỉ là số mẫu, anh chị đổi theo thỏa thuận thật. Sau NAR settlement (2024), phần trả cho agent bên mua không còn đăng trên MLS. Người bán có thể trả, không trả, hoặc cho buyer một khoản credit. Ghi 0% nếu không trả.',
+  comm_wait:'Nhập commission listing agent và buyer agent theo mức đã thỏa thuận (ghi 0 nếu không trả) để xem số tiền thực nhận.',ph_comm:'Thỏa thuận với agent',
+  note_nar:'Commission do anh chị thương lượng với agent, không có mức cố định. Hai ô để trống để anh chị nhập đúng mức đã thỏa thuận. Sau NAR settlement (2024), phần trả cho agent bên mua không còn đăng trên MLS. Người bán có thể trả, không trả, hoặc cho buyer một khoản credit. Ghi 0% nếu không trả.',
   note_gen:'Chưa tính: thuế nhà chia theo ngày (proration), phí HOA docs và transfer nếu là condo (khoảng $300–800), home warranty, thuế capital gains. Ai trả khoản nào là thông lệ và thương lượng được.',
   b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
   f_title:'Gửi bảng tính này vào email của anh chị',f_sub:'Ken sẽ gửi lại seller net sheet chi tiết và một khoảng giá ước tính cho căn nhà. Không gửi quảng cáo.',f_name:'Tên',f_phone:'Điện thoại (không bắt buộc)',f_send:'Gửi',
@@ -454,7 +459,8 @@ const I18N={
   note_brk:'Berkeley: at $1.7M and up the tax jumps from 1.5% to 2.5% on the whole price. Measure W adds higher tiers from 1/1/2027.',
   note_oak:'Oakland: tiered tax on the whole price (1% / 1.5% / 1.75% / 2.5%).',
   note_mv:'Mountain View: over $6M the tax jumps to $15/$1,000 (Measure G).',
-  note_nar:'Commission is negotiable; there is no set rate. The figures in the boxes are placeholders, so enter what you actually agree to. Since the NAR settlement (2024), buyer agent compensation is no longer posted on the MLS. A seller may pay it, decline, or offer the buyer a credit instead. Enter 0% if not paying.',
+  comm_wait:'Enter the listing agent and buyer agent commission you agreed to (enter 0 if not paying) to see your net proceeds.',ph_comm:'As negotiated',
+  note_nar:'Commission is negotiable; there is no set rate. The boxes start empty so you can enter the rate you actually agree to. Since the NAR settlement (2024), buyer agent compensation is no longer posted on the MLS. A seller may pay it, decline, or offer the buyer a credit instead. Enter 0% if not paying.',
   note_gen:'Not included: property tax proration, HOA docs/transfer for condos (~$300–800), home warranty, capital gains tax. Who pays what is custom and negotiable.',
   b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
   f_title:'Email this breakdown to yourself',f_sub:"Ken will reply with a detailed seller net sheet and an estimated value range for your home. No spam.",f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
@@ -479,6 +485,8 @@ $('city').value='sj';
 
 function calc(){
   const d=I18N[lang];
+  const commSet=$('cl').value.trim()!==''&&$('cb').value.trim()!=='';
+  document.querySelector('section.result').classList.toggle('wait',!commSet);
   const r=computeSell({price:num('price'),payoff:num('payoff'),cl:num('cl'),cb:num('cb'),cityId:$('city').value,credit:num('credit'),repair:num('repair')});
   $('total').textContent=fmt(r.net); $('totalV').classList.toggle('neg',r.net<0);
   $('vPrice').textContent=fmt(r.price);
@@ -510,6 +518,7 @@ function calc(){
 function applyLang(){
   const d=I18N[lang];
   document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(d[k]!=null) el.innerHTML=d[k];});
+  $('cl').placeholder=d.ph_comm; $('cb').placeholder=d.ph_comm;
   $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
 }
 ['price','payoff','cl','cb','credit','repair'].forEach(id=>$(id).addEventListener('input',calc));

@@ -105,6 +105,8 @@ footer .who{color:var(--fg)}
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--warn-soft:#33271E}}
 :root[data-theme="dark"]{--warn-soft:#33271E}
 .ctl input[type=date]{font-size:18px;min-height:50px}
+.ctl input::placeholder{font-size:15px;color:var(--muted);opacity:.85}
+#dl{white-space:normal;text-align:right}
 .more{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:0 14px}
 .more summary{cursor:pointer;padding:13px 0;font-size:14px;color:var(--muted);font-weight:500;list-style:none;display:flex;justify-content:space-between;gap:10px}
 .more summary::-webkit-details-marker{display:none}
@@ -315,8 +317,12 @@ footer .src a{word-break:break-word}
       </div>
     </div>
     <div class="field">
-      <label for="acc"><span data-i="l_acc">Ngày acceptance</span> <small data-i="l_acc_s">(không bắt buộc · công cụ tạm tính 17 ngày; hạn thật theo hợp đồng)</small></label>
+      <label for="acc"><span data-i="l_acc">Ngày acceptance</span> <small data-i="l_acc_s">(không bắt buộc)</small></label>
       <div class="ctl"><input id="acc" type="date"></div>
+    </div>
+    <div class="field">
+      <label for="days"><span data-i="l_days">Investigation contingency</span> <small data-i="l_days_s">(số ngày ghi trong hợp đồng của anh chị)</small></label>
+      <div class="ctl"><input id="days" type="number" inputmode="numeric" min="1" max="90" step="1" placeholder="Số ngày trong hợp đồng" data-ph="ph_days"><span class="post" data-i="u_days">ngày</span></div>
     </div>
   </section>
 
@@ -329,7 +335,7 @@ footer .src a{word-break:break-word}
     <div class="lines">
       <div class="line"><span class="n"><b data-i="n_must">Nên làm</b></span><span class="a" id="nMust">0</span></div>
       <div class="line"><span class="n"><b data-i="n_opt">Tùy nhà</b> <span data-i="n_opt_s">(làm khi thấy dấu hiệu)</span></span><span class="a" id="nOpt">0</span></div>
-      <div class="line" id="dlLine"><span class="n"><b data-i="n_dl">Làm xong trước</b> <span data-i="n_dl_s">(hạn inspection, tạm tính ngày 17; theo hợp đồng)</span></span><span class="a" id="dl">—</span></div>
+      <div class="line" id="dlLine"><span class="n"><b data-i="n_dl">Làm xong trước</b> <span data-i="n_dl_s">(hạn investigation contingency theo hợp đồng)</span></span><span class="a" id="dl">—</span></div>
     </div>
     <div class="prog">
       <div class="bar" aria-hidden="true"><i class="b1" id="progBar" style="width:0"></i></div>
@@ -406,11 +412,11 @@ footer .src a{word-break:break-word}
    Năm kích hoạt (thói quen nghề, KEN DUYỆT): trước 1950 knob-and-tube; 1950–1990 panel Federal Pacific / Zinsco; trước 1975 ống galvanized;
      1978–1995 polybutylene; trước 1978 lead paint (EPA 40 CFR 745, cấm sơn chì từ 1978); trước 1980 asbestos; trước 1980 foundation chưa bolt;
      mái shingle >20 năm; HVAC >15 năm.
-   Hạn: investigation contingency 17 ngày (RPA 12/24 ¶3L(3), giống T60).
+   Hạn: investigation contingency = ngày acceptance + số ngày người dùng nhập theo hợp đồng của họ. Không có số mặc định (RPA đã sửa nhiều lần, số ngày do hai bên thương lượng).
 */
 const PRICE={home_sfr:[550,900],home_condo:[450,650],termite:[250,500],sewer:[200,450],septic:[300,650],roof:[200,400],chimney:[250,600],
   pool:[300,500],struct:[500,1200],geotech:[2000,3000],mold:[300,700],hvac:[200,400],elec:[300,600],plumb:[300,600],lead:[300,800],radon:[150,300],oil:null,permit:[0,0]};
-const INSP_DAYS=17, TARGET_DAY=10, NOW_YEAR=2026;
+const NOW_YEAR=2026;
 const UPDATED='03/11/2026';
 
 /* Luật chọn: trả [{k, st:'must'|'opt', why:[mã lý do]}]. Tách riêng để test bằng node. */
@@ -456,11 +462,11 @@ const I18N={
  vi:{title:'Căn nhà này nên làm những inspection nào?',sub:'Chọn vài thông tin về căn nhà để có danh sách inspection nên làm, những mục tùy tình trạng nhà, và chi phí ước tính ở Bay Area.',
   l_type:'Loại nhà',t_sfr:'Nhà riêng',l_year:'Năm xây',l_year_s:'(xem trên MLS)',l_sewer:'Hệ thống nước thải',l_roof:'Loại mái',r_tile:'Tile (ngói)',r_flat:'Mái bằng',
   l_pool:'Hồ bơi / spa',l_fire:'Ống khói / fireplace',l_hill:'Đồi dốc',l_adu:'ADU / garage chuyển đổi',yes:'Có',no:'Không',yes2:'Có',no2:'Không',yes3:'Có',no3:'Không',yes4:'Có',no4:'Không',
-  l_acc:'Ngày acceptance',l_acc_s:'(không bắt buộc · công cụ tạm tính 17 ngày; hạn thật theo hợp đồng)',
+  l_acc:'Ngày acceptance',l_acc_s:'(không bắt buộc)',l_days:'Investigation contingency',l_days_s:'(số ngày ghi trong hợp đồng của anh chị)',ph_days:'Số ngày trong hợp đồng',u_days:'ngày',dlNoDays:'Nhập số ngày theo hợp đồng để thấy ngày hết hạn',
   r_total:'Tổng ước tính cho mục “Nên làm”',optLine:'Làm thêm mục Tùy: <b>+{r}</b>',optNone:'Không có mục Tùy có giá.',
-  n_must:'Nên làm',n_opt:'Tùy nhà',n_opt_s:'(làm khi thấy dấu hiệu)',n_dl:'Làm xong trước',n_dl_s:'(hạn inspection, tạm tính ngày 17; theo hợp đồng)',dlNone:'Nhập ngày acceptance',
+  n_must:'Nên làm',n_opt:'Tùy nhà',n_opt_s:'(làm khi thấy dấu hiệu)',n_dl:'Làm xong trước',n_dl_s:'(hạn investigation contingency theo hợp đồng)',dlNone:'Nhập ngày acceptance',
   prog:'mục đã đặt lịch · bấm vòng tròn để đánh dấu',g_must:'Nên làm',g_opt:'Tùy',c_must:'Nên làm',c_opt:'Tùy',quote:'Hỏi báo giá',free:'$0 · tự tra',
-  gcal:'+ Google Calendar',gcalT:'Hạn inspection (tạm tính, kiểm lại theo hợp đồng)',gcalD:'Mọi inspection phải xong và có quyết định trước hạn này. Ngày chính xác theo hợp đồng của anh chị. tools.kenlamrealty.com',
+  gcal:'+ Google Calendar',gcalT:'Hạn investigation contingency (theo số ngày trong hợp đồng)',gcalD:'Mọi inspection phải xong và có quyết định trước hạn này. Ngày chính xác theo hợp đồng của anh chị. tools.kenlamrealty.com',
   new_note:'Nhà mới xây hay mới flip vẫn cần inspection. Nhà flip thường đẹp ở bề mặt, còn mái, ống cống, hệ thống điện bên trong có thể vẫn là đồ cũ. Hãy hỏi permit cho mọi phần đã sửa.',
   eb_note:'Nhà ở Alameda, Albany, Berkeley, Emeryville, Oakland, Piedmont, El Cerrito, Kensington: phải có sewer lateral compliance certificate (EBMUD) thì mới close được. Thường seller lo phần này, nhưng nên ghi rõ trong hợp đồng.',
   nx_h:'Bước tiếp theo',
@@ -481,11 +487,11 @@ const I18N={
  en:{title:'Which inspections does this home need?',sub:'Pick a few facts about the home. Get the inspections to do, the optional ones, and estimated Bay Area prices.',
   l_type:'Home type',t_sfr:'Single family',l_year:'Year built',l_year_s:'(see MLS)',l_sewer:'Wastewater goes to',l_roof:'Roof type',r_tile:'Tile',r_flat:'Flat',
   l_pool:'Pool / spa',l_fire:'Chimney / fireplace',l_hill:'Hillside lot',l_adu:'ADU / garage conversion',yes:'Yes',no:'No',yes2:'Yes',no2:'No',yes3:'Yes',no3:'No',yes4:'Yes',no4:'No',
-  l_acc:'Acceptance date',l_acc_s:'(optional · tool assumes 17 days; your contract controls)',
+  l_acc:'Acceptance date',l_acc_s:'(optional)',l_days:'Investigation contingency',l_days_s:'(days written in your contract)',ph_days:'Days in your contract',u_days:'days',dlNoDays:'Enter the days from your contract to see this date',
   r_total:'Estimated total for “Recommended”',optLine:'Adding the optional ones: <b>+{r}</b>',optNone:'No priced optional items.',
-  n_must:'Recommended',n_opt:'Depends',n_opt_s:'(do it if you see signs)',n_dl:'Finish by',n_dl_s:'(inspection deadline, assumed Day 17; check your contract)',dlNone:'Enter acceptance date',
+  n_must:'Recommended',n_opt:'Depends',n_opt_s:'(do it if you see signs)',n_dl:'Finish by',n_dl_s:'(investigation contingency deadline per your contract)',dlNone:'Enter acceptance date',
   prog:'booked · tap a circle to check it off',g_must:'Recommended',g_opt:'Depends',c_must:'Recommended',c_opt:'Depends',quote:'Get a quote',free:'$0 · look it up',
-  gcal:'+ Google Calendar',gcalT:'Inspection deadline (estimate, check your contract)',gcalD:'All inspections done and decisions made before this date. Exact dates follow your contract. tools.kenlamrealty.com',
+  gcal:'+ Google Calendar',gcalT:'Investigation contingency deadline (days from your contract)',gcalD:'All inspections done and decisions made before this date. Exact dates follow your contract. tools.kenlamrealty.com',
   new_note:'New builds and fresh flips still need an inspection. Flips look good on the surface; roof, sewer and wiring may still be old. Ask for permits on all work.',
   eb_note:'Homes in Alameda, Albany, Berkeley, Emeryville, Oakland, Piedmont, El Cerrito, Kensington: a sale needs an EBMUD sewer lateral compliance certificate to close. The seller usually handles it; put it in the contract.',
   nx_h:'Next steps',
@@ -583,9 +589,10 @@ function calc(){
   const nm=R.filter(r=>r.st==='must').length, no=R.length-nm;
   $('nMust').textContent=nm; $('nOpt').textContent=no;
   const A=parse($('acc').value);
-  if(A){const D=perf(add(A,INSP_DAYS));
+  const nDays=Math.round(+$('days').value);
+  if(A&&nDays>0){const D=perf(add(A,nDays));
     $('dl').innerHTML=esc(fdate(D))+' · <a class="gcal" href="'+esc('https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(s.gcalT)+'&dates='+ymd(D)+'/'+ymd(add(D,1))+'&details='+encodeURIComponent(s.gcalD))+'" target="_blank" rel="noopener">'+esc(s.gcal)+'</a>';}
-  else $('dl').textContent=s.dlNone;
+  else $('dl').textContent=A?s.dlNoDays:s.dlNone;
   let html='',nd=0,lm=[],lo=[];
   ['must','opt'].forEach(g=>{
     const G=R.filter(r=>r.st===g); if(!G.length)return;
@@ -615,13 +622,14 @@ function calc(){
 function applyLang(){
   const d=I18N[lang];
   document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  document.querySelectorAll('[data-ph]').forEach(el=>{const k=el.getAttribute('data-ph'); if(typeof d[k]==='string') el.placeholder=d[k];});
   $('langBtn').textContent=d.lang; document.documentElement.lang=lang; calc();
 }
 [['gType','type'],['gSewer','sewer'],['gRoof','roof'],['gPool','pool'],['gFire','fire'],['gHill','hill'],['gAdu','adu']].forEach(([id,key])=>{
   $(id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S[key]=b.getAttribute('data-v');
     $(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));calc();});
 });
-['year','acc'].forEach(id=>$(id).addEventListener('input',calc));
+['year','acc','days'].forEach(id=>$(id).addEventListener('input',calc));
 $('tl').addEventListener('change',e=>{const k=e.target.getAttribute('data-k');if(!k)return;const o=loadDone();if(e.target.checked)o[k]=1;else delete o[k];saveDone(o);calc();});
 $('tl').addEventListener('click',e=>{const b=e.target.closest('.tt');if(!b)return;const k=b.getAttribute('data-w');openWhy[k]=!openWhy[k];b.setAttribute('aria-expanded',openWhy[k]?'true':'false');$('w_'+k).hidden=!openWhy[k];});
 $('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
