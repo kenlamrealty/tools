@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cân Xương Tính Số · Ken Lam Tools</title>
+<link rel="manifest" href="/t415/manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="KL Phong Thủy"><link rel="apple-touch-icon" href="/t415/icon-180.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: chép template T409 — một cột, ô nhập trên, bản kết quả bên dưới, nút, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+
+/* ===== Thêm cho T42 / T43 / T44 (không đổi class cũ) ===== */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;-webkit-appearance:none;appearance:none;cursor:pointer}
+.ctl .chev{color:var(--muted);font-size:12px;pointer-events:none}
+.ctl input[type=date]{font-size:18px;min-height:48px}
+.ctl input[type=text]{font-size:18px}
+.hint{font-size:12px;color:var(--muted);margin:0;line-height:1.45}
+.hint b{color:var(--fg);font-weight:500}
+.total .of{font-size:14px;color:var(--muted);margin-top:6px}
+.chip{font-size:12px;line-height:1.3;padding:3px 9px;border-radius:999px;border:1px solid var(--line);white-space:nowrap;flex:none;color:var(--muted)}
+.chip.ok{color:var(--ok);border-color:var(--ok)}
+.chip.mid{color:var(--brass);border-color:var(--brass)}
+.chip.no{color:var(--warn);border-color:var(--warn)}
+.grp-h{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);margin:6px 0 0;font-weight:500}
+.myth{font-size:14px;line-height:1.5;border-left:2px solid var(--brass);padding:2px 0 2px 12px;margin:0}
+.myth b{font-weight:500}
+.next{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:12px}
+.next h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0;line-height:1.15}
+.steps{margin:0;padding:0;list-style:none;display:grid;gap:12px;counter-reset:st}
+.steps li{display:grid;grid-template-columns:26px minmax(0,1fr);gap:10px;font-size:15px;line-height:1.45;counter-increment:st}
+.steps li::before{content:counter(st);font-family:var(--display);font-size:22px;line-height:1;color:var(--brass)}
+.steps small{display:block;color:var(--muted);font-size:13px;margin-top:3px}
+.steps a{color:var(--brass);text-decoration:none}
+.dline{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.dline .n{color:var(--muted);min-width:0}
+.dline .n b{color:var(--fg);font-weight:500}
+.dline .a{font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+.tips{margin:0;padding-left:18px;font-size:14px;line-height:1.5;display:grid;gap:8px;color:var(--fg)}
+.tips li::marker{color:var(--brass)}
+.tips small{display:block;color:var(--muted);font-size:13px}
+.linkbtn{justify-self:start;border:1px solid var(--line);background:transparent;color:var(--brass);font:inherit;font-size:14px;padding:7px 13px;border-radius:999px;cursor:pointer}
+.linkbtn:hover{border-color:var(--brass)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.panel h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0;line-height:1.15}
+.prog{display:grid;gap:6px;font-size:13px;color:var(--muted)}
+.prog b{color:var(--fg);font-weight:500}
+.gcal{color:var(--brass);text-decoration:none;white-space:nowrap;font-size:13px}
+.gcal:hover{text-decoration:underline}
+footer .src{line-height:1.6}
+.hide{display:none!important}
+.result > *,.inputs > *,.wrap > *,.panel > *{min-width:0}
+
+/* ===== Riêng T205 ===== */
+.pp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.pp .p{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:3px;font-size:13px;color:var(--muted);line-height:1.4}
+.pp .p .nm{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.pp .p .big{font-family:var(--display);font-size:24px;line-height:1.1;color:var(--fg)}
+.pp .p b{color:var(--fg);font-weight:500}
+.dirs{display:flex;flex-wrap:wrap;gap:6px}
+.dirs .chip{font-size:13px;padding:4px 10px}
+.lead{background:var(--brass-soft);border-radius:10px;padding:12px;font-size:15px;line-height:1.5}
+.lead b{font-weight:600}
+@media (max-width:340px){.pp{grid-template-columns:1fr}}
+
+/* ===== Riêng T415 ===== */
+.sum{display:grid;gap:8px}
+.sum .row{display:flex;align-items:baseline;gap:10px;font-family:var(--display);font-size:27px;line-height:1.2}
+.sum .row i{flex:none;width:12px;height:12px;border-radius:50%;background:var(--line);transform:translateY(-2px)}
+.sum .row.ok i{background:var(--ok)} .sum .row.mid i{background:var(--brass)} .sum .row.no i{background:var(--warn)}
+.sum .row span{min-width:0}
+.sum .row small{display:block;font-family:var(--body);font-size:13px;color:var(--muted);margin-top:2px}
+.dm{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+.p2box{display:grid;gap:14px;border-left:2px solid var(--line);padding-left:12px}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.sec-h a{font-size:13px;color:var(--brass);text-decoration:none;white-space:nowrap}
+.sec-h a:hover{text-decoration:underline}
+.who-h{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);font-weight:500;margin:4px 0 0}
+.status{font-size:14px;border-radius:10px;padding:10px 12px;line-height:1.45;border:1px solid var(--line);display:flex;gap:10px;justify-content:space-between;align-items:flex-start}
+.status.ok{border-color:var(--ok)} .status.mid{border-color:var(--brass)} .status.no{border-color:var(--warn)}
+.yrs{display:grid;gap:0;border-top:1px solid var(--line)}
+.yr{display:grid;gap:4px;padding:12px 0;border-bottom:1px solid var(--line)}
+.yr .hd{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.yr .y{font-size:16px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.yr .y span{font-weight:400;color:var(--muted);font-size:14px}
+.yr .d{font-size:13px;color:var(--muted);line-height:1.5}
+.yr .d b{font-weight:500;color:var(--fg)}
+.yr .d .x{color:var(--warn)}
+.yr.best{background:var(--brass-soft);margin:0 -10px;padding:12px 10px;border-radius:8px;border-bottom-color:transparent}
+.sh{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.sh div{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:4px;min-width:0}
+.sh .k{font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.sh .n{font-family:var(--display);font-size:28px;line-height:1.05}
+.sh .m{font-size:13px;color:var(--muted);line-height:1.4}
+.sw{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.sw .s{display:grid;gap:4px;font-size:11px;color:var(--muted);line-height:1.25;min-width:0}
+.sw .s i{display:block;height:46px;border-radius:10px;border:1px solid var(--line)}
+.sw .s b{color:var(--fg);font-weight:500;font-size:12px}
+.sw.av .s i{height:30px}
+.sw.av{grid-template-columns:repeat(3,minmax(0,1fr))}
+.mhl{list-style:none;margin:0;padding:0;display:grid;gap:10px}.mhl li{display:grid;gap:2px;border-top:1px solid var(--line);padding-top:10px}.mhl li:first-child{border-top:0;padding-top:0}.mhl a{color:var(--fg);text-decoration:none;font-weight:500}.mhl a b{color:var(--brass);font-weight:600;margin-right:4px}.mhl span{color:var(--muted);font-size:14px}
+.insum{display:none;font-size:13px;color:var(--muted)}
+.disc{font-size:13px;color:var(--muted);line-height:1.5;margin:0}
+@media (max-width:380px){.sh{grid-template-columns:1fr}.dm{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+@media print{
+  :root{--bg:#fff;--panel:#fff;--fg:#111;--muted:#555;--line:#ccc;--brass:#8a6a35;--brass-soft:#f5f0e6;--warn:#8a4a1e;--ok:#3d6b48;color-scheme:light}
+  @page{margin:12mm}
+  body{padding:0;font-size:11px;line-height:1.35}
+  .wrap{max-width:none;display:block;column-count:2;column-gap:10px}
+  .wrap>*{margin:0 0 8px}
+  .wrap>footer{column-span:all} /* header + tóm tắt nằm trong cột: column-span làm Chrome đẩy phần sau sang trang mới (3 trang) */
+  .sw .s i,.sum .row i{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .yrs .yr{break-inside:avoid}
+  .chip{font-size:10px;padding:1px 6px} .dirs{gap:3px} .grp-h,.who-h{margin:2px 0 0;font-size:10px}
+  .note,.hint,.status,.myth,.disc{font-size:10.5px;padding:6px 8px} .sh .m,.sw .s{font-size:10px}
+  .panel h2{font-size:17px} .sub{display:none}
+  #borrow{display:none!important}
+  .inputs,.actions,.form,video,.lang,.kl-back,#ptAll,.next,.sec-h a,.noprint{display:none!important}
+  .insum{display:block}
+  .result,.panel{border:1px solid #ccc;padding:8px 10px;break-inside:avoid;gap:5px;border-radius:8px}
+  .panel[aria-label="Years"]{break-inside:auto}
+  h1{font-size:26px} .sum .row{font-size:20px} .sh .n{font-size:20px} .sw .s i{height:22px}
+  .yr{padding:5px 0} .dline,.line{padding:5px 0;font-size:12px}
+  footer{font-size:10px;padding-top:8px} footer .src{display:none}
+  a{color:inherit;text-decoration:none}
+}
+
+/* ===== Riêng T441 ===== */
+.tabs{display:flex;border-bottom:1px solid var(--line);gap:4px}
+.tabs button{border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:10px 12px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--brass);font-weight:500}
+.ctl input[type=time]{font-size:18px;min-height:48px;flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font-family:inherit;padding:12px 8px}
+.ctl input[type=date]{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font-family:inherit;padding:12px 8px}
+.body7{display:grid;grid-template-columns:110px minmax(0,1fr);gap:14px;align-items:center}
+.body7 svg{width:100%;height:auto}
+.body7 .pt{fill:var(--line)} .body7 .pt.on{fill:var(--brass)}
+.body7 .fig{fill:none;stroke:var(--muted);stroke-width:2}
+.scale{display:flex;height:8px;border-radius:999px;background:var(--line);position:relative;margin:4px 0 18px}
+.scale i{position:absolute;top:-4px;width:16px;height:16px;border-radius:50%;background:var(--brass);transform:translateX(-50%);border:2px solid var(--panel)}
+.scale span{position:absolute;top:12px;font-size:11px;color:var(--muted);transform:translateX(-50%)}
+
+</style>
+
+<meta name="description" content="Nhập ngày giờ sinh dương lịch, tool đổi sang âm lịch, tra 4 bảng năm, tháng, ngày, giờ và cộng ra số lượng chỉ. Kèm tab Mệnh Hoàng Đế 4 mùa. Tham khảo văn hóa, giải trí.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t441/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Cân Xương Tính Số · Ken Lam Tools">
+<meta property="og:description" content="Nhập ngày giờ sinh dương lịch, tool đổi sang âm lịch, tra 4 bảng năm, tháng, ngày, giờ và cộng ra số lượng chỉ. Kèm tab Mệnh Hoàng Đế 4 mùa. Tham khảo văn hóa, giải trí.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t441/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Bone Weight Fortune</h1>
+    <p class="sub" data-i="sub"></p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="row2">
+      <div class="field"><label for="bd"><span data-i="l_d">Birth date (solar)</span></label><div class="ctl"><input id="bd" type="date" value="1975-03-10" min="1900-01-01" max="2099-12-31"></div></div>
+      <div class="field"><label for="bt"><span data-i="l_t">Birth time</span></label><div class="ctl"><input id="bt" type="time" value="08:00"></div></div>
+    </div>
+    <div class="field"><label><span data-i="l_place">Born in</span></label>
+      <div class="seg" role="group"><button type="button" id="pVN" aria-pressed="true" data-i="p_vn">Vietnam</button><button type="button" id="pCA" aria-pressed="false" data-i="p_ca">California / US West</button></div></div>
+    <p class="hint" id="lunarLine"></p>
+  </section>
+
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" id="tabB" aria-selected="true" data-i="tab_b">Bone weight</button>
+    <button type="button" role="tab" id="tabS" aria-selected="false" data-i="tab_s">Emperor of 4 seasons</button>
+  </div>
+
+  <section class="result" aria-live="polite" id="resB">
+    <div class="total"><div class="k" data-i="r_k">Your bone weight</div><div class="v" id="rNum">—</div><div class="of" id="rSub"></div></div>
+    <div class="scale" id="scale"></div>
+    <div id="rBody" style="display:grid;gap:12px"></div>
+  </section>
+
+  <section class="result hide" aria-live="polite" id="resS">
+    <div class="total"><div class="k" data-i="s_k">Where you sit on the Emperor</div><div class="v" id="sNum">—</div><div class="of" id="sSub"></div></div>
+    <div class="body7"><div id="fig"></div><div id="sBody" style="display:grid;gap:10px"></div></div>
+    <div id="sTable"></div>
+  </section>
+
+
+  <section class="panel" aria-label="Myth">
+    <p class="myth"><b data-i="myth_k">Common mistake:</b> <span data-i="myth"></span></p>
+    <p class="disc" data-i="disc"></p>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" style="width:100%;border-radius:12px" aria-label="Video" onerror="this.remove();var b=document.getElementById('videoBtn');if(b)b.remove();"></video>
+
+  <section class="next" aria-label="Next steps">
+    <h2 data-i="ns_h">Next steps</h2>
+    <ol class="steps">
+      <li><span><span data-i="ns1"></span><small><a href="/t415/" data-i="ns1l">T415</a></small></span></li>
+      <li><span><span data-i="ns2"></span><small><a href="/t43/" data-i="ns2l">T43</a></small></span></li>
+      <li><span><span data-i="ns3"></span><small><a href="/t417/" data-i="ns3l">T417</a></small></span></li>
+    </ol>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <button class="btn" type="button" id="printBtn" data-i="b_print">Print / Save PDF</button>
+    <a class="btn" id="videoBtn" href="/t441/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this result</h2>
+    <p data-i="f_sub">It goes to Ken with your result. No spam.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Email opened. Hit Send and you're done.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Read more:</span> <a href="https://kenlamrealty.com/library#video-phong-thuy" target="_blank" rel="noopener" data-i="ft_vid">Real estate video</a></span>
+    <span data-i="ft_est"></span>
+    <span class="src"><span data-i="ft_src">Sources:</span>
+      <span><span data-i="src1">“Phương Pháp Cân Xương Tính Số” — Nguyễn Thành Phương (Tường Minh Phong Thủy)</span></span> ·
+      <span><a href="https://www.informatik.uni-leipzig.de/~duc/amlich/calrules.html" target="_blank" rel="noopener" data-i="src2">Hồ Ngọc Đức lunar algorithm</a></span></span>
+    <span class="who">Ken Lam · Broker Associate · BRG Realty Corp · DRE #01401822 · 408-666-2825 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 16/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ============ DATA (Cân Xương Tính Số) ============ */
+/* Đơn vị: chỉ (1 lượng = 10 chỉ). Lưu số nguyên để khỏi lỗi số thực. */
+const CAN=['Giáp','Ất','Bính','Đinh','Mậu','Kỷ','Canh','Tân','Nhâm','Quý'];
+const CHI=['Tý','Sửu','Dần','Mão','Thìn','Tỵ','Ngọ','Mùi','Thân','Dậu','Tuất','Hợi'];
+const CHI_EN=['Rat','Ox','Tiger','Cat','Dragon','Snake','Horse','Goat','Monkey','Rooster','Dog','Pig'];
+/* Năm: 60 Hoa Giáp, index 0 = Giáp Tý (1924, 1984, 2044). Bảng PHỔ BIẾN. */
+const NAM=[12,9,6,7,12,5,9,8,7,8, 15,9,16,8,8,19,12,6,8,7, 5,15,6,16,15,7,9,12,10,7, 15,6,5,14,14,9,7,7,9,12, 8,7,13,5,14,5,9,17,5,7, 12,8,8,6,19,6,8,16,10,7];
+const THANG=[6,7,18,9,5,16,9,15,18,8,9,5];                 /* tháng âm 1..12 (bảng phổ biến) */
+const NGAY=[5,10,8,15,16,15,8,16,8,16,9,17,8,17,10,8,9,18,5,15,10,9,8,9,15,18,7,8,16,6]; /* ngày âm 1..30 */
+const GIO=[16,6,7,10,9,16,10,8,8,9,6,6];                   /* giờ Tý..Hợi */
+/* 4 chỗ sách khác bảng phổ biến: [loại, index, số sách, số phổ biến] */
+const BOOK_DIFF=[['y',10,5,15],['y',25,8,7],['y',49,5,7],['m',9,18,8]];
+/* Lời luận theo tổng chỉ (21..72), viết lại bằng lời mình, làm mềm các câu nặng */
+const LUAN={
+21:['Đường đầu đời nhiều thử thách. Đi chậm, làm chắc, mỗi lần vấp là một bài học.','An early path full of tests. Go slow and steady; every stumble teaches.'],
+22:['Phải tự lực nhiều, nay đây mai đó. Qua tuổi trung niên thì nhẹ gánh.','Lots of self-reliance and moving around. Life gets lighter after middle age.'],
+23:['Ít được người nhà đỡ, mưu tính dễ trễ. Ra ngoài lập nghiệp thì khá lên.','Little family backing; plans run late. Building a life away from home works better.'],
+24:['Thành quả nhờ chính tay mình, thường phải đi xa mới mở được đường.','Success comes by your own hands; often you go far to open the road.'],
+25:['Tự lập từ sớm, không dựa vào gia sản. Tự gây dựng thì bền.','Independent early, no inheritance to lean on. What you build yourself lasts.'],
+26:['Cả đời lo toan chuyện tiền. Biết giữ, biết tính thì về già vẫn đủ.','A lifetime of minding money. Plan and save, and later years are covered.'],
+27:['Tính nhiều, làm được ít; bôn ba từ nhỏ. Chọn một việc mà theo tới cùng.','Many plans, fewer finished; on the move since young. Pick one thing and see it through.'],
+28:['Thích phiêu lưu. Sau 30 tuổi mới ổn định.','Adventurous. Things settle after 30.'],
+29:['Nhỏ khó khăn, sau 40 có công danh. Đi xa lập nghiệp hợp.','A hard start; recognition after 40. Working far from home suits you.'],
+30:['Bôn ba vất vả, nhưng biết tiết kiệm thì về già sung túc.','Hard-working years; with thrift, a comfortable old age.'],
+31:['Cẩn trọng khi giao tiếp. Sau trung niên may mắn, về già đủ đầy.','Be careful with people. Luck after middle age, enough in later years.'],
+32:['Trẻ chưa thành, trung niên tiền vào, có danh có lợi.','Not much when young; money and standing come in middle age.'],
+33:['Đa cảm, thích kết bạn. Nhỏ khó, về già khá giả.','Warm-hearted and social. Hard early, well-off later.'],
+34:['Có phúc. Theo nghề học thuật, Đông y hay việc tâm linh thì có lộc.','Blessed. Scholarship, Eastern medicine or spiritual work bring income.'],
+35:['Gia sản mỏng, trẻ đã lo kiếm tiền. Ra ngoài lập nghiệp thì tốt.','Thin family assets; earning early. Making your own way pays.'],
+36:['Có chí, được người thân bạn bè giúp. Về già an nhàn.','Determined, helped by family and friends. A relaxed old age.'],
+37:['Tự lập, sống có nghĩa. Giàu không nhanh nhưng trung niên ổn.','Self-made and loyal. Not quick money, but stable by middle age.'],
+38:['Có khí chất, tay trắng làm nên, về sau giàu.','Strong character; starts from nothing and grows wealthy later.'],
+39:['Trẻ không gặp may; về già hưởng phúc, dựng được cơ nghiệp lớn.','Little luck when young; blessings and a big foundation later.'],
+40:['Tự lập, thẳng thắn, có tài, thích giao du. Sau 50 sung sướng.','Independent, direct, talented, sociable. Comfortable after 50.'],
+41:['Thông minh, vui vẻ. Trung niên ổn, già hưởng phúc.','Smart and cheerful. Stable middle years, blessed later.'],
+42:['Tự lực kiếm sống; về già đủ danh lợi nhờ chính mình.','Self-supporting; later life brings standing earned on your own.'],
+43:['Phúc lộc dày, tay trắng làm nên, sống có đạo đức.','Deep blessings; self-made with good values.'],
+44:['Nhỏ chưa có tiền có danh; về già sung túc.','No money or name early; comfortable in later years.'],
+45:['Trẻ vất vả, già có phúc. Nên tiết kiệm.','Hard young years, blessed later. Save.'],
+46:['Làm ăn xa nhà thì thuận, càng đi càng mở đường.','Business away from home goes well; travel opens doors.'],
+47:['Gia đình êm ấm, có tiền, về già hưởng phúc.','A warm family, money, and a blessed old age.'],
+48:['Nhỏ đã có chí lớn. Anh em bạn bè giúp, tự gây dựng.','Big ambitions early. Siblings and friends help; you build your own.'],
+49:['Có bạn tốt, cần đề phòng người xấu. Phú quý song toàn.','Good friends; watch for bad actors. Wealth and honor together.'],
+50:['Cơm áo không lo; trung niên có phúc, già có của.','No worries about food or clothes; blessed middle years, savings later.'],
+51:['Nhờ tiết kiệm mà thành. Anh em tốt, dựng được cơ đồ.','Thrift builds success. Good siblings; a solid foundation.'],
+52:['Thông minh, gia nghiệp hanh thông, người nhà giúp.','Smart; family business goes well with family help.'],
+53:['Gia đình phát đạt, tự lập nên sự nghiệp.','A thriving family; you build your own career.'],
+54:['Nhàn, không lo cơm áo, học hành giỏi.','An easy life, no money worries, good at studies.'],
+55:['Trẻ cố gắng; về già phú quý, có địa vị.','Effort when young; wealth and standing later.'],
+56:['Sống nhân nghĩa. Trung niên có lúc kẹt tiền, rồi qua.','Kind and fair. Some tight money in middle age, then it passes.'],
+57:['Tự lập gia đình riêng, phúc lộc đủ, có uy tín.','Builds a household of your own; enough blessings and respect.'],
+58:['Tự kiếm danh lợi, thi cử đỗ đạt, già hưởng phúc.','Earns your own name; does well in exams; blessed later.'],
+59:['Tài cao, học giỏi, có thể ra nước ngoài, nổi tiếng.','Gifted and learned; may go abroad and become known.'],
+60:['Học giỏi, rạng danh, không lo ăn mặc, nhiều nhà cửa.','Learned and well known; comfortable; many properties.'],
+61:['Danh lợi đủ đầy, thông minh, đỗ cao.','Full of name and fortune; smart and accomplished.'],
+62:['Ham đọc, chức cao, đĩnh đạc.','Loves to read; high position; dignified.'],
+63:['Sống thọ, địa vị cao, nổi tiếng.','Long life, high standing, well known.'],
+64:['Chức lớn, để lại tiếng tốt cho đời sau.','High office; leaves a good name behind.'],
+65:['Phúc dày, phú quý, giúp ích cho đời.','Deep blessings, wealth, and service to others.'],
+66:['Đại phú đại quý; tu tập thì thành.','Great wealth and honor; spiritual practice succeeds.'],
+67:['Cả đời vinh hoa, nhiều sản nghiệp.','A life of honor and many assets.'],
+68:['Sung sướng như vua, tổ nghiệp rạng danh.','Living like royalty; the family name shines.'],
+69:['Được tổ nghiệp giúp, có địa vị, phú quý.','Backed by family legacy; standing and wealth.'],
+70:['Liêm khiết mà vinh hoa, không phải lo nghĩ.','Honest yet honored; free of worry.'],
+71:['Số rất hiếm, ung dung tự tại.','A rare reading; easygoing and free.'],
+72:['Số hiếm nhất trong bảng, người tích đức lớn.','The rarest in the table; a person of great merit.']
+};
+/* Mệnh Hoàng Đế 4 mùa: vị trí 1..7 = Đầu, Tay, Vai, Bụng, Eo, Đầu gối, Chân. Giá trị = index CHI của giờ sinh.
+   Mùa Thu: sách in Tỵ ở cả Tay và Vai, thiếu Tý → sửa Tay mùa Thu = Tý, Sửu. */
+const HD={xuan:[[0],[5,7],[3,9],[1,11],[6],[4,10],[2,8]],
+ ha:[[6],[5,1],[3,9],[7,11],[0],[4,10],[2,8]],
+ thu:[[11],[0,1],[5,6],[7,3],[8],[2,9],[4,10]],
+ dong:[[5],[11,6],[3,9],[2,8],[0],[7,1],[4,10]]};
+const HD_POS={vi:['Đầu','Tay','Vai','Bụng','Eo','Đầu gối','Chân'],en:['Head','Hands','Shoulders','Belly','Waist','Knees','Feet']};
+const HD_TXT={vi:['Đời ít lo, sẵn phúc, dễ có địa vị.','Kiếm tiền khá, ra ngoài gặp người giúp, nhà yên. Trẻ có lúc khó, lớn lên khá.','Nhỏ bôn ba, trung niên có tiền, con cháu đông, nhiều của.','Không lo cơm gạo, thông minh, có khiếu ca hát, sống lâu.','Được cha mẹ lo, nhiều người giúp, già hưởng phúc; phải vượt vài thử thách.','Siêng mà hay chưa như ý; trung niên vất vả, về già vinh hoa.','Tự lực, vất vả, đi xa quê mới khá.'],
+ en:['Few worries, ready blessings, easy standing.','Good earner, meets helpful people away from home, a calm household. Some early bumps, better as you grow.','On the move when young, money in middle age, a big family and many assets.','Never short of food, smart, a gift for music, long life.','Cared for by parents, many helpers, blessed later; a few tests to pass.','Hard-working but not always rewarded quickly; busy middle years, honor later.','Self-reliant and hard-working; life improves once you leave your hometown.']};
+const SEASON_N={vi:{xuan:'Xuân',ha:'Hạ',thu:'Thu',dong:'Đông'},en:{xuan:'Spring',ha:'Summer',thu:'Autumn',dong:'Winter'}};
+let TZ=7; /* giờ Việt Nam mặc định; nơi sinh California đổi sang −8/−7 */
+
+/* Lịch âm Hồ Ngọc Đức — chép nguyên từ T415 */
+function INT(d){return Math.floor(d)}
+function jdFromDate(dd,mm,yy){const a=INT((14-mm)/12),y=yy+4800-a,m=mm+12*a-3;let jd=dd+INT((153*m+2)/5)+365*y+INT(y/4)-INT(y/100)+INT(y/400)-32045;if(jd<2299161)jd=dd+INT((153*m+2)/5)+365*y+INT(y/4)-32083;return jd}
+function jdToDate(jd){let a,b,c;if(jd>2299160){a=jd+32044;b=INT((4*a+3)/146097);c=a-INT((b*146097)/4)}else{b=0;c=jd+32082}const d=INT((4*c+3)/1461),e=c-INT((1461*d)/4),m=INT((5*e+2)/153);return [e-INT((153*m+2)/5)+1,m+3-12*INT(m/10),b*100+d-4800+INT(m/10)]}
+function newMoon(k){const T=k/1236.85,T2=T*T,T3=T2*T,dr=Math.PI/180;let Jd1=2415020.75933+29.53058868*k+0.0001178*T2-0.000000155*T3;Jd1+=0.00033*Math.sin((166.56+132.87*T-0.009173*T2)*dr);const M=359.2242+29.10535608*k-0.0000333*T2-0.00000347*T3,Mpr=306.0253+385.81691806*k+0.0107306*T2+0.00001236*T3,F=21.2964+390.67050646*k-0.0016528*T2-0.00000239*T3;let C1=(0.1734-0.000393*T)*Math.sin(M*dr)+0.0021*Math.sin(2*dr*M);C1=C1-0.4068*Math.sin(Mpr*dr)+0.0161*Math.sin(dr*2*Mpr);C1=C1-0.0004*Math.sin(dr*3*Mpr);C1=C1+0.0104*Math.sin(dr*2*F)-0.0051*Math.sin(dr*(M+Mpr));C1=C1-0.0074*Math.sin(dr*(M-Mpr))+0.0004*Math.sin(dr*(2*F+M));C1=C1-0.0004*Math.sin(dr*(2*F-M))-0.0006*Math.sin(dr*(2*F+Mpr));C1=C1+0.0010*Math.sin(dr*(2*F-Mpr))+0.0005*Math.sin(dr*(2*Mpr+M));const deltat=T<-11?0.001+0.000839*T+0.0002261*T2-0.00000845*T3-0.000000081*T*T3:-0.000278+0.000265*T+0.000262*T2;return Jd1+C1-deltat}
+function sunLong(jdn){const T=(jdn-2451545.0)/36525,T2=T*T,dr=Math.PI/180,M=357.52910+35999.05030*T-0.0001559*T2-0.00000048*T*T2,L0=280.46645+36000.76983*T+0.0003032*T2;let DL=(1.914600-0.004817*T-0.000014*T2)*Math.sin(dr*M);DL+=(0.019993-0.000101*T)*Math.sin(dr*2*M)+0.000290*Math.sin(dr*3*M);let L=(L0+DL)*dr;L=L-Math.PI*2*INT(L/(Math.PI*2));return L}
+function getNewMoonDay(k){return INT(newMoon(k)+0.5+TZ/24)}
+function getSunLongitude(d){return INT(sunLong(d-0.5-TZ/24)/Math.PI*6)}
+function getLunarMonth11(yy){const off=jdFromDate(31,12,yy)-2415021,k=INT(off/29.530588853);let nm=getNewMoonDay(k);if(getSunLongitude(nm)>=9)nm=getNewMoonDay(k-1);return nm}
+function getLeapMonthOffset(a11){const k=INT((a11-2415021.076998695)/29.530588853+0.5);let last,i=1,arc=getSunLongitude(getNewMoonDay(k+i));do{last=arc;i++;arc=getSunLongitude(getNewMoonDay(k+i))}while(arc!=last&&i<14);return i-1}
+/* trả {d,m,y,leap,jd} */
+function solar2lunar(dd,mm,yy){const dayNumber=jdFromDate(dd,mm,yy),k=INT((dayNumber-2415021.076998695)/29.530588853);let monthStart=getNewMoonDay(k+1);if(monthStart>dayNumber)monthStart=getNewMoonDay(k);let a11=getLunarMonth11(yy),b11=a11,lunarYear;if(a11>=monthStart){lunarYear=yy;a11=getLunarMonth11(yy-1)}else{lunarYear=yy+1;b11=getLunarMonth11(yy+1)}const lunarDay=dayNumber-monthStart+1,diff=INT((monthStart-a11)/29);let lunarLeap=0,lunarMonth=diff+11;if(b11-a11>365){const leapMonthDiff=getLeapMonthOffset(a11);if(diff>=leapMonthDiff){lunarMonth=diff+10;if(diff==leapMonthDiff)lunarLeap=1}}if(lunarMonth>12)lunarMonth-=12;if(lunarMonth>=11&&diff<4)lunarYear-=1;return {d:lunarDay,m:lunarMonth,y:lunarYear,leap:lunarLeap,jd:dayNumber}}
+const mod=(a,n)=>((a%n)+n)%n;
+function sunDeg(jdUT){/* + aberration & nutation (Meeus) để tiết khí lệch < vài phút; lịch âm vẫn dùng sunLong gốc */const T=(jdUT+69/86400-2451545)/36525,Om=(125.04-1934.136*T)*Math.PI/180;return mod(sunLong(jdUT+69/86400)*180/Math.PI-0.00569-0.00478*Math.sin(Om),360)}
+/* JD (UT, có phần lẻ) lúc mặt trời đạt kinh độ deg, gần thời điểm jdGuess */
+function termJD(deg,jdGuess){let lo=jdGuess-20,hi=jdGuess+20;
+ const f=j=>{let x=mod(sunDeg(j)-deg+180,360)-180;return x};
+ for(let i=0;i<60;i++){const m=(lo+hi)/2;if(f(m)<0)lo=m;else hi=m}return (lo+hi)/2}
+function jdUT(y,m,d,h,mi,tz){return jdFromDate(d,m,y)-0.5+(h+(mi||0)/60-tz)/24}
+
+
+/* ============ LOGIC ============ */
+function caOffset(y,m,d){ /* giờ California có DST */
+  try{const s=new Date(Date.UTC(y,m-1,d,12)).toLocaleString('en-US',{timeZone:'America/Los_Angeles',timeZoneName:'short'});return /PDT/.test(s)?-7:-8}catch(e){return -8}}
+function weigh(y,m,d,h,mi,place){ /* trả mọi thứ cần hiển thị */
+  const tz=place==='ca'?caOffset(y,m,d):7; TZ=tz;
+  let dd=d,mm=m,yy=y, shifted=false;
+  if(h>=23){const j=jdFromDate(d,m,y)+1; [dd,mm,yy]=jdToDate(j); shifted=true;} /* giờ Tý cuối ngày tính sang ngày sau (KEN DUYỆT) */
+  const L=solar2lunar(dd,mm,yy);
+  const yi=mod(L.y-1924,60), hz=INT((h+1)/2)%12;
+  const parts={y:NAM[yi],m:THANG[L.m-1],d:NGAY[L.d-1],h:GIO[hz]};
+  const total=parts.y+parts.m+parts.d+parts.h;
+  const diffs=BOOK_DIFF.filter(b=>(b[0]==='y'&&b[1]===yi)||(b[0]==='m'&&b[1]===L.m-1));
+  const bookTotal=total+diffs.reduce((s,b)=>s+b[2]-b[3],0);
+  /* mùa theo tiết khí, lúc sinh thật */
+  const deg=sunDeg(jdUT(y,m,d,h,mi,tz));
+  const season=(deg>=315||deg<45)?'xuan':deg<135?'ha':deg<225?'thu':'dong';
+  const pos=HD[season].findIndex(a=>a.includes(hz));
+  return {L,yi,hz,parts,total,diffs,bookTotal,shifted,season,pos,tz,deg};
+}
+const liang=c=>INT(c/10)+'.'+(c%10);
+
+const I18N_P={
+ vi:{title:'Cân xương tính số',sub:'Nhập ngày giờ sinh dương lịch. Tool tự đổi sang âm lịch, tra 4 bảng năm, tháng, ngày, giờ rồi cộng ra mấy lượng mấy chỉ. Thêm tab Mệnh Hoàng Đế 4 mùa.',
+  l_d:'Ngày sinh (dương lịch)',l_t:'Giờ sinh',l_place:'Nơi sinh',p_vn:'Việt Nam',p_ca:'California / miền Tây Mỹ',
+  lunar:'Âm lịch: ngày <b>{d}</b> tháng <b>{m}{lp}</b> năm <b>{cc}</b> ({ly}), giờ <b>{gz}</b>.',lp:' (nhuận)',
+  sh:' Sinh từ 23h nên tính sang ngày hôm sau.',
+  tab_b:'Cân xương',tab_s:'Mệnh Hoàng Đế 4 mùa',
+  r_k:'Số cân xương',unit:'{l} lượng {c} chỉ',unit0:'{l} lượng',
+  k_y:'Năm {cc}',k_m:'Tháng {m}',k_d:'Ngày {d}',k_h:'Giờ {gz}',k_t:'Cộng',
+  k_luan:'Lời bàn',
+  n_leap:'Sinh tháng nhuận: tính như tháng thường cùng số (cách dân gian hay dùng).',
+  n_diff:'Chỗ này sách của thầy Nguyễn Thành Phương ghi khác bảng phổ biến: {x}. Nếu theo sách thì ra <b>{b}</b>.',
+  n_y:'năm {cc} sách ghi {a}, bảng phổ biến {p}',n_m:'tháng 10 sách ghi {a}, bảng phổ biến {p}',
+  n_tz:'Lịch âm tính theo giờ {z}. Ngày sóc sát nửa đêm có thể lệch 1 ngày giữa Việt Nam và Mỹ.',z_vn:'Việt Nam (UTC+7)',z_ca:'California',
+  how:'Cách tính: cộng 4 số của năm, tháng, ngày, giờ âm lịch. 1 lượng = 10 chỉ. Bảng đi từ 2 lượng 1 tới 7 lượng 2.',
+  home:'Chuyện nhà: số lượng chỉ không nói được mua nhà năm nào hay căn nào. Muốn coi tuổi và hướng nhà, qua T415.',
+  s_k:'Vị trí trên hình Hoàng Đế',s_sub:'Sinh mùa {s}, giờ {gz}',s_how:'Mùa tính theo tiết khí: Xuân từ Lập Xuân (~4/2), Hạ từ Lập Hạ (~6/5), Thu từ Lập Thu (~8/8), Đông từ Lập Đông (~8/11).',
+  s_fix:'Bảng mùa Thu trong sách in trùng giờ Tỵ và thiếu giờ Tý; tool sửa vị trí Tay mùa Thu thành Tý, Sửu.',
+  s_tbl:'Bảng giờ theo mùa {s}',
+  bad:'Nhập ngày sinh từ 1900 tới 2099.',
+  myth:'“Xương nặng là số sướng, xương nhẹ là số khổ.” Không đơn giản vậy. Làm nghề 23 năm, tôi gặp rất nhiều người “2, 3 lượng” tự tay mua được nhà, nuôi cả nhà. Số lượng chỉ là trò xem vui của người xưa. Còn mua được nhà hay không là chuyện credit, thu nhập, tiền down và kỷ luật để dành.',
+  ft_est:'Chỉ để tham khảo văn hóa và giải trí. Bảng năm, tháng theo bảng phổ biến; 4 chỗ sách ghi khác được nêu khi gặp. Năm đổi ở Tết, tháng nhuận tính như tháng thường, giờ Tý từ 23h tính sang ngày sau. Lời bàn viết lại mềm, đã bỏ câu về hôn nhân. Không phải tư vấn pháp lý, tài chính hay y tế.',
+  src1:'“Phương Pháp Cân Xương Tính Số” — Nguyễn Thành Phương (Tường Minh Phong Thủy)',src2:'Thuật toán lịch âm Hồ Ngọc Đức',
+  sms:'Chào Ken, tôi vừa cân xương tính số (T441): {s}. Cho tôi hỏi thêm.',subj:'Cân xương tính số — {n}',body:'Tên: {n}\nEmail: {e}\nPhone: {ph}\n\n{full}\n\nGửi từ tool T441 tools.kenlamrealty.com (tham khảo)'},
+ en:{title:'Bone weight fortune',sub:'Enter your solar birth date and time. The tool converts to the lunar calendar, looks up 4 tables (year, month, day, hour) and adds up your “bone weight” in lượng and chỉ. Plus a tab for the Emperor of 4 seasons.',
+  l_d:'Birth date (solar)',l_t:'Birth time',l_place:'Born in',p_vn:'Vietnam',p_ca:'California / US West',
+  lunar:'Lunar: day <b>{d}</b>, month <b>{m}{lp}</b>, year <b>{cc}</b> ({ly}), hour <b>{gz}</b>.',lp:' (leap)',
+  sh:' Born at 23:00 or later, so it counts as the next day.',
+  tab_b:'Bone weight',tab_s:'Emperor of 4 seasons',
+  r_k:'Your bone weight',unit:'{l} lượng {c} chỉ',unit0:'{l} lượng',
+  k_y:'Year {cc}',k_m:'Month {m}',k_d:'Day {d}',k_h:'Hour {gz}',k_t:'Total',
+  k_luan:'Reading',
+  n_leap:'Born in a leap month: counted as the regular month of the same number (common folk practice).',
+  n_diff:'Here Master Nguyễn Thành Phương’s book differs from the common table: {x}. By the book you’d get <b>{b}</b>.',
+  n_y:'year {cc}: book {a}, common table {p}',n_m:'month 10: book {a}, common table {p}',
+  n_tz:'Lunar dates use {z} time. A new moon near midnight can shift the date by 1 day between Vietnam and the US.',z_vn:'Vietnam (UTC+7)',z_ca:'California',
+  how:'How it works: add the 4 numbers for lunar year, month, day and hour. 1 lượng = 10 chỉ. The table runs from 2.1 to 7.2 lượng.',
+  home:'Home matters: bone weight doesn’t tell you which year or which house to buy. For age and home facing, see T415.',
+  s_k:'Your spot on the Emperor',s_sub:'Born in {s}, hour of {gz}',s_how:'Seasons follow solar terms: Spring from Lập Xuân (~Feb 4), Summer from Lập Hạ (~May 6), Autumn from Lập Thu (~Aug 8), Winter from Lập Đông (~Nov 8).',
+  s_fix:'The book’s Autumn table prints the Snake hour twice and leaves out the Rat hour; the tool sets Autumn Hands to Rat and Ox.',
+  s_tbl:'Hours for {s}',
+  bad:'Enter a birth date from 1900 to 2099.',
+  myth:'“Heavy bones mean an easy life, light bones a hard one.” It’s not that simple. In 23 years I’ve met plenty of “2- or 3-lượng” people who bought their own home and carried their whole family. Bone weight is an old parlor reading. Buying a home comes down to credit, income, down payment and the discipline to save.',
+  ft_est:'For cultural reference and entertainment only. Year and month values follow the common table; the 4 places where the book differs are shown when they apply. Year changes at Tết, leap months count as the regular month, and the Rat hour from 23:00 counts as the next day. Readings are rewritten gently; the line about marriage is left out. Not legal, financial or medical advice.',
+  src1:'“Phương Pháp Cân Xương Tính Số” (Bone weight method) — Nguyễn Thành Phương',src2:'Hồ Ngọc Đức lunar algorithm',
+  sms:'Hi Ken, I tried the bone weight tool (T441): {s}. I have a question.',subj:'Bone weight fortune — {n}',body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\n{full}\n\nSent from tool T441 tools.kenlamrealty.com (for reference)'}
+};
+
+let place='vn', tab='b';
+function read(){const v=$('bd').value, t=$('bt').value||'00:00';
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v), tm=/^(\d{1,2}):(\d{2})/.exec(t);
+  if(!m) return null; const y=+m[1],mo=+m[2],d=+m[3]; if(y<1900||y>2099) return null;
+  return {y,m:mo,d,h:tm?+tm[1]:0,mi:tm?+tm[2]:0};}
+function figSVG(pos){
+  const P=[[50,16],[16,58],[30,40],[50,62],[50,82],[38,112],[36,140]];
+  return '<svg viewBox="0 0 100 150" aria-hidden="true"><circle class="fig" cx="50" cy="16" r="11"/><path class="fig" d="M50 27 V96 M50 38 L18 60 M50 38 L82 60 M50 96 L36 140 M50 96 L64 140"/>'+
+    P.map((p,i)=>'<circle class="pt'+(i===pos?' on':'')+'" cx="'+p[0]+'" cy="'+p[1]+'" r="'+(i===pos?7:4)+'"/>').join('')+'</svg>';
+}
+function calc(){
+  const d=I18N[lang], vi=lang==='vi', r=read();
+  $('resB').classList.toggle('hide',tab!=='b'); $('resS').classList.toggle('hide',tab!=='s');
+  if(!r){$('lunarLine').textContent=d.bad; $('rNum').textContent='—'; $('rSub').textContent=''; $('rBody').innerHTML=''; $('sNum').textContent='—'; $('sBody').innerHTML=''; $('sTable').innerHTML=''; $('fig').innerHTML=''; $('scale').innerHTML=''; share('',fmt(d.sms,{s:'—'})); window.__t441=null; return}
+  const w=weigh(r.y,r.m,r.d,r.h,r.mi,place), L=w.L;
+  const cc=CAN[w.yi%10]+' '+CHI[w.yi%12], gz=CHI[w.hz]+(vi?'':' ('+CHI_EN[w.hz]+')');
+  $('lunarLine').innerHTML=fmt(d.lunar,{d:L.d,m:L.m,lp:L.leap?d.lp:'',cc,ly:L.y,gz})+(w.shifted?d.sh:'');
+  const t=w.total, lg=INT(t/10), ch=t%10;
+  $('rNum').innerHTML=liang(t)+' <small>'+(vi?'lượng':'lượng')+'</small>';
+  $('rSub').textContent=ch?fmt(d.unit,{l:lg,c:ch}):fmt(d.unit0,{l:lg});
+  const pct=v=>((v-21)/(72-21)*100).toFixed(1);
+  $('scale').innerHTML='<span style="left:0">2.1</span><span style="left:100%">7.2</span><i style="left:'+pct(t)+'%"></i>';
+  const row=(k,v)=>'<div class="dline"><span class="n"><b>'+k+'</b></span><span class="a">'+liang(v)+'</span></div>';
+  let h='<div class="lines">'+row(fmt(d.k_y,{cc}),w.parts.y)+row(fmt(d.k_m,{m:L.m+(L.leap?d.lp:'')}),w.parts.m)+row(fmt(d.k_d,{d:L.d}),w.parts.d)+row(fmt(d.k_h,{gz}),w.parts.h)+
+    '<div class="dline"><span class="n"><b>'+d.k_t+'</b></span><span class="a">'+liang(t)+'</span></div></div>';
+  h+='<div class="lead"><b>'+d.k_luan+' '+liang(t)+':</b> '+LUAN[t][vi?0:1]+'</div>';
+  if(w.diffs.length){const x=w.diffs.map(b=>b[0]==='y'?fmt(d.n_y,{cc,a:liang(b[2]),p:liang(b[3])}):fmt(d.n_m,{a:liang(b[2]),p:liang(b[3])})).join('; ');
+    h+='<div class="note">'+fmt(d.n_diff,{x,b:liang(w.bookTotal)})+'</div>';}
+  if(L.leap) h+='<div class="note">'+d.n_leap+'</div>';
+  h+='<p class="hint">'+d.how+' '+fmt(d.n_tz,{z:place==='ca'?d.z_ca:d.z_vn})+'</p><div class="note">'+d.home+'</div>';
+  $('rBody').innerHTML=h;
+  /* tab 4 mùa */
+  const sn=SEASON_N[lang][w.season], pn=HD_POS[lang][w.pos];
+  $('sNum').textContent=pn; $('sSub').textContent=fmt(d.s_sub,{s:sn,gz});
+  $('fig').innerHTML=figSVG(w.pos);
+  $('sBody').innerHTML='<div class="lead"><b>'+pn+':</b> '+HD_TXT[lang][w.pos]+'</div><p class="hint">'+d.s_how+'</p>'+(w.season==='thu'?'<div class="note">'+d.s_fix+'</div>':'');
+  $('sTable').innerHTML='<div class="grp-h">'+fmt(d.s_tbl,{s:sn})+'</div><div class="lines">'+HD[w.season].map((a,i)=>'<div class="dline"><span class="n">'+(i===w.pos?'<b>'+HD_POS[lang][i]+'</b>':HD_POS[lang][i])+'</span><span class="a">'+a.map(z=>CHI[z]+(vi?'':' ('+CHI_EN[z]+')')).join(', ')+'</span></div>').join('')+'</div>';
+  const s=liang(t)+(vi?' lượng · ':' lượng · ')+cc+' · '+(vi?'Hoàng Đế: ':'Emperor: ')+pn;
+  const full=[(vi?'Ngày sinh: ':'Born: ')+$('bd').value+' '+($('bt').value||'')+' ('+(place==='ca'?d.z_ca:d.z_vn)+')',
+    (vi?'Âm lịch: ':'Lunar: ')+L.d+'/'+L.m+(L.leap?d.lp:'')+' '+cc+' ('+L.y+'), '+(vi?'giờ ':'hour ')+gz,
+    (vi?'Cân xương: ':'Bone weight: ')+liang(w.parts.y)+' + '+liang(w.parts.m)+' + '+liang(w.parts.d)+' + '+liang(w.parts.h)+' = '+liang(t)+' lượng',
+    LUAN[t][vi?0:1],(vi?'Mệnh Hoàng Đế: ':'Emperor of 4 seasons: ')+sn+' · '+pn+' · '+HD_TXT[lang][w.pos]].join('\n');
+  share(full,fmt(d.sms,{s}));
+  window.__t441={total:t,parts:w.parts,lunar:{d:L.d,m:L.m,y:L.y,leap:L.leap},yi:w.yi,hz:w.hz,season:w.season,pos:w.pos,shifted:w.shifted,book:w.bookTotal};
+}
+function initPage(){
+  $('bd').addEventListener('input',calc); $('bt').addEventListener('input',calc);
+  $('pVN').onclick=()=>{place='vn';$('pVN').setAttribute('aria-pressed','true');$('pCA').setAttribute('aria-pressed','false');calc();};
+  $('pCA').onclick=()=>{place='ca';$('pCA').setAttribute('aria-pressed','true');$('pVN').setAttribute('aria-pressed','false');calc();};
+  $('tabB').onclick=()=>{tab='b';$('tabB').setAttribute('aria-selected','true');$('tabS').setAttribute('aria-selected','false');calc();};
+  $('tabS').onclick=()=>{tab='s';$('tabS').setAttribute('aria-selected','true');$('tabB').setAttribute('aria-selected','false');calc();};
+}
+
+
+const I18N_C={
+ vi:{lang:'English',b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_print:'In / Lưu PDF',b_video:'Xem video 15 giây',
+  f_title:'Gửi kết quả này',f_sub:'Gửi tới Ken kèm kết quả của anh chị. Không spam.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',f_ok:'Đã mở email. Bấm Send là xong.',f_or:'Hoặc text:',f_copy:'Copy',
+  ft_read:'Đọc thêm:',ft_vid:'Video Kiến Thức Địa Ốc',ft_src:'Nguồn:',ft_upd:'Cập nhật',ft_all:'Tất cả công cụ',ns_h:'Bước tiếp theo',myth_k:'Nhiều người hiểu sai:',
+  disc:'Đây là tham khảo văn hóa và giải trí. Không phải tư vấn pháp lý, tài chính, thuế hay y tế. Không thay cho inspection, disclosure hay việc coi giá thật.',
+  ns1:'Coi tổng thể tuổi, hướng nhà, năm mua trong một trang.',ns1l:'Tool T415 · Hồ sơ phong thủy mua nhà',
+  ns2:'Đã chọn được nhà? Chọn ngày dọn vào.',ns2l:'Tool T43 · Chọn ngày dọn nhà',
+  ns3:'Năm 2027 Đinh Mùi: hướng nào trong nhà cần để ý.',ns3l:'Tool T417 · Năm 2027 cho nhà'},
+ en:{lang:'Tiếng Việt',b_email:'Email me the result',b_sms:'Ask Ken',b_print:'Print / Save PDF',b_video:'Watch 15-sec video',
+  f_title:'Email this result',f_sub:'It goes to Ken with your result. No spam.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',f_ok:"Email opened. Hit Send and you're done.",f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Read more:',ft_vid:'Real estate video',ft_src:'Sources:',ft_upd:'Updated',ft_all:'All tools',ns_h:'Next steps',myth_k:'Common mistake:',
+  disc:'This is cultural reference and entertainment. It is not legal, financial, tax or medical advice. It does not replace an inspection, the disclosures or a real price check.',
+  ns1:'See your age, home facing and buying years on one page.',ns1l:'Tool T415 · Feng shui report for buying a home',
+  ns2:'Found the home? Pick a move-in day.',ns2l:'Tool T43 · Pick a move-in date',
+  ns3:'2027, year of the Fire Goat: which parts of the home to watch.',ns3l:'Tool T417 · 2027 for your home'}
+};
+
+
+let lang='en';
+try{ if(localStorage.getItem('kl_lang')==='vi') lang='vi'; }catch(e){}
+const $=id=>document.getElementById(id);
+const fmt=(s,o)=>String(s).replace(/\{(\w+)\}/g,(m,k)=>o[k]!=null?o[k]:m);
+const I18N={vi:Object.assign({},I18N_C.vi,I18N_P.vi),en:Object.assign({},I18N_C.en,I18N_P.en)};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let last={full:''};
+function share(full,sms){last.full=full; $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(sms);}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  document.querySelectorAll('[data-ph]').forEach(el=>{const k=el.getAttribute('data-ph'); if(typeof d[k]==='string') el.placeholder=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang;
+  if(typeof onLang==='function') onLang();
+  calc();
+}
+function wireCommon(){
+  $('printBtn').onclick=()=>window.print();
+  $('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+  $('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus();};
+  $('sendBtn').onclick=()=>{
+    const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+    const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+    const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+    const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+    $('sent').hidden=false;
+  };
+  $('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+}
+
+wireCommon();
+if(typeof initPage==='function') initPage();
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả công cụ';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
