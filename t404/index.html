@@ -176,6 +176,7 @@ footer .src{line-height:1.6}
 .legend .lg-n{background:var(--warn)}
 </style>
 <meta name="description" content="Đánh dấu những gì thấy ở căn nhà, nhập tuổi và hướng nhà để có kế hoạch hóa giải theo thứ tự ưu tiên, kèm chi phí ước tính ở Bay Area và lưu ý về permit, HOA. Tham khảo văn hóa.">
+<link rel="manifest" href="/t415/manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="KL Phong Thủy"><link rel="apple-touch-icon" href="/t415/icon-180.png">
 <link rel="canonical" href="https://tools.kenlamrealty.com/t404/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Ken Lam Tools">
@@ -371,6 +372,15 @@ footer .src{line-height:1.6}
     <div class="plan" id="plan"></div>
   </section>
 
+  <section class="panel" aria-label="Room order">
+    <h2 data-i="ro_h">Which room goes where</h2>
+    <p class="hint" data-i="ro_hint"></p>
+    <ul class="tips" id="roList"></ul>
+    <div class="grp-h" data-i="el_h">Big objects by side of the house</div>
+    <p class="hint" data-i="el_hint"></p>
+    <div style="overflow-x:auto"><table class="tbl" id="elTbl"></table></div>
+  </section>
+
   <section class="panel" aria-label="Role">
     <h2 data-i="role_h">For your situation</h2>
     <p class="myth" id="roleTxt" style="border-left-color:var(--brass)"></p>
@@ -438,9 +448,9 @@ footer .src{line-height:1.6}
       <a href="https://www.davis-stirling.com/HOME/Statutes/Civil-Code-4765" target="_blank" rel="noopener">Civil Code 4765</a> ·
       <a href="https://codes.findlaw.com/ca/civil-code/civ-sect-1940-45/" target="_blank" rel="noopener">Civil Code 1940.45</a> ·
       <a href="https://law.justia.com/codes/california/code-civ/division-3/part-3/section-1710-2/" target="_blank" rel="noopener">Civil Code 1710.2</a>
-      <span data-i="src_date">(checked 04/11/2026)</span></span>
+      <span data-i="src_bk">Books: Tự Học Phong Thủy Bát Trạch 3 and 4 (Nguyễn Thành Phương); Nhị Trạch Thực Nghiệm – Quyển Thượng (Đàm Dưỡng Ngô, tr. Nguyễn Thành Phương)</span> <span data-i="src_date">(checked 17/11/2026)</span></span>
     <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
-    <span><span data-i="ft_upd">Updated</span>: 04/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 17/11/2026 · <a href="/" data-i="ft_all">All tools</a></span>
   </footer>
 </div>
 
@@ -788,16 +798,26 @@ const COST={
  gas:{lo:375,hi:1436,nat:1,src:'homewyse cost_to_move_gas_line; angi move gas line (chưa gồm permit)'},
  toilet:{lo:1000,hi:3500,nat:1,src:'https://homegrail.com/how-much-does-it-cost-to-move-a-toilet/'},
  consult:{lo:400,hi:1500,nat:1,src:'https://angi.com/articles/how-much-hiring-feng-shui-consultant-cost.htm'},
+ water:{lo:0,hi:80,src:'bình/lu nước, chậu nước, hồ cá nhỏ màu tối giá lẻ, ước tính (đợt 2)'},
+ small:{lo:0,hi:40,src:'đồ nhỏ: dây buộc, giỏ, kệ, đèn ngủ, ước tính (đợt 2)'},
+ smoke:{lo:20,hi:60,src:'máy báo khói giá lẻ, ước tính'},
  quote:null
 };
+/* Đợt 2: thứ tự sao Du Niên cho từng phòng [BT3 §2] (tốt nhất trước) */
+const ROOM_ORDER=[['bed',['pv','ty','dn','sk']],['door',['sk','dn','ty','pv']],['altar',['pv','ty','sk','dn']],['office',['pv','ty','dn','sk']],['wc',['nq','ls','hh','tm']]];
+/* hành của cung và vật lớn KHÔNG nên đặt [BT4 §4]; TB, ĐN sách không nói → suy ra (ghi rõ) */
+const EL_CLASH=[['E','moc','kim',0],['SE','moc','kim',1],['S','hoa','thuy',0],['W','kim','hoa',0],['NW','kim','hoa',1],['N','thuy','tho',0],['NE','tho','moc',0],['SW','tho','moc',0],['C','tho','moc',0]];
 /* nhóm checklist */
-const GROUPS=[['cua','Cửa','Doors'],['trong','Trong nhà','Inside'],['ngoai','Ngoài nhà / lô đất','Outside / lot']];
+const GROUPS=[['cua','Cửa (26 điểm của sách Bát Trạch 3, phần làm được)','Doors (Bát Trạch 3’s 26 door points, the doable part)'],['giuong','Phòng ngủ và giường (18 điều kỵ, Bát Trạch 3)','Bedroom and bed (18 rules, Bát Trạch 3)'],['trong','Trong nhà','Inside'],['ngoai','Ngoài nhà / lô đất','Outside / lot']];
+/* ghi chú đầu nhóm: chỗ trùng giữa 18 điều giường và các mục cũ */
+const GROUP_NOTE={giuong:['18 điều (B1–B18) theo sách Tự Học Phong Thủy Bát Trạch 3. Đã gộp: B2 = xà/trần xéo, B4 = “Cửa phòng đối cửa phòng” (nhóm Cửa), B7 = gương, B13 = cửa sổ, B14 = vách WC.','Bát Trạch 3’s 18 rules (B1–B18). Merged: B2 = beam / sloped ceiling, B4 = “Bedroom doors face each other” (Doors group), B7 = mirror, B13 = window, B14 = bathroom wall.'],
+ cua:['Sách có 26 điểm về cửa; ở đây là phần anh chị tự làm được. Cửa tính là cửa cả nhà đi hằng ngày (sách Nhị Trạch Thực Nghiệm), không nhất thiết là cửa chính.','The book lists 26 door points; these are the ones you can act on. The door that counts is the one the family uses every day (Nhị Trạch Thực Nghiệm), not necessarily the front door.']};
 /* mục "khó sửa" (bên ngoài, cấu trúc) — dùng cho câu kết "Có vài điểm khó" */
 const HARD=['N01','N06','N07','N11','N12'];
 const R=(t,k,c,f,vi,en)=>({t,k,c,f,vi,en});
 /* [id, nhóm, mức 1 nhẹ | 2 vừa, link, bất đồng, tên vi, tên en, hình vi, hình en, vì sao vi, vì sao en, cách…] */
 const CAT=[
-['N01','ngoai',2,'T42','', 'Đường đâm thẳng vào nhà','Road runs straight at the house (T-junction)',
+['N01','ngoai',2,'T42','roadstar', 'Đường đâm thẳng vào nhà','Road runs straight at the house (T-junction)',
  'Đứng ở cửa nhìn ra, con đường chạy thẳng vào nhà.','Stand at the door: a street runs straight at you.',
  'Xe, đèn xe, gió dồn thẳng vào cửa. Cái này có lý do thật.','Cars, headlights and wind aim right at the door. This one has a real-world reason.',
  [R(1,'pt','free','r','Đi cửa hông hoặc garage nhiều hơn. Cửa chính đóng khi không dùng.','Use the side or garage door more. Keep the front door closed when not in use.'),
@@ -942,7 +962,7 @@ const CAT=[
  'Phòng tắm nằm ngay tâm căn nhà.','The bathroom sits in the middle of the floor plan.',
  'Tâm nhà là “tim” nhà. Cách sửa thật duy nhất là dời WC; còn lại là giữ sạch khô.','The center is the “heart” of the house. The only true fix is moving it; otherwise keep it clean and dry.',
  [R(1,'logic','free','r','Đóng cửa, đậy nắp, giữ sạch khô mỗi ngày.','Door closed, lid down, clean and dry every day.'),
-  R(2,'logic','pot','r','Đèn sáng, cây nhỏ.','Bright light, a small plant.'),
+  R(2,'logic','small','r','Đèn sáng, gốm sứ hoặc đồ kim loại nhỏ. Không đặt cây: giữa nhà là Thổ, sách Bát Trạch 4 tránh Mộc ở đây.','Bright light, a ceramic piece or a small metal object. No plant: the center is Earth, and Bát Trạch 4 keeps Wood out of it.'),
   R(3,'logic','handy','','Nâng cấp quạt hút, bản lề tự đóng (đi dây điện mới thì có thể cần permit).','Better exhaust fan, self-closing hinge (new wiring may need a permit).'),
   R(4,'pt','toilet','p','Dời WC khi remodel.','Move the bathroom during a remodel.')]],
 ['T02','trong',1,'T42','', 'Bếp đối diện / chung vách WC','Stove faces or shares a wall with a toilet',
@@ -972,34 +992,34 @@ const CAT=[
   R(3,'pt','soffit','','Ốp xà, trần giả; quầy cao phía sau bếp đảo.','Box the beam, drop the ceiling; a raised bar behind the island.'),
   R(4,'pt','gas','p','Dời bếp sát tường.','Move the stove to a wall.'),
   R(2,'dg','item','','Treo hồ lô, tiền xu dưới xà.','Hang a gourd or coins under the beam.')]],
-['T06','trong',2,'T42','', 'Xà ngang đè giường / bàn / sofa','Beam over the bed, desk or sofa',
+['T06','giuong',2,'T42','', 'Xà ngang đè giường / bàn / sofa','Beam over the bed, desk or sofa',
  'Nằm ngửa nhìn lên thấy xà ngang ngay trên người.','Lying in bed you see a beam right above you.',
  'Khối nặng trên đầu làm ngủ không yên. Treo đồ dưới xà còn làm xà nổi hơn.','A heavy beam overhead disturbs sleep. Hanging things under it makes it stand out more.',
  [R(1,'logic','free','r','Xoay giường, bàn để không nằm ngay dưới xà.','Move the bed or desk so it is not under the beam.'),
   R(2,'logic','quote','r','Giường có khung 4 cột hoặc màn tạo “trần trong”.','A canopy or four-poster bed to make an inner ceiling.'),
   R(3,'logic','soffit','','Ốp xà, đóng trần giả (soffit).','Box in the beam or add a soffit.'),
   R(2,'dg','item','','Treo sáo trúc, hồ lô dưới xà.','Hang bamboo flutes or a gourd under the beam.')]],
-['T07','trong',1,'T42','', 'Giường đối cửa phòng (chân ra cửa)','Bed with feet pointing at the door',
+['T07','giuong',1,'T42','', 'Giường đối cửa phòng (chân ra cửa)','Bed with feet pointing at the door',
  'Nằm xuống, chân chĩa thẳng ra cửa phòng.','Lying down, your feet point straight at the door.',
  'Chuyện “thế quan tài” bị thổi phồng. Lo thật là ngủ không yên.','The “coffin position” fear is overblown. The real issue is restless sleep.',
  [R(1,'logic','free','r','Kê giường chéo cửa: thấy cửa mà không thẳng hàng.','Place the bed so you see the door but are not in line with it.'),
   R(1,'logic','free','r','Không được thì xoay 90° cho chân hướng tường bên.','If not, turn it 90° so your feet face a side wall.'),
   R(2,'logic','console','r','Băng ghế, rương cuối giường, footboard cao.','A bench or chest at the foot, or a tall footboard.'),
   R(1,'logic','free','r','Đóng cửa phòng ban đêm.','Close the door at night.')]],
-['T08','trong',1,'T42','', 'Gương chiếu thẳng vào giường','Mirror reflects the bed',
+['T08','giuong',1,'T42','', 'Gương chiếu thẳng vào giường','Mirror reflects the bed',
  'Nằm trên giường thấy mình trong gương hay cửa tủ gương.','From the bed you see yourself in a mirror or mirrored closet.',
  'Một trong số ít điều có gốc cổ điển. Thực tế: ban đêm thấy bóng dễ giật mình.','One of the few points with classical roots. In practice: reflections startle you at night.',
  [R(1,'pt','free','r','Dời gương sang chỗ không chiếu giường.','Move the mirror so it does not face the bed.'),
   R(2,'pt','film','r','Che gương ban đêm hoặc dán film mờ cửa tủ gương.','Cover it at night or put frosted film on the closet mirror.'),
   R(3,'pt','quote','','Thay cửa tủ gương bằng cửa gỗ.','Replace mirrored closet doors with solid ones.')]],
-['T09','trong',2,'T42','', 'Giường dưới WC tầng trên / đầu giường chung vách WC','Bed under an upstairs toilet or against a bathroom wall',
+['T09','giuong',2,'T42','', 'Giường dưới WC tầng trên / đầu giường chung vách WC','Bed under an upstairs toilet or against a bathroom wall',
  'Đầu giường tựa vách phòng tắm, hoặc trên lầu là bồn cầu.','The headboard shares a wall with a bathroom, or a toilet is right above.',
  'Tiếng xả nước, ống nước, ẩm. Thầy Việt và Tây đều nhắc.','Flushing noise, pipes, damp. Both Vietnamese and Western sources list it.',
  [R(1,'logic','free','r','Dời giường khỏi chỗ ngay dưới bồn cầu hay vách WC.','Move the bed off that spot or wall.'),
   R(1,'logic','free','r','Đổi phòng ngủ chính sang phòng khác.','Use another room as the main bedroom.'),
   R(2,'logic','console','r','Đầu giường dày, kệ sách đệm vách.','A thick headboard or bookcase against the wall.'),
   R(3,'logic','handy','','Cách âm ống nước.','Soundproof the pipes.')]],
-['T10','trong',1,'T42','', 'Đầu giường dưới cửa sổ','Headboard under a window',
+['T10','giuong',1,'T42','', 'Đầu giường dưới cửa sổ','Headboard under a window',
  'Đầu giường kê ngay dưới cửa sổ, không có tường tựa.','The bed head sits under a window with no wall behind.',
  'Gió lùa, ánh sáng, tiếng ồn. Lý do môi trường là chính.','Drafts, light and noise. Mostly practical reasons.',
  [R(1,'logic','free','r','Kê đầu giường sát tường đặc.','Put the headboard against a solid wall.'),
@@ -1019,7 +1039,7 @@ const CAT=[
  [R(2,'pt','pot','r','Đèn sáng, cây lớn ở chân cầu thang.','Good light and a big plant at the bottom.'),
   R(3,'pt','quote','p','Làm lan can kín bớt.','Close in the railing.'),
   R(4,'pt','quote','p','Dời cầu thang khi remodel.','Move the stairs in a remodel.')]],
-['T13','trong',1,'T42','', 'Trần xéo trên giường','Sloped ceiling over the bed',
+['T13','giuong',1,'T42','', 'Trần xéo trên giường','Sloped ceiling over the bed',
  'Trần phòng ngủ thấp một bên, ngay trên giường.','The ceiling slopes down over the bed.',
  'Trần thấp một phía đè người ngủ.','The low side feels like it presses down.',
  [R(1,'logic','free','r','Kê giường phía trần cao.','Put the bed under the high side.'),
@@ -1037,7 +1057,7 @@ const CAT=[
  [R(1,'pt','free','r','Dời bàn thờ sang vách đặc, không cùng trục WC, bếp, không dưới cầu thang hay WC.','Move it to a solid wall, off the bathroom and stove line, not under stairs or a toilet.'),
   R(2,'pt','screen','r','Bình phong hay rèm trước bàn thờ nếu đối cửa chính trống quá.','A screen or curtain if it faces a wide-open front door.'),
   R(2,'logic','hinge','','Bản lề tự đóng cửa WC, giữ sạch.','Self-closing bathroom door, keep it clean.')]],
-['T16','trong',1,'T42','', 'Phòng ngủ quá nhiều cửa sổ','Bedroom with too many windows',
+['T16','giuong',1,'T42','', 'Phòng ngủ quá nhiều cửa sổ','Bedroom with too many windows',
  'Phòng ngủ có cửa kính lớn hay 3–4 cửa sổ.','The bedroom has big glass walls or 3–4 windows.',
  'Khó ngủ, nóng lạnh, thiếu riêng tư.','Harder sleep, hot and cold, less privacy.',
  [R(2,'logic','curtain','r','Rèm cản sáng 2 lớp.','Double-layer blackout curtains.'),
@@ -1051,6 +1071,140 @@ const CAT=[
   R(3,'pt','quote','pe','Patio, deck hay pergola lấp góc.','A patio, deck or pergola to fill the corner.'),
   R(4,'pt','quote','pe','Xây thêm (addition) lấp góc.','Build an addition.'),
   R(2,'dg','item','r','Tủ cao, thạch anh, ngũ đế tiền ở góc khuyết.','Tall cabinet, crystals or five-emperor coins in that corner.')]],
+/* ===== Đợt 2 (17/11/2026) — mục mới. Nguồn: [BT3] Bát Trạch 3 §3 (18 điều giường), §8 (26 điểm cửa); [NT] Nhị Trạch Thực Nghiệm §5 (NT03, NT04, NT07, NT09) ===== */
+['G01','giuong',1,'T42','', 'Phòng ngủ méo, khuyết góc (B1)','Bedroom is irregular or missing a corner (B1)',
+ 'Phòng không vuông, có góc lõm hay vát.','The room is not a clean rectangle; a corner is cut or recessed.',
+ 'Sách thích phòng ngủ vuông hoặc chữ nhật. Góc lõm làm phòng khó kê đồ, khí không đều.','The book prefers square or rectangular bedrooms. A recess makes furniture awkward and the room uneven.',
+ [R(1,'logic','free','r','Kê giường ở phần vuông vức nhất của phòng.','Put the bed in the most regular part of the room.'),
+  R(2,'logic','console','r','Tủ, kệ lấp góc lõm cho phòng thành chữ nhật.','A cabinet or shelf to fill the recess so the room reads as a rectangle.')]],
+['G02','giuong',1,'T42','', 'Cửa phòng ngủ đối thẳng cầu thang (B3)','Bedroom door faces the stairs head-on (B3)',
+ 'Mở cửa phòng là thấy đầu hoặc chân cầu thang.','Open the bedroom door and you face the top or bottom of the stairs.',
+ 'Khí và người đi lên xuống dồn thẳng vào phòng.','Energy and foot traffic from the stairs run straight into the room.',
+ [R(1,'logic','free','r','Đóng cửa phòng khi ngủ.','Keep the door closed at night.'),
+  R(2,'logic','curtain','r','Rèm cửa hoặc bình phong nhỏ bên trong cửa.','A door curtain or a small screen just inside.')]],
+['G03','giuong',1,'T42','', 'Cửa phòng ngủ đối cửa kho, cửa bếp (B5)','Bedroom door faces a storage room or the kitchen (B5)',
+ 'Đứng ở cửa phòng ngủ nhìn thẳng cửa kho hoặc bếp.','From the bedroom door you look straight at a storage room or the kitchen.',
+ 'Mùi, tiếng ồn, đồ bừa đi thẳng vào phòng ngủ.','Smells, noise and clutter come straight in.',
+ [R(1,'logic','free','r','Đóng cả hai cửa; kho gọn.','Keep both doors closed; keep storage tidy.'),
+  R(2,'logic','curtain','r','Rèm cửa phòng ngủ.','A curtain on the bedroom door.')]],
+['G04','giuong',2,'T42','', 'Phòng ngủ nằm sau bàn thờ (B6)','Bedroom is right behind the altar (B6)',
+ 'Bàn thờ dựa vào vách phòng ngủ, hoặc giường nằm ngay sau bàn thờ.','The altar backs onto the bedroom wall, or the bed sits right behind it.',
+ 'Sách tránh chỗ ngủ nằm sát lưng bàn thờ.','The book avoids sleeping right behind an altar.',
+ [R(1,'pt','free','r','Dời giường sang vách khác.','Move the bed to another wall.'),
+  R(1,'pt','free','r','Hoặc dời bàn thờ sang vách không giáp phòng ngủ (chọn ngày nếu gia đình giữ lệ).','Or move the altar to a wall that does not back onto a bedroom (pick a date if your family follows that custom).')]],
+['G05','giuong',1,'T42','', 'Tượng, tranh thần thánh trong phòng ngủ (B8)','Religious statues or images in the bedroom (B8)',
+ 'Phòng ngủ có tượng Phật, tranh thánh, bàn thờ nhỏ.','The bedroom has a Buddha statue, religious art or a small altar.',
+ 'Sách Bát Trạch 3 không đặt đồ thờ trong phòng ngủ. Tùy tín ngưỡng gia đình.','Bát Trạch 3 keeps devotional items out of bedrooms. Your family’s faith comes first.',
+ [R(1,'pt','free','r','Chuyển sang phòng khách hoặc phòng thờ.','Move them to the living room or a prayer room.')]],
+['G06','giuong',1,'T42','', 'Bể cá, chậu cây lớn, đá cảnh trong phòng ngủ (B9)','Aquarium, big plant or decorative rocks in the bedroom (B9)',
+ 'Phòng ngủ có bể cá, cây lớn hay hòn non bộ.','There is an aquarium, a large plant or a rock feature in the bedroom.',
+ 'Nước, cây lớn làm phòng ngủ “động”, ẩm; khó ngủ sâu.','Water and big plants make a bedroom “active” and humid; harder to sleep deeply.',
+ [R(1,'logic','free','r','Chuyển sang phòng khách hoặc phòng làm việc.','Move them to the living room or office.')]],
+['G07','giuong',1,'T42','', 'Sofa lớn hơn 2 chỗ trong phòng ngủ (B10)','A sofa larger than a loveseat in the bedroom (B10)',
+ 'Phòng ngủ kê sofa dài 3 chỗ trở lên.','There is a three-seat or bigger sofa in the bedroom.',
+ 'Phòng ngủ thành phòng tiếp khách.','The bedroom turns into a sitting room.',
+ [R(1,'logic','free','r','Đổi sang ghế đơn hoặc ghế đôi.','Swap for an armchair or loveseat.')]],
+['G08','giuong',1,'T42','', 'Loa, điện thoại, đồ sạc sát đầu giường (B11)','Speaker, phone or chargers right at the head of the bed (B11)',
+ 'Điện thoại, loa, ổ sạc đặt ngay sát gối.','Phone, speaker or charging hub right by the pillow.',
+ 'Dễ thức giấc. Lý do thực tế, ai cũng đồng ý.','Easy to wake up. A practical reason everyone agrees on.',
+ [R(1,'logic','free','r','Sạc điện thoại xa đầu giường, ít nhất một sải tay.','Charge the phone at least an arm’s length away.'),
+  R(2,'logic','small','r','Đèn ngủ, đồng hồ không đèn xanh.','A night light, a clock without a bright display.')]],
+['G09','giuong',1,'T42','', 'Quạt trần, đèn spotlight ngay trên giường (B12)','Ceiling fan or spotlight right above the bed (B12)',
+ 'Nằm ngửa là thấy quạt trần hoặc đèn rọi ngay trên mặt.','Lying down, you look straight up at a ceiling fan or spotlight.',
+ 'Cảm giác bị đè, chói. Giống chuyện xà ngang.','Feels like pressure and glare, like a beam.',
+ [R(1,'logic','free','r','Dời giường lệch khỏi quạt, đèn.','Shift the bed off the fan or light.'),
+  R(3,'logic','handy','p','Đổi quạt trần sang đèn ốp sát trần, hoặc dời đèn (đi dây mới có thể cần permit).','Swap the fan for a flush light, or move the fixture (new wiring may need a permit).')]],
+['G10','giuong',1,'T42','', 'Đầu giường áp tường bếp (B15)','Head of the bed against the kitchen wall (B15)',
+ 'Bên kia vách đầu giường là bếp, lò nướng.','On the other side of the headboard wall is the stove or oven.',
+ 'Sách Bát Trạch 3: phòng nóng, khó ngủ, vợ chồng dễ căng thẳng.','Bát Trạch 3: a warm room, poor sleep, tension between spouses.',
+ [R(1,'logic','free','r','Xoay giường sang vách khác.','Turn the bed to another wall.'),
+  R(2,'logic','console','r','Kệ sách hoặc tủ giữa giường và vách bếp.','A bookcase or cabinet between the bed and the kitchen wall.')]],
+['G11','giuong',1,'T42','', 'Gầm giường chất đồ (B16)','Stuff stored under the bed (B16)',
+ 'Gầm giường đầy hộp, giày, đồ cũ.','The space under the bed is packed with boxes, shoes, old things.',
+ 'Khí không lưu thông, bụi. Lý do thực tế: dị ứng.','Stale air and dust. In practice: allergies.',
+ [R(1,'logic','free','r','Dọn trống gầm giường hoặc chỉ để chăn gối sạch.','Clear it, or keep only clean linens.')]],
+['G12','giuong',1,'T42','', 'Giường kê giữa phòng hoặc kê chéo góc (B17)','Bed floating mid-room or set diagonally in a corner (B17)',
+ 'Đầu giường không áp tường nào, hoặc giường xéo vào góc.','The headboard touches no wall, or the bed angles into a corner.',
+ 'Không có chỗ dựa, ngủ không yên.','No support behind you; restless sleep.',
+ [R(1,'logic','free','r','Đưa đầu giường áp vào tường đặc.','Put the headboard against a solid wall.')]],
+['G13','giuong',1,'T42','', 'Đầu giường cùng tường với cửa phòng (B18)','Headboard on the same wall as the bedroom door (B18)',
+ 'Cửa phòng mở ngay cạnh đầu giường.','The door opens right next to the head of the bed.',
+ 'Người ra vào sát đầu, dễ giật mình.','People come and go right by your head; easy to be startled.',
+ [R(1,'logic','free','r','Xoay giường sang tường khác, thấy được cửa mà không thẳng cửa.','Turn the bed so you can see the door without lying in line with it.')]],
+['G14','giuong',1,'T413','', 'Giường nằm trên đường thẳng từ cửa phòng hoặc cầu thang','Bed sits on the straight line from the bedroom door or the stairs',
+ 'Đi từ cửa phòng (hay đầu cầu thang) thẳng vào là đụng giường.','Walk straight in from the door (or the top of the stairs) and you hit the bed.',
+ 'Sách Nhị Trạch Thực Nghiệm: người nằm trên đường khí từ cửa chịu nặng nhất; cùng phòng mà khác giường thì khác kết quả.','Nhị Trạch Thực Nghiệm: whoever sleeps on the line of qi from the door feels it most; two beds in one room can fare differently.',
+ [R(1,'pt','free','r','Dời giường ra khỏi đường thẳng từ cửa.','Move the bed off the line from the door.'),
+  R(1,'pt','free','r','Năm nào sao 2 hoặc 5 bay tới phía phòng đó: người già, trẻ nhỏ đổi sang phòng khác trong năm.','In a year when star 2 or 5 visits that side: let elders and young children sleep in another room that year.')]],
+['D09','cua',1,'T42','', 'Màu cửa chưa hợp phía của cửa, hoặc quá đậm','Door color does not suit its side, or is very dark',
+ 'Cửa sơn màu gắt, đen tuyền, đỏ chói, hoặc màu khắc với phía cửa.','The door is a harsh color, jet black or loud red, or clashes with its side.',
+ 'Sách Bát Trạch 3: màu cửa theo hành của cung cửa, không dùng màu quá đậm.','Bát Trạch 3: match the door color to the element of its side, nothing too dark.',
+ [R(1,'pt','free','r','Màu theo phía: Tây, Tây Bắc trắng, vàng kim · Đông, Đông Nam gỗ, xanh lá · Nam gỗ, đỏ nhạt, hồng · Bắc xanh dương, xám đậm · Đông Bắc, Tây Nam vàng đất, nâu.','Colors by side: West, Northwest white or gold · East, Southeast wood tones or green · South wood, soft red or pink · North blue or charcoal · Northeast, Southwest earthy yellow or brown.'),
+  R(2,'pt','rug','r','Thảm lối vào cùng màu hợp phía cửa (vd cửa phía Đông: xanh lá).','A doormat in the side’s color (e.g. an East door: green).'),
+  R(3,'logic','handy','e','Sơn lại cửa (nhà HOA hỏi ARC trước).','Repaint the door (HOA: ask the ARC first).')]],
+['D10','cua',1,'T70','', 'Cửa xiên, khung cửa vẹo hoặc mục','Door set at an angle, or a warped or rotting frame',
+ 'Cửa đóng không khít, khung nghiêng, gỗ mục.','The door does not close flush, the frame leans, wood is soft.',
+ 'Sách xem cửa vẹo, mục là khí suy. Thực tế: nước vào, mối mọt, mất an toàn.','The book reads a warped door as fading energy. In practice: water, termites, security.',
+ [R(1,'logic','free','','Ghi lại để hỏi inspector (mối mọt, nước).','Note it for the inspector (termites, water).'),
+  R(3,'logic','handy','e','Chỉnh bản lề, thay khung hư.','Adjust hinges, replace the damaged frame.')]],
+['D11','cua',1,'T42','', 'Cửa hư, kẹt, chỉ vá tạm','Door is broken or sticking and only patched',
+ 'Tay nắm lỏng, cửa kẹt, kính nứt dán băng keo.','Loose handle, sticking door, cracked glass taped over.',
+ 'Sách Bát Trạch 3: cửa hư thì thay, đừng vá.','Bát Trạch 3: replace a broken door, do not patch it.',
+ [R(2,'logic','small','r','Thay tay nắm, chỉnh chốt, bôi trơn bản lề.','New handle, adjust the latch, oil the hinges.'),
+  R(3,'logic','handy','e','Thay cửa hoặc kính.','Replace the door or glass.')]],
+['D12','cua',1,'T42','', 'Tượng sư tử hai bên cửa nhà ở','Lion statues flanking a home’s door',
+ 'Hai con sư tử đá hai bên cửa.','A pair of stone lions at the door.',
+ 'Sách Bát Trạch 3: sư tử hợp cơ quan, đền miếu; nhà ở không đặt.','Bát Trạch 3: lions suit offices and temples, not homes.',
+ [R(1,'pt','free','r','Thay bằng cặp chậu cây khỏe hai bên cửa.','Swap them for a pair of healthy potted plants.')]],
+['D13','cua',1,'T42','', 'Ngoài cửa tối, thiếu đèn','Dark entry, not enough light outside the door',
+ 'Tối về không thấy rõ ổ khóa, bậc thềm.','At night you cannot see the lock or the steps.',
+ 'Cửa sáng thì khí vào. Lý do thật: an toàn.','A bright door draws energy in. The real reason: safety.',
+ [R(2,'logic','small','r','Đèn cảm ứng dùng pin.','A battery motion light.'),
+  R(3,'logic','light','e','Đèn cửa gắn tường.','A wired porch light.')]],
+['D14','cua',1,'T42','', 'Song sắt cửa trông như song nhà tù','Security bars that look like a jail',
+ 'Song sắt thẳng đứng dày đặc ở cửa chính, cửa sổ trước.','Dense vertical bars on the front door and front windows.',
+ 'Sách Bát Trạch 3 kỵ. Thực tế: bars cửa sổ phòng ngủ phải mở được từ trong (an toàn cháy).','Bát Trạch 3 avoids them. In practice: bedroom window bars must open from inside (fire safety).',
+ [R(2,'logic','quote','e','Đổi sang cửa an ninh kiểu hoa văn, có chốt mở nhanh.','Switch to a decorative security door with a quick release.')]],
+['D15','cua',1,'T42','', 'Mở thêm cửa phụ ngay hai bên cửa chính','Extra doors right beside the front door',
+ 'Cửa chính kẹp giữa hai cửa nhỏ, hoặc cửa garage sát bên.','The front door is flanked by small doors or a garage door right next to it.',
+ 'Sách Bát Trạch 3: hai bên cửa chính không mở thêm cửa.','Bát Trạch 3: no extra doors on either side of the front door.',
+ [R(1,'pt','free','r','Dùng một cửa làm lối chính, cửa kia khóa.','Use one as the main entrance, keep the other locked.')]],
+['D16','cua',1,'T413','', 'Cả nhà chỉ đi garage hoặc cửa sau, cửa chính đóng quanh năm','Everyone uses the garage or back door; the front door stays shut',
+ 'Rất hay gặp ở Mỹ: vào nhà bằng garage.','Very common in the US: you enter through the garage.',
+ 'Sách Nhị Trạch Thực Nghiệm: cửa đi hằng ngày mới là “miệng khí” thật, nên phải xét sao ở cửa đó. Sách Bát Trạch 3 khuyên đừng bỏ hẳn cửa trước.','Nhị Trạch Thực Nghiệm: the door used every day is the real “mouth of qi,” so read the star at that door. Bát Trạch 3 advises not abandoning the front door.',
+ [R(1,'pt','free','r','Xem sao ở cửa garage bằng T413. Cửa đó xấu mà cửa chính tốt: đi cửa chính lại, $0.','Check the garage door’s star in T413. Weak there but good at the front: use the front door again, $0.'),
+  R(1,'pt','free','r','Cửa xấu không cần dùng thì khóa lại; cửa khóa hẳn thì không tính.','Lock a weak door you do not need; a door that stays locked does not count.')]],
+['D17','cua',1,'T42','', 'Cửa sau cao, lớn hơn cửa trước','Back door bigger than the front door',
+ 'Cửa kính trượt hay cửa đôi phía sau to hơn cửa chính.','A back slider or French doors are bigger than the front door.',
+ 'Sách Bát Trạch 3: cửa sau không được lớn hơn cửa trước, khí vào rồi ra nhanh.','Bát Trạch 3: the back door should not be bigger than the front; energy rushes through.',
+ [R(1,'logic','free','r','Đóng một cánh, kéo rèm phần lớn thời gian.','Keep one panel closed and curtains drawn most of the time.'),
+  R(2,'logic','pot','r','Chậu cây cao hai bên cửa sau.','Tall plants on both sides of the back door.')]],
+['D18','cua',1,'T42','', 'Nhà không có lối ra phía sau','No way out the back',
+ 'Chỉ có một cửa ra vào.','There is only one door in and out.',
+ 'Sách Bát Trạch 3: một cửa duy nhất là khí không lưu thông. Thực tế: lối thoát hiểm.','Bát Trạch 3: a single door means stale energy. In practice: a second exit for safety.',
+ [R(1,'logic','free','r','Giữ cửa sổ phía sau thông thoáng, mở được.','Keep back windows clear and operable.'),
+  R(4,'logic','quote','pe','Mở thêm cửa sau khi remodel.','Add a back door in a remodel.')]],
+['D19','cua',1,'T42','', 'Cửa chính đối thẳng cửa nhà / căn đối diện','Front door faces the neighbor’s door head-on',
+ 'Mở cửa ra là nhìn thẳng cửa nhà bên kia đường hay căn hộ đối diện.','Open the door and you look straight at the neighbor’s door.',
+ 'Sách Bát Trạch 3 kỵ. Sách Huyền Không cho thấy tốt xấu tùy sao, nên chỉ che nhẹ.','Bát Trạch 3 avoids it. The Huyền Không book shows it depends on the stars, so a light screen is enough.',
+ [R(2,'logic','pot','r','Chậu cây cao lệch một bên lối đi.','A tall planter off to one side of the path.'),
+  R(3,'logic','hedge','e','Giàn hoa, hàng rào thấp.','A trellis or low hedge.')]],
+['N14','ngoai',1,'T42','', 'Thấy mái nhọn, cột nhọn từ cửa chính hoặc cửa sổ','A pointed roof or spike visible from the front door or a window',
+ 'Đứng ở cửa hay cửa sổ lớn nhìn ra thấy mái tam giác, cạnh nhà kho, cột cao nhọn.','From the door or a big window you see a triangular roof, a shed edge or a tall spike.',
+ 'Sách Nhị Trạch Thực Nghiệm gọi là hình Hỏa: lời qua tiếng lại, hao của, kể cả khi hướng cửa tốt.','Nhị Trạch Thực Nghiệm calls these Fire shapes: gossip and losses, even with a good door direction.',
+ [R(2,'logic','curtain','r','Rèm, film mờ cửa sổ hướng đó.','Curtains or frosted film on that window.'),
+  R(2,'logic','pot','r','Cây lá tròn che tầm nhìn.','Round-leaf plants to block the view.')]],
+['N15','ngoai',1,'T70','', 'Septic, hố ga lớn ở phía Tây Bắc sau nhà','Septic tank or big sewer pit on the Northwest side',
+ 'Inspector hoặc chủ nhà cho biết septic nằm phía Tây Bắc.','The inspector or seller says the septic tank is to the Northwest.',
+ 'Sách Nhị Trạch Thực Nghiệm: Tây Bắc là “Thiên Môn”, hầm phân ở đây bất lợi cho chủ nhà. Chỉ tham khảo.','Nhị Trạch Thực Nghiệm: the Northwest is the “Heaven Gate”; a waste pit there is unfavorable for the head of the house. Reference only.',
+ [R(1,'logic','free','','Giữ nắp kín, sạch; bơm định kỳ.','Keep it sealed and clean; pump on schedule.'),
+  R(2,'logic','pot','e','Cây che quanh nắp.','Plants around the lid.')]],
+['T19','trong',2,'T70','', 'Nhiều thiết bị nóng tụ một chỗ','Several hot appliances clustered in one spot',
+ 'Water heater, lò sưởi, máy sấy, server, ổ cắm chùm dồn một góc.','Water heater, furnace, dryer, servers and power strips crowded into one corner.',
+ 'Sách Nhị Trạch Thực Nghiệm: khu có cặp sao lửa (2-7, 7-9) mà thêm đồ nóng và gió thì dễ cháy. Đây là chuyện an toàn thật.','Nhị Trạch Thực Nghiệm: a zone with fire pairs (2-7, 7-9) plus heat and draft is a fire risk. This is real safety.',
+ [R(1,'logic','smoke','r','Máy báo khói ngay khu đó; không chất đồ dễ cháy quanh máy.','A smoke alarm right there; nothing flammable around the units.'),
+  R(1,'logic','free','r','Tách ổ cắm chùm, không cắm nối nhiều tầng.','Split the power strips, no daisy-chaining.'),
+  R(3,'logic','handy','p','Thợ điện kiểm tra tải, thêm mạch riêng.','An electrician checks the load and adds a circuit.')]],
 ['T18','trong',1,'T42','', 'WC tầng trên nằm ngay trên cửa chính','Upstairs bathroom right above the front door',
  'Phòng tắm lầu 2 nằm ngay trên cửa vào.','The upstairs bathroom sits right over the entry.',
  'Bị xem là ô uế đè lên “miệng khí”. Ít nguồn Việt nói riêng.','Seen as unclean over the “mouth” of the house. Few Vietnamese sources mention it.',
@@ -1068,7 +1222,7 @@ const CAT=[
    KEN DUYỆT: RPA investigation contingency mặc định 17 ngày (nguồn phụ sebfrey.com; form C.A.R. phải đăng nhập mới coi được).
    KEN DUYỆT: không bao giờ khuyên đổi tên trên title/deed vì phong thủy (vay, thuế, Prop 13).
 */
-const UPDATED='04/11/2026';
+const UPDATED='17/11/2026';
 const DECL=12.7; /* độ lệch từ San Jose (giống T201/T208). Hướng từ = hướng thật − DECL */
 const KL_VI={than:'Kim Lâu Thân',the:'Kim Lâu Thê',tu:'Kim Lâu Tử',luc:'Kim Lâu Lục Súc'};
 const DIR_EN={N:'North',NE:'Northeast',E:'East',SE:'Southeast',S:'South',SW:'Southwest',W:'West',NW:'Northwest',C:'Center'};
@@ -1110,7 +1264,7 @@ const I18N={
   legend:'Ký hiệu: <b>hợp lý về bố trí</b> = có lý do thực tế, đa số đồng ý · <b>theo phong thủy</b> = quy ước nhiều trường phái dùng · <b>dân gian, một số thầy không dùng</b> = vật phẩm mà nhiều thầy theo phái cổ điển cho là không có trong sách.',
   bt_n:'Cửa chính hướng {star} với tuổi chủ nhà',bt_w:'Nhà hướng {dir}, chủ nhà quái {q}. Hướng {dir} là {star}, một hướng xấu. Không cần bỏ nhà: kê giường, bàn làm việc, bếp theo bốn hướng tốt của chủ nhà là <b>{good}</b>. Khi giường, bếp và bàn đều theo hướng tốt, cửa hướng xấu chỉ còn là điểm nhỏ.',
   bt_couple:'Hai người thuộc hai nhóm Đông và Tây khác nhau: cửa theo một người; phòng ngủ và bàn làm việc của người kia theo hướng tốt của họ ({good2}).',
-  bt_r:[['Đầu giường quay về một trong bốn hướng tốt. Nếu được chọn phòng, nên để phòng ngủ chính ở hướng tốt.','free',1,'logic','r'],
+  bt_r:[['Có cửa khác (hông, garage, sau) nằm ở hướng tốt: dùng cửa đó làm lối đi hằng ngày, cửa xấu khóa lại. Sách Nhị Trạch Thực Nghiệm: cửa khóa hẳn thì không tính.','free',1,'pt','r'],['Đầu giường quay về một trong bốn hướng tốt. Nếu được chọn phòng, nên để phòng ngủ chính ở hướng tốt.','free',1,'logic','r'],
         ['Bàn làm việc: ngồi quay mặt về hướng tốt (Sinh Khí cho tài lộc, Phục Vị cho học hành).','free',1,'logic','r'],
         ['Nếu có cửa hông hoặc cửa garage ở hướng tốt, dùng cửa đó hằng ngày.','free',1,'pt','r'],
         ['Thảm chùi chân và cây ở cửa theo màu hợp mệnh.','rug',2,'dg','r'],
@@ -1133,7 +1287,8 @@ const I18N={
   ys_w:'Năm {y} (tính từ tiết Lập Xuân, khoảng 4/2) sao {star} bay đến hướng {dir}. Theo phong thủy, năm đó nên để yên phía này.',
   ys_r1:'Năm {y} tránh đập phá, đào đất, sửa lớn ở phía {dir}. Thay cửa hay làm hiên thì để năm khác.',
   ys_r2:'Việc nhỏ (sơn, thay đèn) nhiều gia đình vẫn làm. Muốn cẩn thận thì chọn ngày khởi công.',
-  ys_r3:'Treo đồ kim loại, chuông gió 6 ống ở khu đó.',
+  ys_r3:'Treo đồ kim loại, chuông gió 6 ống ở khu đó.',ys_r4:'Người già, trẻ nhỏ đang ngủ ở phòng phía {dir}: năm đó đổi sang phòng khác, $0 (sách Nhị Trạch Thực Nghiệm).',
+  hk_r5:'Sao Kim (6, 7) ở cửa: đặt bình nước, lu nước hoặc hồ cá nhỏ màu tối gần cửa để nối Kim sang Thủy; người mệnh Mộc đỡ mệt (sách Nhị Trạch Thực Nghiệm). $0–80.',
   ys_dis:'Vật phẩm kim loại là cách mang tính thương mại; các thầy theo phái cổ điển chỉ khuyên không động thổ khu đó.',
   sh_n:'Năm {y}: {list} ở hướng cửa',sh_w:'Đây là các sao xấu của năm. Điều cần nhớ: năm đó tránh đào đất, sửa lớn ở phía trước nhà.',
   sh_r:'Nếu cần sửa lớn phía trước, để sang năm khác hoặc chọn ngày khởi công.',tt:'Thái Tuế',tp:'Tuế Phá',tsat:'Tam Sát',
@@ -1145,9 +1300,14 @@ const I18N={
         ['Lễ giải hạn, động thổ: chủ yếu khi xây hoặc sửa lớn, không phải khi mua nhà có sẵn.','item',2,'dg','r']],
   yr_dis:'Kim Lâu, Hoang Ốc khi mua nhà có sẵn: có nguồn cho là cần xét, nhiều nguồn chỉ xét khi xây. Cũng có nhà nghiên cứu cho rằng không có cơ sở.',
   yr_title:'Không nên đổi tên trên title hay deed vì lý do phong thủy. Việc đổi tên ảnh hưởng đến khoản vay, thuế và Prop 13. Xin hỏi luật sư, CPA và lender trước.',
-  dis:{culdesac:'Có thầy xem nhà cuối cul-de-sac là điểm xấu nặng; Master Sean Chan cho rằng phần lớn là tốt (yên tĩnh, ít xe), chỉ đáng lo khi đường chĩa thẳng vào cửa.',
+  dis:{roadstar:'Sách Bát Trạch coi đường đâm là xấu. Sách Huyền Không (Nhị Trạch Thực Nghiệm) cho thấy tùy sao ở phía cửa: có nhà buôn bán còn lợi. Nên che nhẹ trước, chưa cần sửa lớn.',culdesac:'Có thầy xem nhà cuối cul-de-sac là điểm xấu nặng; Master Sean Chan cho rằng phần lớn là tốt (yên tĩnh, ít xe), chỉ đáng lo khi đường chĩa thẳng vào cửa.',
        khuyet:'Có thầy cho rằng “khuyết góc” không có trong sách cổ; có thầy chỉ xem là nặng khi phần khuyết hơn 1/3 cạnh hoặc có sát khí bên ngoài.'},
   dis_obj:'Vật phẩm (gương, chuông gió, hồ lô, tỳ hưu): có thầy dùng, có thầy cho là không có trong sách cổ. Công cụ xếp các vật phẩm này cuối danh sách.',
+  ro_h:'Phòng nào ở hướng nào',ro_hint:'Nhập ngày sinh ở Bước 1 để thấy thứ tự hướng cho từng phòng theo tuổi người chính (sách Bát Trạch 3).',ro_hint_p:'Theo cung {q} của người chính, tốt nhất đứng trước (sách Bát Trạch 3). Đo từ tâm nhà; trong phòng thì đo từ giữa phòng.',ro_none:'Chưa có ngày sinh.',
+  ro_bed:'Phòng ngủ',ro_bed_n:'Phục Vị yên, ngủ sâu nhất. Sinh Khí xếp cuối vì “động”: hợp người trẻ, người cần năng động hơn là người lớn tuổi.',ro_door:'Cửa chính',ro_door_n:'Theo người chính trước, theo nhà sau.',ro_altar:'Bàn thờ',ro_altar_n:'Phục Vị, quay mặt ra ngoài là đẹp nhất.',ro_office:'Phòng làm việc',ro_office_n:'Sách chọn như phòng ngủ.',ro_wc:'Nhà vệ sinh',ro_wc_n:'WC nằm cung xấu là đúng, ưu tiên Ngũ Quỷ; đừng đặt ở cung tốt.',
+  ro_stove:'Bếp',ro_stove_t:'thân bếp ở cung xấu, miệng bếp (hướng người nấu nhìn) về cung tốt.',ro_stove_n:'Nhà có người cần sức khỏe: miệng bếp về {ty} (Thiên Y). Làm ăn: {dn} (Diên Niên). Tình cảm, con cái: {sk} (Sinh Khí). Sách Bát Trạch 3 xếp vậy; nhiều sách khác coi Sinh Khí là tài lộc.',
+  el_h:'Đặt đồ lớn theo hành của cung',el_hint:'Sách Bát Trạch 4: đừng đặt vật lớn có hành khắc hành của cung. Đồ nhỏ không sao.',el_side:'Phía',el_el:'Hành',el_avoid:'Tránh vật lớn',el_center:'Giữa nhà',
+  el_kim:'khối kim loại lớn, vật nhọn',el_thuy:'hồ, bể cá lớn, đài nước',el_hoa:'lò, lò sưởi, đèn đỏ mạnh',el_tho:'đống đá, chậu đất, đá cảnh lớn',el_moc:'cây lớn, chậu cây to',el_inf:'sách không nói, suy ra theo hành',
   role_h:'Theo vai trò của anh chị',
   role:{buy:'<b>Đang xem để mua.</b> Dùng thời gian investigation contingency (số ngày theo hợp đồng) để mời thầy xem và hỏi giá sửa. Không nên xin seller credit vì lý do phong thủy; hãy thương lượng dựa trên kết quả inspection, hoặc tính chi phí điều chỉnh vào giá offer. Móng, mái, nước và nguy cơ cháy rừng quan trọng hơn phong thủy.',
         live:'<b>Đã mua, đang ở.</b> Làm từ trên xuống, việc không tốn tiền trước. Đánh dấu “Đã làm” để theo dõi. Việc cần permit thì nên làm có giấy phép để sau này bán nhà không vướng.',
@@ -1158,6 +1318,8 @@ const I18N={
   myth_h:'Điều nhiều người hiểu sai',
   myths:[['Mua vật phẩm phong thủy đắt tiền (tỳ hưu, thạch anh, ngũ đế tiền) để “hút tài lộc”.','Điều chỉnh thật sự nằm ở bố trí, hướng và thời điểm. Vài trăm đô cho rèm, kệ, đèn thường đáng hơn một món đồ “khai quang”.'],
          ['Treo gương bát quái lồi trong nhà, hoặc treo nhiều cái cho chắc.','Gương lồi không treo trong nhà và không chĩa vào nhà hàng xóm. Nhà không bị đường đâm thẳng thì không cần treo.'],
+         ['Cửa chính đẹp, hợp hướng là đủ.','Sách Nhị Trạch Thực Nghiệm: cửa cả nhà đi hằng ngày mới tính. Cửa chính đẹp mà ai cũng vào bằng garage thì phải xét cửa garage.'],
+         ['Đường đâm thẳng vào nhà lúc nào cũng xấu.','Sách Huyền Không cho thấy tùy sao ở phía đó; có nhà buôn bán còn lợi. Che nhẹ bằng cây, hàng rào thấp là đủ.'],
          ['Bỏ một căn nhà tốt vì một lỗi nhỏ (gương, cửa đối cửa, bếp kẹp giữa tủ lạnh và bồn rửa).','Phần lớn lỗi trong nhà điều chỉnh được bằng cách dời đồ hoặc vài trăm đô. Lỗi khó thật sự nằm bên ngoài: đường đâm thẳng, đường dây cao thế, nghĩa trang sát bên.']],
   ns_h:'Bước tiếp theo',ns1:'Đo hướng cho chính xác: đo ở ba chỗ, lấy trung bình.',ns1l:'Công cụ T406 · La bàn đo hướng nhà',ns2:'Xem bàn sao từng phòng: phòng nào để ngủ, phòng nào để làm việc.',ns2l:'Công cụ T413 · Bàn phi tinh cho nhà',
   ns3:'Định sửa nhà? Xem năm nay hướng nào nên để yên.',ns3l:'Công cụ T412 · Sao năm khi sửa nhà',ns4:'Chọn ngày khởi công, ngày dọn vào.',ns4l:'Công cụ T408 · Ngày tốt ký giấy tờ nhà',
@@ -1166,8 +1328,9 @@ const I18N={
   f_title:'Gửi kế hoạch này qua email',f_sub:'Ken sẽ gửi lại bản kế hoạch, kèm tên thợ nếu cần. Ngoài ra không gửi gì khác.',f_name:'Tên',f_phone:'Phone (không bắt buộc)',f_send:'Gửi',
   f_ok:'Ứng dụng email đã mở. Anh chị bấm Send là xong.',f_or:'Hoặc text:',f_copy:'Copy',
   ft_read:'Đọc thêm:',ft_lib:'Hóa giải phong thủy cho nhà',ft_vid:'Video kiến thức địa ốc',
-  ft_est:'Đây là tham khảo văn hóa, không phải lời khuyên tài chính hay pháp lý. Phong thủy không phải khoa học; móng, mái, nước và nguy cơ cháy rừng quan trọng hơn. Giá là ước tính ở Bay Area, không phải báo giá. Phần luật (permit, HOA, thuê nhà, khai báo) chỉ là tóm tắt; khi cần, hỏi city và luật sư.',
-  ft_src:'Nguồn:',src_date:'(tra 04/11/2026)',ft_upd:'Cập nhật',ft_all:'Tất cả công cụ',lang:'English',
+  src_bk:'Sách: Tự Học Phong Thủy Bát Trạch 3 và 4 (Nguyễn Thành Phương); Nhị Trạch Thực Nghiệm – Quyển Thượng (Đàm Dưỡng Ngô, Nguyễn Thành Phương dịch)',
+  ft_est:'Đây là tham khảo văn hóa, giải trí; không phải tư vấn pháp lý, tài chính hay y tế. Phong thủy không phải khoa học; móng, mái, nước và nguy cơ cháy rừng quan trọng hơn. Giá là ước tính ở Bay Area, không phải báo giá. Phần luật (permit, HOA, thuê nhà, khai báo) chỉ là tóm tắt; khi cần, hỏi city và luật sư.',
+  ft_src:'Nguồn:',src_date:'(tra 17/11/2026)',ft_upd:'Cập nhật',ft_all:'Tất cả công cụ',lang:'English',
   dirs:DIR8_VI,
   sms:'Chào Ken, tôi vừa lập kế hoạch hóa giải nhà trên tools.kenlamrealty.com ({n} việc). Việc đầu tiên: {top}. Tôi muốn hỏi thêm.',
   subj:'Kế hoạch hóa giải nhà: {n}',
@@ -1200,7 +1363,7 @@ const I18N={
   legend:'Tags: <b>sensible layout</b> = a practical reason most agree on · <b>feng shui rule</b> = a convention many schools use · <b>folk remedy, some practitioners skip it</b> = objects that many classical practitioners say are not in the texts.',
   bt_n:'Front door faces your {star} direction',bt_w:'The home faces {dir}; the head of household is trigram {q}. {dir} is {star}, an unfavorable direction. There is no need to walk away: orient the bed, desk and stove toward the four favorable directions, <b>{good}</b>. With those in place, an unfavorable door is a minor point.',
   bt_couple:'You are in different East/West groups: the door follows one person, and the other person\'s bed and desk follow their favorable directions ({good2}).',
-  bt_r:[['Head of the bed toward one of the four favorable directions. If you can choose, put the main bedroom in a favorable direction.','free',1,'logic','r'],
+  bt_r:[['If another door (side, garage, back) faces a favorable direction, make it the everyday entrance and keep the weak one locked. Nhị Trạch Thực Nghiệm: a door kept locked does not count.','free',1,'pt','r'],['Head of the bed toward one of the four favorable directions. If you can choose, put the main bedroom in a favorable direction.','free',1,'logic','r'],
         ['Sit at your desk facing a favorable direction (Sinh Khí for prosperity, Phục Vị for study).','free',1,'logic','r'],
         ['If a side or garage door faces a favorable direction, use it every day.','free',1,'pt','r'],
         ['Doormat and plants at the door in your element\'s colors.','rug',2,'dg','r'],
@@ -1223,7 +1386,8 @@ const I18N={
   ys_w:'In {y} (counted from Lập Xuân, around Feb 4), {star} moves to the {dir}. By feng shui convention, leave that side undisturbed that year.',
   ys_r1:'In {y}, avoid demolition, digging or major work on the {dir} side. Save door replacement or a new porch for another year.',
   ys_r2:'Many families still do small jobs (paint, a new light fixture). To be careful, choose a start date.',
-  ys_r3:'Hang metal objects or a six-rod wind chime there.',
+  ys_r3:'Hang metal objects or a six-rod wind chime there.',ys_r4:'Elders or young children sleeping on the {dir} side: switch rooms for that year, $0 (Nhị Trạch Thực Nghiệm).',
+  hk_r5:'Metal stars (6, 7) at the door: a water jar, a bowl of water or a small dark aquarium near the door bridges Metal into Water; easier on Wood-trigram people (Nhị Trạch Thực Nghiệm). $0–80.',
   ys_dis:'Metal objects are a commercial remedy; classical practitioners only advise against breaking ground there.',
   sh_n:'{y}: {list} at the door direction',sh_w:'These are the year\'s unfavorable stars. The key point: that year, avoid digging or major work at the front.',
   sh_r:'Postpone major front work to another year, or choose a start date.',tt:'Thái Tuế',tp:'Tuế Phá',tsat:'Tam Sát',
@@ -1235,9 +1399,14 @@ const I18N={
         ['A giải hạn or ground-breaking ceremony: mainly for building or major remodels, not for buying an existing home.','item',2,'dg','r']],
   yr_dis:'Kim Lâu and Hoang Ốc for an existing home: some sources say to check them, many apply them only to building. Some scholars say there is no basis for them.',
   yr_title:'Do not change names on title or deed for feng shui reasons. It affects your loan, taxes and Prop 13. Ask an attorney, a CPA and your lender first.',
-  dis:{culdesac:'Some practitioners see the end of a cul-de-sac as a serious issue; Master Sean Chan sees it as mostly favorable (quiet, little traffic), a concern only when the road points straight at the door.',
+  dis:{roadstar:'Bát Trạch books treat a road aimed at the door as unfavorable. The Huyền Không book Nhị Trạch Thực Nghiệm shows it depends on the star on that side; some shops even do well. Start with a light screen, no major work yet.',culdesac:'Some practitioners see the end of a cul-de-sac as a serious issue; Master Sean Chan sees it as mostly favorable (quiet, little traffic), a concern only when the road points straight at the door.',
        khuyet:'Some practitioners say “missing corners” are not in the classical texts; others consider them serious only when more than 1/3 of the side is missing or harsh energy points at it.'},
   dis_obj:'Objects (mirrors, chimes, gourds, tỳ hưu): some practitioners use them, others say they are not in the classical texts. The tool lists them last.',
+  ro_h:'Which room goes where',ro_hint:'Add a birth date in Step 1 to see the order of directions for each room by the main person’s trigram (Bát Trạch 3).',ro_hint_p:'For the main person’s {q} trigram, best first (Bát Trạch 3). Measure from the center of the house; inside a room, from the center of the room.',ro_none:'No birth date yet.',
+  ro_bed:'Bedroom',ro_bed_n:'Phục Vị is calm and sleeps deepest. Sinh Khí comes last because it is “active”: better for young people who want energy than for elders.',ro_door:'Front door',ro_door_n:'By the main person first, the house second.',ro_altar:'Altar',ro_altar_n:'Phục Vị, facing outward, is best.',ro_office:'Office',ro_office_n:'The book picks it like a bedroom.',ro_wc:'Bathroom',ro_wc_n:'A bathroom belongs in a weak sector, Ngũ Quỷ first; keep it out of good ones.',
+  ro_stove:'Kitchen',ro_stove_t:'stove body in a weak sector, the cooking side (where the cook faces) toward a good one.',ro_stove_n:'Someone’s health matters most: face {ty} (Thiên Y). Business: {dn} (Diên Niên). Relationships, children: {sk} (Sinh Khí). That is Bát Trạch 3’s order; many other books treat Sinh Khí as wealth.',
+  el_h:'Big objects by side of the house',el_hint:'Bát Trạch 4: do not put a large object whose element controls that side’s element. Small items are fine.',el_side:'Side',el_el:'Element',el_avoid:'Avoid large',el_center:'Center',
+  el_kim:'big metal pieces, sharp objects',el_thuy:'pond, big aquarium, fountain',el_hoa:'oven, fireplace, strong red lights',el_tho:'rock piles, big pots of soil, large stones',el_moc:'big trees, large potted plants',el_inf:'not in the book, inferred by element',
   role_h:'For your situation',
   role:{buy:'<b>Considering buying.</b> Use the investigation contingency period (as set in your contract) to bring in a practitioner and price the adjustments. Do not ask the seller for a credit over feng shui; negotiate on inspection findings, or build the remedy cost into your offer. Foundation, roof, water and wildfire risk matter more than feng shui.',
         live:'<b>Bought, living here.</b> Work from the top down, no-cost items first. Mark “Done” to track progress. Do permit work with a permit so a future sale goes smoothly.',
@@ -1248,6 +1417,8 @@ const I18N={
   myth_h:'Common misunderstandings',
   myths:[['Buying expensive feng shui objects (tỳ hưu, crystals, five-emperor coins) to “attract wealth”.','Real remedies are about layout, direction and timing. A few hundred dollars on curtains, shelves and lighting usually does more than a “blessed” object.'],
          ['Hanging a convex bagua mirror indoors, or several just to be safe.','Convex mirrors never go indoors or face a neighbor. If no road points at the house, you do not need one.'],
+         ['A good-looking front door in a good direction is all that matters.','Nhị Trạch Thực Nghiệm: the door the family uses every day is the one that counts. If everyone comes in through the garage, read the garage door.'],
+         ['A road aimed at the house is always bad.','The Huyền Không book shows it depends on the star on that side; some shops even do well. A light screen of plants or a low hedge is enough.'],
          ['Walking away from a good home over one small issue (a mirror, facing doors, a stove between the fridge and sink).','Most interior issues are addressed by moving furniture or spending a few hundred dollars. The difficult ones are outside: a road aimed at the house, high-voltage lines, a cemetery next door.']],
   ns_h:'Next steps',ns1:'Measure the direction accurately: three spots, then average.',ns1l:'Tool T406 · Compass for your home\'s facing',ns2:'See the room-by-room star chart: where to sleep, where to work.',ns2l:'Tool T413 · Flying Star chart',
   ns3:'Remodeling? See which side to leave undisturbed this year.',ns3l:'Tool T412 · Yearly stars for remodeling',ns4:'Choose a day for the work and for moving in.',ns4l:'Tool T408 · Good days to sign',
@@ -1256,8 +1427,9 @@ const I18N={
   f_title:'Email this plan',f_sub:'Ken can send the plan back, with contractor names if you need them. Nothing else.',f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',
   f_ok:"Your email app should be open. Press Send and you are done.",f_or:'Or text:',f_copy:'Copy',
   ft_read:'Read more:',ft_lib:'House remedies',ft_vid:'Real estate video',
-  ft_est:'This is cultural reference, not financial or legal advice. Feng shui is not a science; foundation, roof, water and wildfire risk matter more. Costs are Bay Area estimates, not quotes. Legal points (permits, HOA, renting, disclosure) are summaries; ask the city or an attorney when it matters.',
-  ft_src:'Sources:',src_date:'(checked 04/11/2026)',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  src_bk:'Books: Tự Học Phong Thủy Bát Trạch 3 and 4 (Nguyễn Thành Phương); Nhị Trạch Thực Nghiệm – Quyển Thượng (Đàm Dưỡng Ngô, tr. Nguyễn Thành Phương)',
+  ft_est:'Cultural and entertainment reference; not legal, financial or medical advice. Feng shui is not a science; foundation, roof, water and wildfire risk matter more. Costs are Bay Area estimates, not quotes. Legal points (permits, HOA, renting, disclosure) are summaries; ask the city or an attorney when it matters.',
+  ft_src:'Sources:',src_date:'(checked 17/11/2026)',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
   dirs:DIR_EN,
   sms:'Hi Ken, I made a feng shui remedy plan on tools.kenlamrealty.com ({n} items). First item: {top}. I have a question.',
   subj:'Home remedy plan: {n}',
@@ -1321,7 +1493,7 @@ function build(){
     if([2,5,3,7].includes(f)||BAD_PAIRS.includes(pair)){ const key=[5,2,3,7].includes(f)?f:([5,2,3,7].includes(m)?m:7);
       const dis=[d.hk_dis]; if(f===7||m===7) dis.push(d.hk_dis7); if(f===2||m===2) dis.push(d.hk_dis2);
       items.push({id:'HK',pr:2,name:fmt(d.hk_n,{f,fn:STAR9[f],p:per}),why:fmt(d.hk_w,{p:per,m,f,pair:BAD_PAIRS.includes(pair)?fmt(d.hk_pair,{m,f}):''}),
-        rem:[{txt:d.hk_r1,c:'free',t:1,k:'pt',f:'r'},{txt:d.hk_r2,c:'free',t:1,k:'pt',f:''},{txt:(HK_COMMON[key]||HK_COMMON[7])[lang==='vi'?0:1],c:'item',t:2,k:'dg',f:'r'},{txt:d.hk_r4,c:'consult',t:3,k:'pt',f:''}],
+        rem:[{txt:d.hk_r1,c:'free',t:1,k:'pt',f:'r'},{txt:d.hk_r2,c:'free',t:1,k:'pt',f:''},{txt:(HK_COMMON[key]||HK_COMMON[7])[lang==='vi'?0:1],c:'item',t:2,k:'dg',f:'r'},{txt:d.hk_r4,c:'consult',t:3,k:'pt',f:''}].concat(([6,7].includes(f)||[6,7].includes(m))?[{txt:d.hk_r5,c:'water',t:2,k:'pt',f:'r'}]:[]),
         dis,link:dlink,ll:'T201'}); }
     else if([9,1,8].includes(f)) plus.push(fmt(d.hk_plus,{f,fn:STAR9[f],p:per}));
     if(chart.type==='tshh') items.push({id:'TS',pr:2,name:fmt(d.ts_n,{p:per}),why:d.ts_w,rem:arrRem(d.ts_r),dis:[],link:dlink,ll:'T201'});
@@ -1332,7 +1504,7 @@ function build(){
       const onDoor=face&&at===face, onRep=st.rep&&at===st.rep&&at!==face;
       if(onDoor||onRep){ const dir=dirName(at);
         items.push({id:'YS'+Y+n+(onRep?'r':''),pr:(n===5&&(Y===CUR_Y||onRep))?1:2,name:fmt(onDoor?d.ys_n:d.ys_nr,{y:Y,star,dir}),why:fmt(d.ys_w,{y:Y,star,dir}),
-          rem:[{txt:fmt(d.ys_r1,{y:Y,dir}),c:'free',t:1,k:'pt',f:'r'},{txt:d.ys_r2,c:'free',t:1,k:'pt',f:'r'},{txt:d.ys_r3,c:'item',t:2,k:'dg',f:'r'}],
+          rem:[{txt:fmt(d.ys_r1,{y:Y,dir}),c:'free',t:1,k:'pt',f:'r'},{txt:d.ys_r2,c:'free',t:1,k:'pt',f:'r'},{txt:fmt(d.ys_r4,{dir}),c:'free',t:1,k:'pt',f:'r'},{txt:d.ys_r3,c:'item',t:2,k:'dg',f:'r'}],
           dis:[d.ys_dis],link:'/t412/',ll:'T202',ys:n===5}); } });
     if(fi!=null){ const l=[]; if(fi===ys.thaiTue) l.push(d.tt); if(fi===ys.tuePha) l.push(d.tp); if(ys.tamSat===face) l.push(d.tsat);
       if(l.length) items.push({id:'SH'+Y,pr:3,name:fmt(d.sh_n,{y:Y,list:l.join(', ')}),why:d.sh_w,rem:[{txt:d.sh_r,c:'free',t:1,k:'pt',f:'r'}],dis:[],link:'/t412/',ll:'T202'}); } }); }
@@ -1381,7 +1553,7 @@ function itemHTML(it){ const d=D(), isDone=!!done[it.id];
 
 function renderChecklist(){ const d=D();
   $('chk').innerHTML=GROUPS.map(([g,vi,en])=>{ const its=CAT.filter(c=>c[1]===g), n=its.filter(c=>st.ticks.includes(c[0])).length;
-    return '<details class="grp" data-g="'+g+'"'+(open[g]?' open':'')+'><summary><span>'+(lang==='vi'?vi:en)+'</span><span class="chip'+(n?' mid':'')+'">'+fmt(d.gcount,{n})+'</span></summary><div class="opts">'+
+    return '<details class="grp" data-g="'+g+'"'+(open[g]?' open':'')+'><summary><span>'+(lang==='vi'?vi:en)+'</span><span class="chip'+(n?' mid':'')+'">'+fmt(d.gcount,{n})+'</span></summary><div class="opts">'+(GROUP_NOTE[g]?'<p class="hint" style="padding:10px 16px 0;margin:0">'+GROUP_NOTE[g][lang==='vi'?0:1]+'</p>':'')+
       its.map(c=>'<label class="opt"><input type="checkbox" data-tick="'+c[0]+'"'+(st.ticks.includes(c[0])?' checked':'')+'><span><b>'+esc(lang==='vi'?c[5]:c[6])+'</b><small>'+esc(lang==='vi'?c[7]:c[8])+'</small></span></label>').join('')+'</div></details>'; }).join('');
   const t=st.ticks.map(id=>CAT.find(c=>c[0]===id)).filter(Boolean);
   $('picked').innerHTML='<span class="pk">'+d.picked+'</span> '+(t.length?t.map(c=>'<button type="button" class="pchip" data-untick="'+c[0]+'">'+esc(lang==='vi'?c[5]:c[6])+' <span aria-hidden="true">×</span></button>').join(''):'<span class="hint">'+d.picked_none+'</span>');
@@ -1435,6 +1607,15 @@ function calc(){
   $('rentNote').classList.toggle('hide',st.role!=='rent'); $('hoaNote').classList.toggle('hide',st.hoa!=='y');
   $('objNote').classList.toggle('hide',!it.some(x=>x.rem.some(r=>r.k==='dg')));
   $('roleTxt').innerHTML=d.role[st.role];
+  // phòng nào ở hướng nào [BT3 §2] + hành khắc theo cung [BT4 §4]
+  { const p=R.p1&&!R.p1.bad?R.p1:null;
+    if(p){ const at=k=>BT[p.q][BT_STARS.indexOf(k)];
+      $('roList').innerHTML=ROOM_ORDER.map(([r,ord])=>'<li><b>'+d['ro_'+r]+':</b> '+ord.map(k=>dirName(at(k))+' <small style="display:inline;white-space:nowrap">('+BT_VI[k]+')</small>').join(' › ')+(d['ro_'+r+'_n']?'<small>'+d['ro_'+r+'_n']+'</small>':'')+'</li>').join('')+
+        '<li><b>'+d.ro_stove+':</b> '+d.ro_stove_t+'<small>'+fmt(d.ro_stove_n,{ty:dirName(at('ty')),dn:dirName(at('dn')),sk:dirName(at('sk'))})+'</small></li>';
+      $('roList').previousElementSibling.innerHTML=fmt(d.ro_hint_p,{q:QUAI[p.q].vi}); }
+    else { $('roList').innerHTML='<li>'+d.ro_none+'</li>'; $('roList').previousElementSibling.innerHTML=d.ro_hint; }
+    const HN=lang==='vi'?HANH_VI:HANH_EN;
+    $('elTbl').innerHTML='<tr><th>'+d.el_side+'</th><th>'+d.el_el+'</th><th>'+d.el_avoid+'</th></tr>'+EL_CLASH.map(([k,e,x,inf])=>'<tr><td>'+(k==='C'?d.el_center:dirName(k))+'</td><td>'+HN[e]+'</td><td>'+d['el_'+x]+(inf?' <small class="hint">('+d.el_inf+')</small>':'')+'</td></tr>').join(''); }
   // email / sms
   const cheap1=x=>{const ok=x.rem.filter(r=>r.k!=='dg'&&(st.role!=='rent'||r.f.includes('r'))); const r=ok[0]||x.rem[0]; return r?r.txt+' ('+costTxt(r.c)+')':'';};
   const faceT=R.fi!=null?sonInfo(R.fi).name+' / '+dirName(R.face)+' '+R.fd+'°':'—';
