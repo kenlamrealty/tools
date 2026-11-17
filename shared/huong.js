@@ -113,19 +113,72 @@ function locate(inp){
     if(g&&!g.num&&sa.num) o.approx=true;
     return o; });
 }
-function analyse(o){
+/* ---------- OpenFreeMap vector tiles (z14, CDN) — nguồn chính; Overpass dự phòng ---------- */
+var OFM='https://tiles.openfreemap.org/planet', tileTpl=null;
+function pbfRead(buf){ var b=new Uint8Array(buf), pos=0;
+  function vint(){ var r=0,m=1,c; do{ c=b[pos++]; r+=(c&127)*m; m*=128; }while(c>=128); return r; }
+  function msg(end,cb){ while(pos<end){ var k=vint(), f=k>>3, w=k&7, st;
+    if(w===0){ cb(f,0,vint()); } else if(w===2){ var len=vint(); st=pos; pos+=len; cb(f,2,st,st+len); } else if(w===5){ cb(f,5,pos); pos+=4; } else if(w===1){ cb(f,1,pos); pos+=8; } else throw new Error('pbf'); } }
+  function str(a,z){ return new TextDecoder().decode(b.subarray(a,z)); }
+  function packed(a,z){ var save=pos,out=[]; pos=a; while(pos<z) out.push(vint()); pos=save; return out; }
+  var layers=[];
+  msg(b.length,function(f,w,a,z){ if(f!==3) return; var save=pos; pos=a; var L={name:'',keys:[],vals:[],feats:[],extent:4096};
+    msg(z,function(f2,w2,a2,z2){
+      if(f2===1) L.name=str(a2,z2); else if(f2===3) L.keys.push(str(a2,z2)); else if(f2===5) L.extent=a2;
+      else if(f2===4){ var sv=pos,v=null; pos=a2; msg(z2,function(f3,w3,a3,z3){ if(f3===1) v=str(a3,z3); else if(f3===4||f3===5) v=a3; else if(f3===7) v=!!a3; else if(f3===3) v=new DataView(b.buffer,b.byteOffset+a3,8).getFloat64(0,true); else if(f3===2) v=new DataView(b.buffer,b.byteOffset+a3,4).getFloat32(0,true); }); pos=sv; L.vals.push(v); }
+      else if(f2===2) L.feats.push([a2,z2]); });
+    pos=save; layers.push(L); });
+  function feature(L,fr){ var save=pos,F={tags:[],type:0,geom:[]}; pos=fr[0];
+    msg(fr[1],function(f,w,a,z){ if(f===2) F.tags=packed(a,z); else if(f===3) F.type=a; else if(f===4) F.geom=packed(a,z); });
+    pos=save; var props={}; for(var i=0;i<F.tags.length;i+=2) props[L.keys[F.tags[i]]]=L.vals[F.tags[i+1]];
+    var rings=[],cur=null,x=0,y=0,g=F.geom,i2=0; while(i2<g.length){ var c=g[i2++],id=c&7,n=c>>3;
+      if(id===7){ if(cur&&cur.length) cur.push(cur[0]); continue; }
+      for(var j=0;j<n;j++){ var dx=g[i2++],dy=g[i2++]; x+=(dx>>>1)^-(dx&1); y+=(dy>>>1)^-(dy&1); if(id===1){ cur=[]; rings.push(cur); } cur.push([x,y]); } }
+    return {props:props,type:F.type,rings:rings}; }
+  return {layers:layers,feature:feature};
+}
+function tileData(o){
+  var Z=14,n=1<<Z, fx=(o.lon+180)/360*n, lr=o.lat*Math.PI/180, fy=(1-Math.log(Math.tan(lr)+1/Math.cos(lr))/Math.PI)/2*n;
+  var tx=Math.floor(fx),ty=Math.floor(fy),xs=[tx],ys=[ty]; if(fx-tx<.15) xs.push(tx-1); if(fx-tx>.85) xs.push(tx+1); if(fy-ty<.15) ys.push(ty-1); if(fy-ty>.85) ys.push(ty+1);
+  var tp=tileTpl?Promise.resolve(tileTpl):fetchJSON(OFM,{},10000).then(function(j){tileTpl=j.tiles[0];return tileTpl;});
+  return tp.then(function(tpl){ var jobs=[]; xs.forEach(function(x){ys.forEach(function(y){ jobs.push(fetchBuf(tpl.replace('{z}',Z).replace('{x}',x).replace('{y}',y)).then(function(buf){return {x:x,y:y,t:pbfRead(buf)}})); });});
+    return Promise.all(jobs); }).then(function(tiles){
+    var P=proj(o), blds=[], roads=[], addrs=[], ROADC={primary:1,secondary:1,tertiary:1,minor:1,trunk:1};
+    tiles.forEach(function(T0){ T0.t.layers.forEach(function(L){ if(!/^(building|housenumber|transportation_name)$/.test(L.name)) return;
+      var toLL=function(p){ var X=(T0.x+p[0]/L.extent)/n, Y=(T0.y+p[1]/L.extent)/n; return {lon:X*360-180,lat:Math.atan(Math.sinh(Math.PI*(1-2*Y)))*180/Math.PI}; };
+      L.feats.forEach(function(fr){ var F=T0.t.feature(L,fr);
+        if(L.name==='building'&&F.type===3){ F.rings.forEach(function(r,ri){ if(r.length<4) return; var pts=r.map(function(q){return P(toLL(q))}); var c=centroid(pts.slice(0,-1)); if(Math.hypot(c.x,c.y)>200) return;
+          if(ri>0){ var a=0; for(var k=0;k<r.length-1;k++) a+=r[k][0]*r[k+1][1]-r[k+1][0]*r[k][1]; if(a<0) return; }
+          blds.push({pts:pts,c:c,t:{}}); }); }
+        else if(L.name==='housenumber'&&F.type===1){ F.rings.forEach(function(r){ var q=P(toLL(r[0])); if(Math.hypot(q.x,q.y)<450) addrs.push({way:false,p:q,t:{'addr:housenumber':String(F.props.housenumber)}}); }); }
+        else if(L.name==='transportation_name'&&F.type===2&&F.props.name&&ROADC[F.props['class']]){ F.rings.forEach(function(r){ var pts=r.map(function(q){return P(toLL(q))}); if(nearOnLine({x:0,y:0},pts).d<400) roads.push({name:F.props.name,core:coreName(F.props.name),pts:pts}); }); }
+      }); }); });
+    return {blds:blds,roads:roads,addrs:addrs,src:'ofm'}; });
+}
+function fetchBuf(url){ var c=('AbortController' in window)?new AbortController():null, to=setTimeout(function(){if(c)c.abort()},12000);
+  return fetch(url,c?{signal:c.signal}:{}).then(function(r){clearTimeout(to); if(!r.ok) throw new Error('http '+r.status); return r.arrayBuffer();}); }
+function overpassData(o){
   var lat=o.lat.toFixed(6),lon=o.lon.toFixed(6),num=o.num?String(o.num).replace(/"/g,''):null;
-  var q='[out:json][timeout:25];('+(num?'nw(around:400,'+lat+','+lon+')["addr:housenumber"="'+num+'"];':'')+
+  var q='[out:json][timeout:20];('+(num?'nw(around:250,'+lat+','+lon+')["addr:housenumber"="'+num+'"];':'')+
     'way(around:160,'+lat+','+lon+')["building"];'+
-    'way(around:300,'+lat+','+lon+')["highway"~"^(residential|tertiary|secondary|primary|unclassified|living_street|trunk|tertiary_link|secondary_link|primary_link)$"]["name"];);out tags geom;';
-  return overpass(q).catch(function(){throw {k:'e_net'}}).then(function(js){
-    var P=proj(o), els=js.elements||[], blds=[], roads=[], addrs=[], want=o.street?coreName(o.street):null;
+    'way(around:300,'+lat+','+lon+')["highway"~"^(residential|tertiary|secondary|primary|unclassified|living_street|trunk)$"]["name"];);out tags geom;';
+  return overpass(q).then(function(js){
+    var P=proj(o), els=js.elements||[], blds=[], roads=[], addrs=[];
     els.forEach(function(e){ var t=e.tags||{};
       if(e.type==='way'&&e.geometry){ var pts=e.geometry.map(P);
         if(t.highway) roads.push({name:t.name,core:coreName(t.name),pts:pts});
-        else if(pts.length>3){ blds.push({pts:pts,c:centroid(pts.slice(0,-1)),t:t,id:e.id}); }
-        if(t['addr:housenumber']===num&&!t.highway) addrs.push({way:true,pts:pts,t:t,id:e.id}); }
+        else if(pts.length>3){ blds.push({pts:pts,c:centroid(pts.slice(0,-1)),t:t}); }
+        if(t['addr:housenumber']===num&&!t.highway) addrs.push({way:true,pts:pts,t:t}); }
       else if(e.type==='node'&&t['addr:housenumber']===num) addrs.push({way:false,p:P({lat:e.lat,lon:e.lon}),t:t}); });
+    return {blds:blds,roads:roads,addrs:addrs,src:'ovp'}; });
+}
+function getData(o){ return tileData(o).then(function(d){ if(!d.roads.length&&!d.blds.length) throw new Error('empty'); return d; })
+  .catch(function(){ return overpassData(o); }).catch(function(){ throw {k:'e_net'}; }); }
+function analyse(o){
+  var num=o.num?String(o.num):null;
+  return getData(o).then(function(D){
+    var P=proj(o), blds=D.blds, roads=D.roads, want=o.street?coreName(o.street):null;
+    var addrs=D.addrs.filter(function(a){return a.t['addr:housenumber']===num});
     /* căn nhà */
     var house=null, conf='md', origin={x:0,y:0};
     var am=addrs.filter(function(a){return !want||!a.t['addr:street']||coreName(a.t['addr:street'])===want});
