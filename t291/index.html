@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Add Up the Permitted Square Footage · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<style>
+/* ---- Thêm cho T92 (không đổi class cũ) ---- */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl.sel::after{content:"";width:8px;height:8px;border:solid var(--muted);border-width:0 1.5px 1.5px 0;transform:rotate(45deg) translateY(-3px);flex:none}
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.checks label{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:8px 13px;font-size:14px;color:var(--muted);cursor:pointer;user-select:none}
+.checks input{accent-color:var(--brass);margin:0}
+.checks label:has(input:checked){background:var(--brass-soft);color:var(--fg);border-color:var(--brass)}
+.tg{display:grid;gap:8px}
+.tg label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;align-items:start;font-size:14px;color:var(--fg);cursor:pointer;line-height:1.4}
+.tg input{accent-color:var(--brass);width:18px;height:18px;margin:1px 0 0}
+.tg small{display:block;color:var(--muted);font-size:12px}
+.total .v .of{font-size:30px;color:var(--muted)}
+.total .cnt2{margin-top:8px;font-size:14px;color:var(--muted)}
+.total .cnt2 b{color:var(--fg);font-weight:500}
+.pjs{display:grid;border-top:1px solid var(--line)}
+.pj{padding:14px 0;border-bottom:1px solid var(--line);display:grid;gap:6px}
+.pj-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.pj-h b{font-weight:500;font-size:16px;min-width:0}
+.st{font-size:11px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;border-radius:999px;padding:3px 9px;border:1px solid var(--line);color:var(--muted)}
+.st.y{border-color:var(--brass);background:var(--brass-soft);color:var(--warn)}
+.st.d{border-style:dashed;color:var(--fg)}
+.pj .why{font-size:14px;color:var(--fg);margin:0;line-height:1.45}
+.pj dl{margin:2px 0 0;display:grid;grid-template-columns:minmax(0,7.5em) minmax(0,1fr);gap:4px 10px;font-size:13px}
+.pj dt{color:var(--muted)}
+.pj dd{margin:0;min-width:0}
+.pj dd a{color:var(--brass);text-decoration:none}
+.pj dd small{color:var(--muted)}
+.next-steps{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.next-steps h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.next-steps ol,.next-steps ul{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.next-steps a{color:var(--brass)}
+.myth{font-size:14px;line-height:1.5;border-left:2px solid var(--brass);padding:2px 0 2px 12px;margin:0}
+.myth b{font-weight:500}
+.srcs a{word-break:break-word}
+.ck{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.empty{font-size:14px;color:var(--muted);padding:12px 0}
+</style>
+<style>
+/* ---- Thêm cho T282/T290 (không đổi class cũ) ---- */
+.ctl input[type=text]{font-size:20px}
+.pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.pair .ctl input{font-size:18px}
+.pair .tag{font-size:12px;color:var(--muted)}
+.meter{height:10px;border-radius:999px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--brass);transition:width .2s}
+.meter.hi i{background:var(--warn)}
+.lvl{display:inline-block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:3px 10px;border:1px solid var(--line);margin-left:8px;vertical-align:middle;font-family:var(--body)}
+.lvl.l{color:var(--ok);border-color:var(--ok)}
+.lvl.m{color:var(--brass);border-color:var(--brass);background:var(--brass-soft)}
+.lvl.h{color:var(--warn);border-color:var(--warn);background:var(--brass-soft)}
+.gapbox{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.gapbox>div{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.gapbox .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.gapbox .v{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
+.gapbox .v small{font-family:var(--body);font-size:13px;color:var(--muted)}
+.line .a.pts{color:var(--warn)}
+.line .a.z{color:var(--muted)}
+.todo{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.todo a{color:var(--brass)}
+html.embed .kl-back{display:none}
+.row2>.ctl,.row2>.field,.pair .ctl{min-width:0}
+.row2 .ctl input,.pair .ctl input{width:0}
+</style>
+<meta name="description" content="Enter the original house and each permit from the city record. See how many square feet have a final permit and how much of the MLS number does not.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t291/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Add Up the Permitted Square Footage · Ken Lam Tools">
+<meta property="og:description" content="How much of this home has a final permit, and how much of the MLS number doesn't.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t291/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+<style>
+/* ---- Thêm cho T290 (không đổi class cũ) ---- */
+.srcin{display:grid;gap:8px}
+.srcin .r{display:grid;grid-template-columns:minmax(0,1fr) 9.5em;gap:10px;align-items:center}
+.srcin .r .nm{font-size:14px;line-height:1.3}
+.srcin .r .nm small{display:block;color:var(--muted);font-size:12px}
+.srcin .ctl input{font-size:18px;width:0;padding:10px 6px}
+.srcs-out{display:grid;border-top:1px solid var(--line)}
+.so{padding:11px 0;border-bottom:1px solid var(--line);display:grid;gap:5px}
+.so-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:15px}
+.so-h b{font-weight:500;min-width:0}
+.so-h .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.so-h .a small{color:var(--muted);font-weight:400}
+.so.best .so-h b::after{content:"★";color:var(--brass);margin-left:6px}
+.tr{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.tr .m{flex:1;height:6px;border-radius:999px;background:var(--line);overflow:hidden}
+.tr .m i{display:block;height:100%;background:var(--brass)}
+.so p{margin:0;font-size:13px;color:var(--muted);line-height:1.45}
+.dz{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:center}
+.dz .ctl input{font-size:17px;width:0;padding:10px 6px}
+.dz .x{color:var(--muted);font-size:14px}
+.rules{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.rules li{display:grid;grid-template-columns:26px minmax(0,1fr);gap:8px;font-size:15px;line-height:1.45}
+.rules li i{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:600}
+.rules li i.y{background:var(--brass-soft);color:var(--ok);border:1px solid var(--ok)}
+.rules li i.n{background:var(--brass-soft);color:var(--warn);border:1px solid var(--warn)}
+.rules li small{display:block;color:var(--muted);font-size:13px}
+.big2{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
+.big2 small{font-family:var(--body);font-size:13px;color:var(--muted)}
+</style>
+<style>
+/* ---- Thêm cho T291 (không đổi class cũ) ---- */
+.pms{display:grid;border-top:1px solid var(--line)}
+.pr{display:grid;grid-template-columns:5.6em minmax(0,1fr) 36px;grid-template-areas:"y t x" "r r r";gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.pr .py{grid-area:y}.pr .pt{grid-area:t}.pr .xb{grid-area:x}
+.pr .ctl{min-width:0;padding:0 8px}
+.pr .ctl input{font-size:17px;width:0;padding:10px 4px}
+.pr .ctl select{font-size:15px;padding:10px 2px}
+.pr2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:8px;grid-area:r}
+.xb{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:16px;cursor:pointer;line-height:1}
+.xb:hover{border-color:var(--warn);color:var(--warn)}
+.cmp{display:grid;gap:8px}
+.cmp .r{display:grid;grid-template-columns:minmax(0,1fr) 9.5em;gap:10px;align-items:center}
+.cmp .r .nm{font-size:14px;line-height:1.3}
+.cmp .r .nm small{display:block;color:var(--muted);font-size:12px}
+.cmp .ctl input{font-size:18px;width:0;padding:10px 6px}
+.line.w .a{color:var(--warn)}
+.line.ok .a{color:var(--ok)}
+.line.sep .n{color:var(--fg)}
+.note.warn{border-left:3px solid var(--warn)}
+.paste{background:var(--brass-soft);border-radius:10px;padding:12px;font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word;margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-x:auto}
+.cpy{justify-self:start;border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;cursor:pointer}
+.cpy:hover{border-color:var(--brass)}
+.cmpout{display:grid;gap:8px}
+.cmpout p{margin:0;font-size:14px;line-height:1.45}
+.cmpout p b{font-weight:500}
+.wrap{grid-template-columns:minmax(0,1fr)}
+.todo li,.cmpout p,.note,.rules li,.gapbox .v,.total .v{overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Add up the permitted square footage</h1>
+    <p class="sub" data-i="sub">Start with the original house. Add every permit from the city record. See how many square feet have a final inspection, and how much of the MLS number doesn't.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label><span data-i="l_base">Original house</span> <small data-i="l_base_s">(from the original permit or the county, plus year built)</small></label>
+      <div class="row2">
+        <div class="field"><div class="tag" style="font-size:12px;color:var(--muted)" data-i="tg_sqft">Original sqft</div><div class="ctl"><input id="bSqft" type="number" inputmode="numeric" min="0" value="1250" aria-label="Original sqft"><span class="post">sqft</span></div></div>
+        <div class="field"><div class="tag" style="font-size:12px;color:var(--muted)" data-i="tg_year">Year built</div><div class="ctl"><input id="bYear" type="number" inputmode="numeric" min="1850" max="2100" value="1962" aria-label="Year built"></div></div>
+      </div>
+      <div class="seg" id="bSrc" role="group">
+        <button type="button" data-v="permit" aria-pressed="true" data-i="bs_permit">Original permit / plans</button>
+        <button type="button" data-v="county" aria-pressed="false" data-i="bs_county">County record</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label><span data-i="l_pm">Permits on record</span> <small data-i="l_pm_s">(one row per permit; leave sqft blank if the permit doesn't say)</small></label>
+      <div class="pms" id="pms"></div>
+      <button class="btn" type="button" id="pmAdd" data-i="pm_add">+ Add a permit</button>
+    </div>
+
+    <div class="field">
+      <label><span data-i="l_cmp">Numbers to compare</span> <small data-i="l_cmp_s">(fill only what you have)</small></label>
+      <div class="cmp" id="cmpIn"></div>
+    </div>
+
+    <div class="field">
+      <label><span data-i="l_pps">Price per sqft</span> <small data-i="l_pps_s">(optional, to put a dollar figure on the gap)</small></label>
+      <div class="ctl"><span class="pre">$</span><input id="pps" type="number" inputmode="numeric" min="0" placeholder="—" aria-label="Price per sqft"><span class="post">/ sqft</span></div>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_k">Square feet with a final permit</div>
+      <div class="v"><span id="fin">0</span> <small>sqft</small></div>
+      <div class="cnt2" id="finSub"></div>
+    </div>
+    <div class="gapbox">
+      <div><div class="k" data-i="g_mls">Gap vs MLS</div><div class="v" id="gMls">—</div></div>
+      <div><div class="k" data-i="g_meas">Gap vs measured</div><div class="v" id="gMeas">—</div></div>
+    </div>
+    <div class="note warn hide" id="warn20"></div>
+    <div class="ck" data-i="r_brk">Breakdown</div>
+    <div class="lines" id="brk"></div>
+    <div class="cmpout" id="cmpOut"></div>
+    <div class="note hide" id="usdNote"></div>
+    <div class="note hide" id="noAreaNote"></div>
+    <div class="note hide" id="ctyNote"></div>
+    <div class="note hide" id="oldNote"></div>
+    <div class="ck" data-i="tbl_h">Table to copy</div>
+    <pre class="paste" id="tbl"></pre>
+    <button class="cpy" type="button" id="tblCopy" data-i="tbl_copy">Copy table</button>
+    <div class="note" data-i="r_est">This adds up what you typed. It is not a permit search and not a measurement. The dollar figure is an estimate.</div>
+  </section>
+
+  <section class="next-steps">
+    <h2 data-i="todo_h">Next steps</h2>
+    <ol class="todo" id="todo"></ol>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" aria-label="Video" onerror="this.remove()"></video>
+
+  <section class="next-steps">
+    <h2 data-i="st_h">What each status means</h2>
+    <ul class="rules" id="stList"></ul>
+  </section>
+
+  <section class="next-steps">
+    <p class="myth"><b data-i="my_k">Many people get this wrong:</b> <span data-i="my_v">"There's a permit, so it's legal." Only Finaled means the final inspection passed. Issued means the work was allowed to start. Expired usually means nobody came back for the final. To a buyer's appraiser, an expired addition can read a lot like no permit at all.</span></p>
+    <p class="myth"><b data-i="my2_k">One more:</b> <span data-i="my2_v">A remodel permit doesn't add square feet. A kitchen permit from 2010 says nothing about the family room behind the kitchen.</span></p>
+    <p class="myth"><b data-i="my3_k">And this one:</b> <span data-i="my3_v">"Appraisers give unpermitted space zero value." That's a habit, not a rule. Fannie Mae tells the appraiser to comment on the quality of the work and its effect, if any, on value. That's why this tool says "at risk", not "lost".</span></p>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t291/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email this tally to yourself</h2>
+    <p data-i="f_sub">The email includes the table, the gaps and the next steps. Ken will reply if you have questions. No marketing emails.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Your email app is open. Press Send to finish. If nothing opened, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Related:</span> <a href="/t290/" data-i="ft_t290">Which sqft to trust (T290)</a> · <a href="/t282/" data-i="ft_t282">Unpermitted work check (T282)</a> · <a href="/t285/" data-i="ft_t285">Open or expired permit (T285)</a></span>
+    <span data-i="ft_est">General info, not legal or appraisal advice. The tally only reflects what you entered; the dollar figure is an estimate. Confirm permits with the city before you rely on them.</span>
+    <span class="srcs"><span data-i="ft_src">Sources:</span>
+      <a href="https://sanjoseca.gov/business/development-services-permit-center/online-permits-at-sjpermits-org/how-to-check-your-permit-status" target="_blank" rel="noopener">City of San José, permit statuses (SJPermits)</a> ·
+      <a href="https://sjpl.org/archival_post/building-permits" target="_blank" rel="noopener">San José Public Library, building permits</a> ·
+      <a href="https://www.sanjoseca.gov/home/showpublisheddocument/15333/639146973972370000" target="_blank" rel="noopener">San José, document duplication request</a> ·
+      <a href="https://sjdevelopmentservices.freshdesk.com/support/solutions/articles/73000607697-permit-extensions-how-to-reactivate-reinstate-or-renew-an-expired-permit" target="_blank" rel="noopener">San José, expired permits</a> ·
+      <a href="https://www.sccassessor.org/property-information/homeowners/homeowner-new-construction" target="_blank" rel="noopener">Santa Clara County Assessor, new construction</a> ·
+      <a href="https://selling-guide.fanniemae.com/sel/b4-1.3-05/improvements-section-appraisal-report" target="_blank" rel="noopener">Fannie Mae Selling Guide B4-1.3-05</a> ·
+      <a href="https://www.leagle.com/decision/199898776calrptr2d9111867" target="_blank" rel="noopener">Furla v. Jon Douglas Co. (1998)</a>
+      · <span data-i="ft_chk">Checked 19/11/2026.</span></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 19/11/2026 · <a href="/cong-cu/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số liệu — sửa ở đây (tra 19/11/2026, xem /sqftpermit/FACTS.md) ===== */
+const GAP_WARN=0.20;        /* Furla v. Jon Douglas Co. (1998) 65 Cal.App.4th 1069: >20% "was not de minimis" [LAW] */
+const OLD_YEAR=1950;        /* SJPL: SJPermits.org có permit từ thập niên 1950; microfilm 1940–1986 ở California Room [OFFICIAL] */
+const LIVING=['add','gar'];  /* loại permit cộng vào diện tích nhà chính; ADU ghi riêng (ANSI/Fannie: ADU báo riêng) [OFFICIAL] */
+const TYPES=['add','adu','gar','rem']; /* rem = remodel, không thêm sqft */
+const STATUS=['fin','iss','exp','unk']; /* SJPermits: Finaled = đã qua final inspection; Under Inspection = đã cấp, đang kiểm [OFFICIAL]; Expired: city không định nghĩa */
+const SJ_EXPIRED={email:'buildingpermits@sanjoseca.gov',phone:'408-535-3885'}; /* San José, mở lại permit hết hạn [OFFICIAL] */
+const SJ_DUP={email:'pbceduplicationrequests@sanjoseca.gov',docs:'7–10',plans:'30–40',research:'$45'}; /* San José Document Duplication: 7–10 ngày làm việc (giấy tờ), 30–40 ngày (bản vẽ), $45/nửa giờ tra cứu [OFFICIAL] */
+const DEF={bSqft:'1250',bYear:'1962',bSrc:'permit',
+  rows:[{y:'1988',t:'add',s:'400',st:'fin'},{y:'2005',t:'add',s:'300',st:'exp'}],
+  cmp:{mls:'2100',cty:'',meas:''},pps:''};  /* ví dụ mặc định theo BRIEF */
+/* ======================================================================== */
+const I18N={
+en:{
+  title:'Add up the permitted square footage',
+  sub:'Start with the original house. Add every permit from the city record. See how many square feet have a final inspection, and how much of the MLS number doesn’t.',
+  l_base:'Original house',l_base_s:'(from the original permit or the county, plus year built)',
+  tg_sqft:'Original sqft',tg_year:'Year built',
+  bs_permit:'Original permit / plans',bs_county:'County record',
+  l_pm:'Permits on record',l_pm_s:'(one row per permit; leave sqft blank if the permit doesn’t say)',
+  p_year:'Year',p_type:'Type',p_sqft:'Sqft',p_st:'Status',rm:'Remove this permit',
+  t_add:'Addition',t_adu:'ADU',t_gar:'Garage conversion',t_rem:'Remodel, no sqft',
+  s_fin:'Finaled',s_iss:'Issued, not final',s_exp:'Expired',s_unk:'Not sure',
+  pm_add:'+ Add a permit',pm_none:'No permits yet. Tap “Add a permit” for each one you find.',
+  l_cmp:'Numbers to compare',l_cmp_s:'(fill only what you have)',
+  c_mls:'MLS',c_mls_s:'what the listing says',c_cty:'County',c_cty_s:'assessor or title profile',c_meas:'Measured / appraisal',c_meas_s:'tape, laser or appraiser',
+  l_pps:'Price per sqft',l_pps_s:'(optional, to put a dollar figure on the gap)',
+  r_k:'Square feet with a final permit',
+  fin_sub:'Original {b} + finaled additions {a}',fin_none:'Type the original sqft above.',
+  g_mls:'Gap vs MLS',g_meas:'Gap vs measured',
+  r_brk:'Breakdown',
+  ln_base:'Original house',ln_fin:'Finaled additions / conversions',ln_iss:'Issued, not finaled',ln_exp:'Expired permits',ln_unk:'Status not sure',
+  ln_adu:'ADU with final permit (own line, not in the house)',ln_adu2:'ADU without a final permit (own line)',ln_rem:'Remodel permits (no added sqft)',ln_noarea:'Permits with no sqft listed',
+  cmp_over:'<b>{src}: {v} sqft.</b> That’s {g} sqft ({p}%) more than the finaled number. Of that, {nf} sqft has a permit that never finaled, and {nr} sqft has no permit on your list.',
+  cmp_under:'<b>{src}: {v} sqft.</b> Not above the finaled number. Nothing unexplained here.',
+  cmp_none:'Add the MLS, county or measured number to compare.',
+  warn20:'<b>Over 20%.</b> In Furla v. Jon Douglas Co. (1998) a California court said a square footage overstatement of more than 20% “was not de minimis”, even with “approximate” on the listing. That case was about size, not permits. A gap this big still draws the same attention from buyers, appraisers and lawyers.',
+  usd:'At {pps}/sqft, the {g} sqft gap is about <b>{usd}</b> on paper. That’s money at risk, not money lost: an appraiser decides how much value, if any, unpermitted space gets. Estimate only.',
+  noarea:'{n} permit(s) on your list show no sqft. Part of the gap may be covered by them. Get copies of the plans to find out.',
+  ctynote:'You started from the county number. The assessor values new construction whether or not a permit was issued, so that figure can already include unpermitted space. The original permit or plans are a better starting point.',
+  oldnote:'Built before {y}? SJPermits.org has building permits from the 1950s on. Microfilm of permits from 1940 to 1986, plus older indexes, is at the San José Public Library California Room.',
+  tbl_h:'Table to copy',tbl_copy:'Copy table',copied:'Copied ✓',
+  tb_item:'Item',tb_year:'Year',tb_sqft:'Sqft',tb_st:'Status',tb_total:'Finaled total',tb_orig:'Original house',tb_blank:'(not listed)',
+  r_est:'This adds up what you typed. It is not a permit search and not a measurement. The dollar figure is an estimate.',
+  todo_h:'Next steps',
+  n1:'<b>Get the full permit list.</b> San José: search SJPermits.org by address (drop the direction and suffix) or by APN without dashes. Other cities: <a href="/t281/">T281</a>.',
+  n2:'<b>Permit not finaled or expired?</b> See what it takes to close it: <a href="/t285/">T285</a>. In San José, email {em} or call {ph}.',
+  n3:'<b>Permit shows no sqft?</b> Order copies. San José: Document Duplication Request to {em}. Plan copies need the current owner’s signature and take {pl} days; other documents {dc} business days. Research is {rs} per half hour. Buyers: start on day one of your contingency.',
+  n4:'<b>Ask the seller</b> what was built, when, and by whom: <a href="/t287/">T287</a>.',
+  n5:'<b>Gap still there?</b> Price the risk with <a href="/t283/">T283</a>, and see the legalizing path with <a href="/t284/">T284</a>.',
+  n6:'<b>Not sure the MLS number is even right?</b> <a href="/t290/">T290</a> shows which sqft to trust.',
+  st_h:'What each status means',
+  st_fin:'<b>Finaled</b><small>Final inspection passed. The only status that closes a permit.</small>',
+  st_iss:'<b>Issued / under inspection</b><small>Work was approved to start. Inspections still open.</small>',
+  st_exp:'<b>Expired</b><small>The permit lapsed before a final. The city page doesn’t define it; in practice, work stopped or no one called for the final.</small>',
+  st_unk:'<b>Not sure</b><small>Counted with “not finaled” until you check.</small>',
+  my_k:'Many people get this wrong:',
+  my_v:'“There’s a permit, so it’s legal.” Only Finaled means the final inspection passed. Issued means the work was allowed to start. Expired usually means nobody came back for the final. To a buyer’s appraiser, an expired addition can read a lot like no permit at all.',
+  my2_k:'One more:',my2_v:'A remodel permit doesn’t add square feet. A kitchen permit from 2010 says nothing about the family room behind the kitchen.',
+  my3_k:'And this one:',my3_v:'“Appraisers give unpermitted space zero value.” That’s a habit, not a rule. Fannie Mae tells the appraiser to comment on the quality of the work and its effect, if any, on value. That’s why this tool says “at risk”, not “lost”.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email this tally to yourself',f_sub:'The email includes the table, the gaps and the next steps. Ken will reply if you have questions. No marketing emails.',
+  f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',f_ok:'Your email app is open. Press Send to finish. If nothing opened, copy the number below and text Ken.',f_or:'Or text:',f_copy:'Copy',
+  ft_read:'Related:',ft_t290:'Which sqft to trust (T290)',ft_t282:'Unpermitted work check (T282)',ft_t285:'Open or expired permit (T285)',
+  ft_est:'General info, not legal or appraisal advice. The tally only reflects what you entered; the dollar figure is an estimate. Confirm permits with the city before you rely on them.',
+  ft_src:'Sources:',ft_chk:'Checked 19/11/2026.',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I added up the permits on tools.kenlamrealty.com (T291). Finaled: {fin} sqft. MLS: {mls} sqft. Gap: {gap} sqft. Could we talk it over?',
+  subj:'Permitted sqft: {fin} sqft, {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nSquare feet with a final permit: {fin} sqft\nGap vs MLS: {gap} sqft\nGap vs measured: {gapm} sqft\n{usd}\n\n{tbl}\n\nNext steps:\n{todo}\n\nEstimate only. Sent from tool T291 tools.kenlamrealty.com'
+},
+vi:{
+  title:'Cộng sqft có permit',
+  sub:'Bắt đầu từ căn nhà gốc. Cộng từng permit trong hồ sơ city. Anh chị sẽ thấy bao nhiêu sqft đã qua final inspection, và bao nhiêu sqft trong số MLS không có permit nào đỡ.',
+  l_base:'Nhà gốc',l_base_s:'(lấy từ permit gốc hoặc county, kèm năm xây)',
+  tg_sqft:'Sqft nhà gốc',tg_year:'Năm xây',
+  bs_permit:'Permit gốc / bản vẽ',bs_county:'Số county',
+  l_pm:'Các permit trong hồ sơ',l_pm_s:'(mỗi permit một dòng; permit không ghi sqft thì để trống)',
+  p_year:'Năm',p_type:'Loại',p_sqft:'Sqft',p_st:'Trạng thái',rm:'Xóa permit này',
+  t_add:'Cơi nới (addition)',t_adu:'ADU',t_gar:'Garage làm phòng',t_rem:'Sửa, không thêm sqft',
+  s_fin:'Finaled (đã final)',s_iss:'Đã cấp, chưa final',s_exp:'Hết hạn',s_unk:'Không rõ',
+  pm_add:'+ Thêm permit',pm_none:'Chưa có permit nào. Tìm được permit nào thì bấm “Thêm permit”.',
+  l_cmp:'Các số để so',l_cmp_s:'(chỉ nhập số anh chị có)',
+  c_mls:'MLS',c_mls_s:'số ghi trên listing',c_cty:'County',c_cty_s:'assessor hoặc profile của title',c_meas:'Đo thật / appraisal',c_meas_s:'thước, máy laser hoặc appraiser',
+  l_pps:'Giá mỗi sqft',l_pps_s:'(không bắt buộc, để quy phần chênh ra tiền)',
+  r_k:'Sqft đã có permit final',
+  fin_sub:'Nhà gốc {b} + phần cơi nới đã final {a}',fin_none:'Nhập sqft nhà gốc ở trên.',
+  g_mls:'Chênh so với MLS',g_meas:'Chênh so với số đo',
+  r_brk:'Chi tiết',
+  ln_base:'Nhà gốc',ln_fin:'Cơi nới / chuyển đổi đã final',ln_iss:'Đã cấp, chưa final',ln_exp:'Permit hết hạn',ln_unk:'Không rõ trạng thái',
+  ln_adu:'ADU đã final (ghi riêng, không cộng vào nhà)',ln_adu2:'ADU chưa final (ghi riêng)',ln_rem:'Permit sửa lại (không thêm sqft)',ln_noarea:'Permit không ghi sqft',
+  cmp_over:'<b>{src}: {v} sqft.</b> Nhiều hơn số đã final {g} sqft ({p}%). Trong đó {nf} sqft có permit nhưng chưa bao giờ final, còn {nr} sqft không có permit nào trong danh sách của anh chị.',
+  cmp_under:'<b>{src}: {v} sqft.</b> Không cao hơn số đã final. Chỗ này không có gì phải giải thích.',
+  cmp_none:'Nhập số MLS, county hoặc số đo để so sánh.',
+  warn20:'<b>Chênh quá 20%.</b> Trong vụ Furla v. Jon Douglas Co. (1998), tòa California nói diện tích ghi lố hơn 20% “không phải chuyện nhỏ”, dù listing có chữ “approximate”. Vụ đó nói về diện tích, không phải permit. Nhưng chênh cỡ này thì người mua, appraiser và luật sư đều sẽ để ý y như vậy.',
+  usd:'Với {pps}/sqft, phần chênh {g} sqft trên giấy khoảng <b>{usd}</b>. Đây là tiền có rủi ro, chưa phải tiền mất: appraiser quyết định phần không permit được tính bao nhiêu, hoặc không tính. Chỉ là ước tính.',
+  noarea:'Có {n} permit trong danh sách không ghi sqft. Một phần chênh lệch có thể nằm trong đó. Xin bản sao bản vẽ mới biết chắc.',
+  ctynote:'Anh chị đang lấy số county làm gốc. Assessor định giá phần xây mới dù có permit hay không, nên số county có thể đã gồm cả phần không permit. Permit gốc hoặc bản vẽ là điểm bắt đầu tốt hơn.',
+  oldnote:'Nhà xây trước {y}? SJPermits.org chỉ có permit từ thập niên 1950 trở đi. Microfilm permit từ 1940 đến 1986 và sổ mục lục cũ hơn nằm ở phòng California Room, thư viện San José.',
+  tbl_h:'Bảng để chép',tbl_copy:'Chép bảng',copied:'Đã chép ✓',
+  tb_item:'Hạng mục',tb_year:'Năm',tb_sqft:'Sqft',tb_st:'Trạng thái',tb_total:'Tổng đã final',tb_orig:'Nhà gốc',tb_blank:'(không ghi)',
+  r_est:'Tool chỉ cộng những gì anh chị nhập. Đây không phải tra permit, cũng không phải số đo. Con số tiền là ước tính.',
+  todo_h:'Bước tiếp theo',
+  n1:'<b>Lấy đủ danh sách permit.</b> San José: tra SJPermits.org theo địa chỉ (bỏ hướng và chữ St/Ave) hoặc APN không gạch. City khác: <a href="/t281/">T281</a>.',
+  n2:'<b>Permit chưa final hoặc hết hạn?</b> Xem cần làm gì để đóng: <a href="/t285/">T285</a>. Ở San José, email {em} hoặc gọi {ph}.',
+  n3:'<b>Permit không ghi sqft?</b> Xin bản sao. San José: gửi Document Duplication Request tới {em}. Bản vẽ cần chủ nhà hiện tại ký và mất {pl} ngày; giấy tờ khác {dc} ngày làm việc. Phí tra cứu {rs} mỗi nửa giờ. Người mua: làm ngay ngày đầu của contingency.',
+  n4:'<b>Hỏi người bán</b> đã xây gì, năm nào, ai làm: <a href="/t287/">T287</a>.',
+  n5:'<b>Vẫn còn chênh?</b> Tính chi phí và rủi ro ở <a href="/t283/">T283</a>, xem cách hợp thức hóa ở <a href="/t284/">T284</a>.',
+  n6:'<b>Không chắc số MLS có đúng không?</b> <a href="/t290/">T290</a> chỉ anh chị nên tin số sqft nào.',
+  st_h:'Mỗi trạng thái nghĩa là gì',
+  st_fin:'<b>Finaled</b><small>Đã qua final inspection. Chỉ trạng thái này mới đóng permit.</small>',
+  st_iss:'<b>Đã cấp, đang kiểm tra</b><small>Được phép bắt đầu làm. Các lần kiểm tra vẫn còn mở.</small>',
+  st_exp:'<b>Hết hạn</b><small>Permit hết hạn trước khi final. Trang của city không định nghĩa; thực tế thường là ngưng làm, hoặc không ai gọi kiểm tra lần cuối.</small>',
+  st_unk:'<b>Không rõ</b><small>Tạm tính chung với “chưa final” cho tới khi anh chị tra lại.</small>',
+  my_k:'Nhiều người hiểu sai:',
+  my_v:'“Có permit là hợp pháp rồi.” Chưa chắc. Chỉ Finaled mới là đã qua final inspection. Đã cấp nghĩa là được phép bắt đầu làm. Hết hạn thường là không ai quay lại cho kiểm tra lần cuối. Với appraiser bên mua, phần cơi nới có permit hết hạn nhiều khi chẳng khác gì không có permit.',
+  my2_k:'Thêm một điều:',my2_v:'Permit sửa lại không làm tăng sqft. Permit làm bếp năm 2010 không nói gì về cái phòng sinh hoạt phía sau bếp.',
+  my3_k:'Và điều này:',my3_v:'“Appraiser không tính đồng nào cho phần không permit.” Đó là thói quen, không phải luật. Fannie Mae bảo appraiser nhận xét chất lượng phần làm thêm và ảnh hưởng của nó tới giá, nếu có. Vì vậy tool này ghi “có rủi ro”, không ghi “mất”.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi bảng này về email',f_sub:'Email sẽ có bảng, phần chênh và các bước tiếp theo. Có câu hỏi, Ken sẽ trả lời. Không gửi quảng cáo.',
+  f_name:'Tên',f_phone:'Điện thoại (không bắt buộc)',f_send:'Gửi',f_ok:'Ứng dụng email đã mở sẵn, anh chị chỉ cần bấm Send. Nếu email không mở, xin copy số điện thoại bên dưới và nhắn cho Ken.',f_or:'Hoặc nhắn tin:',f_copy:'Copy',
+  ft_read:'Tool liên quan:',ft_t290:'Nên tin số sqft nào (T290)',ft_t282:'Kiểm tra phần xây không permit (T282)',ft_t285:'Permit còn mở hay hết hạn (T285)',
+  ft_est:'Thông tin chung, không phải tư vấn pháp lý hay thẩm định. Bảng chỉ phản ánh số anh chị nhập; con số tiền là ước tính. Hỏi lại city trước khi dựa vào permit.',
+  ft_src:'Nguồn:',ft_chk:'Tra ngày 19/11/2026.',ft_upd:'Cập nhật',ft_all:'Tất cả công cụ',lang:'English',
+  sms:'Chào Ken, tôi vừa cộng permit trên tools.kenlamrealty.com (T291). Đã final: {fin} sqft. MLS: {mls} sqft. Chênh: {gap} sqft. Tôi muốn hỏi thêm.',
+  subj:'Sqft có permit: {fin} sqft, {n}',
+  body:'Tên: {n}\nEmail: {e}\nĐiện thoại: {ph}\n\nSqft đã có permit final: {fin} sqft\nChênh so với MLS: {gap} sqft\nChênh so với số đo: {gapm} sqft\n{usd}\n\n{tbl}\n\nBước tiếp theo:\n{todo}\n\nChỉ là ước tính. Gửi từ tool T291 tools.kenlamrealty.com'
+}};
+
+let lang='en';
+lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+const $=id=>document.getElementById(id);
+const nf=n=>(Math.round(n*10)/10).toLocaleString('en-US');
+const usd=n=>'$'+Math.round(n).toLocaleString('en-US');
+const num=v=>{ const x=parseFloat(String(v==null?'':v).replace(/,/g,'')); return isFinite(x)&&x>0?x:0; };
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let st=JSON.parse(JSON.stringify(DEF)), last={};
+
+/* Tính thuần — không đụng DOM (dễ test) */
+function tally(x){
+  const b=num(x.bSqft), o={base:b,fin:0,iss:0,exp:0,unk:0,aduFin:0,aduNot:0,rem:0,noArea:0};
+  x.rows.forEach(r=>{
+    const s=num(r.s);
+    if(r.t==='rem'){ o.rem++; return; }
+    if(!s){ o.noArea++; return; }
+    if(r.t==='adu'){ if(r.st==='fin') o.aduFin+=s; else o.aduNot+=s; return; }
+    o[r.st]+=s;
+  });
+  o.finTotal=b+o.fin;
+  o.notFinal=o.iss+o.exp+o.unk;
+  o.cmp={};
+  ['mls','cty','meas'].forEach(k=>{ const v=num(x.cmp[k]); if(!v) return;
+    const g=v-o.finTotal, nfz=Math.min(Math.max(g,0),o.notFinal), nr=Math.max(g-o.notFinal,0);
+    o.cmp[k]={v,g,pct:o.finTotal>0?g/o.finTotal:0,nf:nfz,nr}; });
+  const gs=Object.values(o.cmp).map(c=>c.g); o.maxGap=gs.length?Math.max(0,...gs):0;
+  o.warn=Object.values(o.cmp).some(c=>c.g>0&&c.pct>GAP_WARN);
+  return o;
+}
+
+function rowHtml(r,i,d){
+  const opt=(arr,pre,cur)=>arr.map(k=>'<option value="'+k+'"'+(k===cur?' selected':'')+'>'+d[pre+k]+'</option>').join('');
+  return '<div class="pr" data-r="'+i+'">'+
+    '<div class="ctl py"><input type="number" inputmode="numeric" min="1850" max="2100" data-f="y" placeholder="'+d.p_year+'" aria-label="'+d.p_year+'"></div>'+
+    '<div class="ctl sel pt"><select data-f="t" aria-label="'+d.p_type+'">'+opt(TYPES,'t_',r.t)+'</select></div>'+
+    '<button type="button" class="xb" data-f="x" aria-label="'+d.rm+'" title="'+d.rm+'">✕</button>'+
+    '<div class="pr2"><div class="ctl ps"><input type="number" inputmode="numeric" min="0" data-f="s" placeholder="'+d.p_sqft+'" aria-label="'+d.p_sqft+'"><span class="post">sqft</span></div>'+
+    '<div class="ctl sel pst"><select data-f="st" aria-label="'+d.p_st+'">'+opt(STATUS,'s_',r.st)+'</select></div></div></div>';
+}
+function buildRows(){
+  const d=I18N[lang], P=$('pms');
+  P.innerHTML=st.rows.length?st.rows.map((r,i)=>rowHtml(r,i,d)).join(''):'<div class="empty">'+d.pm_none+'</div>';
+  P.querySelectorAll('.pr').forEach(el=>{ const i=+el.dataset.r, r=st.rows[i];
+    el.querySelector('[data-f=y]').value=r.y; el.querySelector('[data-f=s]').value=r.s;
+    el.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{ r[inp.dataset.f]=inp.value; calc(); }));
+    el.querySelectorAll('select').forEach(s=>s.addEventListener('change',()=>{ r[s.dataset.f]=s.value; calc(); }));
+    el.querySelector('[data-f=x]').onclick=()=>{ st.rows.splice(i,1); buildRows(); calc(); };
+  });
+}
+function buildCmp(){
+  const d=I18N[lang], C=$('cmpIn'); C.innerHTML='';
+  ['mls','cty','meas'].forEach(k=>C.insertAdjacentHTML('beforeend','<div class="r"><div class="nm">'+d['c_'+k]+'<small>'+d['c_'+k+'_s']+'</small></div><div class="ctl"><input type="number" inputmode="numeric" min="0" id="c_'+k+'" placeholder="—" aria-label="'+d['c_'+k]+'"><span class="post">sqft</span></div></div>'));
+  ['mls','cty','meas'].forEach(k=>{ const i=$('c_'+k); i.value=st.cmp[k]; i.addEventListener('input',()=>{ st.cmp[k]=i.value; calc(); }); });
+}
+function buildStatic(){
+  const d=I18N[lang];
+  $('stList').innerHTML=STATUS.map(k=>'<li><i class="'+(k==='fin'?'y':'n')+'">'+(k==='fin'?'✓':'!')+'</i><span>'+d['st_'+k]+'</span></li>').join('');
+  document.querySelectorAll('#bSrc button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.bSrc?'true':'false'));
+}
+function calc(){
+  const d=I18N[lang];
+  st.bSqft=$('bSqft').value; st.bYear=$('bYear').value; st.pps=$('pps').value;
+  const o=tally(st), pps=num(st.pps), yr=parseInt(st.bYear,10);
+  $('fin').textContent=o.base?nf(o.finTotal):'—';
+  $('finSub').textContent=o.base?d.fin_sub.replace('{b}',nf(o.base)).replace('{a}',nf(o.fin)):d.fin_none;
+  const gtxt=c=>c?(c.g>0?'+':'')+nf(c.g)+' <small>sqft</small>':'—';
+  $('gMls').innerHTML=o.base?gtxt(o.cmp.mls):'—'; $('gMeas').innerHTML=o.base?gtxt(o.cmp.meas):'—';
+  const L=[];
+  const ln=(k,v,cls)=>L.push('<div class="line '+(cls||'')+'"><span class="n">'+d[k]+'</span><span class="a">'+v+'</span></div>');
+  ln('ln_base',nf(o.base)+' sqft','sep'); ln('ln_fin','+'+nf(o.fin)+' sqft','ok');
+  if(o.iss) ln('ln_iss',nf(o.iss)+' sqft','w');
+  if(o.exp) ln('ln_exp',nf(o.exp)+' sqft','w');
+  if(o.unk) ln('ln_unk',nf(o.unk)+' sqft','w');
+  if(o.aduFin) ln('ln_adu',nf(o.aduFin)+' sqft');
+  if(o.aduNot) ln('ln_adu2',nf(o.aduNot)+' sqft','w');
+  if(o.rem) ln('ln_rem',String(o.rem));
+  if(o.noArea) ln('ln_noarea',String(o.noArea),'w');
+  $('brk').innerHTML=L.join('');
+  const labels={mls:d.c_mls,cty:d.c_cty,meas:d.c_meas};
+  const ks=Object.keys(o.cmp);
+  $('cmpOut').innerHTML=!o.base?'':ks.length?ks.map(k=>{ const c=o.cmp[k];
+    return '<p>'+(c.g>0?d.cmp_over.replace('{src}',labels[k]).replace('{v}',nf(c.v)).replace('{g}',nf(c.g)).replace('{p}',(Math.round(c.pct*1000)/10).toLocaleString('en-US')).replace('{nf}',nf(c.nf)).replace('{nr}',nf(c.nr))
+      :d.cmp_under.replace('{src}',labels[k]).replace('{v}',nf(c.v)))+'</p>'; }).join(''):'<p class="empty">'+d.cmp_none+'</p>';
+  const show=(id,on,html)=>{ const el=$(id); el.classList.toggle('hide',!on); if(on) el.innerHTML=html; };
+  show('warn20',o.base&&o.warn,d.warn20);
+  const usdTxt=pps&&o.maxGap&&o.base?d.usd.replace('{pps}',usd(pps)).replace('{g}',nf(o.maxGap)).replace('{usd}',usd(o.maxGap*pps)):'';
+  show('usdNote',!!usdTxt,usdTxt);
+  show('noAreaNote',o.noArea>0,d.noarea.replace('{n}',o.noArea));
+  show('ctyNote',st.bSrc==='county'&&o.base>0,d.ctynote);
+  show('oldNote',yr>0&&yr<OLD_YEAR,d.oldnote.replace('{y}',OLD_YEAR));
+  // bảng copy
+  const rowsT=[[d.tb_orig,isFinite(yr)&&yr?String(yr):'',o.base?nf(o.base):'—','']];
+  st.rows.forEach(r=>rowsT.push([d['t_'+r.t],r.y||'',num(r.s)?nf(num(r.s)):d.tb_blank,d['s_'+r.st]]));
+  rowsT.push([d.tb_total,'',nf(o.finTotal),'']);
+  ks.forEach(k=>{ const c=o.cmp[k]; rowsT.push([labels[k],'',nf(c.v),(c.g>0?'+':'')+nf(c.g)]); });
+  const tbl=[d.tb_item+' | '+d.tb_year+' | '+d.tb_sqft+' | '+d.tb_st].concat(rowsT.map(r=>r.join(' | '))).join('\n');
+  $('tbl').textContent=tbl;
+  const T=[d.n1,d.n2.replace('{em}',SJ_EXPIRED.email).replace('{ph}',SJ_EXPIRED.phone),d.n3.replace('{em}',SJ_DUP.email).replace('{pl}',SJ_DUP.plans).replace('{dc}',SJ_DUP.docs).replace('{rs}',SJ_DUP.research),d.n4,d.n5,d.n6];
+  $('todo').innerHTML=T.map(t=>'<li>'+t+'</li>').join('');
+  const strip=s=>s.replace(/<[^>]+>/g,'');
+  last={fin:o.base?nf(o.finTotal):'—',mls:o.cmp.mls?nf(o.cmp.mls.v):'—',gap:o.cmp.mls?nf(o.cmp.mls.g):'—',gapm:o.cmp.meas?nf(o.cmp.meas.g):'—',usd:strip(usdTxt),tbl:tbl,
+    todo:T.map((t,i)=>(i+1)+'. '+strip(t)).join('\n')};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(d.sms.replace(/\{(\w+)\}/g,(mm,k)=>last[k]??mm));
+  klSend();
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; buildRows(); buildCmp(); buildStatic(); calc();
+}
+/* embed mode (?embed=1): iframe trên kenlamrealty.com, gửi chiều cao qua postMessage klToolsHeight */
+const EMBED=/[?&]embed=1/.test(location.search);
+let klSend=()=>{};
+if(EMBED){ document.documentElement.classList.add('embed'); let lastH=0;
+  klSend=()=>{ const w=document.querySelector('.wrap'); const h=Math.ceil(w.getBoundingClientRect().bottom+window.scrollY+40); if(Math.abs(h-lastH)<4) return; lastH=h; try{ parent.postMessage({klToolsHeight:h},'*'); }catch(e){} };
+  window.addEventListener('resize',()=>klSend());
+  document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('a[href]'); if(!a) return; const h=a.getAttribute('href'); if(h.startsWith('#')||a.target==='_blank'||/^(sms|mailto|tel):/.test(h)) return; if(h.startsWith('/')) a.href='https://tools.kenlamrealty.com'+h; a.target='_top'; },true); }
+['bSqft','bYear','pps'].forEach(id=>$(id).addEventListener('input',calc));
+$('bSrc').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; st.bSrc=b.dataset.v; buildStatic(); calc(); });
+$('pmAdd').onclick=()=>{ if(st.rows.length<20){ st.rows.push({y:'',t:'add',s:'',st:'fin'}); buildRows(); calc(); } };
+$('tblCopy').onclick=async()=>{ const d=I18N[lang]; try{ await navigator.clipboard.writeText($('tbl').textContent); $('tblCopy').textContent=d.copied; setTimeout(()=>{$('tblCopy').textContent=I18N[lang].tbl_copy},1500); }catch(e){ const r=document.createRange(); r.selectNodeContents($('tbl')); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus(); klSend();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false; klSend();
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+try{if(/[?&]embed=1/.test(location.search))a.style.display='none';}catch(e){}
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả công cụ';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>

@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Listing Square Footage: What to Write · Ken Lam Tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: one column, inputs on top, live result card below, three actions, footer. Phone first. */
+:root{
+  --bg:#FBF9F4;        /* ivory */
+  --panel:#FFFFFF;
+  --fg:#2B2925;
+  --muted:#7A7468;
+  --line:#E6E0D3;
+  --brass:#B8955A;     /* soft brass accent */
+  --brass-soft:#F3EBDC;
+  --warn:#9A5B2E;
+  --ok:#4F7A5A;
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1C1A17;--panel:#24211D;--fg:#F1ECE2;--muted:#A69D8E;--line:#3A352E;
+  --brass:#D2B07A;--brass-soft:#302A20;--warn:#D99A6A;--ok:#8CBF9A;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 40px}
+.wrap{max-width:560px;margin:0 auto;display:grid;gap:22px}
+header{display:grid;gap:6px}
+.brand{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.lang{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:5px 10px;border-radius:999px;cursor:pointer}
+.lang:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font-family:var(--display);font-weight:300;font-size:38px;line-height:1.1;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:15px;margin:0;max-width:40ch}
+
+.inputs{display:grid;gap:14px}
+.field{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.field label{font-size:13px;font-weight:500;color:var(--muted)}
+.field label small{font-weight:400}
+.ctl{display:flex;align-items:center;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 12px}
+.ctl:focus-within{border-color:var(--brass)}
+.ctl .pre,.ctl .post{color:var(--muted);font-size:15px}
+.ctl input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:20px;padding:12px 8px;font-variant-numeric:tabular-nums}
+.ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ctl input[type=number]{-moz-appearance:textfield}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:380px){.row2{grid-template-columns:1fr}}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-size:15px;padding:11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brass-soft);color:var(--fg);font-weight:500}
+
+.result{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 20px;display:grid;gap:16px}
+.total .k{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.total .v{font-family:var(--display);font-weight:400;font-size:58px;line-height:1;margin-top:4px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.total .v small{font-family:var(--body);font-size:16px;color:var(--muted);font-weight:400}
+.lines{display:grid;gap:0;border-top:1px solid var(--line)}
+.line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.line .n{color:var(--muted);min-width:0}
+.line .n b{color:var(--fg);font-weight:500}
+.line .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.line.pmi .a{color:var(--warn)}
+.line.pmi.off{display:none}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--line)}
+.bar i{display:block;height:100%}
+.bar .b1{background:var(--brass)}
+.bar .b2{background:#A9B7A0}
+.bar .b3{background:#CBB7A3}
+.bar .b4{background:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.meta{font-size:13px;color:var(--muted);display:grid;gap:4px}
+.meta b{color:var(--fg);font-weight:500}
+.note{font-size:13px;color:var(--muted);background:var(--brass-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.note.hide{display:none}
+
+.actions{display:grid;gap:10px}
+.btn{display:flex;justify-content:center;align-items:center;gap:8px;border-radius:10px;padding:14px 16px;font:inherit;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--fg)}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#FFFDF8}
+.btn.primary:hover{filter:brightness(.96)}
+.btn:hover{border-color:var(--brass)}
+
+.form{display:none;background:var(--panel);border:1px solid var(--brass);border-radius:14px;padding:18px;gap:12px}
+.form.open{display:grid}
+.form h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.form .ctl input{font-size:16px}
+.form .ok{color:var(--ok);font-weight:500;font-size:14px}
+.copyrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.copyrow code{background:var(--brass-soft);padding:3px 8px;border-radius:6px;user-select:all;font-family:var(--body)}
+.copyrow button{border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:5px 10px;border-radius:999px;cursor:pointer}
+
+footer{display:grid;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+footer a{color:var(--brass);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .who{color:var(--fg)}
+@media (prefers-reduced-motion:no-preference){.total .v{transition:opacity .15s}}
+</style>
+<style>
+/* ---- Thêm cho T92 (không đổi class cũ) ---- */
+.ctl select{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font:inherit;font-size:18px;padding:12px 4px;appearance:none;-webkit-appearance:none;cursor:pointer}
+.ctl.sel::after{content:"";width:8px;height:8px;border:solid var(--muted);border-width:0 1.5px 1.5px 0;transform:rotate(45deg) translateY(-3px);flex:none}
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.checks label{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:8px 13px;font-size:14px;color:var(--muted);cursor:pointer;user-select:none}
+.checks input{accent-color:var(--brass);margin:0}
+.checks label:has(input:checked){background:var(--brass-soft);color:var(--fg);border-color:var(--brass)}
+.tg{display:grid;gap:8px}
+.tg label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;align-items:start;font-size:14px;color:var(--fg);cursor:pointer;line-height:1.4}
+.tg input{accent-color:var(--brass);width:18px;height:18px;margin:1px 0 0}
+.tg small{display:block;color:var(--muted);font-size:12px}
+.total .v .of{font-size:30px;color:var(--muted)}
+.total .cnt2{margin-top:8px;font-size:14px;color:var(--muted)}
+.total .cnt2 b{color:var(--fg);font-weight:500}
+.pjs{display:grid;border-top:1px solid var(--line)}
+.pj{padding:14px 0;border-bottom:1px solid var(--line);display:grid;gap:6px}
+.pj-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.pj-h b{font-weight:500;font-size:16px;min-width:0}
+.st{font-size:11px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;border-radius:999px;padding:3px 9px;border:1px solid var(--line);color:var(--muted)}
+.st.y{border-color:var(--brass);background:var(--brass-soft);color:var(--warn)}
+.st.d{border-style:dashed;color:var(--fg)}
+.pj .why{font-size:14px;color:var(--fg);margin:0;line-height:1.45}
+.pj dl{margin:2px 0 0;display:grid;grid-template-columns:minmax(0,7.5em) minmax(0,1fr);gap:4px 10px;font-size:13px}
+.pj dt{color:var(--muted)}
+.pj dd{margin:0;min-width:0}
+.pj dd a{color:var(--brass);text-decoration:none}
+.pj dd small{color:var(--muted)}
+.next-steps{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;gap:10px}
+.next-steps h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+.next-steps ol,.next-steps ul{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.next-steps a{color:var(--brass)}
+.myth{font-size:14px;line-height:1.5;border-left:2px solid var(--brass);padding:2px 0 2px 12px;margin:0}
+.myth b{font-weight:500}
+.srcs a{word-break:break-word}
+.ck{font-size:13px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.empty{font-size:14px;color:var(--muted);padding:12px 0}
+</style>
+<style>
+/* ---- Thêm cho T282/T290 (không đổi class cũ) ---- */
+.ctl input[type=text]{font-size:20px}
+.pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.pair .ctl input{font-size:18px}
+.pair .tag{font-size:12px;color:var(--muted)}
+.meter{height:10px;border-radius:999px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--brass);transition:width .2s}
+.meter.hi i{background:var(--warn)}
+.lvl{display:inline-block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:3px 10px;border:1px solid var(--line);margin-left:8px;vertical-align:middle;font-family:var(--body)}
+.lvl.l{color:var(--ok);border-color:var(--ok)}
+.lvl.m{color:var(--brass);border-color:var(--brass);background:var(--brass-soft)}
+.lvl.h{color:var(--warn);border-color:var(--warn);background:var(--brass-soft)}
+.gapbox{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.gapbox>div{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.gapbox .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.gapbox .v{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
+.gapbox .v small{font-family:var(--body);font-size:13px;color:var(--muted)}
+.line .a.pts{color:var(--warn)}
+.line .a.z{color:var(--muted)}
+.todo{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15px}
+.todo a{color:var(--brass)}
+html.embed .kl-back{display:none}
+.row2>.ctl,.row2>.field,.pair .ctl{min-width:0}
+.row2 .ctl input,.pair .ctl input{width:0}
+</style>
+<meta name="description" content="Enter county, permitted, measured and seller numbers plus any unpermitted space. Get the MLS sqft figure, its source, and ready-to-paste remarks, TDS/SPQ and AVID lines.">
+<link rel="canonical" href="https://tools.kenlamrealty.com/t293/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ken Lam Tools">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Listing Square Footage: What to Write · Ken Lam Tools">
+<meta property="og:description" content="The sqft to put in the MLS, the source to note, and disclosure lines to paste.">
+<meta property="og:url" content="https://tools.kenlamrealty.com/t293/">
+<meta property="og:image" content="https://tools.kenlamrealty.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* site additions (tools.kenlamrealty.com) */
+.kl-back{font-size:13px;color:var(--muted);text-decoration:none;justify-self:start}
+.kl-back:hover{color:var(--brass)}
+.kl-vid{width:100%;border-radius:12px;display:block;background:var(--panel);border:1px solid var(--line)}
+</style>
+<script id="kl-commas">
+/* Ken Lam Realty: ô nhập tiền / sqft tự thêm dấu phẩy (1,200,000). Code cũ vẫn đọc .value ra số thuần. */
+(function(){
+  var d=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+  function fmt(v){
+    var s=String(v==null?'':v).replace(/[^0-9.\-]/g,''),neg=s.charAt(0)==='-';
+    s=s.replace(/-/g,'');
+    var i=s.indexOf('.'),ip=i<0?s:s.slice(0,i),dp=i<0?'':s.slice(i).replace(/\./g,'');
+    if(i>=0)dp='.'+dp;
+    ip=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    return (neg?'-':'')+ip+dp;
+  }
+  function want(el){
+    if(el.type!=='number'||el.__klc)return false;
+    var c=el.closest&&el.closest('.ctl');if(!c)return false;
+    var pre=c.querySelector('.pre'),post=c.querySelector('.post');
+    if(pre&&pre.textContent.indexOf('$')>-1)return true;
+    if(post&&/^\s*(sqft|sq ?ft)\s*$/i.test(post.textContent))return true;
+    return false;
+  }
+  function conv(el){
+    if(!want(el))return;
+    el.__klc=1;
+    var cur=d.get.call(el),ph=el.getAttribute('placeholder');
+    el.type='text';
+    if(!el.getAttribute('inputmode'))el.setAttribute('inputmode','numeric');
+    Object.defineProperty(el,'value',{configurable:true,
+      get:function(){return d.get.call(this).replace(/,/g,'')},
+      set:function(v){d.set.call(this,fmt(v))}});
+    d.set.call(el,fmt(cur));
+    if(ph&&/^[0-9.]{5,}$/.test(ph))el.setAttribute('placeholder',fmt(ph));
+    el.addEventListener('input',function(){
+      var raw=d.get.call(el),pos=el.selectionStart,n=0,k;
+      for(k=0;k<pos;k++)if(/[0-9.]/.test(raw.charAt(k)))n++;
+      var out=fmt(raw);
+      if(out===raw)return;
+      d.set.call(el,out);
+      for(k=0,pos=0;k<out.length&&n>0;k++){pos=k+1;if(/[0-9.]/.test(out.charAt(k)))n--;}
+      try{el.setSelectionRange(pos,pos)}catch(e){}
+    });
+  }
+  function scan(r){
+    if(r.nodeType!==1)return;
+    if(r.tagName==='INPUT')conv(r);
+    var l=r.querySelectorAll?r.querySelectorAll('input[type=number]'):[];
+    for(var i=0;i<l.length;i++)conv(l[i]);
+  }
+  new MutationObserver(function(m){
+    for(var i=0;i<m.length;i++)for(var j=0;j<m[i].addedNodes.length;j++)scan(m[i].addedNodes[j]);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',function(){scan(document.body)});
+})();
+</script>
+<style>
+/* ---- Thêm cho T290 (không đổi class cũ) ---- */
+.srcin{display:grid;gap:8px}
+.srcin .r{display:grid;grid-template-columns:minmax(0,1fr) 9.5em;gap:10px;align-items:center}
+.srcin .r .nm{font-size:14px;line-height:1.3}
+.srcin .r .nm small{display:block;color:var(--muted);font-size:12px}
+.srcin .ctl input{font-size:18px;width:0;padding:10px 6px}
+.srcs-out{display:grid;border-top:1px solid var(--line)}
+.so{padding:11px 0;border-bottom:1px solid var(--line);display:grid;gap:5px}
+.so-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:15px}
+.so-h b{font-weight:500;min-width:0}
+.so-h .a{font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.so-h .a small{color:var(--muted);font-weight:400}
+.so.best .so-h b::after{content:"★";color:var(--brass);margin-left:6px}
+.tr{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.tr .m{flex:1;height:6px;border-radius:999px;background:var(--line);overflow:hidden}
+.tr .m i{display:block;height:100%;background:var(--brass)}
+.so p{margin:0;font-size:13px;color:var(--muted);line-height:1.45}
+.dz{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:center}
+.dz .ctl input{font-size:17px;width:0;padding:10px 6px}
+.dz .x{color:var(--muted);font-size:14px}
+.rules{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.rules li{display:grid;grid-template-columns:26px minmax(0,1fr);gap:8px;font-size:15px;line-height:1.45}
+.rules li i{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:600}
+.rules li i.y{background:var(--brass-soft);color:var(--ok);border:1px solid var(--ok)}
+.rules li i.n{background:var(--brass-soft);color:var(--warn);border:1px solid var(--warn)}
+.rules li small{display:block;color:var(--muted);font-size:13px}
+.big2{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
+.big2 small{font-family:var(--body);font-size:13px;color:var(--muted)}
+</style>
+<style>
+/* ---- Thêm cho T291 (không đổi class cũ) ---- */
+.pms{display:grid;border-top:1px solid var(--line)}
+.pr{display:grid;grid-template-columns:5.6em minmax(0,1fr) 36px;grid-template-areas:"y t x" "r r r";gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.pr .py{grid-area:y}.pr .pt{grid-area:t}.pr .xb{grid-area:x}
+.pr .ctl{min-width:0;padding:0 8px}
+.pr .ctl input{font-size:17px;width:0;padding:10px 4px}
+.pr .ctl select{font-size:15px;padding:10px 2px}
+.pr2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:8px;grid-area:r}
+.xb{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:16px;cursor:pointer;line-height:1}
+.xb:hover{border-color:var(--warn);color:var(--warn)}
+.cmp{display:grid;gap:8px}
+.cmp .r{display:grid;grid-template-columns:minmax(0,1fr) 9.5em;gap:10px;align-items:center}
+.cmp .r .nm{font-size:14px;line-height:1.3}
+.cmp .r .nm small{display:block;color:var(--muted);font-size:12px}
+.cmp .ctl input{font-size:18px;width:0;padding:10px 6px}
+.line.w .a{color:var(--warn)}
+.line.ok .a{color:var(--ok)}
+.line.sep .n{color:var(--fg)}
+.note.warn{border-left:3px solid var(--warn)}
+.paste{background:var(--brass-soft);border-radius:10px;padding:12px;font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word;margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-x:auto}
+.cpy{justify-self:start;border:1px solid var(--line);background:transparent;color:var(--fg);font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;cursor:pointer}
+.cpy:hover{border-color:var(--brass)}
+.cmpout{display:grid;gap:8px}
+.cmpout p{margin:0;font-size:14px;line-height:1.45}
+.cmpout p b{font-weight:500}
+.wrap{grid-template-columns:minmax(0,1fr)}
+.todo li,.cmpout p,.note,.rules li,.gapbox .v,.total .v{overflow-wrap:anywhere}
+</style><style>
+/* ---- Thêm cho T293 ---- */
+.ur{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr) 36px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.ur .ctl{min-width:0;padding:0 8px}
+.ur .ctl input{font-size:17px;width:0;padding:10px 4px}
+.ur .ctl select{font-size:15px;padding:10px 2px}
+.pblk{display:grid;gap:8px;padding-top:4px}
+.pblk .gl{margin:0;font-size:13px;color:var(--muted);line-height:1.45}
+.why2{margin:0;padding-left:18px;display:grid;gap:6px;font-size:14px;line-height:1.45}
+.seg.sm button{font-size:14px;padding:10px 6px}
+.hidden{display:none !important}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="kl-back" id="klBack" href="/cong-cu/">← All tools</a>
+  <header>
+    <div class="brand">
+      <span>Ken Lam Realty · Tools</span>
+      <button class="lang" id="langBtn" type="button" aria-label="Switch language">Tiếng Việt</button>
+    </div>
+    <h1 data-i="title">Listing square footage: what to write</h1>
+    <p class="sub" data-i="sub">Type the numbers you have and any space built without a permit. You get the number for the MLS sqft field, the source to note, and lines ready to paste into remarks, the TDS, SPQ and AVID.</p>
+  </header>
+
+  <section class="inputs" aria-label="Inputs">
+    <div class="field">
+      <label><span data-i="l_num">Numbers you have</span> <small data-i="l_num_s">(fill only what you have)</small></label>
+      <div class="cmp" id="numIn"></div>
+    </div>
+    <div class="field" id="mtField">
+      <label><span data-i="l_mt">How was it measured?</span></label>
+      <div class="seg sm" id="mt" role="group">
+        <button type="button" data-v="ansi" aria-pressed="true">ANSI Z765</button>
+        <button type="button" data-v="appr" aria-pressed="false" data-i="mt_appr">Appraisal</button>
+        <button type="button" data-v="oth" aria-pressed="false" data-i="mt_oth">Other / not sure</button>
+      </div>
+    </div>
+    <div class="field" id="incField">
+      <label><span data-i="l_inc">Does the measured number include the unpermitted space?</span></label>
+      <div class="seg sm" id="inc" role="group">
+        <button type="button" data-v="yes" aria-pressed="true" data-i="inc_yes">Yes, it's in there</button>
+        <button type="button" data-v="no" aria-pressed="false" data-i="inc_no">No, left out</button>
+      </div>
+    </div>
+    <div class="field">
+      <label><span data-i="l_un">Space built without a permit</span> <small data-i="l_un_s">(or permit never finaled; one row each)</small></label>
+      <div class="pms" id="unRows"></div>
+      <button class="btn" type="button" id="unAdd" data-i="un_add">+ Add a row</button>
+    </div>
+  </section>
+
+  <section class="result" aria-live="polite">
+    <div class="total">
+      <div class="k" data-i="r_k">Put this in the MLS sqft field</div>
+      <div class="v"><span id="fieldN">—</span> <small>sqft</small></div>
+      <div class="cnt2" id="srcLine"></div>
+    </div>
+    <ul class="why2" id="why"></ul>
+    <div class="gapbox">
+      <div><div class="k" data-i="g_un">Unpermitted (remarks only)</div><div class="v" id="unN">0 <small>sqft</small></div></div>
+      <div><div class="k" data-i="g_spread">Spread among records</div><div class="v" id="spreadN">— </div></div>
+    </div>
+    <div class="ck"><span data-i="rk_h">Risk if the listing used the biggest number</span><span class="lvl" id="lvl">—</span></div>
+    <div class="meter" id="meter"><i id="meterBar" style="width:0%"></i></div>
+    <div class="note" id="riskNote"></div>
+
+    <div class="pblk"><div class="ck" data-i="p_mls">MLS sqft field + source</div><pre class="paste en-paste" id="pMls"></pre><p class="gl" id="gMls"></p><button class="cpy" type="button" data-c="pMls" data-i="cp">Copy</button></div>
+    <div class="pblk"><div class="ck" data-i="p_rem">MLS remarks (English)</div><pre class="paste en-paste" id="pRem"></pre><p class="gl" id="gRem"></p><button class="cpy" type="button" data-c="pRem" data-i="cp">Copy</button></div>
+    <div class="pblk"><div class="ck" data-i="p_tds">TDS section II.C, items 4–5</div><pre class="paste en-paste" id="pTds"></pre><p class="gl" id="gTds"></p><button class="cpy" type="button" data-c="pTds" data-i="cp">Copy</button></div>
+    <div class="pblk"><div class="ck" data-i="p_spq">SPQ item 7.A</div><pre class="paste en-paste" id="pSpq"></pre><p class="gl" id="gSpq"></p><button class="cpy" type="button" data-c="pSpq" data-i="cp">Copy</button></div>
+    <div class="pblk"><div class="ck" data-i="p_avid">AVID (what the agent sees)</div><pre class="paste en-paste" id="pAvid"></pre><p class="gl" id="gAvid"></p><button class="cpy" type="button" data-c="pAvid" data-i="cp">Copy</button></div>
+    <div class="note" data-i="r_est">Suggested wording, not legal advice. The seller answers the TDS and SPQ from their own knowledge; edit every line to fit the facts. Risk bands are a rule of thumb.</div>
+  </section>
+
+  <section class="next-steps">
+    <h2 data-i="todo_h">Next steps</h2>
+    <ol class="todo" id="todo"></ol>
+  </section>
+
+  <video class="kl-vid" src="web.mp4" autoplay muted loop playsinline preload="metadata" aria-label="Video" onerror="this.remove()"></video>
+
+  <section class="next-steps">
+    <p class="myth"><b data-i="my_k">Many people get this wrong:</b> <span data-i="my_v"></span></p>
+    <p class="myth"><b data-i="my2_k">One more:</b> <span data-i="my2_v"></span></p>
+    <p class="myth"><b data-i="my3_k">And this one:</b> <span data-i="my3_v"></span></p>
+  </section>
+
+  <section class="actions">
+    <button class="btn primary" type="button" id="emailBtn" data-i="b_email">Email me the result</button>
+    <a class="btn" id="smsBtn" href="sms:4086662825" data-i="b_sms">Ask Ken</a>
+    <a class="btn" id="videoBtn" href="/t293/web.mp4" target="_blank" rel="noopener" data-i="b_video">Watch 15-sec video</a>
+  </section>
+
+  <section class="form" id="form" aria-label="Email form">
+    <h2 data-i="f_title">Email these lines to yourself</h2>
+    <p data-i="f_sub">The email includes the field number, the source and every line above. Ken will reply if you have questions. No marketing emails.</p>
+    <div class="field"><label for="fname"><span data-i="f_name">Name</span></label><div class="ctl"><input id="fname" type="text" autocomplete="name"></div></div>
+    <div class="field"><label for="femail">Email</label><div class="ctl"><input id="femail" type="email" inputmode="email" autocomplete="email"></div></div>
+    <div class="field"><label for="fphone"><span data-i="f_phone">Phone (optional)</span></label><div class="ctl"><input id="fphone" type="tel" inputmode="tel" autocomplete="tel"></div></div>
+    <button class="btn primary" type="button" id="sendBtn" data-i="f_send">Send</button>
+    <div class="ok" id="sent" hidden data-i="f_ok">Your email app is open. Press Send to finish. If nothing opened, copy the number below and text Ken.</div>
+    <div class="copyrow"><span data-i="f_or">Or text:</span> <code>408-666-2825</code> <button type="button" id="copyBtn" data-i="f_copy">Copy</button></div>
+  </section>
+
+  <footer>
+    <span><span data-i="ft_read">Related:</span> <a href="/t291/" data-i="ft_t291">Add up permitted sqft (T291)</a> · <a href="/t290/" data-i="ft_t290">Which sqft to trust (T290)</a> · <a href="/t287/" data-i="ft_t287">Permit questions for the seller (T287)</a></span>
+    <span data-i="ft_est">General info, not legal or appraisal advice. Wording is a suggestion; the seller's disclosures must reflect what the seller actually knows. Risk bands are an estimate.</span>
+    <span class="srcs"><span data-i="ft_src">Sources:</span>
+      <a href="https://california.public.law/codes/civil_code_section_1088" target="_blank" rel="noopener">Civ. Code 1088 (MLS accuracy)</a> ·
+      <a href="https://www.leagle.com/decision/199898776calrptr2d9111867" target="_blank" rel="noopener">Furla v. Jon Douglas Co. (1998)</a> ·
+      <a href="https://go.sdar.com/legal/handling-square-footage-differences-in-residential-listings" target="_blank" rel="noopener">SDAR, square footage differences (Robinson v. Grossman)</a> ·
+      <a href="https://www.epsten.com/civil-code-2014-1102-6-transfer-disclosure-statement/" target="_blank" rel="noopener">Civ. Code 1102.6 (TDS text)</a> ·
+      <a href="https://california.public.law/codes/civil_code_section_1102.6h" target="_blank" rel="noopener">Civ. Code 1102.6h (18-month rule)</a> ·
+      <a href="https://cdn.realtyfeed.com/cdn/3/1153238508/3e4ee68fdb4f09f50a3be3adaf0eff5c.pdf" target="_blank" rel="noopener">C.A.R. SPQ, SFLS, AVID (public listing packet)</a> ·
+      <a href="https://www.nysar.com/wp-content/uploads/2022/04/Fannie_Mae_ANSI_Fact_Sheet_updated_033122.pdf" target="_blank" rel="noopener">Fannie Mae ANSI fact sheet</a> ·
+      <a href="https://ddwiki.reso.org/display/DDW20/LivingAreaSource+Field" target="_blank" rel="noopener">RESO LivingAreaSource</a>
+      · <span data-i="ft_chk">Checked 19/11/2026.</span></span>
+    <span class="who">Ken Lam · Broker Associate · DRE #01401822 · <a href="https://kenlamrealty.com" target="_blank" rel="noopener">kenlamrealty.com</a></span>
+    <span><span data-i="ft_upd">Updated</span>: 19/11/2026 · <a href="/cong-cu/" data-i="ft_all">All tools</a></span>
+  </footer>
+</div>
+
+<script>
+/* ===== Số liệu — sửa ở đây (tra 19/11/2026, xem /sqftpermit/FACTS.md) ===== */
+const RISK_LOW=0.05;   /* ≤5% chênh: thấp — ước tính theo nghề [ESTIMATE] */
+const RISK_HIGH=0.20;  /* >20%: cao — Furla v. Jon Douglas Co. (1998): >20% "was not de minimis" [LAW] */
+const ANSI_SINCE='04/2022'; /* Fannie Mae: appraisal hiệu lực từ 1/4/2022 phải đo theo ANSI Z765-2021 [OFFICIAL] */
+const FLIP_MONTHS=18;  /* Civ. Code 1102.6h: bán trong 18 tháng sau khi nhận title, offer từ 1/7/2024 [LAW] */
+/* Thứ tự ưu tiên số ghi vào ô sqft (ước tính theo nghề, giải thích trong bài) */
+const PRIORITY=['meas_ok','perm','cty','meas_oth'];
+/* RESO LivingAreaSource — giá trị gần nhất; MLSListings có bắt buộc ô này không: CHƯA XÁC MINH [UNVERIFIED] */
+const RESO_SRC={ansi:'See Remarks',appr:'Appraiser',perm:'Plans',cty:'Public Records',oth:'See Remarks'};
+const UTYPES=['gar','add','pat','adu','oth'];
+const DEF={n:{meas:'',perm:'1650',cty:'1650',sel:'2100'},mt:'ansi',inc:'yes',
+  un:[{t:'gar',s:'250'},{t:'add',s:'200'}]};  /* ví dụ: nhà T291 — 1,650 có permit, người bán nói 2,100 */
+/* ======================================================================== */
+const PASTE={ /* câu tiếng Anh để dán vào form/MLS — giữ English ở cả 2 ngôn ngữ */
+  src:{ansi:'per ANSI Z765 measurement',appr:'per appraisal',perm:'per City permit records',cty:'per County records',oth:'per measurement'},
+  srcShort:{ansi:'ANSI Z765 measurement',appr:'Appraisal',perm:'City permit records',cty:'County records',oth:'Measurement (method not stated)'},
+  t:{gar:'garage conversion',add:'room addition',pat:'enclosed patio',adu:'ADU / back unit',oth:'other added space'},
+  avid:{gar:'Garage appears to have been converted to living space.',add:'Part of the home appears to be an added room.',pat:'Patio appears to be enclosed and used as interior space.',adu:'Separate unit / ADU on the property.',oth:'Area that appears to have been added or converted.'}
+};
+const I18N={
+en:{
+  title:'Listing square footage: what to write',
+  sub:'Type the numbers you have and any space built without a permit. You get the number for the MLS sqft field, the source to note, and lines ready to paste into remarks, the TDS, SPQ and AVID.',
+  l_num:'Numbers you have',l_num_s:'(fill only what you have)',
+  n_meas:'Measured / appraisal',n_meas_s:'ANSI measurement or recent appraisal',n_perm:'Permitted',n_perm_s:'original + finaled permits (T291)',n_cty:'County',n_cty_s:'assessor property characteristics',n_sel:'Seller says',n_sel_s:'what the owner believes',
+  l_mt:'How was it measured?',mt_appr:'Appraisal',mt_oth:'Other / not sure',
+  l_inc:'Does the measured number include the unpermitted space?',inc_yes:'Yes, it’s in there',inc_no:'No, left out',
+  l_un:'Space built without a permit',l_un_s:'(or permit never finaled; one row each)',
+  u_gar:'Garage conversion',u_add:'Addition',u_pat:'Enclosed patio',u_adu:'ADU / back unit',u_oth:'Other',u_sqft:'Sqft',u_type:'Type',rm:'Remove this row',
+  un_add:'+ Add a row',un_none:'No unpermitted space entered. Good, if that’s true.',
+  r_k:'Put this in the MLS sqft field',src:'Source to note: {s}',none:'Type a measured, permitted or county number.',
+  why_ansi:'A measurement to ANSI Z765 is what lender appraisers have used since {d}. It’s the number least likely to move during escrow.',
+  why_appr:'An appraiser measured it, and appraisers must use ANSI for living area.',
+  why_perm:'No measurement, so the permitted number is the one you can back up with city records.',
+  why_cty:'Only the county number. It’s public, but the county keeps it for taxes and doesn’t update it continuously. Label it County records and tell buyers to verify.',
+  why_oth:'The measured number has no stated method, so it ranks below permit and county records.',
+  why_minus:'The measured {m} sqft includes {u} sqft built without a permit, so the field shows {m} − {u}. The rest goes in remarks.',
+  why_sel:'The seller’s {s} sqft never goes in the field on its own. An agent can’t pass on a seller’s figure without a reasonable basis (Robinson v. Grossman, 1997).',
+  g_un:'Unpermitted (remarks only)',g_spread:'Spread among records',
+  rk_h:'Risk if the listing used the biggest number',rk_l:'Low',rk_m:'Medium',rk_hh:'High',
+  risk:'The biggest number in play is {big} sqft ({who}), {p}% over the field number. Up to 5% is normal noise. 5–20% gets buyers and appraisers asking. Over 20% is the range a California court called “not de minimis” in Furla v. Jon Douglas Co. (1998). The bands are a rule of thumb, not law.',
+  risk_none:'Add a number to see the risk.',
+  who_sel:'seller',who_tot:'field + unpermitted',who_meas:'measured',who_cty:'county',who_perm:'permitted',
+  p_mls:'MLS sqft field + source',p_rem:'MLS remarks (English)',p_tds:'TDS section II.C, items 4–5',p_spq:'SPQ item 7.A',p_avid:'AVID (what the agent sees)',cp:'Copy',copied:'Copied ✓',
+  g_mls_t:'Type this in the sqft field. If your MLS has a source field (RESO LivingAreaSource), pick the closest match: {o}.',
+  g_rem_t:'MLS remarks stay in English. Say where the number came from, list the unpermitted space separately, and tell buyers to verify.',
+  g_tds_t:'Item 4 asks directly about additions or alterations made without necessary permits. Item 5 asks about building code compliance; answer it from what the seller knows.',
+  g_spq_t:'Item 7.A covers alterations and improvements. Note 2 is where work without a permit is explained. Add years and who did the work, if known.',
+  g_avid_t:'The AVID is what the agent sees on the walk-through. Write only what you see, not what the seller told you.',
+  todo_h:'Next steps',
+  n1:'<b>Get the permitted number first.</b> Add up the original house and finaled permits with <a href="/t291/">T291</a>.',
+  n2:'<b>Want a number nobody argues with?</b> Have the home measured to ANSI Z765 before you list. <a href="/t290/">T290</a> explains what counts.',
+  n3:'<b>Give buyers the C.A.R. SFLS</b> (Square Footage and Lot Size Advisory). It says brokers won’t verify square footage and buyers should use their own experts.',
+  n4:'<b>Collect the paper:</b> old permits, plans, receipts, contractor names. <a href="/t287/">T287</a> has the questions.',
+  n5:'<b>Seller took title less than {m} months before accepting an offer?</b> Civ. Code 1102.6h: disclose contractor-done additions and alterations, and hand over copies of permits.',
+  n6:'<b>Thinking of legalizing before you list?</b> See the steps in <a href="/t284/">T284</a> and the cost in <a href="/t283/">T283</a>.',
+  my_k:'Many people get this wrong:',my_v:'“I wrote ‘approx.’, so I’m covered.” Not if the number is way off. In Furla, the listing said “APX: 5500”, appraisers measured about 4,400 to 4,600, and the court still let the buyer’s case go forward.',
+  my2_k:'One more:',my2_v:'“If I leave the room out of the sqft, I don’t have to mention it.” The TDS asks about it directly, in section II.C item 4. Leaving it out of the number is fine. Leaving it out of the disclosures is not.',
+  my3_k:'And this one:',my3_v:'“Use the biggest number, it sells.” The buyer’s appraiser measures to ANSI. If the number drops, the appraisal can drop with it, and you renegotiate in escrow. Civ. Code 1088 also makes the agent responsible for MLS statements they knew, or should have known, were wrong.',
+  b_email:'Email me the result',b_sms:'Ask Ken',b_video:'Watch 15-sec video',
+  f_title:'Email these lines to yourself',f_sub:'The email includes the field number, the source and every line above. Ken will reply if you have questions. No marketing emails.',
+  f_name:'Name',f_phone:'Phone (optional)',f_send:'Send',f_ok:'Your email app is open. Press Send to finish. If nothing opened, copy the number below and text Ken.',f_or:'Or text:',f_copy:'Copy',
+  r_est:'Suggested wording, not legal advice. The seller answers the TDS and SPQ from their own knowledge; edit every line to fit the facts. Risk bands are a rule of thumb.',
+  ft_read:'Related:',ft_t291:'Add up permitted sqft (T291)',ft_t290:'Which sqft to trust (T290)',ft_t287:'Permit questions for the seller (T287)',
+  ft_est:'General info, not legal or appraisal advice. Wording is a suggestion; the seller’s disclosures must reflect what the seller actually knows. Risk bands are an estimate.',
+  ft_src:'Sources:',ft_chk:'Checked 19/11/2026.',ft_upd:'Updated',ft_all:'All tools',lang:'Tiếng Việt',
+  sms:'Hi Ken, I used the listing sqft tool on tools.kenlamrealty.com (T293). Field number: {f} sqft ({s}). Unpermitted: {u} sqft. Could we talk it over?',
+  subj:'Listing sqft: {f} sqft, {n}',
+  body:'Name: {n}\nEmail: {e}\nPhone: {ph}\n\nMLS sqft field: {f} sqft\nSource: {s}\nUnpermitted (remarks only): {u} sqft\nRisk: {risk}\n\n{blocks}\n\nSuggested wording only. Sent from tool T293 tools.kenlamrealty.com'
+},
+vi:{
+  title:'Ghi sqft cho đúng khi đăng bán',
+  sub:'Nhập các số anh chị có và phần xây không permit. Tool cho ra số nên ghi vào ô sqft trên MLS, nguồn cần ghi kèm, và các câu dán sẵn cho remarks, TDS, SPQ và AVID.',
+  l_num:'Các số anh chị có',l_num_s:'(chỉ nhập số anh chị có)',
+  n_meas:'Đo thật / appraisal',n_meas_s:'đo theo ANSI hoặc appraisal gần đây',n_perm:'Có permit',n_perm_s:'nhà gốc + permit đã final (T291)',n_cty:'County',n_cty_s:'hồ sơ đặc điểm nhà của assessor',n_sel:'Người bán nói',n_sel_s:'số chủ nhà tin là đúng',
+  l_mt:'Đo bằng cách nào?',mt_appr:'Appraisal',mt_oth:'Cách khác / không rõ',
+  l_inc:'Số đo có gồm cả phần không permit không?',inc_yes:'Có, đã gồm',inc_no:'Không, đã trừ ra',
+  l_un:'Phần xây không permit',l_un_s:'(hoặc permit chưa bao giờ final; mỗi phần một dòng)',
+  u_gar:'Garage làm phòng',u_add:'Cơi nới',u_pat:'Patio đóng kín',u_adu:'ADU / nhà sau',u_oth:'Khác',u_sqft:'Sqft',u_type:'Loại',rm:'Xóa dòng này',
+  un_add:'+ Thêm dòng',un_none:'Chưa nhập phần nào không permit. Nếu đúng là không có thì tốt.',
+  r_k:'Ghi số này vào ô sqft trên MLS',src:'Nguồn ghi kèm: {s} ({v})',srcvi:{ansi:'đo theo ANSI',appr:'appraisal',perm:'hồ sơ permit của city',cty:'hồ sơ county',oth:'số đo, không rõ cách đo'},none:'Nhập số đo, số có permit hoặc số county.',
+  why_ansi:'Đo theo ANSI Z765 là cách appraiser của ngân hàng dùng từ {d}. Đây là con số ít bị đổi nhất trong lúc escrow.',
+  why_appr:'Appraiser đã đo, và appraiser bắt buộc đo diện tích ở theo ANSI.',
+  why_perm:'Chưa có số đo, nên số có permit là số anh chị chứng minh được bằng hồ sơ city.',
+  why_cty:'Chỉ có số county. Số này công khai, nhưng county giữ để tính thuế và không cập nhật liên tục. Ghi rõ nguồn là County records và dặn người mua tự kiểm.',
+  why_oth:'Số đo không rõ cách đo, nên xếp sau hồ sơ permit và county.',
+  why_minus:'Số đo {m} sqft đã gồm {u} sqft xây không permit, nên ô sqft ghi {m} − {u}. Phần còn lại ghi trong remarks.',
+  why_sel:'Số {s} sqft của người bán không bao giờ được ghi thẳng vào ô sqft. Agent không được chuyển lời người bán khi không có cơ sở hợp lý (Robinson v. Grossman, 1997).',
+  g_un:'Không permit (chỉ ghi remarks)',g_spread:'Các hồ sơ lệch nhau',
+  rk_h:'Rủi ro nếu listing ghi số lớn nhất',rk_l:'Thấp',rk_m:'Vừa',rk_hh:'Cao',
+  risk:'Số lớn nhất đang có là {big} sqft ({who}), cao hơn số ghi trong ô {p}%. Dưới 5% là lệch bình thường. Từ 5 tới 20% thì người mua và appraiser bắt đầu hỏi. Trên 20% là mức tòa California gọi là “không phải chuyện nhỏ” trong vụ Furla v. Jon Douglas Co. (1998). Các mức này là kinh nghiệm, không phải luật.',
+  risk_none:'Nhập số để xem mức rủi ro.',
+  who_sel:'người bán nói',who_tot:'số trong ô + phần không permit',who_meas:'số đo',who_cty:'county',who_perm:'có permit',
+  p_mls:'Ô sqft trên MLS + nguồn',p_rem:'MLS remarks (tiếng Anh)',p_tds:'TDS phần II.C, mục 4–5',p_spq:'SPQ mục 7.A',p_avid:'AVID (agent tự thấy)',cp:'Chép',copied:'Đã chép ✓',
+  g_mls_t:'Gõ số này vào ô sqft. Nếu MLS có ô nguồn (RESO LivingAreaSource), chọn mục gần nhất: {o}.',
+  g_rem_t:'Remarks trên MLS viết tiếng Anh. Câu trên nói: sqft lấy từ đâu, phần không permit ghi riêng và không cộng vào số, agent không xác minh sqft, người mua tự kiểm với appraiser, người đo và city.',
+  g_tds_t:'Mục 4 hỏi thẳng: có cơi nới hay sửa đổi mà không có permit cần thiết không. Có thì đánh dấu ô Có và giải thích. Mục 5 hỏi chuyện đúng code xây dựng; trả lời theo những gì người bán biết.',
+  g_spq_t:'Mục 7.A hỏi về mọi thay đổi, cải tạo. Note 2 là chỗ giải thích phần làm không permit. Người bán ghi thêm năm làm và ai làm, nếu nhớ.',
+  g_avid_t:'AVID là những gì agent tự mắt thấy khi đi xem nhà. Chỉ ghi điều mình thấy, không ghi lời người bán kể.',
+  todo_h:'Bước tiếp theo',
+  n1:'<b>Lấy số có permit trước.</b> Cộng nhà gốc và các permit đã final bằng <a href="/t291/">T291</a>.',
+  n2:'<b>Muốn một con số không ai cãi?</b> Cho đo nhà theo ANSI Z765 trước khi đăng. <a href="/t290/">T290</a> giải thích phần nào được tính.',
+  n3:'<b>Đưa người mua form C.A.R. SFLS</b> (bản tư vấn về diện tích nhà và đất). Form ghi rõ broker không xác minh sqft, người mua nên tự thuê chuyên viên.',
+  n4:'<b>Gom giấy tờ:</b> permit cũ, bản vẽ, hóa đơn, tên thợ. Câu hỏi có sẵn ở <a href="/t287/">T287</a>.',
+  n5:'<b>Người bán đứng tên chưa tới {m} tháng đã nhận offer?</b> Civ. Code 1102.6h: phải khai phần cơi nới, sửa đổi do contractor làm, và đưa bản sao permit.',
+  n6:'<b>Tính hợp thức hóa trước khi đăng?</b> Xem các bước ở <a href="/t284/">T284</a> và chi phí ở <a href="/t283/">T283</a>.',
+  my_k:'Nhiều người hiểu sai:',my_v:'“Ghi ‘approx.’ là an toàn rồi.” Không, nếu số lệch quá xa. Vụ Furla: listing ghi “APX: 5500”, appraiser đo được khoảng 4,400 tới 4,600, tòa vẫn cho người mua kiện tiếp.',
+  my2_k:'Thêm một điều:',my2_v:'“Không tính phòng đó vào sqft thì khỏi phải khai.” TDS hỏi thẳng chuyện này ở phần II.C mục 4. Không cộng vào số thì được. Không khai trong disclosure thì không được.',
+  my3_k:'Và điều này:',my3_v:'“Ghi số lớn nhất cho dễ bán.” Appraiser bên mua đo theo ANSI. Số tụt thì appraisal tụt theo, và hai bên ngồi lại trả giá trong escrow. Civ. Code 1088 còn bắt agent chịu trách nhiệm về những gì ghi trên MLS mà mình biết, hoặc lẽ ra phải biết, là sai.',
+  b_email:'Gửi kết quả qua email',b_sms:'Hỏi Ken',b_video:'Xem video 15 giây',
+  f_title:'Gửi các câu này về email',f_sub:'Email sẽ có số ghi ô sqft, nguồn và tất cả các câu ở trên. Có câu hỏi, Ken sẽ trả lời. Không gửi quảng cáo.',
+  f_name:'Tên',f_phone:'Điện thoại (không bắt buộc)',f_send:'Gửi',f_ok:'Ứng dụng email đã mở sẵn, anh chị chỉ cần bấm Send. Nếu email không mở, xin copy số điện thoại bên dưới và nhắn cho Ken.',f_or:'Hoặc nhắn tin:',f_copy:'Copy',
+  r_est:'Câu gợi ý, không phải tư vấn pháp lý. Người bán tự trả lời TDS và SPQ theo những gì mình biết; sửa từng câu cho đúng sự thật. Mức rủi ro là ước tính theo kinh nghiệm.',
+  ft_read:'Tool liên quan:',ft_t291:'Cộng sqft có permit (T291)',ft_t290:'Nên tin số sqft nào (T290)',ft_t287:'Câu hỏi permit cho người bán (T287)',
+  ft_est:'Thông tin chung, không phải tư vấn pháp lý hay thẩm định. Câu chữ chỉ là gợi ý; disclosure phải đúng những gì người bán thật sự biết. Mức rủi ro là ước tính.',
+  ft_src:'Nguồn:',ft_chk:'Tra ngày 19/11/2026.',ft_upd:'Cập nhật',ft_all:'Tất cả công cụ',lang:'English',
+  sms:'Chào Ken, tôi vừa dùng tool ghi sqft khi đăng bán trên tools.kenlamrealty.com (T293). Số ghi ô sqft: {f} sqft ({s}). Phần không permit: {u} sqft. Tôi muốn hỏi thêm.',
+  subj:'Sqft khi đăng bán: {f} sqft, {n}',
+  body:'Tên: {n}\nEmail: {e}\nĐiện thoại: {ph}\n\nSố ghi ô sqft trên MLS: {f} sqft\nNguồn: {s}\nPhần không permit (chỉ ghi remarks): {u} sqft\nRủi ro: {risk}\n\n{blocks}\n\nChỉ là câu gợi ý. Gửi từ tool T293 tools.kenlamrealty.com'
+}};
+
+let lang='en';
+lang='vi'; try{ if(localStorage.getItem('kl_lang')==='en') lang='en'; }catch(e){}
+const $=id=>document.getElementById(id);
+const nf=n=>(Math.round(n*10)/10).toLocaleString('en-US');
+const num=v=>{ const x=parseFloat(String(v==null?'':v).replace(/,/g,'')); return isFinite(x)&&x>0?x:0; };
+let st=JSON.parse(JSON.stringify(DEF)), last={};
+const NK=['meas','perm','cty','sel'];
+
+/* Tính thuần — không đụng DOM */
+function pick(x){
+  const m=num(x.n.meas),p=num(x.n.perm),c=num(x.n.cty),s=num(x.n.sel);
+  const U=x.un.reduce((a,r)=>a+num(r.s),0);
+  const measVal=()=>{ const sub=x.inc==='yes'&&U>0&&m>U; return {v:sub?m-U:m,minus:sub}; };
+  let o=null;
+  for(const k of PRIORITY){
+    if(k==='meas_ok'&&m&&(x.mt==='ansi'||x.mt==='appr')){ const r=measVal(); o={f:r.v,src:x.mt,minus:r.minus}; break; }
+    if(k==='perm'&&p){ o={f:p,src:'perm'}; break; }
+    if(k==='cty'&&c){ o={f:c,src:'cty'}; break; }
+    if(k==='meas_oth'&&m){ const r=measVal(); o={f:r.v,src:'oth',minus:r.minus}; break; }
+  }
+  const res={U,m,p,c,s,field:o};
+  const recs=[m,p,c].filter(v=>v>0); res.spread=recs.length>1?Math.max(...recs)-Math.min(...recs):null;
+  if(o){
+    const cand=[['sel',s],['tot',U?o.f+U:0],['meas',m],['cty',c],['perm',p]].filter(a=>a[1]>0);
+    let big=cand[0]; cand.forEach(a=>{ if(a[1]>big[1]) big=a; });
+    res.big=big[1]; res.who=big[0]; res.pct=(big[1]-o.f)/o.f;
+    res.lvl=res.pct<=RISK_LOW?'l':res.pct<=RISK_HIGH?'m':'h';
+  }
+  return res;
+}
+function listEn(x){ return x.un.map(r=>PASTE.t[r.t]+(num(r.s)?' approx. '+nf(num(r.s))+' sq ft':' (size not known)')).join('; '); }
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+function paste(x,r){
+  const out={};
+  if(!r.field){ ['mls','rem','tds','spq','avid'].forEach(k=>out[k]='—'); return out; }
+  const F=nf(r.field.f), has=x.un.length>0, L=listEn(x);
+  out.mls=F+' sq ft\nSource: '+PASTE.srcShort[r.field.src]+(r.field.minus?' ('+nf(r.m)+' measured, less '+nf(r.U)+' sq ft unpermitted)':'');
+  out.rem='Approx. '+F+' sq ft '+PASTE.src[r.field.src]+'.'+
+    (has?' Seller reports additional space built without permits or without final permits: '+L+'. This space is not included in the square footage above.':'')+
+    ' Square footage has not been verified by listing agent or broker. Buyer to verify with own appraiser, measurement and the City.';
+  out.tds=has?'Item 4 (room additions, structural modifications or other alterations made without necessary permits): YES.\nItem 5 (not in compliance with building codes): answer from Seller’s own knowledge.\nExplanation: '+cap(L)+'. To Seller’s knowledge, no permit or no final permit for this work.'+(r.U?' Approx. '+nf(r.U)+' sq ft total, not included in the listed square footage.':'')
+    :'Item 4: Seller answers from own knowledge. No unpermitted space was entered in this tool.';
+  out.spq=has?'7.A: YES. '+cap(L)+'.\nNote 2: work done without a permit or without a final permit, to Seller’s knowledge. Seller to add approximate years and who did the work, if known.'
+    :'7.A: Seller answers from own knowledge.';
+  const seen=[]; x.un.forEach(u=>{ if(!seen.includes(u.t)) seen.push(u.t); });
+  out.avid=has?seen.map(t=>PASTE.avid[t]).join(' ')+' Agent did not measure square footage and did not review permits. Buyer to investigate.'
+    :'Write only what you see on the walk-through.';
+  return out;
+}
+
+function buildNums(){
+  const d=I18N[lang], C=$('numIn'); C.innerHTML='';
+  NK.forEach(k=>C.insertAdjacentHTML('beforeend','<div class="r"><div class="nm">'+d['n_'+k]+'<small>'+d['n_'+k+'_s']+'</small></div><div class="ctl"><input type="number" inputmode="numeric" min="0" id="n_'+k+'" placeholder="—" aria-label="'+d['n_'+k]+'"><span class="post">sqft</span></div></div>'));
+  NK.forEach(k=>{ const i=$('n_'+k); i.value=st.n[k]; i.addEventListener('input',()=>{ st.n[k]=i.value; calc(); }); });
+}
+function buildUn(){
+  const d=I18N[lang], P=$('unRows');
+  P.innerHTML=st.un.length?st.un.map((r,i)=>'<div class="ur" data-r="'+i+'"><div class="ctl sel"><select data-f="t" aria-label="'+d.u_type+'">'+UTYPES.map(k=>'<option value="'+k+'"'+(k===r.t?' selected':'')+'>'+d['u_'+k]+'</option>').join('')+'</select></div><div class="ctl"><input type="number" inputmode="numeric" min="0" data-f="s" placeholder="'+d.u_sqft+'" aria-label="'+d.u_sqft+'"><span class="post">sqft</span></div><button type="button" class="xb" data-f="x" aria-label="'+d.rm+'" title="'+d.rm+'">✕</button></div>').join(''):'<div class="empty">'+d.un_none+'</div>';
+  P.querySelectorAll('.ur').forEach(el=>{ const i=+el.dataset.r, r=st.un[i];
+    const inp=el.querySelector('[data-f=s]'); inp.value=r.s; inp.addEventListener('input',()=>{ r.s=inp.value; calc(); });
+    el.querySelector('select').addEventListener('change',e=>{ r.t=e.target.value; calc(); });
+    el.querySelector('[data-f=x]').onclick=()=>{ st.un.splice(i,1); buildUn(); calc(); };
+  });
+}
+function segs(){
+  document.querySelectorAll('#mt button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.mt?'true':'false'));
+  document.querySelectorAll('#inc button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.inc?'true':'false'));
+}
+function calc(){
+  const d=I18N[lang], r=pick(st), P=paste(st,r);
+  $('mtField').classList.toggle('hidden',!r.m);
+  $('incField').classList.toggle('hidden',!(r.m&&st.un.length));
+  $('fieldN').textContent=r.field?nf(r.field.f):'—';
+  $('srcLine').textContent=r.field?d.src.replace('{s}',PASTE.srcShort[r.field.src]).replace(' ({v})',d.srcvi?' ('+d.srcvi[r.field.src]+')':''):d.none;
+  const W=[];
+  if(r.field){
+    W.push(d['why_'+r.field.src].replace('{d}',ANSI_SINCE));
+    if(r.field.minus) W.push(d.why_minus.replace(/\{m\}/g,nf(r.m)).replace(/\{u\}/g,nf(r.U)));
+    if(r.s&&r.s!==r.field.f) W.push(d.why_sel.replace('{s}',nf(r.s)));
+  }
+  $('why').innerHTML=W.map(t=>'<li>'+t+'</li>').join('');
+  $('unN').innerHTML=nf(r.U)+' <small>sqft</small>';
+  $('spreadN').innerHTML=r.spread==null?'—':nf(r.spread)+' <small>sqft</small>';
+  const Lv=$('lvl'), M=$('meter');
+  if(r.field){
+    const pc=Math.max(0,r.pct);
+    Lv.textContent=d[r.lvl==='h'?'rk_hh':'rk_'+r.lvl]; Lv.className='lvl '+r.lvl;
+    $('meterBar').style.width=Math.min(100,pc/0.3*100)+'%'; M.classList.toggle('hi',r.lvl==='h');
+    $('riskNote').innerHTML=d.risk.replace('{big}',nf(r.big)).replace('{who}',d['who_'+r.who]).replace('{p}',(Math.round(pc*1000)/10).toLocaleString('en-US'));
+  } else { Lv.textContent='—'; Lv.className='lvl'; $('meterBar').style.width='0%'; M.classList.remove('hi'); $('riskNote').innerHTML=d.risk_none; }
+  $('pMls').textContent=P.mls; $('pRem').textContent=P.rem; $('pTds').textContent=P.tds; $('pSpq').textContent=P.spq; $('pAvid').textContent=P.avid;
+  $('gMls').textContent=d.g_mls_t.replace('{o}',r.field?RESO_SRC[r.field.src]:'—');
+  $('gRem').textContent=d.g_rem_t; $('gTds').textContent=d.g_tds_t; $('gSpq').textContent=d.g_spq_t; $('gAvid').textContent=d.g_avid_t;
+  const T=[d.n1,d.n2,d.n3,d.n4,d.n5.replace('{m}',FLIP_MONTHS),d.n6];
+  $('todo').innerHTML=T.map(t=>'<li>'+t+'</li>').join('');
+  last={f:r.field?nf(r.field.f):'—',s:r.field?PASTE.srcShort[r.field.src]:'—',u:nf(r.U),risk:r.field?Lv.textContent+' ('+(Math.round(Math.max(0,r.pct)*1000)/10)+'%)':'—',
+    blocks:[[d.p_mls,P.mls],[d.p_rem,P.rem],[d.p_tds,P.tds],[d.p_spq,P.spq],[d.p_avid,P.avid]].map(a=>a[0]+':\n'+a[1]).join('\n\n')};
+  $('smsBtn').href='sms:4086662825?&body='+encodeURIComponent(d.sms.replace(/\{(\w+)\}/g,(mm,k)=>last[k]??mm));
+  klSend();
+}
+function applyLang(){
+  const d=I18N[lang];
+  document.querySelectorAll('[data-i]').forEach(el=>{const k=el.getAttribute('data-i'); if(typeof d[k]==='string') el.innerHTML=d[k];});
+  $('langBtn').textContent=d.lang; document.documentElement.lang=lang; buildNums(); buildUn(); segs(); calc();
+}
+/* embed mode (?embed=1): iframe trên kenlamrealty.com, gửi chiều cao qua postMessage klToolsHeight */
+const EMBED=/[?&]embed=1/.test(location.search);
+let klSend=()=>{};
+if(EMBED){ document.documentElement.classList.add('embed'); let lastH=0;
+  klSend=()=>{ const w=document.querySelector('.wrap'); const h=Math.ceil(w.getBoundingClientRect().bottom+window.scrollY+40); if(Math.abs(h-lastH)<4) return; lastH=h; try{ parent.postMessage({klToolsHeight:h},'*'); }catch(e){} };
+  window.addEventListener('resize',()=>klSend());
+  document.addEventListener('click',e=>{ const a=e.target.closest&&e.target.closest('a[href]'); if(!a) return; const h=a.getAttribute('href'); if(h.startsWith('#')||a.target==='_blank'||/^(sms|mailto|tel):/.test(h)) return; if(h.startsWith('/')) a.href='https://tools.kenlamrealty.com'+h; a.target='_top'; },true); }
+$('mt').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; st.mt=b.dataset.v; segs(); calc(); });
+$('inc').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; st.inc=b.dataset.v; segs(); calc(); });
+$('unAdd').onclick=()=>{ if(st.un.length<12){ st.un.push({t:'add',s:''}); buildUn(); calc(); } };
+document.querySelectorAll('.cpy[data-c]').forEach(b=>b.onclick=async()=>{ const el=$(b.dataset.c); try{ await navigator.clipboard.writeText(el.textContent); b.textContent=I18N[lang].copied; setTimeout(()=>{b.textContent=I18N[lang].cp},1500); }catch(e){ const rg=document.createRange(); rg.selectNodeContents(el); const s=getSelection(); s.removeAllRanges(); s.addRange(rg);} });
+$('langBtn').onclick=()=>{lang=lang==='vi'?'en':'vi'; try{localStorage.setItem('kl_lang',lang)}catch(e){} applyLang();};
+$('emailBtn').onclick=()=>{$('form').classList.toggle('open'); if($('form').classList.contains('open')) $('fname').focus(); klSend();};
+$('sendBtn').onclick=()=>{
+  const d=I18N[lang], n=$('fname').value.trim()||'—', e=$('femail').value.trim()||'—', ph=$('fphone').value.trim()||'—';
+  const fill=s=>s.replace('{n}',n).replace('{e}',e).replace('{ph}',ph).replace(/\{(\w+)\}/g,(m,k)=>last[k]??m);
+  /* LEAD → FUB: email tới ken@kenlamrealty.com (FUB Lead Email Parsing). */
+  const href='mailto:ken@kenlamrealty.com?subject='+encodeURIComponent(fill(d.subj))+'&body='+encodeURIComponent(fill(d.body));
+  const a=document.createElement('a'); a.href=href; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  $('sent').hidden=false; klSend();
+};
+$('copyBtn').onclick=async()=>{ try{ await navigator.clipboard.writeText('4086662825'); $('copyBtn').textContent='✓'; }catch(e){ const r=document.createRange(); r.selectNodeContents($('copyBtn').previousElementSibling); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} };
+applyLang();
+</script>
+
+<script>
+(function(){var a=document.getElementById('klBack'),b=document.getElementById('langBtn');if(!a)return;
+try{if(/[?&]embed=1/.test(location.search))a.style.display='none';}catch(e){}
+function u(){var en=b&&b.textContent.trim()==='Tiếng Việt';a.textContent=en?'← All tools':'← Tất cả công cụ';}
+u();if(b)b.addEventListener('click',function(){setTimeout(u,0)});})();
+</script>
+</body>
+</html>
